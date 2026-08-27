@@ -63,6 +63,13 @@
             color: white;
             box-shadow: 0 4px 6px rgba(0, 82, 204, 0.2);
         }
+        /* Estilos para modo Hoja de Cálculo */
+        .bg-pastel-danger { background-color: #fee2e2 !important; color: #ef4444 !important; border: none; }
+        .table-spreadsheet { border-collapse: collapse; }
+        .table-spreadsheet th { font-size: 0.75rem; text-transform: uppercase; color: #64748b; border: 1px solid #e2e8f0; padding: 1rem 0.75rem; }
+        .table-spreadsheet td { padding: 0; border: 1px solid #e2e8f0; vertical-align: middle; }
+        .input-spreadsheet { width: 100%; border: none; padding: 0.85rem 0.75rem; background: transparent; outline: none; font-size: 0.85rem; color: #0f172a; transition: all 0.2s; }
+        .input-spreadsheet:focus { background-color: #f0fdf4; box-shadow: inset 0 0 0 2px #22c55e; }
     </style>
 
     <div class="app-container py-4">
@@ -429,33 +436,114 @@
                             </div>
 
                             {{-- ==========================================
-                                 TAB 4: CERTIFICADOS (Visor de PDF)
-                                 ========================================== --}}
+                                TAB 4: CERTIFICADOS (Acordeón + Hoja de Cálculo)
+                                ========================================== --}}
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase">
-                                        <i class="fas fa-search me-2"></i> Vista Previa del Certificado
-                                    </h6>
 
-                                    {{-- Botón para abrir el PDF a pantalla completa en otra pestaña --}}
-                                    <a href="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill fw-bold">
-                                        <i class="fas fa-external-link-alt me-1"></i> Pantalla completa
-                                    </a>
-                                </div>
+                                <div class="accordion accordion-custom" id="accordionCertificados">
+                                    {{-- Acordeón 1: Certificado de Estado de Cuenta --}}
+                                    <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
+                                        <h2 class="accordion-header" id="headingCertificado1">
+                                            <button class="accordion-button collapsed bg-white border-0 shadow-none px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCertificado1">
+                                                <div class="d-flex align-items-center w-100 me-3">
+                                                    <div class="bg-pastel-danger rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 48px; height: 48px;">
+                                                        <i class="fas fa-file-pdf text-danger fs-5"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="fw-bold text-dark mb-1 fs-5">Certificado: Estado de Cuenta (Al Día)</h6>
+                                                        <div class="text-muted fs-8 mt-1">Datos procesados correspondientes al Lote BLQ-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        </h2>
 
-                                {{-- Contenedor del Iframe --}}
-                                <div class="border-0 rounded-4 overflow-hidden shadow-sm bg-light" style="height: 650px; position: relative;">
-                                    {{-- Iframe que carga dinámicamente el método generarIndividual del controlador --}}
-                                    <iframe
-                                        src="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}"
-                                        width="100%"
-                                        height="100%"
-                                        frameborder="0"
-                                        style="border: none; background-color: #f8fafc;">
-                                        <p>Tu navegador no soporta la visualización de PDFs.
-                                           <a href="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}">Descargar PDF</a>
-                                        </p>
-                                    </iframe>
+                                        <div id="collapseCertificado1" class="accordion-collapse collapse" data-bs-parent="#accordionCertificados">
+                                            <div class="accordion-body p-4 border-top">
+
+                                                @if($operacion->lineas && $operacion->lineas->count() > 0)
+                                                    {{-- Controles de Vistas --}}
+                                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                                        <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
+                                                        <div class="btn-group shadow-sm bg-white rounded-pill p-1" role="group">
+                                                            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 active fw-bold" id="btnModePdf" onclick="toggleMode('pdf')">
+                                                                <i class="fas fa-file-pdf me-1"></i> Visor PDF
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-light text-success rounded-pill px-3 fw-bold" id="btnModeData" onclick="toggleMode('data')">
+                                                                <i class="fas fa-table me-1"></i> Modo Hoja de Cálculo
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- MODO A: VISOR PDF --}}
+                                                    <div id="pdfViewerContainer" class="border-0 rounded-4 overflow-hidden shadow-sm bg-light transition-all" style="height: 650px; position: relative;">
+                                                        <iframe src="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}" width="100%" height="100%" frameborder="0" style="border: none; background-color: #f8fafc;"></iframe>
+                                                    </div>
+
+                                                    {{-- MODO B: HOJA DE CÁLCULO (Oculto por defecto) --}}
+                                                    <div id="dataEditorContainer" class="d-none transition-all">
+                                                        <form action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
+                                                            @csrf
+                                                            @method('PUT')
+
+                                                            <div class="table-responsive rounded-4 shadow-sm border mb-3 overflow-hidden" style="max-height: 500px;">
+                                                                <table class="table table-spreadsheet align-middle mb-0 text-nowrap">
+                                                                    <thead class="bg-light" style="position: sticky; top: 0; z-index: 10;">
+                                                                        <tr>
+                                                                            <th class="ps-3" style="width: 120px;">N° Factura</th>
+                                                                            <th style="width: 150px;">Línea (Cuenta)</th>
+                                                                            <th style="width: 140px;">Calificación</th>
+                                                                            <th style="width: 120px;">Días Mora</th>
+                                                                            <th style="width: 150px;">Vencimiento</th>
+                                                                            <th>Observación General</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach($operacion->lineas as $linea)
+                                                                        <tr>
+                                                                            <td class="ps-3 bg-light fw-bold text-muted border-end">#{{ $linea->id_factura }}</td>
+                                                                            <td class="bg-light text-muted border-end">{{ $linea->id_car_sia_lineas }}</td>
+
+                                                                            {{-- CAMPOS EDITABLES --}}
+                                                                            <td>
+                                                                                <select name="lineas[{{ $linea->id }}][calificacion]" class="input-spreadsheet">
+                                                                                    <option value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
+                                                                                    <option value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
+                                                                                    <option value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
+                                                                                </select>
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" value="{{ $linea->dias_mora_automaticos }}" class="input-spreadsheet text-center">
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" value="{{ $linea->fecha_venci ? $linea->fecha_venci->format('Y-m-d') : '' }}" class="input-spreadsheet">
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="text" name="lineas[{{ $linea->id }}][observacion]" value="{{ $linea->observacion }}" class="input-spreadsheet" placeholder="Escribe una observación...">
+                                                                            </td>
+                                                                        </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+
+                                                            <div class="d-flex justify-content-end bg-pastel-secondary p-3 rounded-4 align-items-center">
+                                                                <span class="text-muted fs-8 me-3"><i class="fas fa-info-circle me-1"></i> Los cambios aplicados reconstruirán el PDF inmediatamente.</span>
+                                                                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold text-white shadow-sm hover-opacity">
+                                                                    <i class="fas fa-save me-2"></i> Guardar Cambios
+                                                                </button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                @else
+                                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
+                                                        <i class="fas fa-file-excel fs-1 text-secondary mb-3 opacity-25"></i>
+                                                        <h6 class="fw-bold text-dark">Líneas No Estructuradas</h6>
+                                                        <p class="mb-0 fs-7">El certificado no cuenta con datos procesados aún. Utiliza el botón <strong class="text-danger">Generar Certificado</strong> en la cabecera para inicializar los datos.</p>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -574,4 +662,34 @@
             </form>
         </div>
     </div>
+
+    {{-- ESTE ES EL SCRIPT QUE FALTABA PARA QUE FUNCIONEN LOS BOTONES DE LA HOJA DE CÁLCULO --}}
+    <script>
+        function toggleMode(mode) {
+            const btnPdf = document.getElementById('btnModePdf');
+            const btnData = document.getElementById('btnModeData');
+            const containerPdf = document.getElementById('pdfViewerContainer');
+            const containerData = document.getElementById('dataEditorContainer');
+
+            if (mode === 'pdf') {
+                btnPdf.classList.replace('btn-light', 'btn-danger');
+                btnPdf.classList.replace('text-danger', 'text-white');
+
+                btnData.classList.replace('btn-success', 'btn-light');
+                btnData.classList.replace('text-white', 'text-success');
+
+                containerPdf.classList.remove('d-none');
+                containerData.classList.add('d-none');
+            } else {
+                btnData.classList.replace('btn-light', 'btn-success');
+                btnData.classList.replace('text-success', 'text-white');
+
+                btnPdf.classList.replace('btn-danger', 'btn-light');
+                btnPdf.classList.replace('text-white', 'text-danger');
+
+                containerData.classList.remove('d-none');
+                containerPdf.classList.add('d-none');
+            }
+        }
+    </script>
 </x-base-layout>
