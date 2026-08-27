@@ -620,7 +620,7 @@ Route::resource('creditos', CreditoController::class)
 
 
 // =========================================================================
-// MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED)
+// MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED) ARCHIVO - TALENTO HUMANO
 // =========================================================================
 Route::prefix('archivo')
     ->middleware(['auth'])
