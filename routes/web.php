@@ -195,6 +195,9 @@ Route::resource('admin', AuditoriaController::class)
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
     ->middleware(['auth']);
+Route::get('roles-permisos', [RoleController::class, 'matriz'])
+    ->name('admin.roles.matriz')
+    ->middleware(['auth']);
 Route::resource('permisos', PermissionsController::class)
     ->names('admin.permisos')
     ->middleware(['auth']);
