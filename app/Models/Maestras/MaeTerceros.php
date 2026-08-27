@@ -99,10 +99,10 @@ class MaeTerceros extends Model
         // DATOS PERSONALES
         // ----------------------
         'nom_ter', // NOMBRE DEL TERCERO
-        'apl1',
-        'apl2', // APELLIDOS
-        'nom1',
-        'nom2', // NOMBRES
+        'apl1',  //APELLIDO 1
+        'apl2', // APELLIDO 2
+        'nom1', // NOMBRE 1
+        'nom2', // NOMBRE 2
         'raz', // RAZÓN SOCIAL
         'razon_soc', // RAZÓN SOCIAL alternativo
         'repres', // REPRESENTANTE

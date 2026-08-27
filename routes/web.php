@@ -68,6 +68,9 @@ use App\Http\Controllers\Rsv\CatalogoInmuebleController;
 use App\Http\Controllers\Rsv\ReservaController;
 
 
+//SGRH
+use App\Http\Controllers\Sgrh\EmpleadoController as SgrhEmpleadoController;
+
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
 use App\Http\Controllers\Archivo\GdoAreaController;
@@ -191,6 +194,9 @@ Route::resource('admin', AuditoriaController::class)
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
+    ->middleware(['auth']);
+Route::get('roles-permisos', [RoleController::class, 'matriz'])
+    ->name('admin.roles.matriz')
     ->middleware(['auth']);
 Route::resource('permisos', PermissionsController::class)
     ->names('admin.permisos')
@@ -614,7 +620,7 @@ Route::resource('creditos', CreditoController::class)
 
 
 // =========================================================================
-// MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED)
+// MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED) ARCHIVO - TALENTO HUMANO
 // =========================================================================
 Route::prefix('archivo')
     ->middleware(['auth'])
@@ -1516,3 +1522,35 @@ Route::middleware(['auth'])
 
     });
 // FIN MÓDULO SIA CERTIFICADOS
+
+// =============================
+// MÓDULO SGRH (Recursos Humanos)
+// =============================
+// Fase 1/3 en construcción: por ahora solo listado y cambio de estado de
+// colaboradores. Aún no hay alta/edición porque depende de una decisión de
+// negocio pendiente sobre identificación/creación de terceros (ver plan).
+Route::prefix('sgrh')
+    ->name('sgrh.')
+    ->middleware(['auth'])
+    ->group(function () {
+        Route::get('empleados', [SgrhEmpleadoController::class, 'index'])->name('empleado.index');
+        Route::get('empleados/create', [SgrhEmpleadoController::class, 'create'])->name('empleado.create');
+        Route::get('empleados/buscar-tercero', [SgrhEmpleadoController::class, 'buscarTercero'])->name('empleado.buscarTercero');
+        Route::post('empleados', [SgrhEmpleadoController::class, 'store'])->name('empleado.store');
+        Route::put('empleados/{empleado}/estado', [SgrhEmpleadoController::class, 'updateEstado'])->name('empleado.updateEstado');
+
+        // Consulta/edición acotada del tercero (solo Identificación/Información Personal/
+        // Ubicación/Contacto) para RR. HH. — no usa el editor genérico de Maestras/Terceros,
+        // que trae secciones (Financiera, Comercial, Tributaria) que no aplican aquí.
+        // Permisos separados: sgrh.tercero.show (solo consulta) y sgrh.tercero.edit (edita).
+        // Se usa `can:` (no `candirect`) para que funcione tanto si el permiso se asigna
+        // directo al usuario como si se hereda de un rol.
+        Route::get('terceros/{tercero}', [SgrhEmpleadoController::class, 'showTercero'])
+            ->name('tercero.show')->middleware('can:sgrh.tercero.show');
+        Route::get('terceros/{tercero}/edit', [SgrhEmpleadoController::class, 'editTercero'])
+            ->name('tercero.edit')->middleware('can:sgrh.tercero.edit');
+        Route::put('terceros/{tercero}', [SgrhEmpleadoController::class, 'updateTercero'])
+            ->name('tercero.update')->middleware('can:sgrh.tercero.edit');
+    });
+// FIN MÓDULO SGRH
+

@@ -135,6 +135,9 @@
                 <p class="mb-0 fs-15 opacity-75 fw-medium ms-1">Configuración centralizada de perfiles, accesos y permisos operativos.</p>
             </div>
             <div class="position-relative z-1 d-flex flex-column flex-sm-row gap-3">
+                <a href="{{ route('admin.roles.matriz') }}" class="ui-btn-white text-decoration-none">
+                    <i class="bi bi-grid-3x3-gap-fill"></i> Ver matriz completa
+                </a>
                 <a href="#cardAddRole" class="ui-btn-white text-decoration-none" id="mostrarCardRole">
                     <i class="bi bi-plus-lg"></i> Crear Rol
                 </a>
