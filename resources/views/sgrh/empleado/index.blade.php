@@ -78,6 +78,12 @@
                                                 <i class="bi bi-exclamation-triangle"></i> Sin clasificar
                                             </span>
                                         @endif
+                                        @if (!$empleado->tercero->fec_act || (string) $empleado->tercero->fec_act < $fechaLimiteActualizacion)
+                                            <span class="badge rounded-pill ms-1 px-2 py-1" style="background-color: #ffe4e6; color: #e11d48; font-weight: 600;" data-bs-toggle="tooltip"
+                                                  title="Última actualización: {{ $empleado->tercero->fec_act ? \Illuminate\Support\Carbon::parse($empleado->tercero->fec_act)->format('d/m/Y') : 'nunca registrada' }}">
+                                                <i class="bi bi-exclamation-triangle"></i> Información de usuario requiere actualizar
+                                            </span>
+                                        @endif
                                     </div>
                                 @else
                                     <div class="text-danger small">
