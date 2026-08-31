@@ -1,4 +1,7 @@
 <x-base-layout>
+    {{-- ==========================================
+         1. ESTILOS LOCALES
+         ========================================== --}}
     <style>
         /* Paleta de Colores Pasteles Soft UI */
         .bg-pastel-primary { background-color: #e7f0ff !important; color: #0052cc !important; border: none; }
@@ -22,12 +25,49 @@
         .btn-reload:hover { background-color: #e7f0ff; color: #4a90e2; border-color: #e7f0ff; }
         .btn-reload:hover i { transform: rotate(180deg); transition: transform 0.4s ease; }
         .btn-reload i { transition: transform 0.4s ease; }
+
+        /* Scrollbar horizontal */
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* ==========================================
+           ESTILOS NUEVOS: PROGRESO MINIMALISTA
+           ========================================== */
+        .progress-minimalist {
+            height: 6px;
+            width: 100%;
+            background-color: #fee2e2;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-minimalist::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -50%;
+            width: 50%;
+            height: 100%;
+            background-color: #ef4444;
+            animation: progress-slide 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+        @keyframes progress-slide {
+            0% { left: -50%; width: 30%; }
+            50% { width: 60%; }
+            100% { left: 100%; width: 30%; }
+        }
     </style>
 
     <div class="app-container py-4">
 
-        {{-- Encabezado y SELECTOR DE BLOQUE AISLADO --}}
+        {{-- ==========================================
+             2. ENCABEZADO Y CONTROLES SUPERIORES
+             ========================================== --}}
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+
+            {{-- Título de la página --}}
             <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center justify-content-center shadow-sm" style="width: 54px; height: 54px; border-radius: 12px; background-color: #e7f0ff;">
                     <i class="fas fa-layer-group fs-4" style="color: #4a90e2;"></i>
@@ -41,51 +81,46 @@
                 </div>
             </div>
 
-            <!-- CONTROLES DERECHOS: SELECTOR DE BLOQUE, RECARGAR Y ALERTAS/CERTIFICADOS -->
+            {{-- Controles Derechos (Selector, Recarga y Botones de Acción) --}}
             <div class="d-flex align-items-center gap-3 flex-wrap">
 
-                {{-- NUEVO BOTÓN: Recargar Vista (Sutil y Minimalista) --}}
+                {{-- Botón Recargar --}}
                 <a href="{{ request()->fullUrl() }}" class="btn btn-reload shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; flex-shrink: 0;" title="Actualizar datos">
                     <i class="fas fa-sync-alt"></i>
                 </a>
 
+                {{-- Selector de Lote --}}
                 @if($bloquesDisponibles->count() > 0)
-                <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="d-flex align-items-center bg-white p-2 border rounded-pill shadow-sm" style="min-width: 320px;">
-                    <label class="fw-bold text-muted small mb-0 ms-3 me-2 text-nowrap"><i class="fas fa-filter me-1"></i> Lote Activo:</label>
-
-                    @if(request('buscar')) <input type="hidden" name="buscar" value="{{ request('buscar') }}"> @endif
-                    @if(request('anio')) <input type="hidden" name="anio" value="{{ request('anio') }}"> @endif
-
-                    <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: #4a90e2; cursor:pointer;" onchange="this.form.submit()">
-                        @foreach($bloquesDisponibles as $b)
-                            <option value="{{ $b->numero_bloque }}" {{ $bloqueActivo == $b->numero_bloque ? 'selected' : '' }}>
-                                Lote API-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
-                            </option>
-                        @endforeach
-                    </select>
-                </form>
+                    <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="d-flex align-items-center bg-white p-2 border rounded-pill shadow-sm" style="min-width: 320px;">
+                        <label class="fw-bold text-muted small mb-0 ms-3 me-2 text-nowrap"><i class="fas fa-filter me-1"></i> Lote Activo:</label>
+                        @if(request('buscar')) <input type="hidden" name="buscar" value="{{ request('buscar') }}"> @endif
+                        @if(request('anio')) <input type="hidden" name="anio" value="{{ request('anio') }}"> @endif
+                        <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: #4a90e2; cursor:pointer;" onchange="this.form.submit()">
+                            @foreach($bloquesDisponibles as $b)
+                                <option value="{{ $b->numero_bloque }}" {{ $bloqueActivo == $b->numero_bloque ? 'selected' : '' }}>
+                                    Lote API-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
                 @endif
 
-                {{-- ACCIONES DE LOTE (MUESTRA SOLO SI HAY BLOQUE SELECCIONADO) --}}
+                {{-- Botones de Acción Masiva (Solo si hay un lote activo) --}}
                 @if($bloqueActivo)
-                    {{-- BOTÓN: Alerta de Lote --}}
                     <button type="button" class="btn btn-info shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque">
                         <i class="fas fa-bell me-2"></i> Alerta de Lote
                     </button>
 
-                    {{-- NUEVO BOTÓN: Generar Certificados Masivos --}}
-                    <form action="{{ route('certificados.operaciones.pdf_masivo') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
-                        <button type="submit" class="btn btn-danger shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center">
-                            <i class="fas fa-database me-2"></i> Estructurar Lote
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-danger shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalMasivo">
+                        <i class="fas fa-database me-2"></i> Estructurar Lote
+                    </button>
                 @endif
             </div>
         </div>
 
-        {{-- Alertas del Sistema --}}
+        {{-- ==========================================
+             3. ALERTAS DE SISTEMA (MENSALJES FLASH)
+             ========================================== --}}
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
                 <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -100,99 +135,93 @@
             </div>
         @endif
 
-        {{-- ========================================== --}}
-        {{-- SECCIÓN DE KPIs MINIMALISTAS --}}
-        {{-- ========================================== --}}
+        {{-- ==========================================
+             4. SECCIÓN DE KPIS MINIMALISTAS
+             ========================================== --}}
         @if($bloqueActivo)
-        <div class="row g-3 mb-4">
-            <!-- KPI: Total -->
-            <div class="col-12 col-md-4">
-                <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
-                    <div class="bg-pastel-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
-                        <i class="fas fa-cubes fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Lote</div>
-                        <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['total'], 0, ',', '.') }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KPI: Procesados -->
-            <div class="col-12 col-md-4">
-                <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
-                    <div class="bg-pastel-success rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
-                        <i class="fas fa-check-double fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Procesados / Aprobados</div>
-                        <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['procesados'], 0, ',', '.') }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KPI: Pendientes -->
-            <div class="col-12 col-md-4">
-                <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
-                    <div class="bg-pastel-warning rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
-                        <i class="fas fa-hourglass-half fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Pendientes</div>
-                        <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['pendientes'], 0, ',', '.') }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
-        {{-- ========================================== --}}
-        {{-- HISTORIAL COMPACTO DEL LOTE --}}
-        {{-- ========================================== --}}
-        @if($bloqueActivo && isset($historialBloque) && $historialBloque->count() > 0)
-        <div class="card card-custom shadow-sm border-0 mb-4">
-            <div class="card-body p-3">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="fas fa-history text-muted me-2"></i>
-                    <h6 class="fw-bold text-muted m-0 small text-uppercase" style="letter-spacing: 0.5px;">Actividad Reciente del Lote</h6>
-                </div>
-
-                {{-- Contenedor Horizontal Scrollable --}}
-                <div class="d-flex flex-nowrap overflow-auto gap-3 pb-2 pt-1 custom-scrollbar">
-                    @foreach($historialBloque as $log)
-                        @php
-                            // Extrae la primera letra del usuario, o usa 'S' para el Sistema
-                            $inicial = strtoupper(substr($log->usuario->name ?? 'S', 0, 1));
-                            // Un color aleatorio basado en el nombre para darle vida sutil
-                            $colorBg = match($inicial) { 'S' => 'bg-pastel-secondary', 'A','E','I','O','U' => 'bg-pastel-success', 'M','N','P','C' => 'bg-pastel-warning', default => 'bg-pastel-primary' };
-                        @endphp
-
-                        <div class="bg-white rounded-3 p-2 d-flex align-items-center flex-shrink-0 shadow-sm" style="min-width: 260px; border: 1px solid #f0f0f0;">
-                            <div class="{{ $colorBg }} rounded-circle d-flex align-items-center justify-content-center me-3 text-dark fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
-                                {{ $inicial }}
-                            </div>
-                            <div class="overflow-hidden">
-                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.75rem; line-height: 1.2;" title="{{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}">
-                                    {{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}
-                                </div>
-                                <div class="text-muted" style="font-size: 0.65rem;">
-                                    <i class="fas fa-user-circle me-1"></i>{{ $log->usuario->name ?? 'Sistema' }} • {{ $log->created_at->diffForHumans() }}
-                                </div>
-                            </div>
+            <div class="row g-3 mb-4">
+                {{-- KPI: Total --}}
+                <div class="col-12 col-md-4">
+                    <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
+                        <div class="bg-pastel-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
+                            <i class="fas fa-cubes fs-4"></i>
                         </div>
-                    @endforeach
+                        <div>
+                            <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Lote</div>
+                            <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['total'], 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- KPI: Procesados --}}
+                <div class="col-12 col-md-4">
+                    <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
+                        <div class="bg-pastel-success rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
+                            <i class="fas fa-check-double fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Procesados / Aprobados</div>
+                            <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['procesados'], 0, ',', '.') }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- KPI: Pendientes --}}
+                <div class="col-12 col-md-4">
+                    <div class="card card-custom h-100 p-3 d-flex flex-row align-items-center gap-3">
+                        <div class="bg-pastel-warning rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 55px; height: 55px;">
+                            <i class="fas fa-hourglass-half fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Pendientes</div>
+                            <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['pendientes'], 0, ',', '.') }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <style>
-            /* Hacemos el scrollbar súper delgado y elegante solo para este contenedor */
-            .custom-scrollbar::-webkit-scrollbar { height: 6px; }
-            .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        </style>
         @endif
-        {{-- Tarjeta de Filtros Secundarios --}}
+
+        {{-- ==========================================
+             5. HISTORIAL COMPACTO DEL LOTE
+             ========================================== --}}
+        @if($bloqueActivo && isset($historialBloque) && $historialBloque->count() > 0)
+            <div class="card card-custom shadow-sm border-0 mb-4">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-history text-muted me-2"></i>
+                        <h6 class="fw-bold text-muted m-0 small text-uppercase" style="letter-spacing: 0.5px;">Actividad Reciente del Lote</h6>
+                    </div>
+
+                    {{-- Contenedor Horizontal Scrollable --}}
+                    <div class="d-flex flex-nowrap overflow-auto gap-3 pb-2 pt-1 custom-scrollbar">
+                        @foreach($historialBloque as $log)
+                            @php
+                                $inicial = strtoupper(substr($log->usuario->name ?? 'S', 0, 1));
+                                $colorBg = match($inicial) { 'S' => 'bg-pastel-secondary', 'A','E','I','O','U' => 'bg-pastel-success', 'M','N','P','C' => 'bg-pastel-warning', default => 'bg-pastel-primary' };
+                            @endphp
+
+                            <div class="bg-white rounded-3 p-2 d-flex align-items-center flex-shrink-0 shadow-sm" style="min-width: 260px; border: 1px solid #f0f0f0;">
+                                <div class="{{ $colorBg }} rounded-circle d-flex align-items-center justify-content-center me-3 text-dark fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                    {{ $inicial }}
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size: 0.75rem; line-height: 1.2;" title="{{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}">
+                                        {{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}
+                                    </div>
+                                    <div class="text-muted" style="font-size: 0.65rem;">
+                                        <i class="fas fa-user-circle me-1"></i>{{ $log->usuario->name ?? 'Sistema' }} • {{ $log->created_at->diffForHumans() }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        {{-- ==========================================
+             6. TARJETA DE FILTROS SECUNDARIOS
+             ========================================== --}}
         <div class="card card-custom shadow-sm border-0 mb-4">
             <div class="card-body p-4">
                 <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="row g-3 align-items-end">
@@ -231,12 +260,15 @@
             </div>
         </div>
 
-        {{-- Tabla Principal --}}
+        {{-- ==========================================
+             7. TABLA PRINCIPAL DE OPERACIONES
+             ========================================== --}}
         <div class="card card-custom shadow-sm border-0">
             <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center" style="border-radius: 20px 20px 0 0;">
                 <h6 class="fw-bold m-0" style="color: #2c3e50;"><i class="fas fa-list text-muted me-2"></i> Operaciones del Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}</h6>
                 <span class="badge bg-pastel-info text-dark rounded-pill px-3 py-2"><i class="fas fa-hashtag me-1"></i> {{ number_format($operaciones->total(), 0, ',', '.') }} Registros Listados</span>
             </div>
+
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" style="border-collapse: separate; border-spacing: 0 12px;">
                     <thead class="text-muted small text-uppercase bg-light">
@@ -252,124 +284,131 @@
                     </thead>
                     <tbody class="px-3">
                         @forelse($operaciones as $operacion)
-                        <tr class="bg-white">
-                            <td class="ps-5">
-                                <div class="d-flex align-items-center">
-                                    <div class="symbol symbol-45px me-3">
-                                        <div class="symbol-label bg-pastel-primary" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
-                                            <i class="fas fa-file-invoice fs-4"></i>
+                            <tr class="bg-white">
+                                {{-- Radicado --}}
+                                <td class="ps-5">
+                                    <div class="d-flex align-items-center">
+                                        <div class="symbol symbol-45px me-3">
+                                            <div class="symbol-label bg-pastel-primary" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
+                                                <i class="fas fa-file-invoice fs-4"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-gray-800 fs-6">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
+                                            <div class="text-muted small fw-semibold">
+                                                <i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <div class="fw-bold text-gray-800 fs-6">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
-                                        <div class="text-muted small fw-semibold">
-                                            <i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
-                                        </div>
+                                </td>
+
+                                {{-- Tercero --}}
+                                <td>
+                                    @if($operacion->tercero)
+                                        <div class="fw-bold text-dark small">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
+                                        <div class="text-muted" style="font-size: 0.8rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                    @else
+                                        <span class="badge bg-pastel-warning px-3 py-2 rounded-pill"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
+                                    @endif
+                                </td>
+
+                                {{-- Estado Actual --}}
+                                <td>
+                                    @php
+                                        $todosLosEstados = collect();
+                                        if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
+                                        if(isset($operacion->estadosBloque)) $todosLosEstados = $todosLosEstados->concat($operacion->estadosBloque);
+
+                                        $ultimoEstado = $todosLosEstados->sortByDesc('created_at')->first();
+                                        $esEstadoBloque = $ultimoEstado && is_null($ultimoEstado->id_car_sia_operaciones);
+                                        $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
+
+                                        $clasePastel = match(strtolower(trim($estadoNombre))) {
+                                            'aprobado', 'completado', 'vigente', 'procesado' => 'bg-pastel-success',
+                                            'rechazado', 'anulado' => 'bg-pastel-warning',
+                                            'pendiente', 'nuevo', 'pendiente por procesar' => 'bg-pastel-secondary',
+                                            default => 'bg-pastel-primary'
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $clasePastel }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esEstadoBloque ? 'Estado general asignado por Lote' : 'Estado específico del cliente' }}">
+                                        <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
+                                    </span>
+                                </td>
+
+                                {{-- Último Evento --}}
+                                <td>
+                                    @php
+                                        $todosLosTipos = collect();
+                                        if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
+                                        if(isset($operacion->tiposBloque)) $todosLosTipos = $todosLosTipos->concat($operacion->tiposBloque);
+
+                                        $ultimoTipoObj = $todosLosTipos->sortByDesc('created_at')->first();
+                                        $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
+                                        $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
+                                    @endphp
+                                    <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esTipoBloque ? 'Evento general asignado por Lote' : 'Evento específico del cliente' }}">
+                                        <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
+                                    </span>
+                                </td>
+
+                                {{-- Última Alerta --}}
+                                <td>
+                                    @php
+                                        $todasLasAlertas = collect();
+                                        if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
+                                        if(isset($operacion->alertasBloque)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertasBloque);
+
+                                        $ultimaAlertaObj = $todasLasAlertas->sortByDesc('created_at')->first();
+                                        $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
+                                    @endphp
+
+                                    @if($ultimaAlertaObj)
+                                        <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esAlertaBloque ? 'Alerta general programada por Lote' : 'Alerta específica del cliente' }}">
+                                            <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
+                                            {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
+                                        </span>
+                                    @else
+                                        <span class="badge bg-light text-muted border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                            <i class="fas fa-bell-slash me-1 opacity-50"></i> SIN ALERTA
+                                        </span>
+                                    @endif
+                                </td>
+
+                                {{-- Fecha Creación --}}
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-gray-800 fw-bold small">{{ $operacion->created_at->format('d/m/Y') }}</span>
+                                        <span class="text-muted" style="font-size: 0.8rem;">{{ $operacion->created_at->format('h:i A') }}</span>
                                     </div>
-                                </div>
-                            </td>
-                            <td>
-                                @if($operacion->tercero)
-                                    <div class="fw-bold text-dark small">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
-                                    <div class="text-muted" style="font-size: 0.8rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
-                                @else
-                                    <span class="badge bg-pastel-warning px-3 py-2 rounded-pill"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
-                                @endif
-                            </td>
+                                </td>
 
-                            {{-- 1. COLUMNA: ESTADO ACTUAL --}}
-                            <td>
-                                @php
-                                    $todosLosEstados = collect();
-                                    if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
-                                    if(isset($operacion->estadosBloque)) $todosLosEstados = $todosLosEstados->concat($operacion->estadosBloque);
-
-                                    $ultimoEstado = $todosLosEstados->sortByDesc('created_at')->first();
-                                    $esEstadoBloque = $ultimoEstado && is_null($ultimoEstado->id_car_sia_operaciones);
-                                    $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
-
-                                    $clasePastel = match(strtolower(trim($estadoNombre))) {
-                                        'aprobado', 'completado', 'vigente', 'procesado' => 'bg-pastel-success',
-                                        'rechazado', 'anulado' => 'bg-pastel-warning',
-                                        'pendiente', 'nuevo', 'pendiente por procesar' => 'bg-pastel-secondary',
-                                        default => 'bg-pastel-primary'
-                                    };
-                                @endphp
-                                <span class="badge {{ $clasePastel }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esEstadoBloque ? 'Estado general asignado por Lote' : 'Estado específico del cliente' }}">
-                                    <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
-                                </span>
-                            </td>
-
-                            {{-- 2. COLUMNA: ÚLTIMO TIPO DE EVENTO --}}
-                            <td>
-                                @php
-                                    $todosLosTipos = collect();
-                                    if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
-                                    if(isset($operacion->tiposBloque)) $todosLosTipos = $todosLosTipos->concat($operacion->tiposBloque);
-
-                                    $ultimoTipoObj = $todosLosTipos->sortByDesc('created_at')->first();
-                                    $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
-                                    $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
-                                @endphp
-                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esTipoBloque ? 'Evento general asignado por Lote' : 'Evento específico del cliente' }}">
-                                    <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
-                                </span>
-                            </td>
-
-                            {{-- 3. COLUMNA: ÚLTIMA ALERTA --}}
-                            <td>
-                                @php
-                                    $todasLasAlertas = collect();
-                                    if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
-                                    if(isset($operacion->alertasBloque)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertasBloque);
-
-                                    $ultimaAlertaObj = $todasLasAlertas->sortByDesc('created_at')->first();
-                                    $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
-                                @endphp
-
-                                @if($ultimaAlertaObj)
-                                    <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esAlertaBloque ? 'Alerta general programada por Lote' : 'Alerta específica del cliente' }}">
-                                        <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
-                                        {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
-                                    </span>
-                                @else
-                                    <span class="badge bg-light text-muted border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-                                        <i class="fas fa-bell-slash me-1 opacity-50"></i> SIN ALERTA
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td>
-                                <div class="d-flex flex-column">
-                                    <span class="text-gray-800 fw-bold small">{{ $operacion->created_at->format('d/m/Y') }}</span>
-                                    <span class="text-muted" style="font-size: 0.8rem;">{{ $operacion->created_at->format('h:i A') }}</span>
-                                </div>
-                            </td>
-                            <td class="text-end pe-5">
-                                <a href="{{ route('certificados.operaciones.show', $operacion->id) }}"
-                                   class="btn btn-light rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"
-                                   title="Ver Detalle y Trazabilidad">
-                                    <i class="fas fa-eye" style="color: #4a90e2;"></i>
-                                </a>
-                            </td>
-                        </tr>
+                                {{-- Acciones --}}
+                                <td class="text-end pe-5">
+                                    <a href="{{ route('certificados.operaciones.show', $operacion->id) }}"
+                                       class="btn btn-light rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"
+                                       title="Ver Detalle y Trazabilidad">
+                                        <i class="fas fa-eye" style="color: #4a90e2;"></i>
+                                    </a>
+                                </td>
+                            </tr>
                         @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-10">
-                                <div class="text-center px-4 py-5">
-                                    <div class="mb-3 p-4 rounded-circle d-inline-block" style="background-color: #f8f9fa;">
-                                        <i class="fas fa-search fs-1 text-muted opacity-50"></i>
+                            <tr>
+                                <td colspan="7" class="text-center py-10">
+                                    <div class="text-center px-4 py-5">
+                                        <div class="mb-3 p-4 rounded-circle d-inline-block" style="background-color: #f8f9fa;">
+                                            <i class="fas fa-search fs-1 text-muted opacity-50"></i>
+                                        </div>
+                                        <h5 class="fw-bold" style="color: #2c3e50;">Bloque Vacío o Sin Resultados</h5>
+                                        <p class="text-muted">No se encontraron operaciones en el Lote API-{{ $bloqueActivo }} que coincidan con tu búsqueda.</p>
                                     </div>
-                                    <h5 class="fw-bold" style="color: #2c3e50;">Bloque Vacío o Sin Resultados</h5>
-                                    <p class="text-muted">No se encontraron operaciones en el Lote API-{{ $bloqueActivo }} que coincidan con tu búsqueda.</p>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
+            {{-- Paginación --}}
             @if($operaciones->hasPages() || $operaciones->total() > 0)
                 <div class="card-footer bg-white border-top-0 pt-4 pb-4 px-5 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="border-radius: 0 0 20px 20px;">
                     <span class="text-muted small">
@@ -384,49 +423,131 @@
     </div>
 
     {{-- ==========================================
-         MODAL: PROGRAMAR ALERTA DE LOTE
+         8. MODALES
          ========================================== --}}
     @if($bloqueActivo)
-    <div class="modal fade" id="modalAlertaBloque" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <form action="{{ route('certificados.operaciones.alerta_bloque') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
-                @csrf
-                <div class="modal-header border-0 pb-0 pt-4 px-4">
-                    <h5 class="fw-bold mb-0"><i class="fas fa-bell text-info me-2"></i> Programar Alerta de Lote</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="alert bg-pastel-info text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
-                        <i class="fas fa-info-circle me-2"></i> Esta alerta se aplicará de forma general al lote <strong>API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>. No quedará asignada a un cliente individual.
-                    </div>
 
-                    <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
-
-                    <div class="mb-3">
-                        <label for="id_car_sia_tipos_alerta" class="form-label fw-semibold text-muted">Tipo de alerta</label>
-                        <select name="id_car_sia_tipos_alerta" id="id_car_sia_tipos_alerta" class="form-select bg-light border-0" required>
-                            <option value="">Seleccione una alerta</option>
-                            @isset($tiposAlerta)
-                                @foreach($tiposAlerta as $tipoAlerta)
-                                    <option value="{{ $tipoAlerta->id }}">{{ $tipoAlerta->nombre }}</option>
-                                @endforeach
-                            @else
-                                <option value="" disabled>Falta variable $tiposAlerta desde el controlador.</option>
-                            @endisset
-                        </select>
+        {{-- Modal 8.1: PROGRAMAR ALERTA DE LOTE --}}
+        <div class="modal fade" id="modalAlertaBloque" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ route('certificados.operaciones.alerta_bloque') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                    @csrf
+                    <div class="modal-header border-0 pb-0 pt-4 px-4">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-bell text-info me-2"></i> Programar Alerta de Lote</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
+                    <div class="modal-body p-4">
+                        <div class="alert bg-pastel-info text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
+                            <i class="fas fa-info-circle me-2"></i> Esta alerta se aplicará de forma general al lote <strong>API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>. No quedará asignada a un cliente individual.
+                        </div>
 
-                    <div class="mb-0">
-                        <label for="fecha_programada" class="form-label fw-semibold text-muted">Fecha programada</label>
-                        <input type="date" name="fecha_programada" id="fecha_programada" class="form-control bg-light border-0" required>
+                        <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+
+                        <div class="mb-3">
+                            <label for="id_car_sia_tipos_alerta" class="form-label fw-semibold text-muted">Tipo de alerta</label>
+                            <select name="id_car_sia_tipos_alerta" id="id_car_sia_tipos_alerta" class="form-select bg-light border-0" required>
+                                <option value="">Seleccione una alerta</option>
+                                @isset($tiposAlerta)
+                                    @foreach($tiposAlerta as $tipoAlerta)
+                                        <option value="{{ $tipoAlerta->id }}">{{ $tipoAlerta->nombre }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="" disabled>Falta variable $tiposAlerta desde el controlador.</option>
+                                @endisset
+                            </select>
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="fecha_programada" class="form-label fw-semibold text-muted">Fecha programada</label>
+                            <input type="date" name="fecha_programada" id="fecha_programada" class="form-control bg-light border-0" required>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold text-white">Programar Lote</button>
-                </div>
-            </form>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold text-white">Programar Lote</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+
+        {{-- Modal 8.2: ESTRUCTURAR LOTE Y ASIGNAR TIPO --}}
+        <div class="modal fade" id="modalMasivo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <!-- AGREGAMOS ID AL FORMULARIO PARA CAPTURARLO EN JS -->
+                <form id="formEstructurarLote" action="{{ route('certificados.operaciones.pdf_masivo') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                    @csrf
+                    <div class="modal-header border-0 pb-0 pt-4 px-4">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-database text-danger me-2"></i> Estructurar Lote</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="alert bg-pastel-warning text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
+                            <i class="fas fa-info-circle me-2"></i> Se procesarán masivamente las operaciones del lote <strong>API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong> y se asignará el siguiente tipo a los certificados.
+                        </div>
+
+                        <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+
+                        <div class="mb-3">
+                            <label for="id_car_sia_tipos" class="form-label fw-semibold text-muted">Tipo de Certificado</label>
+                            <select name="id_car_sia_tipos" id="id_car_sia_tipos" class="form-select bg-light border-0" required>
+                                <option value="">Seleccione un tipo...</option>
+                                @isset($tipos)
+                                    @foreach($tipos as $tipo)
+                                        <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="" disabled>Falta pasar $tipos desde el controlador</option>
+                                @endisset
+                            </select>
+                        </div>
+
+                        <!-- ESTADO DE PROGRESO MINIMALISTA OCULTO POR DEFECTO -->
+                        <div id="loadingMasivo" class="d-none mt-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-cogs me-1"></i> Ensamblando documentos del lote...</span>
+                                <span class="text-danger fw-bold" style="font-size: 0.75rem;">Por favor espera</span>
+                            </div>
+                            <div class="progress-minimalist"></div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                        <!-- ID EN EL BOTÓN CANCELAR Y SUBMIT -->
+                        <button type="button" id="btnCancelMasivo" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" id="btnSubmitMasivo" class="btn btn-danger rounded-pill px-4 fw-bold text-white">Procesar Lote</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- SCRIPT PARA BLOQUEO DE BOTÓN Y BARRA DE PROGRESO --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const formMasivo = document.getElementById('formEstructurarLote');
+                const btnSubmit = document.getElementById('btnSubmitMasivo');
+                const btnCancel = document.getElementById('btnCancelMasivo');
+                const loadingContainer = document.getElementById('loadingMasivo');
+
+                if (formMasivo) {
+                    formMasivo.addEventListener('submit', function () {
+                        // 1. Bloquear el botón principal y cambiar el texto a procesando
+                        if(btnSubmit) {
+                            btnSubmit.disabled = true;
+                            btnSubmit.innerHTML = '<i class="fas fa-circle-notch fa-spin me-2"></i> Procesando Lote...';
+                        }
+
+                        // 2. Ocultar el botón cancelar para evitar interrumpir el envío
+                        if(btnCancel) {
+                            btnCancel.classList.add('d-none');
+                        }
+
+                        // 3. Mostrar la barra de progreso
+                        if(loadingContainer) {
+                            loadingContainer.classList.remove('d-none');
+                        }
+                    });
+                }
+            });
+        </script>
     @endif
 </x-base-layout>
