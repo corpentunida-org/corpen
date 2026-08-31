@@ -116,7 +116,7 @@
                     <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: var(--color-primary); cursor:pointer;" onchange="this.form.submit()">
                         @foreach($bloquesDisponibles as $b)
                             <option value="{{ $b }}" {{ $bloqueActivo == $b ? 'selected' : '' }}>
-                                Lote BLQ-{{ str_pad($b, 4, '0', STR_PAD_LEFT) }}
+                                Lote API-{{ str_pad($b, 4, '0', STR_PAD_LEFT) }}
                             </option>
                         @endforeach
                     </select>
@@ -276,7 +276,7 @@
                         @forelse($lotesCrudos as $lote)
                         <tr>
                             <td class="ps-4">
-                                <span class="badge bg-light text-secondary border fw-bold">BLQ-{{ str_pad($lote->numero_bloque ?? 0, 4, '0', STR_PAD_LEFT) }}</span>
+                                <span class="badge bg-light text-secondary border fw-bold">API-{{ str_pad($lote->numero_bloque ?? 0, 4, '0', STR_PAD_LEFT) }}</span>
                             </td>
                             <td><span class="fw-bold" style="color: var(--color-text-main); font-family: monospace;">#{{ $lote->id_factura ?? 'N/A' }}</span></td>
                             <td>
@@ -346,7 +346,7 @@
                     <span class="pulse-dot me-3"></span>
                     <div class="d-flex flex-column">
                         <span class="fw-bold fs-5 text-dark lh-1">{{ number_format($totalPendientes, 0, ',', '.') }}</span>
-                        <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase;">A inyectar del BLQ-{{ $bloqueActivo }}</span>
+                        <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600; text-transform: uppercase;">A inyectar del API-{{ $bloqueActivo }}</span>
                     </div>
                 </div>
 

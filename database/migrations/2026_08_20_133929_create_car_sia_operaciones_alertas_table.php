@@ -16,7 +16,7 @@ return new class extends Migration
             // Llave foránea hacia los tipos de alerta
             $table->foreignId('id_car_sia_tipos_alerta')->constrained('car_sia_tipos_alerta');
 
-            // Ajustado a string para soportar formato "BLQ-2026-001"
+            // Ajustado a string para soportar formato "API-2026-001"
             $table->string('numero_bloque', 50)->index();
 
             // Llave foránea a operaciones (nullable como indica el diseño)

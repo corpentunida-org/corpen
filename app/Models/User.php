@@ -32,6 +32,8 @@ use App\Models\Correspondencia\ComunicacionSalida;
 use App\Models\Archivo\GdoEmpleado;
 //Cartera
 use App\Models\Cartera\CarComprobantePago;
+//Certificados
+use App\Models\Certificados\CarSiaOperacionLinea;
 
 
 class User extends Authenticatable
@@ -144,12 +146,12 @@ class User extends Authenticatable
     public function getFotoPerfilAttribute()
     {
         $empleado = $this->perfilEmpleado;
-        
+
         if ($empleado && $empleado->ubicacion_foto) {
             // Usa la ruta que definiste en web.php
             return route('archivo.empleado.verFoto', ['id' => $empleado->id]);
         }
-        
+
         return null; // Retorna null si no tiene foto, así puedes manejar el "fallback" (iniciales) en la vista
     }
     // ==========================================
@@ -161,7 +163,7 @@ class User extends Authenticatable
     public function workflows()
     {
         return $this->belongsToMany(Workflow::class, 'wor_usuarios', 'user_id', 'workflow_id')
-                    ->using(WorUsuario::class) 
+                    ->using(WorUsuario::class)
                     ->withTimestamps();
     }
     /*
@@ -226,7 +228,7 @@ class User extends Authenticatable
     public function seguimientosCorrespondencia()
     {
         // Un usuario tiene muchos registros de gestión/seguimiento
-        return $this->hasMany(CorrespondenciaProceso::class, 'fk_usuario'); 
+        return $this->hasMany(CorrespondenciaProceso::class, 'fk_usuario');
     }
 
     // Seguimientos registrados por el usuario (como agente)
@@ -240,12 +242,20 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Interacciones\IntSeguimiento::class, 'id_user_asignacion');
     }
-    
-/**
+
+    /**
      * Obtiene todos los comprobantes de pago registrados por este usuario.
      */
     public function comprobantesRegistrados(): HasMany
     {
         return $this->hasMany(CarComprobantePago::class, 'id_user');
+    }
+
+    /**
+     * Obtiene todas las líneas de certificados (operaciones) que este usuario ha generado o auditado.
+     */
+    public function lineasCertificadosGenerados(): HasMany
+    {
+        return $this->hasMany(CarSiaOperacionLinea::class, 'id_user');
     }
 }
