@@ -138,12 +138,19 @@ class OperacionController extends Controller
     public function show($id)
     {
         try {
+            // 1. Modificamos la carga de las 'lineas' para ordenarlas de la más nueva a la más vieja
             $operacion = CarSiaOperacion::with([
                 'tercero',
+                'lineas' => function($query) {
+                    $query->orderBy('created_at', 'desc');
+                },
                 'lineas.lineaSia',
                 'lineas.estadoOperacion',
                 'lineas.factura'
             ])->findOrFail($id);
+
+            // 2. Extraemos las líneas únicas por factura.
+            $lineasUnicas = $operacion->lineas->unique('id_factura');
 
             $registrosCrudos = CarSiaApi::with('lineaSia')
                 ->where('numero_bloque', $operacion->numero_bloque)
@@ -170,10 +177,27 @@ class OperacionController extends Controller
                 ->where('id_car_sia_operaciones', $operacion->id)
                 ->orWhere(function($q) use ($operacion) {
                     $q->where('numero_bloque', $operacion->numero_bloque)
-                      ->whereNull('id_car_sia_operaciones');
+                    ->whereNull('id_car_sia_operaciones');
                 })
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($registro) use ($operacion) {
+                    $registro->es_lote = is_null($registro->id_car_sia_operaciones);
+                    $lineaAsociada = $operacion->lineas->where('id_car_sia_tipos', $registro->id_car_sia_tipos)->first();
+
+                    $registro->nombre_user = 'Usuario / Sistema';
+                    $registro->cargo_user = '';
+
+                    if ($lineaAsociada && $lineaAsociada->usuario) {
+                        $registro->nombre_user = $lineaAsociada->usuario->name;
+
+                        if ($lineaAsociada->usuario->cargoRelation) {
+                            $registro->cargo_user = ' / ' . $lineaAsociada->usuario->cargoRelation->nombre_cargo;
+                        }
+                    }
+
+                    return $registro;
+                });
 
             $historialAlertas = CarSiaOperacionAlerta::with('tipoAlerta')
                 ->where('id_car_sia_operaciones', $operacion->id)
@@ -189,7 +213,7 @@ class OperacionController extends Controller
             $tiposAlerta = CarSiaTipoAlerta::all();
 
             return view('certificados.operaciones.show', compact(
-                'operacion', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas'
+                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas'
             ));
 
         } catch (\Exception $e) {
@@ -216,6 +240,7 @@ class OperacionController extends Controller
                     'id_car_sia_operaciones' => $operacion->id,
                     'numero_bloque'          => $request->numero_bloque,
                     'id_car_sia_estados'     => $request->id_car_sia_estados,
+                    'id_user'                => Auth::id(),
                 ]);
             });
 
@@ -228,7 +253,7 @@ class OperacionController extends Controller
     }
 
     /**
-     * 4. ASIGNA TIPOS: UNIFICADO PARA ACTUALIZAR HASH INMEDIATAMENTE
+     * 4. ASIGNA TIPOS: UNIFICADO PARA INSERCIÓN CON NUEVO HASH
      */
     public function asignarTipo(Request $request, $id)
     {
@@ -245,20 +270,14 @@ class OperacionController extends Controller
                     'id_car_sia_operaciones' => $operacion->id,
                     'id_car_sia_tipos'       => $request->id_car_sia_tipos,
                     'numero_bloque'          => $request->numero_bloque,
+                    'id_user'                => Auth::id(),
                 ]);
 
-                // UNIFICACIÓN: Actualizar dinámicamente las líneas existentes con el nuevo tipo y Hash
-                $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
-
-                CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                    ->update([
-                        'id_car_sia_tipos' => $auditoria['id_tipo'],
-                        'hash_certificado' => $auditoria['hash'],
-                        'id_user'          => $auditoria['user_id']
-                    ]);
+                // Llamamos al motor de reglas para que INSERTE las líneas nuevas con el nuevo Hash
+                $this->procesarLineasOperacion($operacion);
             });
 
-            return redirect()->back()->with('success', 'Tipo asignado y versión del certificado regenerada con éxito.');
+            return redirect()->back()->with('success', 'Tipo asignado y nuevo certificado generado con éxito (Nuevo Hash de Auditoría).');
 
         } catch (\Exception $e) {
             Log::error("SIA - Error al asignar tipo en operación {$id}: " . $e->getMessage());
@@ -283,6 +302,7 @@ class OperacionController extends Controller
             'numero_bloque'           => $request->numero_bloque,
             'id_car_sia_operaciones'  => null,
             'fecha_programada'        => $request->fecha_programada,
+            'id_user'                 => Auth::id(),
         ]);
 
         return back()->with('success', 'Alerta general programada para el lote.');
@@ -310,6 +330,7 @@ class OperacionController extends Controller
                     'id_car_sia_operaciones'  => $operacion->id,
                     'fecha_programada'        => $request->fecha_programada,
                     'procesado_en'            => null,
+                    'id_user'                 => Auth::id(),
                 ]);
             });
 
@@ -397,9 +418,14 @@ class OperacionController extends Controller
     public function generarMasivo(Request $request)
     {
         $bloque = $request->input('bloque') ?? $request->input('numero_bloque');
+        $id_car_sia_tipos = $request->input('id_car_sia_tipos');
 
         if (!$bloque) {
             return back()->with('error', 'Debe seleccionar un lote (bloque) válido para procesar.');
+        }
+
+        if (!$id_car_sia_tipos) {
+            return back()->with('error', 'Debe seleccionar un tipo de certificado.');
         }
 
         try {
@@ -410,12 +436,15 @@ class OperacionController extends Controller
             $id_user = Auth::id();
             $totalOperacionesProcesadas = 0;
 
-            // Obtener el tipo global como fallback
-            $tipoBloque = CarSiaTipoOperacion::where('numero_bloque', $bloque)
-                ->whereNull('id_car_sia_operaciones')
-                ->latest()
-                ->first();
-            $id_tipo_global = $tipoBloque ? $tipoBloque->id_car_sia_tipos : 'N/A';
+            // 1. Registrar el evento de TIPO a nivel Lote (id_car_sia_operaciones = null)
+            CarSiaTipoOperacion::create([
+                'id_car_sia_operaciones' => null,
+                'numero_bloque'          => $bloque,
+                'id_car_sia_tipos'       => $id_car_sia_tipos,
+                'id_user'                => $id_user,
+            ]);
+
+            $id_tipo_global = $id_car_sia_tipos;
 
             CarSiaOperacion::where('numero_bloque', $bloque)
                 ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $id_tipo_global, $bloque, &$totalOperacionesProcesadas) {
@@ -443,7 +472,7 @@ class OperacionController extends Controller
 
                         $diasMora = 0;
                         if ($factura->fecha_venci) {
-                            $fechaVencimiento = Carbon::parse($factura->fecha_venci);
+                            $fechaVencimiento = \Carbon\Carbon::parse($factura->fecha_venci);
                             $diferencia = $ahora->diffInDays($fechaVencimiento, false);
                             $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
                         }
@@ -454,7 +483,6 @@ class OperacionController extends Controller
                             default => 'Bueno'
                         };
 
-                        // UNIFICACIÓN: Resolver si la operación tiene un tipo propio o usa el global
                         $id_tipo_final = isset($tiposIndividuales[$operacion->id])
                             ? $tiposIndividuales[$operacion->id]->first()->id_car_sia_tipos
                             : $id_tipo_global;
@@ -482,11 +510,12 @@ class OperacionController extends Controller
                         collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
                             CarSiaOperacionLinea::upsert(
                                 $batch->toArray(),
-                                ['id_car_sia_operaciones', 'id_factura'],
+                                // Agregar hash_certificado a las llaves únicas para que inserte versiones nuevas
+                                ['id_car_sia_operaciones', 'id_factura', 'hash_certificado'],
                                 [
                                     'id_car_sia_lineas', 'numero_bloque', 'observacion', 'calificacion',
                                     'fecha_venci', 'id_car_sia_estados', 'dias_mora_automaticos', 'procesado_en',
-                                    'id_user', 'id_car_sia_tipos', 'hash_certificado'
+                                    'id_user', 'id_car_sia_tipos'
                                 ]
                             );
                         });
@@ -497,11 +526,11 @@ class OperacionController extends Controller
 
             DB::commit();
 
-            return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente ($totalOperacionesProcesadas operaciones).");
+            return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente y asignado al tipo seleccionado ($totalOperacionesProcesadas operaciones).");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
+            \Illuminate\Support\Facades\Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
             return back()->with('error', 'Ocurrió un error en la base de datos: ' . $e->getMessage());
         }
     }
@@ -516,7 +545,14 @@ class OperacionController extends Controller
 
             $this->procesarLineasOperacion($operacion);
 
-            $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)->get();
+            // Obtener específicamente las líneas generadas por la iteración más reciente (último hash)
+            $ultimoHash = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                ->orderBy('created_at', 'desc')
+                ->value('hash_certificado');
+
+            $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                ->where('hash_certificado', $ultimoHash)
+                ->get();
 
             $pdf = Pdf::loadView('certificados.pdf.certificado_aldia', compact('operacion', 'lineas'));
             return $pdf->stream("Certificado_{$operacion->numero_radicado}.pdf");
@@ -536,7 +572,7 @@ class OperacionController extends Controller
             ->where('tercero', $operacion->id_tercero)
             ->get();
 
-        // Extraemos Auditoría unificada
+        // Extraemos Auditoría unificada (genera un Hash nuevo)
         $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
 
         foreach ($facturas as $factura) {
@@ -560,6 +596,8 @@ class OperacionController extends Controller
                 [
                     'id_car_sia_operaciones' => $operacion->id,
                     'id_factura'             => $factura->id,
+                    // INCLUIR EL HASH AQUÍ GARANTIZA QUE SEA UN INSERT Y NO UN UPDATE
+                    'hash_certificado'       => $auditoria['hash'],
                 ],
                 [
                     'id_car_sia_lineas'      => $factura->cuenta,
@@ -572,7 +610,6 @@ class OperacionController extends Controller
                     'procesado_en'           => now(),
                     'id_user'                => $auditoria['user_id'],
                     'id_car_sia_tipos'       => $auditoria['id_tipo'],
-                    'hash_certificado'       => $auditoria['hash'],
                 ]
             );
         }
@@ -595,22 +632,30 @@ class OperacionController extends Controller
             DB::transaction(function () use ($request, $id) {
                 $operacion = CarSiaOperacion::findOrFail($id);
 
-                // UNIFICACIÓN: Usamos el helper para tener un nuevo timestamp de versión
+                // Generamos un nuevo Timestamp/Hash para esta revisión manual
                 $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
 
                 foreach ($request->lineas as $lineaId => $data) {
-                    CarSiaOperacionLinea::where('id', $lineaId)->update([
-                        'calificacion'          => $data['calificacion'],
-                        'dias_mora_automaticos' => $data['dias_mora_automaticos'],
-                        'fecha_venci'           => $data['fecha_venci'],
-                        'observacion'           => $data['observacion'] ?? '',
-                        'id_user'               => $auditoria['user_id'],
-                        'hash_certificado'      => $auditoria['hash'],
-                    ]);
+                    $lineaOriginal = CarSiaOperacionLinea::findOrFail($lineaId);
+
+                    // Clonar la línea original para conservar el historial anterior
+                    $nuevaLinea = $lineaOriginal->replicate();
+
+                    // Aplicar las modificaciones
+                    $nuevaLinea->calificacion = $data['calificacion'];
+                    $nuevaLinea->dias_mora_automaticos = $data['dias_mora_automaticos'];
+                    $nuevaLinea->fecha_venci = $data['fecha_venci'];
+                    $nuevaLinea->observacion = $data['observacion'] ?? '';
+
+                    // Asignar los nuevos datos de auditoría
+                    $nuevaLinea->id_user = $auditoria['user_id'];
+                    $nuevaLinea->hash_certificado = $auditoria['hash'];
+
+                    $nuevaLinea->save();
                 }
             });
 
-            return redirect()->back()->with('success', 'Datos del certificado actualizados. El PDF ha sido regenerado con la nueva información de auditoría.');
+            return redirect()->back()->with('success', 'Cambios guardados. Se ha generado una nueva revisión (Nuevo Hash) conservando la versión anterior.');
 
         } catch (\Exception $e) {
             Log::error("Error actualizando líneas tipo Excel: " . $e->getMessage());
