@@ -5,6 +5,7 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 class CarSiaOperacionAlerta extends Model
 {
@@ -26,6 +27,7 @@ class CarSiaOperacionAlerta extends Model
         'id_car_sia_operaciones', //Null si asigna desde el index solo se hace un registro de alerta, y solo se toma "numero_bloque"
         'fecha_programada',
         'procesado_en',
+        'id_user',
     ];
 
     // 4. Conversión de tipos de datos (Casting)
@@ -47,5 +49,11 @@ class CarSiaOperacionAlerta extends Model
     public function operacion()
     {
         return $this->belongsTo(CarSiaOperacion::class, 'id_car_sia_operaciones');
+    }
+
+    // Pertenece a un usuario
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_user');
     }
 }

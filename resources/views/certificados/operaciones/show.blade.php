@@ -71,6 +71,33 @@
         .table-spreadsheet td { padding: 0; border: 1px solid #e2e8f0; vertical-align: middle; }
         .input-spreadsheet { width: 100%; border: none; padding: 0.85rem 0.75rem; background: transparent; outline: none; font-size: 0.85rem; color: #0f172a; transition: all 0.2s; }
         .input-spreadsheet:focus { background-color: #f0fdf4; box-shadow: inset 0 0 0 2px #22c55e; }
+
+        /* ==========================================
+           ESTILOS NUEVOS: PROGRESO MINIMALISTA
+           ========================================== */
+        .progress-minimalist {
+            height: 6px;
+            width: 100%;
+            background-color: #fee2e2; /* fondo rojo pastel */
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .progress-minimalist::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -50%;
+            width: 50%;
+            height: 100%;
+            background-color: #ef4444; /* color primary/danger */
+            animation: progress-slide 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+        @keyframes progress-slide {
+            0% { left: -50%; width: 30%; }
+            50% { width: 60%; }
+            100% { left: 100%; width: 30%; }
+        }
     </style>
 
     <div class="app-container py-4">
@@ -97,7 +124,6 @@
                     <i class="fas fa-bell me-2"></i> Programar Alerta
                 </button>
 
-                {{-- BOTÓN UNIFICADO: GENERAR Y ASIGNAR TIPO --}}
                 <button type="button" class="btn btn-danger shadow-sm rounded-pill px-4 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalTipo">
                     <i class="fas fa-file-pdf me-2"></i> Generar Certificado
                 </button>
@@ -349,7 +375,10 @@
                                                                     <span class="badge bg-pastel-secondary text-dark px-2 py-1 border" style="font-size: 0.65rem;" title="Alerta Individual"><i class="fas fa-user"></i> Cliente</span>
                                                                 @endif
                                                             </div>
-                                                            <div class="text-muted fs-8 mt-1"><i class="far fa-calendar-alt me-1"></i> Programada para: <span class="fw-semibold text-dark">{{ $alerta->fecha_programada ? \Carbon\Carbon::parse($alerta->fecha_programada)->format('d/m/Y') : 'N/A' }}</span></div>
+                                                            <div class="text-muted fs-8 mt-1 d-flex align-items-center flex-wrap gap-3">
+                                                                <span><i class="far fa-calendar-alt me-1"></i> Programada para: <span class="fw-semibold text-dark">{{ $alerta->fecha_programada ? \Carbon\Carbon::parse($alerta->fecha_programada)->format('d/m/Y') : 'N/A' }}</span></span>
+                                                                <span><i class="fas fa-user-edit text-muted opacity-50 me-1"></i> Creada por: <span class="fw-semibold text-dark">{{ optional($alerta->usuario)->name ?? 'Sistema' }}</span></span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div class="text-sm-end ms-5 ms-sm-0">
@@ -391,7 +420,10 @@
                                                                 <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
                                                             @endif
                                                         </div>
-                                                        <div class="text-muted fs-8 mt-1"><i class="far fa-clock me-1"></i> {{ $historialEstado->created_at ? $historialEstado->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</div>
+                                                        <div class="text-muted fs-8 mt-1 d-flex flex-wrap gap-2">
+                                                            <span><i class="far fa-clock me-1"></i> {{ $historialEstado->created_at ? $historialEstado->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
+                                                            <span>| <i class="fas fa-user-tag text-muted opacity-50 ms-1 me-1"></i> {{ optional($historialEstado->usuario)->name ?? 'Sistema' }}</span>
+                                                        </div>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -416,7 +448,10 @@
                                                                 <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
                                                             @endif
                                                         </div>
-                                                        <div class="text-muted fs-8 mt-1"><i class="far fa-clock me-1"></i> {{ $historialTipo->created_at ? $historialTipo->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</div>
+                                                        <div class="text-muted fs-8 mt-1 d-flex flex-wrap gap-2">
+                                                            <span><i class="far fa-clock me-1"></i> {{ $historialTipo->created_at ? $historialTipo->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
+                                                            <span>| <i class="fas fa-user-edit text-muted opacity-50 ms-1 me-1"></i> {{ optional($historialTipo->usuario)->name ?? 'Sistema' }}</span>
+                                                        </div>
                                                     </div>
                                                 @endforeach
                                             </div>
@@ -429,130 +464,85 @@
 
                             {{-- TAB 4: CERTIFICADOS --}}
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
-
                                 <div class="accordion accordion-custom" id="accordionCertificados">
-                                    <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
-                                        <h2 class="accordion-header" id="headingCertificado1">
-                                            <button class="accordion-button collapsed bg-white border-0 shadow-none px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCertificado1">
-                                                <div class="d-flex align-items-center w-100 me-3">
-                                                    <div class="bg-pastel-danger rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 48px; height: 48px;">
-                                                        <i class="fas fa-file-pdf text-danger fs-5"></i>
-                                                    </div>
-                                                    <div class="flex-grow-1">
-                                                        <h6 class="fw-bold text-dark mb-1 fs-5">Certificado: Estado de Cuenta (Al Día)</h6>
-                                                        <div class="text-muted fs-8 mt-1">Datos procesados correspondientes al Lote API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        </h2>
+                                    @if($operacion->lineas && $operacion->lineas->count() > 0)
 
-                                        <div id="collapseCertificado1" class="accordion-collapse collapse" data-bs-parent="#accordionCertificados">
-                                            <div class="accordion-body p-4 border-top">
+                                        @foreach($historialTipos as $registro)
+                                            @php
+                                                $certId = $loop->iteration;
+                                                $tipo = $registro->tipo;
+                                            @endphp
 
-                                                @if($operacion->lineas && $operacion->lineas->count() > 0)
-                                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                                        <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
-                                                        <div class="btn-group shadow-sm bg-white rounded-pill p-1" role="group">
-                                                            <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 active fw-bold" id="btnModePdf" onclick="toggleMode('pdf')">
-                                                                <i class="fas fa-file-pdf me-1"></i> Visor PDF
-                                                            </button>
-                                                            <button type="button" class="btn btn-sm btn-light text-success rounded-pill px-3 fw-bold" id="btnModeData" onclick="toggleMode('data')">
-                                                                <i class="fas fa-table me-1"></i> Modo Hoja de Cálculo
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- MODO A: VISOR PDF --}}
-                                                    <div id="pdfViewerContainer" class="border-0 rounded-4 overflow-hidden shadow-sm bg-light transition-all" style="height: 650px; position: relative;">
-                                                        <iframe src="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}" width="100%" height="100%" frameborder="0" style="border: none; background-color: #f8fafc;"></iframe>
-                                                    </div>
-
-                                                    {{-- MODO B: HOJA DE CÁLCULO ACTUALIZADA --}}
-                                                    <div id="dataEditorContainer" class="d-none transition-all">
-                                                        <form action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
-                                                            @csrf
-                                                            @method('PUT')
-
-                                                            <div class="table-responsive rounded-4 shadow-sm border mb-3 overflow-hidden" style="max-height: 500px;">
-                                                                <table class="table table-spreadsheet align-middle mb-0 text-nowrap">
-                                                                    <thead class="bg-light" style="position: sticky; top: 0; z-index: 10;">
-                                                                        <tr>
-                                                                            <th class="ps-3" style="width: 100px;">N° Factura</th>
-                                                                            <th style="width: 120px;">Línea (Cuenta)</th>
-                                                                            <th style="width: 140px;" class="text-center">Auditor / Tipo</th>
-                                                                            <th style="width: 140px;" class="text-center">Firma (Hash)</th>
-                                                                            <th style="width: 130px;">Calificación</th>
-                                                                            <th style="width: 100px;">Días Mora</th>
-                                                                            <th style="width: 130px;">Vencimiento</th>
-                                                                            <th>Observación General</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        @foreach($operacion->lineas as $linea)
-                                                                            <tr>
-                                                                                <td class="ps-3 bg-light fw-bold text-muted border-end">#{{ $linea->id_factura }}</td>
-                                                                                <td class="bg-light text-muted border-end">{{ $linea->id_car_sia_lineas }}</td>
-                                                                                <td class="bg-light border-end px-2">
-                                                                                    <div class="d-flex flex-column gap-1 align-items-center">
-                                                                                        @if($linea->usuario)
-                                                                                            <span class="badge bg-pastel-primary text-primary text-truncate w-100" style="max-width: 130px;" title="Auditor: {{ $linea->usuario->name }}"><i class="fas fa-user-shield me-1"></i> {{ strtok($linea->usuario->name, ' ') }}</span>
-                                                                                        @else
-                                                                                            <span class="badge bg-pastel-secondary text-muted w-100"><i class="fas fa-robot me-1"></i> Automático</span>
-                                                                                        @endif
-
-                                                                                        @if($linea->tipoAuditoria)
-                                                                                            <span class="badge bg-pastel-info text-info text-truncate w-100" style="max-width: 130px;" title="Tipo: {{ $linea->tipoAuditoria->nombre }}"><i class="fas fa-tag me-1"></i> {{ $linea->tipoAuditoria->nombre }}</span>
-                                                                                        @endif
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td class="bg-light text-center border-end">
-                                                                                    @if($linea->hash_certificado)
-                                                                                        <span class="font-monospace text-muted" style="font-size: 0.7rem; cursor: help;" title="{{ $linea->hash_certificado }}">
-                                                                                            <i class="fas fa-fingerprint text-info me-1"></i>...{{ substr($linea->hash_certificado, -12) }}
-                                                                                        </span>
-                                                                                    @else
-                                                                                        <span class="text-muted" style="font-size: 0.75rem;">-</span>
-                                                                                    @endif
-                                                                                </td>
-                                                                                <td>
-                                                                                    <select name="lineas[{{ $linea->id }}][calificacion]" class="input-spreadsheet">
-                                                                                        <option value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
-                                                                                        <option value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
-                                                                                        <option value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
-                                                                                    </select>
-                                                                                </td>
-                                                                                <td>
-                                                                                    <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" value="{{ $linea->dias_mora_automaticos }}" class="input-spreadsheet text-center">
-                                                                                </td>
-                                                                                <td>
-                                                                                    <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" value="{{ $linea->fecha_venci ? $linea->fecha_venci->format('Y-m-d') : '' }}" class="input-spreadsheet">
-                                                                                </td>
-                                                                                <td>
-                                                                                    <input type="text" name="lineas[{{ $linea->id }}][observacion]" value="{{ $linea->observacion }}" class="input-spreadsheet" placeholder="Escribe una observación...">
-                                                                                </td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                    </tbody>
-                                                                </table>
+                                            <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
+                                                <h2 class="accordion-header" id="headingCertificado{{ $certId }}">
+                                                    <button class="accordion-button collapsed bg-white border-0 shadow-none px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCertificado{{ $certId }}">
+                                                        <div class="d-flex align-items-center w-100 me-3">
+                                                            <div class="bg-pastel-danger rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 48px; height: 48px;">
+                                                                <i class="fas fa-file-pdf text-danger fs-5"></i>
                                                             </div>
-                                                            <div class="d-flex justify-content-end bg-pastel-secondary p-3 rounded-4 align-items-center">
-                                                                <span class="text-muted fs-8 me-3"><i class="fas fa-info-circle me-1"></i> Los cambios aplicados registrarán tu autoría, actualizarán el hash y reconstruirán el PDF.</span>
-                                                                <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold text-white shadow-sm hover-opacity">
-                                                                    <i class="fas fa-save me-2"></i> Guardar Cambios
+                                                            <div class="flex-grow-1">
+                                                                <h6 class="fw-bold text-dark mb-1 fs-5 d-flex align-items-center flex-wrap gap-2">
+                                                                    {{ $tipo->nombre ?? 'Documento ' . $certId }}
+
+                                                                    @if($registro->es_lote)
+                                                                        <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25" style="font-size: 0.7rem;">
+                                                                            <i class="fas fa-layer-group me-1"></i> Generado en Lote (API-{{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }})
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.7rem;">
+                                                                            <i class="fas fa-user me-1"></i> Generado Individualmente
+                                                                        </span>
+                                                                    @endif
+                                                                </h6>
+
+                                                                <div class="d-flex align-items-center gap-3 text-muted mt-2" style="font-size: 0.8rem;">
+                                                                    <span><i class="far fa-clock me-1"></i> {{ $registro->created_at ? $registro->created_at->format('d/m/Y h:i A') : 'Fecha desconocida' }}</span>
+                                                                    <span class="fw-semibold text-dark"><i class="fas fa-user-edit text-muted me-1 opacity-50"></i> {{ optional($registro->usuario)->name ?? $registro->nombre_user ?? 'Sistema' }}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </button>
+                                                </h2>
+
+                                                <div id="collapseCertificado{{ $certId }}" class="accordion-collapse collapse" data-bs-parent="#accordionCertificados">
+                                                    <div class="accordion-body p-4 border-top">
+                                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                                            <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
+                                                            <div class="btn-group shadow-sm bg-white rounded-pill p-1" role="group">
+                                                                <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 active fw-bold" id="btnModePdf_{{ $certId }}" onclick="toggleMode('pdf', '{{ $certId }}')">
+                                                                    <i class="fas fa-file-pdf me-1"></i> Visor PDF
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-light text-success rounded-pill px-3 fw-bold" id="btnModeData_{{ $certId }}" onclick="toggleMode('data', '{{ $certId }}')">
+                                                                    <i class="fas fa-table me-1"></i> Modo Hoja de Cálculo
                                                                 </button>
                                                             </div>
-                                                        </form>
+                                                        </div>
+
+                                                        {{-- VISOR PDF DINÁMICO --}}
+                                                        <div id="pdfViewerContainer_{{ $certId }}" class="border-0 rounded-4 overflow-hidden shadow-sm bg-light transition-all" style="height: 650px; position: relative;">
+                                                            <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null]) }}" width="100%" height="100%" frameborder="0" style="border: none; background-color: #f8fafc;"></iframe>
+                                                        </div>
+
+                                                        {{-- HOJA DE CÁLCULO DINÁMICA --}}
+                                                        <div id="dataEditorContainer_{{ $certId }}" class="d-none transition-all">
+                                                            <form action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
+                                                                @csrf @method('PUT')
+                                                                <input type="hidden" name="tipo_certificado_id" value="{{ $tipo->id ?? '' }}">
+                                                                <div class="alert bg-pastel-success mt-3 text-center">Aquí va la tabla dinámica del certificado</div>
+                                                            </form>
+                                                        </div>
                                                     </div>
-                                                @else
-                                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
-                                                        <i class="fas fa-file-excel fs-1 text-secondary mb-3 opacity-25"></i>
-                                                        <h6 class="fw-bold text-dark">Líneas No Estructuradas</h6>
-                                                        <p class="mb-0 fs-7">El certificado no cuenta con datos procesados aún. Utiliza el botón <strong class="text-danger">Generar Certificado</strong> en la cabecera para inicializar los datos y asignar el tipo.</p>
-                                                    </div>
-                                                @endif
+                                                </div>
                                             </div>
+                                        @endforeach
+
+                                    @else
+                                        <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
+                                            <i class="fas fa-file-excel fs-1 text-secondary mb-3 opacity-25"></i>
+                                            <h6 class="fw-bold text-dark">Líneas No Estructuradas</h6>
+                                            <p class="mb-0 fs-7">El certificado no cuenta con datos procesados aún. Utiliza el botón <strong class="text-danger">Generar Certificado</strong> en la cabecera para inicializar los datos y asignar el tipo.</p>
                                         </div>
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -566,10 +556,11 @@
          5. MODALES (ACCIONES INDIVIDUALES)
          ========================================== --}}
 
-    {{-- MODAL UNIFICADO: GENERAR Y ASIGNAR TIPO --}}
+    {{-- MODAL GENERAR CERTIFICADO --}}
     <div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form action="{{ route('certificados.operaciones.asignar_tipo', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+            <!-- AGREGAMOS EL ID AL FORMULARIO PARA CAPTURARLO CON JS -->
+            <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.asignar_tipo', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
                     <h5 class="fw-bold mb-0"><i class="fas fa-file-pdf text-danger me-2"></i> Generar Certificado / Asignar Tipo</h5>
@@ -577,7 +568,6 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    {{-- ALERTA DINÁMICA: DETECTAR SI ES PRIMER CERTIFICADO O UNA ACTUALIZACIÓN --}}
                     @if(isset($operacion->lineas) && $operacion->lineas->count() > 0)
                         <div class="alert bg-pastel-info text-dark border-0 rounded-4 mb-4 shadow-sm">
                             <div class="d-flex align-items-center">
@@ -612,15 +602,28 @@
                             @endisset
                         </select>
                     </div>
+
+                    <!-- ESTADO DE PROGRESO MINIMALISTA OCULTO POR DEFECTO -->
+                    <div id="loadingCertificado" class="d-none mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-cogs me-1"></i> Ensamblando PDF y Hash de seguridad...</span>
+                            <span class="text-danger fw-bold" style="font-size: 0.75rem;">Por favor espera</span>
+                        </div>
+                        <div class="progress-minimalist"></div>
+                    </div>
+
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold text-white shadow-sm">Generar y Asignar</button>
+                    <!-- ID EN EL BOTÓN CANCELAR -->
+                    <button type="button" id="btnCancelCertificado" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <!-- ID EN EL BOTÓN SUBMIT -->
+                    <button type="submit" id="btnSubmitCertificado" class="btn btn-danger rounded-pill px-4 fw-bold text-white shadow-sm">Generar y Asignar</button>
                 </div>
             </form>
         </div>
     </div>
 
+    {{-- MODAL CAMBIAR ESTADO --}}
     <div class="modal fade" id="modalTransicionar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('certificados.operaciones.transicionar', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
@@ -654,6 +657,7 @@
         </div>
     </div>
 
+    {{-- MODAL PROGRAMAR ALERTA --}}
     <div class="modal fade" id="modalAlerta" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('certificados.operaciones.programar_alerta', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
@@ -692,11 +696,12 @@
     </div>
 
     <script>
-        function toggleMode(mode) {
-            const btnPdf = document.getElementById('btnModePdf');
-            const btnData = document.getElementById('btnModeData');
-            const containerPdf = document.getElementById('pdfViewerContainer');
-            const containerData = document.getElementById('dataEditorContainer');
+        // Función existente para cambiar modo de visualización PDF vs Hoja de Cálculo
+        function toggleMode(mode, certId) {
+            const btnPdf = document.getElementById('btnModePdf_' + certId);
+            const btnData = document.getElementById('btnModeData_' + certId);
+            const containerPdf = document.getElementById('pdfViewerContainer_' + certId);
+            const containerData = document.getElementById('dataEditorContainer_' + certId);
 
             if (mode === 'pdf') {
                 btnPdf.classList.replace('btn-light', 'btn-danger');
@@ -718,5 +723,31 @@
                 containerPdf.classList.add('d-none');
             }
         }
+
+        // ==============================================================
+        // SCRIPT NUEVO: BLOQUEO DE BOTÓN Y PROGRESO MINIMALISTA
+        // ==============================================================
+        document.addEventListener('DOMContentLoaded', function () {
+            const formCertificado = document.getElementById('formGenerarCertificado');
+            const btnSubmit = document.getElementById('btnSubmitCertificado');
+            const btnCancel = document.getElementById('btnCancelCertificado');
+            const loadingContainer = document.getElementById('loadingCertificado');
+
+            if (formCertificado) {
+                formCertificado.addEventListener('submit', function () {
+                    // 1. Bloquear el botón principal y cambiar el texto a procesando
+                    btnSubmit.disabled = true;
+                    btnSubmit.innerHTML = '<i class="fas fa-circle-notch fa-spin me-2"></i> Procesando...';
+
+                    // 2. Ocultar el botón cancelar para evitar interrumpir el envío accidentalmente
+                    btnCancel.classList.add('d-none');
+
+                    // 3. Mostrar la barra de progreso minimalista
+                    if(loadingContainer) {
+                        loadingContainer.classList.remove('d-none');
+                    }
+                });
+            }
+        });
     </script>
 </x-base-layout>
