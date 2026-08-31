@@ -20,6 +20,24 @@
         </div>
     </div>
 
+    @if ($desactualizado ?? false)
+        <div class="alert d-flex align-items-center justify-content-between gap-3 mb-4" style="background-color: #ffe4e6; border: 1px solid #fbb6c2; color: #e11d48; border-radius: 12px;">
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                <div>
+                    <strong>Información de usuario requiere actualizar</strong>
+                    <span class="d-block small">Última actualización: {{ $tercero->fec_act ? \Illuminate\Support\Carbon::parse($tercero->fec_act)->format('d/m/Y') : 'nunca registrada' }}</span>
+                </div>
+            </div>
+            @can('sgrh.tercero.edit')
+                <a href="{{ route('sgrh.tercero.edit', $tercero->cod_ter) }}" class="btn btn-sm flex-shrink-0"
+                   style="background-color: #e11d48; color: #fff; font-weight: bold;">
+                    <i class="bi bi-pencil-square"></i> ACTUALIZAR / EDITAR TERCERO
+                </a>
+            @endcan
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-body">
             @include('sgrh.empleado._tercero-campos', ['editable' => false])

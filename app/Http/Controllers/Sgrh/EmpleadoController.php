@@ -6,11 +6,18 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sgrh\StoreEmpleadoRequest;
 use App\Models\Maestras\EstadoCivil;
+use App\Models\Maestras\MaeDepartamento;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeTipo;
+use App\Models\Maestras\Parentesco;
 use App\Models\Maestras\TipoDocumento;
+use App\Models\Sgrh\Arl;
 use App\Models\Sgrh\Empleado;
+use App\Models\Sgrh\Eps;
+use App\Models\Sgrh\FondoPension;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class EmpleadoController extends Controller
 {
@@ -25,7 +32,12 @@ class EmpleadoController extends Controller
      */
     private function tipoEmpleadoId(): ?int
     {
-        return MaeTipo::where('nombre', 'Empleado')->value('id');
+        // Se llama en cada búsqueda/alta/listado — sin caché costaba ~690ms por ser una
+        // consulta remota (AWS RDS). El id de "Empleado" en el catálogo prácticamente nunca
+        // cambia, así que se cachea igual que terceroCatalogos().
+        return Cache::remember('sgrh.tipo_empleado_id', now()->addDays(7), function () {
+            return MaeTipo::where('nombre', 'Empleado')->value('id');
+        });
     }
 
     /**
@@ -54,8 +66,10 @@ class EmpleadoController extends Controller
 
         $empleados = $query->latest('id')->paginate(20)->appends($request->query());
         $tipoEmpleadoId = $this->tipoEmpleadoId();
+        // MaeTerceros no tiene updated_at — fec_act cumple ese rol (ver fechaDesactualizada()).
+        $fechaLimiteActualizacion = now()->subYears(1)->format('Y-m-d');
 
-        return view('sgrh.empleado.index', compact('empleados', 'tipoEmpleadoId'));
+        return view('sgrh.empleado.index', compact('empleados', 'tipoEmpleadoId', 'fechaLimiteActualizacion'));
     }
 
     /**
@@ -63,7 +77,11 @@ class EmpleadoController extends Controller
      */
     public function create()
     {
-        return view('sgrh.empleado.create');
+        return view('sgrh.empleado.create', [
+            'listaEps' => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'listaArl' => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+        ]);
     }
 
     /**
@@ -82,16 +100,40 @@ class EmpleadoController extends Controller
             ], 422);
         }
 
-        $terceros = MaeTerceros::where(function ($query) use ($q) {
-                $query->where('cod_ter', 'like', "%{$q}%")
-                    ->orWhere('nom1', 'like', "%{$q}%")
-                    ->orWhere('nom2', 'like', "%{$q}%")
-                    ->orWhere('apl1', 'like', "%{$q}%")
-                    ->orWhere('apl2', 'like', "%{$q}%")
-                    ->orWhere('nom_ter', 'like', "%{$q}%");
-            })
+        // Búsqueda por nombre vía FULLTEXT (índice ft_mae_terceros_nombres) — medido: ~4.3x más
+        // rápido que el LIKE '%...%' que se usaba antes (que no puede usar ningún índice por
+        // el comodín al inicio). cod_ter (numérico) sigue por LIKE, FULLTEXT no aplica ahí.
+        // Cada palabra se busca como prefijo ("palabra*"); se limpian caracteres especiales de
+        // sintaxis booleana para que un usuario no pueda romper la consulta sin querer.
+        $terminoBooleano = collect(preg_split('/\s+/', $q))
+            ->filter()
+            ->map(fn($palabra) => '+' . preg_replace('/[+\-><()~*"@]/', '', $palabra) . '*')
+            ->filter(fn($palabra) => $palabra !== '+*')
+            ->implode(' ');
+
+        // 'MaeTerceros.cod_ter' calificado a propósito: tras el leftJoin con sgrh_empleados
+        // (que también tiene columna cod_ter), un 'cod_ter' sin calificar sería ambiguo.
+        $query = DB::table('MaeTerceros')->where('MaeTerceros.cod_ter', 'like', "%{$q}%");
+
+        if ($terminoBooleano !== '') {
+            $query->orWhereRaw(
+                'MATCH(nom1, nom2, apl1, apl2, nom_ter) AGAINST(? IN BOOLEAN MODE)',
+                [$terminoBooleano]
+            );
+        }
+
+        // LEFT JOIN con sgrh_empleados en la misma consulta (en vez de una segunda consulta
+        // aparte para "ya_registrado"): cada consulta paga ~130-150ms de latencia fija contra
+        // la base de datos remota, sin importar qué tan simple sea, así que combinar consultas
+        // ahorra más que optimizar cada una por separado.
+        $terceros = $query
+            ->leftJoin('sgrh_empleados', 'sgrh_empleados.cod_ter', '=', 'MaeTerceros.cod_ter')
             ->limit(10)
-            ->get(['cod_ter', 'nom1', 'nom2', 'apl1', 'apl2', 'nom_ter', 'email', 'cel', 'tip_prv']);
+            ->get([
+                'MaeTerceros.cod_ter', 'MaeTerceros.nom1', 'MaeTerceros.nom2', 'MaeTerceros.apl1',
+                'MaeTerceros.apl2', 'MaeTerceros.nom_ter', 'MaeTerceros.email', 'MaeTerceros.cel',
+                'MaeTerceros.tip_prv', 'MaeTerceros.fec_act', 'sgrh_empleados.id as empleado_id',
+            ]);
 
         if ($terceros->isEmpty()) {
             return response()->json([
@@ -100,10 +142,9 @@ class EmpleadoController extends Controller
             ], 404);
         }
 
-        $yaRegistrados = Empleado::whereIn('cod_ter', $terceros->pluck('cod_ter'))->pluck('cod_ter')->all();
         $tipoEmpleadoId = $this->tipoEmpleadoId();
 
-        $data = $terceros->map(function ($t) use ($yaRegistrados, $tipoEmpleadoId) {
+        $data = $terceros->map(function ($t) use ($tipoEmpleadoId) {
             $nombre = trim("{$t->nom1} {$t->nom2} {$t->apl1} {$t->apl2}");
 
             return [
@@ -111,8 +152,10 @@ class EmpleadoController extends Controller
                 'nombre_completo' => $nombre !== '' ? $nombre : ($t->nom_ter ?? ''),
                 'email' => $t->email,
                 'celular' => $t->cel,
-                'ya_registrado' => in_array($t->cod_ter, $yaRegistrados),
+                'ya_registrado' => $t->empleado_id !== null,
                 'clasificado_empleado' => $tipoEmpleadoId !== null && (int) $t->tip_prv === $tipoEmpleadoId,
+                'fecha_actualizacion' => $t->fec_act ? substr($t->fec_act, 0, 10) : null,
+                'desactualizado' => $this->fechaDesactualizada($t->fec_act),
             ];
         });
 
@@ -124,7 +167,13 @@ class EmpleadoController extends Controller
      */
     public function store(StoreEmpleadoRequest $request)
     {
-        $empleado = Empleado::create($request->validated());
+        $datos = $request->validated();
+
+        if (!empty($datos['contacto_emergencia_nombre'])) {
+            $datos['contacto_emergencia_nombre'] = mb_strtoupper($datos['contacto_emergencia_nombre'], 'UTF-8');
+        }
+
+        $empleado = Empleado::create($datos);
 
         $this->auditoria("Alta de colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
 
@@ -156,7 +205,8 @@ class EmpleadoController extends Controller
                 'cod_ter' => 'hash', 'tip_prv' => 'award', 'nom_ter' => 'user', 'estado' => 'activity',
                 'apl1' => 'user-check', 'apl2' => 'user-check', 'nom1' => 'user', 'nom2' => 'user',
                 'sexo' => 'users', 'fec_nac' => 'calendar', 'est_civil' => 'heart', 'tdoc' => 'file-text',
-                'dv' => 'hash', 'digito_v' => 'hash', 'razon_soc' => 'briefcase', 'nom_conyug' => 'user-plus',
+                'dv' => 'hash', 'fec_expcc' => 'calendar', 'lugar_expcc' => 'map-pin', 'lugar_naci' => 'map-pin',
+                'digito_v' => 'hash', 'razon_soc' => 'briefcase', 'nom_conyug' => 'user-plus',
                 'id_conyuge' => 'hash', 'parentesco' => 'link', 'mail_conyu' => 'mail', 'num_hijos' => 'users',
                 'fec_falle' => 'activity', 'contacto' => 'phone', 'cont_tel' => 'phone', 'cargo' => 'briefcase',
                 'dir' => 'map-pin', 'ciu_comer' => 'map', 'ciudad' => 'map', 'dpto' => 'map', 'pais' => 'globe',
@@ -170,7 +220,7 @@ class EmpleadoController extends Controller
                 'sexo' => 'Sexo', 'fec_nac' => 'Fecha de nacimiento', 'est_civil' => 'Estado civil',
                 'tipo_ter' => 'Tipo (código interno)', 'tip_pers' => 'Tipo de persona',
                 'tdoc' => 'Tipo de documento', 'dv' => 'Dígito de verificación',
-                'digito_v' => 'Dígito de verificación (alterno)', 'razon_soc' => 'Razón social',
+                'fec_expcc' => 'Fecha de expedición', 'digito_v' => 'Dígito de verificación (alterno)', 'razon_soc' => 'Razón social',
                 'raz' => 'Razón social (alterna)', 'nom_conyug' => 'Nombre del cónyuge',
                 'id_conyuge' => 'Cédula del cónyuge', 'parentesco' => 'Parentesco',
                 'mail_conyu' => 'Correo del cónyuge', 'num_hijos' => 'Número de hijos',
@@ -188,21 +238,36 @@ class EmpleadoController extends Controller
             // Solo las secciones relevantes para RR. HH. — se omiten Iglesia/Financiera/Comercial/
             // Tributaria/Otros del formulario genérico de Maestras/Terceros a propósito.
             'groups' => [
-                'Identificación' => ['tip_prv'],
+                // tip_prv ya no es editable aquí: se muestra fijo junto a cod_ter/nom_ter y
+                // se actualiza automáticamente desde "tipo_ter" (Información Personal).
+                'Identificación' => [],
                 'Información Personal' => [
+                    // digito_v, razon_soc y raz ocultos a pedido: son duplicados de dv/nom_ter
+                    // (campos de persona jurídica) que no aplican al caso de uso de RR. HH.
+                    // lugar_naci y lugar_expcc se movieron aquí desde Ubicación, junto a
+                    // tdoc/dv/fec_expcc, según el orden pedido. Los campos del cónyuge se
+                    // movieron a su propia sección "Información Cónyuge" (ver abajo).
                     'estado', 'apl1', 'apl2', 'nom1', 'nom2', 'sexo', 'fec_nac', 'est_civil',
-                    'tipo_ter', 'tip_pers', 'tdoc', 'dv', 'digito_v', 'razon_soc', 'raz',
-                    'nom_conyug', 'id_conyuge', 'parentesco', 'mail_conyu', 'num_hijos',
-                    'fec_falle', 'contacto', 'cont_tel', 'cargo',
+                    'tipo_ter', 'tip_pers', 'tdoc', 'dv', 'fec_expcc', 'lugar_expcc', 'lugar_naci',
+                    'fec_falle', 'contacto', 'cargo',
+                ],
+                'Información Cónyuge' => [
+                    'id_conyuge', 'nom_conyug', 'mail_conyu', 'parentesco', 'num_hijos', 'cont_tel',
                 ],
                 'Ubicación' => [
-                    'dir', 'dir1', 'dir2', 'dir_comer', 'ciu_comer', 'ciudad', 'dpto', 'mun',
-                    'pais', 'cod_postal', 'cod_pais', 'cod_depa', 'barrio', 'lugar_naci', 'lugar_expcc',
+                    // 'ciudad' oculto: texto libre truncado, redundante con 'mun' (Municipio).
+                    // 'cod_depa' oculto: duplica 'dpto' (mismo código DANE, llenados de forma
+                    // inconsistente entre sí) — se fusionan, dpto escribe en los dos al guardar.
+                    // 'cod_pais' oculto: duplica 'pais' con un código numérico de esquema
+                    // desconocido (no es ISO) — se deja intacto en BD, no se puede sincronizar
+                    // con seguridad sin saber qué significa cada número.
+                    'dir', 'dir1', 'dir2', 'dir_comer', 'ciu_comer', 'dpto', 'mun',
+                    'pais', 'cod_postal', 'barrio',
                 ],
                 'Contacto' => ['tel', 'tel1', 'tel2', 'cel', 'fax1', 'email'],
             ],
             // Se guardan siempre en mayúsculas (nombres, apellidos, cónyuge).
-            'uppercaseFields' => ['apl1', 'apl2', 'nom1', 'nom2', 'nom_conyug'],
+            'uppercaseFields' => ['apl1', 'apl2', 'nom1', 'nom2', 'nom_conyug', 'barrio'],
             'tdocPredeterminado' => '13',
             // '42' y '43' NO son tipos de documento: son indicadores de responsabilidad
             // tributaria DIAN (facturación electrónica / IVA) cargados por error en tdoc.
@@ -220,14 +285,32 @@ class EmpleadoController extends Controller
      */
     public function showTercero(MaeTerceros $tercero)
     {
-        $tipos = MaeTipo::all();
-        $tiposDocumento = TipoDocumento::orderBy('codigo')->pluck('nombre', 'codigo');
-        $estadosCiviles = EstadoCivil::orderBy('codigo')->pluck('nombre', 'codigo');
+        // La vista de solo lectura no necesita el listado completo de municipios (solo se usa
+        // para el filtro en cascada del formulario de edición) — se resuelve únicamente el
+        // nombre del municipio actual, evitando cargar/enviar las 1.125 filas sin necesidad.
+        $catalogos = $this->terceroCatalogos();
+        $municipioActual = $catalogos['municipios']->firstWhere('id', (int) $tercero->mun);
+        $catalogos['municipios'] = $municipioActual ? collect([$municipioActual]) : collect();
 
         return view('sgrh.empleado.tercero-show', array_merge(
-            compact('tercero', 'tipos', 'tiposDocumento', 'estadosCiviles'),
+            ['tercero' => $tercero, 'desactualizado' => $this->fechaDesactualizada($tercero->fec_act)],
+            $catalogos,
             $this->terceroFieldMeta()
         ));
+    }
+
+    /**
+     * MaeTerceros no tiene updated_at de Laravel — fec_act cumple ese rol (ver
+     * updateTercero(), que lo refresca en cada guardado desde SGRH). Sin fecha registrada
+     * cuenta como desactualizado también (peor que 1 año, en realidad).
+     */
+    private function fechaDesactualizada(?string $fecAct): bool
+    {
+        if (!$fecAct) {
+            return true;
+        }
+
+        return $fecAct < now()->subYears(1)->format('Y-m-d');
     }
 
     /**
@@ -239,14 +322,41 @@ class EmpleadoController extends Controller
      */
     public function editTercero(MaeTerceros $tercero)
     {
-        $tipos = MaeTipo::all();
-        $tiposDocumento = TipoDocumento::orderBy('codigo')->pluck('nombre', 'codigo');
-        $estadosCiviles = EstadoCivil::orderBy('codigo')->pluck('nombre', 'codigo');
-
         return view('sgrh.empleado.tercero-edit', array_merge(
-            compact('tercero', 'tipos', 'tiposDocumento', 'estadosCiviles'),
+            ['tercero' => $tercero, 'desactualizado' => $this->fechaDesactualizada($tercero->fec_act)],
+            $this->terceroCatalogos(),
             $this->terceroFieldMeta()
         ));
+    }
+
+    /**
+     * Catálogos usados por las vistas show/edit del tercero. Casi no cambian (tipos de
+     * documento, departamentos, municipios...) pero se volvían a consultar completos en cada
+     * carga de la página — medido: ~2.3 segundos contra la base de datos remota (AWS RDS),
+     * solo municipios costaba 785ms de esos. Se cachean 7 días. Se usa `DB::table()` en vez
+     * de los modelos Eloquent para tipos/municipios/países: hidratar cientos de instancias de
+     * modelo (con sus traits/casts) es notablemente más lento de serializar/deserializar en
+     * caché que las filas planas (stdClass) de una consulta de query builder — medido: ~640ms
+     * vs ~300ms para leer el mismo catálogo ya cacheado.
+     *
+     * Si algún día se edita uno de estos catálogos desde su propia pantalla, hay que limpiar
+     * la caché (`Cache::forget('sgrh.catalogos.tercero')`) o esperar a que expire el TTL.
+     */
+    private function terceroCatalogos(): array
+    {
+        return Cache::remember('sgrh.catalogos.tercero', now()->addDays(7), function () {
+            return [
+                'tipos' => DB::table('MaeTipos')->orderBy('nombre')->get(['id', 'nombre']),
+                'tiposDocumento' => TipoDocumento::orderBy('codigo')->pluck('nombre', 'codigo'),
+                'estadosCiviles' => EstadoCivil::orderBy('codigo')->pluck('nombre', 'codigo'),
+                'parentescos' => Parentesco::orderBy('name')->pluck('name', 'code'),
+                'departamentos' => MaeDepartamento::orderBy('nombre')->pluck('nombre', 'codigo_Dane'),
+                // Se pasa completo (no pluck) porque el select de municipio se filtra en el
+                // navegador según el departamento elegido (id_departamento de cada uno).
+                'municipios' => DB::table('MaeMunicipios')->orderBy('nombre')->get(['id', 'nombre', 'id_departamento']),
+                'paises' => DB::table('paises')->orderBy('nombre')->get(['codigo_iso', 'nombre']),
+            ];
+        });
     }
 
     /**
@@ -255,8 +365,8 @@ class EmpleadoController extends Controller
     public function updateTercero(Request $request, MaeTerceros $tercero)
     {
         $validated = $request->validate([
-            // Identificación (nom_ter no se recibe del formulario: se recalcula abajo)
-            'tip_prv' => 'nullable|integer',
+            // Identificación: nom_ter y tip_prv no se reciben del formulario, se recalculan
+            // abajo (nom_ter desde nom1/nom2/apl1/apl2, tip_prv como copia de tipo_ter).
 
             // Información Personal
             'estado' => 'nullable|string|max:10',
@@ -267,13 +377,13 @@ class EmpleadoController extends Controller
             'sexo' => 'nullable|string|max:10',
             'fec_nac' => 'nullable|date',
             'est_civil' => 'nullable|string|max:10',
-            'tipo_ter' => 'nullable|string|max:10',
+            // tipo_ter ahora es el selector real (catálogo MaeTipos); tip_prv lo copia.
+            'tipo_ter' => 'nullable|integer',
             'tip_pers' => 'nullable|string|max:10',
             'tdoc' => 'nullable|string|max:10',
-            'dv' => 'nullable|string|max:10',
-            'digito_v' => 'nullable|string|max:255',
-            'razon_soc' => 'nullable|string|max:10',
-            'raz' => 'nullable|string|max:10',
+            // Solo aplica (y es obligatorio) cuando el tipo de documento es NIT (31).
+            'dv' => 'nullable|required_if:tdoc,31|string|max:10',
+            'fec_expcc' => 'nullable|date',
             'nom_conyug' => 'nullable|string',
             'id_conyuge' => 'nullable|integer',
             'parentesco' => 'nullable|string|max:10',
@@ -290,13 +400,12 @@ class EmpleadoController extends Controller
             'dir2' => 'nullable|string|max:255',
             'dir_comer' => 'nullable|string|max:255',
             'ciu_comer' => 'nullable|string|max:10',
-            'ciudad' => 'nullable|string|max:10',
-            'dpto' => 'nullable|string|max:50',
-            'mun' => 'nullable|string|max:10',
+            // dpto = MaeDepartamentos.codigo_Dane, mun = MaeMunicipios.id (verificado contra
+            // datos reales de MaeTerceros antes de construir el select en cascada).
+            'dpto' => 'nullable|integer',
+            'mun' => 'nullable|integer',
             'pais' => 'nullable|string|max:100',
             'cod_postal' => 'nullable|string|max:10',
-            'cod_pais' => 'nullable|string|max:255',
-            'cod_depa' => 'nullable|string|max:255',
             'barrio' => 'nullable|string|max:255',
             'lugar_naci' => 'nullable|string',
             'lugar_expcc' => 'nullable|string',
@@ -310,8 +419,14 @@ class EmpleadoController extends Controller
             'email' => 'nullable|email|max:255',
         ]);
 
-        // Nombres, apellidos y cónyuge siempre en mayúsculas.
-        foreach (['apl1', 'apl2', 'nom1', 'nom2', 'nom_conyug'] as $campo) {
+        // Defensa adicional: si '' llega hasta aquí como cadena vacía (en vez de null) para
+        // una columna DATETIME (fec_nac, fec_falle), MySQL rechaza la consulta completa con
+        // un QueryException — y como todos los campos van en el mismo UPDATE, ESO tumbaba el
+        // guardado de TODO el formulario, no solo de la fecha. Se normaliza antes de guardar.
+        $validated = array_map(fn($v) => $v === '' ? null : $v, $validated);
+
+        // Nombres, apellidos, cónyuge y barrio siempre en mayúsculas.
+        foreach (['apl1', 'apl2', 'nom1', 'nom2', 'nom_conyug', 'barrio'] as $campo) {
             if (array_key_exists($campo, $validated) && $validated[$campo] !== null) {
                 $validated[$campo] = mb_strtoupper($validated[$campo], 'UTF-8');
             }
@@ -325,6 +440,19 @@ class EmpleadoController extends Controller
             $validated['apl1'] ?? $tercero->apl1,
             $validated['apl2'] ?? $tercero->apl2,
         ])));
+
+        // tip_prv tampoco es editable directamente: se mantiene siempre igual a tipo_ter,
+        // que es ahora el selector real (catálogo MaeTipos) en Información Personal.
+        $validated['tip_prv'] = $validated['tipo_ter'] ?? null;
+
+        // cod_depa duplica dpto (mismo código DANE) — no se muestra por separado en el
+        // formulario, pero se mantiene sincronizado para no dejarlo desactualizado.
+        $validated['cod_depa'] = $validated['dpto'] ?? null;
+
+        // MaeTerceros no tiene updated_at de Laravel — fec_act cumple ese rol. Se refresca en
+        // cada guardado desde SGRH para que la alerta de "más de 1 año sin actualizar" se
+        // resuelva sola la próxima vez que se consulte.
+        $validated['fec_act'] = now()->format('Y-m-d');
 
         $tercero->update($validated);
 
