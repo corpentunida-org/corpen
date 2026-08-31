@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  * fuente oficial actualizada — el sector EPS/ARL ha tenido fusiones/liquidaciones recientes.
  * `activo` permite desactivar una entidad sin borrar el historial de quién la tenía asignada.
  * El formulario deja elegir "Otra (especificar)" para no depender de que la lista esté
- * completa o vigente.
+ * completa o vigente....
  */
 return new class extends Migration
 {
