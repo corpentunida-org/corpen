@@ -163,7 +163,7 @@
                                                         </div>
                                                         <div>
                                                             <span class="d-block fs-8 text-muted fw-semibold text-uppercase letter-spacing-1 mb-1">Identificador Lote</span>
-                                                            <span class="fw-bold text-dark fs-6">BLQ-{{ str_pad($bloque, 4, '0', STR_PAD_LEFT) }}</span>
+                                                            <span class="fw-bold text-dark fs-6">API-{{ str_pad($bloque, 4, '0', STR_PAD_LEFT) }}</span>
                                                         </div>
                                                     </div>
                                                     <div class="border-start ps-4 py-1 d-none d-md-block">

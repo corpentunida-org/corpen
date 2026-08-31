@@ -59,7 +59,7 @@
                     <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: #4a90e2; cursor:pointer;" onchange="this.form.submit()">
                         @foreach($bloquesDisponibles as $b)
                             <option value="{{ $b->numero_bloque }}" {{ $bloqueActivo == $b->numero_bloque ? 'selected' : '' }}>
-                                Lote BLQ-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
+                                Lote API-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
                             </option>
                         @endforeach
                     </select>
@@ -234,7 +234,7 @@
         {{-- Tabla Principal --}}
         <div class="card card-custom shadow-sm border-0">
             <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center" style="border-radius: 20px 20px 0 0;">
-                <h6 class="fw-bold m-0" style="color: #2c3e50;"><i class="fas fa-list text-muted me-2"></i> Operaciones del Lote BLQ-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}</h6>
+                <h6 class="fw-bold m-0" style="color: #2c3e50;"><i class="fas fa-list text-muted me-2"></i> Operaciones del Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}</h6>
                 <span class="badge bg-pastel-info text-dark rounded-pill px-3 py-2"><i class="fas fa-hashtag me-1"></i> {{ number_format($operaciones->total(), 0, ',', '.') }} Registros Listados</span>
             </div>
             <div class="table-responsive">
@@ -263,7 +263,7 @@
                                     <div>
                                         <div class="fw-bold text-gray-800 fs-6">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
                                         <div class="text-muted small fw-semibold">
-                                            <i class="fas fa-cube me-1 opacity-50"></i> BLQ-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                            <i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
                                         </div>
                                     </div>
                                 </div>
@@ -361,7 +361,7 @@
                                         <i class="fas fa-search fs-1 text-muted opacity-50"></i>
                                     </div>
                                     <h5 class="fw-bold" style="color: #2c3e50;">Bloque Vacío o Sin Resultados</h5>
-                                    <p class="text-muted">No se encontraron operaciones en el Lote BLQ-{{ $bloqueActivo }} que coincidan con tu búsqueda.</p>
+                                    <p class="text-muted">No se encontraron operaciones en el Lote API-{{ $bloqueActivo }} que coincidan con tu búsqueda.</p>
                                 </div>
                             </td>
                         </tr>
@@ -397,7 +397,7 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="alert bg-pastel-info text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
-                        <i class="fas fa-info-circle me-2"></i> Esta alerta se aplicará de forma general al lote <strong>BLQ-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>. No quedará asignada a un cliente individual.
+                        <i class="fas fa-info-circle me-2"></i> Esta alerta se aplicará de forma general al lote <strong>API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>. No quedará asignada a un cliente individual.
                     </div>
 
                     <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
