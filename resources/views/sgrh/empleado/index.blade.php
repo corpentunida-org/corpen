@@ -50,6 +50,7 @@
                         <th>Código (cod_ter)</th>
                         <th>Fecha de ingreso</th>
                         <th class="text-center">Estado</th>
+                        <th></th>
                         <th class="text-end pe-4">Cambiar estado</th>
                     </tr>
                 </thead>
@@ -106,6 +107,11 @@
                                         <span class="badge bg-warning-subtle text-warning">Inactivo</span>
                                 @endswitch
                             </td>
+                            <td class="text-end">
+                                <a href="{{ route('sgrh.empleado.edit', $empleado) }}" class="small">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </a>
+                            </td>
                             <td class="text-end pe-4">
                                 <form action="{{ route('sgrh.empleado.updateEstado', $empleado->id) }}" method="POST"
                                       class="d-inline-flex gap-2 justify-content-end">
@@ -122,7 +128,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-5 text-center text-muted">
+                            <td colspan="6" class="py-5 text-center text-muted">
                                 No hay colaboradores registrados todavía.
                             </td>
                         </tr>
