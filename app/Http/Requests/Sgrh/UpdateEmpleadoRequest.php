@@ -4,7 +4,10 @@ namespace App\Http\Requests\Sgrh;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreEmpleadoRequest extends FormRequest
+// No incluye 'cod_ter' ni 'estado': cod_ter es el enlace al tercero (no se reasigna desde
+// aquí) y el cambio de estado tiene su propio flujo (EmpleadoController::updateEstado, con la
+// lógica de fecha_retiro) para no duplicarla en dos sitios que puedan desincronizarse.
+class UpdateEmpleadoRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -14,9 +17,7 @@ class StoreEmpleadoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'cod_ter' => 'required|integer|exists:MaeTerceros,cod_ter|unique:sgrh_empleados,cod_ter',
             'fecha_ingreso' => 'nullable|date',
-            'estado' => 'nullable|in:activo,inactivo,retirado',
             'cargo_id' => 'nullable|exists:sgrh_cargos,id',
             'salario_asignado' => 'nullable|numeric|min:0',
             'eps' => 'nullable|string|max:255',
@@ -26,15 +27,6 @@ class StoreEmpleadoRequest extends FormRequest
             'contacto_emergencia_nombre' => 'nullable|string|max:255',
             'contacto_emergencia_telefono' => 'nullable|string|max:20',
             'observaciones' => 'nullable|string',
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'cod_ter.required' => 'Debes buscar e identificar el tercero antes de guardar.',
-            'cod_ter.exists' => 'El tercero indicado no existe en el maestro de terceros.',
-            'cod_ter.unique' => 'Este tercero ya está registrado como colaborador.',
         ];
     }
 }

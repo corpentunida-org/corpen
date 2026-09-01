@@ -70,6 +70,10 @@ use App\Http\Controllers\Rsv\ReservaController;
 
 //SGRH
 use App\Http\Controllers\Sgrh\EmpleadoController as SgrhEmpleadoController;
+use App\Http\Controllers\Sgrh\AreaController as SgrhAreaController;
+use App\Http\Controllers\Sgrh\CargoController as SgrhCargoController;
+use App\Http\Controllers\Sgrh\ContratoController as SgrhContratoController;
+use App\Http\Controllers\Sgrh\TipoContratoController as SgrhTipoContratoController;
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -1526,9 +1530,7 @@ Route::middleware(['auth'])
 // =============================
 // MÓDULO SGRH (Recursos Humanos)
 // =============================
-// Fase 1/3 en construcción: por ahora solo listado y cambio de estado de
-// colaboradores. Aún no hay alta/edición porque depende de una decisión de
-// negocio pendiente sobre identificación/creación de terceros (ver plan).
+// Bloque A (Núcleo): colaboradores + consulta/edición de terceros + cargos y áreas.
 Route::prefix('sgrh')
     ->name('sgrh.')
     ->middleware(['auth'])
@@ -1538,6 +1540,8 @@ Route::prefix('sgrh')
         Route::get('empleados/buscar-tercero', [SgrhEmpleadoController::class, 'buscarTercero'])->name('empleado.buscarTercero');
         Route::post('empleados', [SgrhEmpleadoController::class, 'store'])->name('empleado.store');
         Route::put('empleados/{empleado}/estado', [SgrhEmpleadoController::class, 'updateEstado'])->name('empleado.updateEstado');
+        Route::get('empleados/{empleado}/edit', [SgrhEmpleadoController::class, 'edit'])->name('empleado.edit');
+        Route::put('empleados/{empleado}', [SgrhEmpleadoController::class, 'update'])->name('empleado.update');
 
         // Consulta/edición acotada del tercero (solo Identificación/Información Personal/
         // Ubicación/Contacto) para RR. HH. — no usa el editor genérico de Maestras/Terceros,
@@ -1551,6 +1555,23 @@ Route::prefix('sgrh')
             ->name('tercero.edit')->middleware('can:sgrh.tercero.edit');
         Route::put('terceros/{tercero}', [SgrhEmpleadoController::class, 'updateTercero'])
             ->name('tercero.update')->middleware('can:sgrh.tercero.edit');
+
+        // Cargos y Áreas: catálogos propios de SGRH (sgrh_areas/sgrh_cargos), poblados una
+        // sola vez con los datos reales de gdo_area/gdo_cargo (módulo Archivo/"Gestión") vía
+        // la migración 2026_08_31_210002_migrate_gdo_area_cargo_data_to_sgrh — gdo_area/
+        // gdo_cargo siguen activos aparte, no quedan enlazados a estas tablas.
+        // Sin 'show': el índice ya lista todo con acciones de editar/eliminar.
+        Route::resource('areas', SgrhAreaController::class)->except('show')->names('area')->parameters(['areas' => 'area']);
+        Route::resource('cargos', SgrhCargoController::class)->except('show')->names('cargo')->parameters(['cargos' => 'cargo']);
+
+        // Gestión contractual: historial de contratos por colaborador + alertas de vencimiento
+        // (30/60 días). Sin 'show': se edita o se consulta desde el índice/alertas/colaborador.
+        Route::get('contratos/alertas', [SgrhContratoController::class, 'alertas'])->name('contrato.alertas');
+        Route::put('contratos/{contrato}/renovar', [SgrhContratoController::class, 'renovar'])->name('contrato.renovar');
+        Route::get('contratos/{contrato}/documento', [SgrhContratoController::class, 'verDocumento'])->name('contrato.documento.ver');
+        Route::get('contratos/{contrato}/documento/descargar', [SgrhContratoController::class, 'downloadDocumento'])->name('contrato.documento.descargar');
+        Route::resource('contratos', SgrhContratoController::class)->except('show')->names('contrato')->parameters(['contratos' => 'contrato']);
+        Route::resource('tipos-contrato', SgrhTipoContratoController::class)->except('show')->names('tipo-contrato')->parameters(['tipos-contrato' => 'tipo_contrato']);
     });
 // FIN MÓDULO SGRH
 
