@@ -5,6 +5,7 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User; // Añadido para la relación con usuarios
 
 /**
  * Detalle (Líneas) de la Operación.
@@ -19,16 +20,20 @@ class CarSiaOperacionLinea extends Model
     // 2. Campos asignables masivamente
     protected $fillable = [
         'id_car_sia_operaciones',
-        'id_factura', 
+        'id_factura',
         'id_car_sia_lineas', //cuenta
         'numero_bloque',
-        'observacion', 
-        'calificacion', 
+        'observacion',
+        'calificacion',
         'fecha_venci',
         'id_car_sia_estados',
         'fecha_ultimo_recordatorio',
         'dias_mora_automaticos',
         'procesado_en',
+        // --- CAMPOS NUEVOS DE AUDITORÍA Y CERTIFICADOS ---
+        'id_user',
+        'id_car_sia_tipos',
+        'hash_certificado',
     ];
 
     // 3. Conversión de tipos de datos (Casting)
@@ -42,7 +47,7 @@ class CarSiaOperacionLinea extends Model
     // ---------------------------------------------------
     // 4. RELACIONES DEL SISTEMA
     // ---------------------------------------------------
-    
+
     /**
      * Factura de Staging (car_sia_api) asociada a esta línea específica.
      */
@@ -61,7 +66,7 @@ class CarSiaOperacionLinea extends Model
     {
         return $this->belongsTo(CarSiaApi::class, 'id_car_sia_lineas', 'cuenta');
     }
-    
+
     /**
      * Permite múltiples líneas por cada operación.
      */
@@ -94,5 +99,25 @@ class CarSiaOperacionLinea extends Model
     public function logs()
     {
         return $this->hasMany(CarSiaOperacionLog::class, 'id_car_sia_operaciones_lineas');
+    }
+
+    // ---------------------------------------------------
+    // 5. NUEVAS RELACIONES DE AUDITORÍA
+    // ---------------------------------------------------
+
+    /**
+     * Usuario que generó/auditó la línea del certificado.
+     */
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    /**
+     * Tipo de operación/evento en el momento de la auditoría.
+     */
+    public function tipoAuditoria()
+    {
+        return $this->belongsTo(CarSiaTipoOperacion::class, 'id_car_sia_tipos');
     }
 }

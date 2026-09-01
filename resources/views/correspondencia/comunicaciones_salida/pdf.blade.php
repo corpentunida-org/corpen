@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <style>
         @page {
-            margin: 4cm 2.5cm 3cm 2.5cm; 
+            margin: 4cm 2.5cm 3cm 2.5cm;
         }
 
         body {
@@ -37,26 +37,28 @@
         /* Contenedor flexible para el cuerpo */
         .cuerpo-carta {
             text-align: justify;
-            min-height: 350px; 
+            min-height: 350px;
             margin-bottom: 20px;
         }
 
         /* --- SECCIÓN DE FIRMA --- */
         .contenedor-firma {
-            page-break-inside: avoid; 
+            page-break-inside: avoid;
             width: 300px;
             margin-top: 10px;
         }
 
         .espacio-rubrica {
-            height: 65px; 
+            height: 65px;
             position: relative;
         }
 
         .img-firma {
-            max-height: 75px; 
+            max-height: 75px;
+            width: auto;
+            object-fit: contain;
             position: absolute;
-            bottom: 5px; 
+            bottom: 5px;
             left: 0;
         }
 
@@ -103,13 +105,13 @@
         <div class="header-content">
             <br><br><br>
             <div class="fecha">
-                Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->translatedFormat('d \d\e F \d\e Y') }}
+                Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
             </div>
 
             <div class="destinatario">
                 Pastor:<br>
                 <strong>{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'NOMBRE DEL ASOCIADO' }}</strong><br>
-                
+
                 {{-- EXTRACCIÓN DEL NOMBRE DEL DISTRITO DESDE EL JSON --}}
                 @php
                     $distritoRaw = $comunicacionSalida->correspondencia->remitente->distrito;
@@ -123,19 +125,19 @@
         </div>
 
         <div class="cuerpo-carta">
-            <p>El Señor Jesucristo le bendiga abundantemente.</p>
-            
+            <br>
+
             <div style="margin-top: 15px;">
                 {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
             </div>
             {{-- <br> --}}
-            <p>Deseamos que las bendiciones del Señor le acompañe y direccionen en todos sus asuntos.</p>
-            <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
+            <br>
+            <br>
         </div>
 
         <div class="contenedor-firma">
-            
-            
+
+
             <div class="espacio-rubrica">
                 @if(isset($firmaImg) && $firmaImg)
                     <img src="{{ $firmaImg }}" class="img-firma">
