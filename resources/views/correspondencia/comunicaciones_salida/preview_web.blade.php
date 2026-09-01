@@ -214,7 +214,7 @@
             </div>
 
             <div class="cuerpo-carta">
-                <p>El Señor Jesucristo le bendiga abundantemente.</p>
+                <br>
                 <div style="margin-top: 15px;">
                     {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
                 </div>
