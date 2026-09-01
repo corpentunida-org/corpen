@@ -1495,15 +1495,17 @@ Route::middleware(['auth'])
         // Panel de Lotes Crudos (Staging)
         Route::get('ingesta', [IngestaController::class, 'index'])->name('ingesta.index');
 
-        // carga el EXCEL
+        // Crear un Periodo contable (Año/Mes)
+        Route::post('ingesta/periodos', [IngestaController::class, 'storePeriodo'])->name('periodos.store');
+
+        // Carga el EXCEL
         Route::post('ingesta/cargar', [IngestaController::class, 'cargarExcel'])->name('ingesta.cargar');
 
-        // Proceso de Inyección Masiva (Motor ETl)
+        // Proceso de Inyección Masiva (Motor ETL)
         Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');
 
         // Anulación Manual de un lote corrupto
         Route::put('ingesta/{id}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular');
-
 
         // ---------------------------------------------------
         // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA
