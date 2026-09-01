@@ -7,6 +7,7 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 
 class CarSiaTipoOperacion extends Model
@@ -22,7 +23,8 @@ class CarSiaTipoOperacion extends Model
     protected $fillable = [
         'id_car_sia_operaciones', //null - En inyectarBloques queda blanco
         'id_car_sia_tipos',
-        'numero_bloque', // En inyectarBloques 
+        'numero_bloque', // En inyectarBloques
+        'id_user',
     ];
 
 
@@ -40,6 +42,11 @@ class CarSiaTipoOperacion extends Model
     public function tipo()
     {
         return $this->belongsTo(CarSiaTipo::class, 'id_car_sia_tipos');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_user');
     }
 }
 

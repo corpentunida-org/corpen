@@ -79,7 +79,7 @@
                                         </div>
                                         {{-- AQUÍ AGREGAMOS LA INFORMACIÓN DEL LOTE --}}
                                         <div class="text-muted" style="font-size: 0.8rem; margin-left: 5px;">
-                                            <i class="fas fa-layer-group me-1 opacity-50"></i> Lote: BLQ-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                            <i class="fas fa-layer-group me-1 opacity-50"></i> Lote: API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
                                         </div>
                                     </div>
                                 </td>

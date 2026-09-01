@@ -5,6 +5,7 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 class CarSiaEstadoOperacion extends Model
 {
@@ -17,7 +18,8 @@ class CarSiaEstadoOperacion extends Model
     protected $fillable = [
         'id_car_sia_operaciones',  //null - En inyectarBloques queda blanco
         'id_car_sia_estados', //
-        'numero_bloque', // En inyectarBloques 
+        'numero_bloque', // En inyectarBloques
+        'id_user',
     ];
 
     // 3. Relaciones
@@ -32,5 +34,10 @@ class CarSiaEstadoOperacion extends Model
     public function estado()
     {
         return $this->belongsTo(CarSiaEstado::class, 'id_car_sia_estados');
+    }
+
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_user');
     }
 }

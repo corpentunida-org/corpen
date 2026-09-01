@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Oficio de Salida - {{ $comunicacionSalida->nro_oficio_salida }}</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/dist/css/all.min.css">
-    
+
     <style>
         /* --- ESTILOS PARA LA PANTALLA (MODO EDITOR) --- */
         @media screen {
@@ -14,7 +14,7 @@
                 padding: 20px;
                 font-family: 'Helvetica', Arial, sans-serif;
             }
-            
+
             .barra-herramientas {
                 max-width: 21cm;
                 margin: 0 auto 20px auto;
@@ -106,7 +106,7 @@
             font-weight: bold;
             white-space: nowrap;
         }
-        
+
         .contenido-dinamico {
             position: relative;
             z-index: 10; /* Por encima del fondo y de la marca de agua */
@@ -156,7 +156,7 @@
             margin-top: 10px;
         }
         .espacio-rubrica { height: 65px; position: relative; }
-        .img-firma { max-height: 75px; position: absolute; bottom: 5px; left: 0; }
+        .img-firma { max-height: 75px; width: auto; object-fit: contain;position: absolute; bottom: 5px; left: 0; }
         .linea { border-top: 1px solid #000; width: 100%; margin-bottom: 5px; }
         .nombre-firmante { font-weight: bold; text-transform: uppercase; font-size: 12px; display: block; }
         .cargo-firmante { font-size: 11px; color: #444; }
@@ -174,7 +174,7 @@
     </div>
 
     <div class="hoja-papel">
-        
+
         @if(isset($fondoImg) && $fondoImg)
         <div id="fondo-plantilla">
             <img src="{{ $fondoImg }}">
@@ -187,7 +187,7 @@
             <div class="header-content">
                 <br><br><br>
                 <div class="fecha">
-                    Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->translatedFormat('d \d\e F \d\e Y') }}
+                    Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
                 </div>
 
                 <div class="destinatario-block">
@@ -198,15 +198,15 @@
                     @endphp
                     <input type="text" class="input-editable" value="Asociado">
                 </div>
-                
+
                 <br>
-                
+
                 <div class="asunto">
                     <table style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
                         <tr>
-                            <td style="width: 55px; font-weight: bold; vertical-align: middle; white-space: nowrap;">Asunto:</td>
+                            <td style="width: 1%; font-weight: bold; vertical-align: middle; white-space: nowrap; padding-right: 5px;">Asunto:</td>
                             <td style="padding-left: 5px; vertical-align: middle;">
-                                <input type="text" class="input-editable font-bold text-uppercase" value="{{ $comunicacionSalida->correspondencia->asunto ?? 'SOLICITUD' }}">
+                                <span class="input-editable font-bold text-uppercase" contenteditable="true">{{ $comunicacionSalida->correspondencia->asunto ?? 'SOLICITUD' }}</span>
                             </td>
                         </tr>
                     </table>
@@ -214,13 +214,13 @@
             </div>
 
             <div class="cuerpo-carta">
-                <p>El Señor Jesucristo le bendiga abundantemente.</p>
+                <br>
                 <div style="margin-top: 15px;">
                     {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
                 </div>
                 {{-- <br> --}}
-                <p>Deseamos que las bendiciones del Señor le acompañe y direccionen en todos sus asuntos.</p>
-                <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
+                <br>
+                <br>
             </div>
 
             <div class="contenedor-firma">

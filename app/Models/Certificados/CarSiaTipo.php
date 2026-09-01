@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Certificados\CarSiaTipoOperacion;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Certificados\CarSiaOperacionLinea;
 
 class CarSiaTipo extends Model
 {
@@ -32,4 +33,13 @@ class CarSiaTipo extends Model
     {
         return $this->hasMany(CarSiaTipoOperacion::class, 'id_car_sia_tipos');
     }
+
+    /**
+     * Obtiene todas las líneas de operaciones que fueron auditadas o generadas bajo este tipo de evento.
+     */
+    public function lineasAuditadas()
+    {
+        return $this->hasMany(CarSiaOperacionLinea::class, 'id_car_sia_tipos');
+    }
+
 }

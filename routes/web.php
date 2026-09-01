@@ -1443,6 +1443,9 @@ Route::middleware(['auth'])
         // NUEVA RUTA: Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 
+        // INFORME CLIENTE: Generación de reporte de comportamiento
+        Route::get('operaciones/{id}/informe-cliente', [OperacionController::class, 'generarInformeCliente'])->name('operaciones.informe_cliente');
+
         // CERTIFICADOS:
         Route::get('operaciones/{id}/generar-pdf', [CertificadoController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
         Route::post('operaciones/generar-masivo', [CertificadoController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
@@ -1496,15 +1499,17 @@ Route::middleware(['auth'])
         // Panel de Lotes Crudos (Staging)
         Route::get('ingesta', [IngestaController::class, 'index'])->name('ingesta.index');
 
-        // carga el EXCEL
+        // Crear un Periodo contable (Año/Mes)
+        Route::post('ingesta/periodos', [IngestaController::class, 'storePeriodo'])->name('periodos.store');
+
+        // Carga el EXCEL
         Route::post('ingesta/cargar', [IngestaController::class, 'cargarExcel'])->name('ingesta.cargar');
 
-        // Proceso de Inyección Masiva (Motor ETl)
+        // Proceso de Inyección Masiva (Motor ETL)
         Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');
 
         // Anulación Manual de un lote corrupto
         Route::put('ingesta/{id}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular');
-
 
         // ---------------------------------------------------
         // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA

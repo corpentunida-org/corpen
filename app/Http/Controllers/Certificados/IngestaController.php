@@ -20,6 +20,8 @@ use App\Models\Certificados\CarSiaEventoAuditoria;
 use App\Models\Certificados\CarSiaApi;
 use App\Models\Certificados\CarSiaOperacion;
 use App\Models\Certificados\CarSiaEstado;
+use App\Models\Certificados\CarSiaPeriodo;
+use App\Models\Certificados\CarSiaBloque;
 use App\Models\Certificados\CarSiaEstadoOperacion;
 use App\Models\Creditos\LineaCredito;
 
@@ -60,9 +62,24 @@ class IngestaController extends Controller
                       ->orWhere('id_factura', 'LIKE', $termino . '%');
                 });
             }
-            // FILTRO POR ESTADO
+
+            $periodos = CarSiaPeriodo::orderBy('anio', 'desc')->orderBy('mes', 'desc')->get();
+
+            // FILTRO POR ESTADO (Refactorizado para detectar estado PENDIENTE, PROCESADO y ANULADO exactos)
             if ($request->filled('estado')) {
-                $query->where('estado', $request->estado);
+                if ($request->estado == 'ANULADO') {
+                    $query->where('anular', 1);
+                } elseif ($request->estado == 'PENDIENTE') {
+                    $query->where('estado', '!=', 'PROCESADO')
+                          ->where(function($q) {
+                              $q->whereNull('anular')->orWhere('anular', '!=', 1);
+                          });
+                } else {
+                    $query->where('estado', $request->estado)
+                          ->where(function($q) {
+                              $q->whereNull('anular')->orWhere('anular', '!=', 1);
+                          });
+                }
             }
 
             // 3. LA MAGIA: Forzamos a que los 'PENDIENTE' siempre salgan primero
@@ -105,13 +122,14 @@ class IngestaController extends Controller
             $estados = CarSiaEstado::all();
             $tipos = DB::table('car_sia_tipos')->get();
 
-            return view('certificados.ingesta.index', compact('lotesCrudos', 'totalPendientes', 'estados', 'tipos', 'kpi', 'bloquesDisponibles', 'bloqueActivo'));
+            return view('certificados.ingesta.index', compact('lotesCrudos', 'totalPendientes', 'estados', 'tipos', 'kpi', 'bloquesDisponibles', 'bloqueActivo', 'periodos'));
 
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Ingesta - Error al cargar staging: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al procesar los datos.');
         }
     }
+
 
     /**
      * =========================================================================
@@ -120,8 +138,10 @@ class IngestaController extends Controller
      */
     public function cargarExcel(Request $request)
     {
+        // 1. Validar que el archivo y el periodo sean enviados
         $request->validate([
-            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480'
+            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480',
+            'id_periodo'    => 'required|integer|exists:car_sia_periodos,id'
         ]);
 
         try {
@@ -156,13 +176,21 @@ class IngestaController extends Controller
 
             $ahora = now()->format('Y-m-d H:i:s');
 
-            // 1. SOLUCIÓN CRÍTICA: Bloque Máximo Global (Infalible)
-            // Revisamos ambas tablas y tomamos el valor numérico más alto, luego le sumamos 1.
+            // 2. SOLUCIÓN CRÍTICA: Bloque Máximo Global (Añadimos tu nueva tabla a la verificación)
             $maxStaging = CarSiaApi::max('numero_bloque') ?? 0;
             $maxOperacion = CarSiaOperacion::max('numero_bloque') ?? 0;
-            $nuevoBloque = max((int)$maxStaging, (int)$maxOperacion) + 1;
+            $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
+            $nuevoBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
 
-            DB::transaction(function () use ($hoja, $encabezados, $mapaColumnas, $ahora, $nuevoBloque) {
+            DB::transaction(function () use ($hoja, $encabezados, $mapaColumnas, $ahora, $nuevoBloque, $request) {
+
+                // 3. INTEGRACIÓN DEL MODELO: Registramos el bloque y lo asociamos al periodo
+                CarSiaBloque::create([
+                    'numero_bloque' => $nuevoBloque,
+                    'id_periodo'    => $request->id_periodo,
+                    'descripcion'   => 'Lote de carga masiva #' . $nuevoBloque,
+                    'estado'        => 'PENDIENTE'
+                ]);
 
                 $loteInsercionMasiva = [];
 
@@ -176,7 +204,7 @@ class IngestaController extends Controller
                         'fecha_ad'      => $ahora,
                         'created_at'    => $ahora,
                         'updated_at'    => $ahora,
-                        'numero_bloque' => $nuevoBloque, // Inyección del bloque invulnerable
+                        'numero_bloque' => $nuevoBloque,
                     ];
 
                     foreach ($mapaColumnas as $columnaExcel => $campoBD) {
@@ -204,7 +232,6 @@ class IngestaController extends Controller
                     $loteInsercionMasiva[] = $datosInsertar;
                 }
 
-                // Chunk optimizado
                 $bloques = array_chunk($loteInsercionMasiva, 1000);
                 foreach ($bloques as $bloque) {
                     CarSiaApi::insert($bloque);
@@ -338,7 +365,10 @@ class IngestaController extends Controller
                         'updated_at' => $ahora
                     ]);
 
-                // 7. LOG DE AUDITORÍA
+                // 7. ACTUALIZACIÓN DE ESTADO DEL BLOQUE PADRE A PROCESADO
+                CarSiaBloque::where('numero_bloque', $numeroBloqueNuevo)->update(['estado' => 'PROCESADO']);
+
+                // 8. LOG DE AUDITORÍA
                 try {
                     CarSiaOperacionLog::create([
                         'numero_bloque'                 => $numeroBloqueNuevo,
@@ -406,6 +436,40 @@ class IngestaController extends Controller
             return redirect()->back()->with('success', 'El lote fue anulado.');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'No se pudo anular el registro.');
+        }
+    }
+
+    // =========================================================================
+    // CREAR PERIODO
+    // =========================================================================
+    public function storePeriodo(Request $request)
+    {
+        $request->validate([
+            'anio'   => 'required|integer|min:2020|max:2099',
+            'mes'    => 'required|integer|min:1|max:12',
+            'nombre' => 'required|string|max:50',
+        ]);
+
+        try {
+            // Validar que no exista el mismo año y mes
+            $existe = CarSiaPeriodo::where('anio', $request->anio)
+                                ->where('mes', $request->mes)->exists();
+
+            if ($existe) {
+                return redirect()->back()->with('warning', 'El periodo para este Año y Mes ya existe.');
+            }
+
+            CarSiaPeriodo::create([
+                'anio'    => $request->anio,
+                'mes'     => $request->mes,
+                'nombre'  => mb_strtoupper($request->nombre, 'UTF-8'),
+                'abierto' => $request->has('abierto') ? 1 : 0,
+            ]);
+
+            return redirect()->back()->with('success', "Periodo {$request->nombre} creado correctamente.");
+        } catch (\Exception $e) {
+            Log::error('CERTIFICADOS - Error al crear periodo: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Ocurrió un error al crear el periodo.');
         }
     }
 }
