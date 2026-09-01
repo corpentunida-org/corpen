@@ -26,6 +26,11 @@ use App\Models\Certificados\CarSiaConfig;
 use App\Models\Certificados\CarSiaApi;
 use App\Models\Certificados\CarSiaOperacionLog;
 use App\Models\Maestras\MaeTerceros;
+use App\Models\User;
+use App\Models\Certificados\CarSiaOrigenEvento;
+use App\Models\Certificados\CarSiaEventoAuditoria;
+use App\Models\Certificados\CarSiaOperacionAlertaLog;
+
 
 class OperacionController extends Controller
 {
@@ -138,7 +143,6 @@ class OperacionController extends Controller
     public function show($id)
     {
         try {
-            // 1. Modificamos la carga de las 'lineas' para ordenarlas de la más nueva a la más vieja
             $operacion = CarSiaOperacion::with([
                 'tercero',
                 'lineas' => function($query) {
@@ -149,7 +153,6 @@ class OperacionController extends Controller
                 'lineas.factura'
             ])->findOrFail($id);
 
-            // 2. Extraemos las líneas únicas por factura.
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
             $registrosCrudos = CarSiaApi::with('lineaSia')
@@ -157,12 +160,96 @@ class OperacionController extends Controller
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
 
+            // --- LÓGICA DE BLADE TRASLADADA (Tab 1: Líneas y Facturas) ---
             $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
                 return $item->lineaSia->nombre
                     ?? $item->nombre_cuenta
                     ?? $item->cuenta
                     ?? 'Línea Desconocida';
+            })->map(function($facturas) {
+                $totalLinea = $facturas->sum('valor');
+                $facturasOrdenadas = $facturas->sortBy('cuota')->map(function($factura) {
+                    if ($factura->fecha_venci) {
+                        $fechaV = \Carbon\Carbon::parse($factura->fecha_venci);
+                        $factura->diasMoraCalculados = now()->diffInDays($fechaV, false);
+                        $factura->fechaVFormateada = $fechaV->format('d/m/Y');
+                    } else {
+                        $factura->diasMoraCalculados = 0;
+                        $factura->fechaVFormateada = null;
+                    }
+                    return $factura;
+                });
+                return [
+                    'total' => $totalLinea,
+                    'count' => $facturas->count(),
+                    'facturas' => $facturasOrdenadas
+                ];
             });
+
+            $estados = CarSiaEstado::all();
+            $tipos = CarSiaTipo::all();
+            $tiposAlerta = CarSiaTipoAlerta::all();
+
+            // --- LÓGICA DE BLADE TRASLADADA (Tab 3: Auditoría y Detalle Formateado) ---
+            $logsAuditoria = CarSiaOperacionLog::with(['origenEvento', 'eventoAuditoria', 'usuario', 'usuario.cargoRelation'])
+                ->where('numero_bloque', $operacion->numero_bloque)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($log) use ($tipos, $estados) {
+                    // Pre-calculando variables visuales
+                    $log->tituloEvento  = optional($log->eventoAuditoria)->nombre ?? 'Evento Registrado';
+                    $log->fechaEvento   = $log->created_at->format('d/m/Y h:i A');
+                    $log->origenEvento  = optional($log->origenEvento)->nombre ?? 'Sistema';
+                    $log->nombreUsuario = optional($log->usuario)->name ?? 'Sistema';
+                    $log->cargoUsuario  = optional(optional($log->usuario)->cargoRelation)->nombre_cargo ?? 'Sin cargo';
+                    $log->ipDelUsuario  = $log->ip ?? '127.0.0.1';
+                    $log->hayDetalles   = !empty($log->detalles_ejecucion);
+
+                    // Formateando el JSON de detalles
+                    $detallesProcesados = [];
+                    if ($log->hayDetalles) {
+                        foreach ((array)$log->detalles_ejecucion as $llave => $valor) {
+                            $llaveLimpia = ucfirst(str_replace('_', ' ', $llave));
+                            $valorLimpio = is_array($valor) ? json_encode($valor) : $valor;
+
+                            if ($llave === 'tipo_asignado') {
+                                $tipoBuscado = collect($tipos)->firstWhere('id', $valor);
+                                $valorLimpio = $tipoBuscado ? $tipoBuscado->nombre : $valor;
+                            }
+                            if ($llave === 'estado_asignado') {
+                                $estadoBuscado = collect($estados)->firstWhere('id', $valor);
+                                $valorLimpio = $estadoBuscado ? $estadoBuscado->nombre : $valor;
+                            }
+                            if ($llave === 'bloque_origen' && is_numeric($valor)) {
+                                $valorLimpio = 'API-' . str_pad($valor, 4, '0', STR_PAD_LEFT);
+                            }
+                            $detallesProcesados[$llaveLimpia] = $valorLimpio;
+                        }
+                    }
+                    $log->detalles_procesados = $detallesProcesados;
+                    return $log;
+                });
+
+            // --- LÓGICA DE BLADE TRASLADADA (Tab 6: Operarios y Estadísticas) ---
+            $operariosData = collect();
+            $totalProcesos = collect($logsAuditoria)->count();
+
+            if($totalProcesos > 0) {
+                $operariosData = collect($logsAuditoria)->filter(function($log) {
+                    return $log->usuario != null;
+                })->groupBy(function($log) {
+                    return $log->nombreUsuario;
+                })->map(function($grupo) use ($totalProcesos) {
+                    $cantidad = $grupo->count();
+                    return [
+                        'nombre'     => $grupo->first()->nombreUsuario,
+                        'cargo'      => $grupo->first()->cargoUsuario,
+                        'cantidad'   => $cantidad,
+                        'porcentaje' => round(($cantidad / $totalProcesos) * 100),
+                        'ultimo'     => $grupo->first()->created_at->format('d/m/Y h:i A')
+                    ];
+                })->sortByDesc('cantidad');
+            }
 
             $historialEstados = CarSiaEstadoOperacion::with('estado')
                 ->where('id_car_sia_operaciones', $operacion->id)
@@ -173,6 +260,7 @@ class OperacionController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+            // --- LÓGICA DE BLADE TRASLADADA (Tab 4: Certificados y Hashes) ---
             $historialTipos = CarSiaTipoOperacion::with('tipo')
                 ->where('id_car_sia_operaciones', $operacion->id)
                 ->orWhere(function($q) use ($operacion) {
@@ -183,7 +271,9 @@ class OperacionController extends Controller
                 ->get()
                 ->map(function ($registro) use ($operacion) {
                     $registro->es_lote = is_null($registro->id_car_sia_operaciones);
-                    $lineaAsociada = $operacion->lineas->where('id_car_sia_tipos', $registro->id_car_sia_tipos)->first();
+
+                    // Eliminado el "clone" ya que first() puede devolver null
+                    $lineaAsociada = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos)->first();
 
                     $registro->nombre_user = 'Usuario / Sistema';
                     $registro->cargo_user = '';
@@ -195,6 +285,21 @@ class OperacionController extends Controller
                             $registro->cargo_user = ' / ' . $lineaAsociada->usuario->cargoRelation->nombre_cargo;
                         }
                     }
+
+                    // Eliminado el "clone" (where() ya devuelve una nueva instancia de Collection)
+                    $lineasParaEsteTipo = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos);
+
+                    $versionesDeEsteTipo = collect($lineasParaEsteTipo)->groupBy('hash_certificado')->map(function($grupo) {
+                        return collect($grupo)->first();
+                    })->sortByDesc('created_at');
+
+                    $hashActual = collect($versionesDeEsteTipo)->first()->hash_certificado ?? null;
+                    $lineasEditor = collect($lineasParaEsteTipo)->where('hash_certificado', $hashActual)->unique('id_factura');
+
+                    $registro->versionesDeEsteTipo = $versionesDeEsteTipo;
+                    $registro->hashActual = $hashActual;
+                    $registro->lineasEditor = $lineasEditor;
+                    $registro->lineasParaEsteTipo = $lineasParaEsteTipo;
 
                     return $registro;
                 });
@@ -208,12 +313,8 @@ class OperacionController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $estados = CarSiaEstado::all();
-            $tipos = CarSiaTipo::all();
-            $tiposAlerta = CarSiaTipoAlerta::all();
-
             return view('certificados.operaciones.show', compact(
-                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas'
+                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData'
             ));
 
         } catch (\Exception $e) {
@@ -241,6 +342,21 @@ class OperacionController extends Controller
                     'numero_bloque'          => $request->numero_bloque,
                     'id_car_sia_estados'     => $request->id_car_sia_estados,
                     'id_user'                => Auth::id(),
+                ]);
+
+                // Registro en Log de Auditoría
+                $estado = CarSiaEstado::find($request->id_car_sia_estados);
+                CarSiaOperacionLog::create([
+                    'numero_bloque' => $operacion->numero_bloque,
+                    'id_car_sia_origenes_evento' => 1,
+                    'id_car_sia_eventos_auditoria' => 1, // Ej: 1 = Cambio de Estado
+                    'id_user' => Auth::id(),
+                    'ip' => $request->ip(),
+                    'detalles_ejecucion' => [
+                        'accion' => 'Transición de estado individual',
+                        'nuevo_estado' => $estado ? $estado->nombre : 'Desconocido',
+                        'operacion_id' => $operacion->id
+                    ],
                 ]);
             });
 
@@ -275,6 +391,21 @@ class OperacionController extends Controller
 
                 // Llamamos al motor de reglas para que INSERTE las líneas nuevas con el nuevo Hash
                 $this->procesarLineasOperacion($operacion);
+
+                // Registro en Log de Auditoría
+                $tipo = CarSiaTipo::find($request->id_car_sia_tipos);
+                CarSiaOperacionLog::create([
+                    'numero_bloque' => $operacion->numero_bloque,
+                    'id_car_sia_origenes_evento' => 1,
+                    'id_car_sia_eventos_auditoria' => 2, // Ej: 2 = Generación de Certificado
+                    'id_user' => Auth::id(),
+                    'ip' => $request->ip(),
+                    'detalles_ejecucion' => [
+                        'accion' => 'Generación de certificado individual y nuevo hash',
+                        'tipo_certificado' => $tipo ? $tipo->nombre : 'Desconocido',
+                        'operacion_id' => $operacion->id
+                    ],
+                ]);
             });
 
             return redirect()->back()->with('success', 'Tipo asignado y nuevo certificado generado con éxito (Nuevo Hash de Auditoría).');
@@ -296,14 +427,31 @@ class OperacionController extends Controller
             'fecha_programada'        => 'required|date'
         ]);
 
-        CarSiaOperacionAlerta::create([
-            'id'                      => (string) Str::uuid(),
-            'id_car_sia_tipos_alerta' => $request->id_car_sia_tipos_alerta,
-            'numero_bloque'           => $request->numero_bloque,
-            'id_car_sia_operaciones'  => null,
-            'fecha_programada'        => $request->fecha_programada,
-            'id_user'                 => Auth::id(),
-        ]);
+        DB::transaction(function () use ($request) {
+            CarSiaOperacionAlerta::create([
+                'id'                      => (string) Str::uuid(),
+                'id_car_sia_tipos_alerta' => $request->id_car_sia_tipos_alerta,
+                'numero_bloque'           => $request->numero_bloque,
+                'id_car_sia_operaciones'  => null,
+                'fecha_programada'        => $request->fecha_programada,
+                'id_user'                 => Auth::id(),
+            ]);
+
+            // Registro en Log de Auditoría
+            $tipoAlerta = CarSiaTipoAlerta::find($request->id_car_sia_tipos_alerta);
+            CarSiaOperacionLog::create([
+                'numero_bloque' => $request->numero_bloque,
+                'id_car_sia_origenes_evento' => 1,
+                'id_car_sia_eventos_auditoria' => 3, // Ej: 3 = Programación Alerta
+                'id_user' => Auth::id(),
+                'ip' => $request->ip(),
+                'detalles_ejecucion' => [
+                    'accion' => 'Alerta programada para el lote completo',
+                    'tipo_alerta' => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
+                    'fecha_programada' => $request->fecha_programada
+                ],
+            ]);
+        });
 
         return back()->with('success', 'Alerta general programada para el lote.');
     }
@@ -331,6 +479,22 @@ class OperacionController extends Controller
                     'fecha_programada'        => $request->fecha_programada,
                     'procesado_en'            => null,
                     'id_user'                 => Auth::id(),
+                ]);
+
+                // Registro en Log de Auditoría
+                $tipoAlerta = CarSiaTipoAlerta::find($request->id_car_sia_tipos_alerta);
+                CarSiaOperacionLog::create([
+                    'numero_bloque' => $operacion->numero_bloque,
+                    'id_car_sia_origenes_evento' => 1,
+                    'id_car_sia_eventos_auditoria' => 3, // Ej: 3 = Programación Alerta
+                    'id_user' => Auth::id(),
+                    'ip' => $request->ip(),
+                    'detalles_ejecucion' => [
+                        'accion' => 'Alerta programada individualmente',
+                        'tipo_alerta' => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
+                        'fecha_programada' => $request->fecha_programada,
+                        'operacion_id' => $operacion->id
+                    ],
                 ]);
             });
 
@@ -524,6 +688,21 @@ class OperacionController extends Controller
                     $totalOperacionesProcesadas += $operacionesChunk->count();
                 });
 
+            // Registro en Log de Auditoría Masiva
+            $tipo = CarSiaTipo::find($id_car_sia_tipos);
+            CarSiaOperacionLog::create([
+                'numero_bloque' => $bloque,
+                'id_car_sia_origenes_evento' => 1,
+                'id_car_sia_eventos_auditoria' => 2, // 2 = Generación de Certificado
+                'id_user' => $id_user,
+                'ip' => $request->ip(),
+                'detalles_ejecucion' => [
+                    'accion' => 'Generación masiva de certificados y nuevos hashes',
+                    'tipo_certificado_global' => $tipo ? $tipo->nombre : 'Desconocido',
+                    'total_operaciones_afectadas' => $totalOperacionesProcesadas
+                ],
+            ]);
+
             DB::commit();
 
             return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente y asignado al tipo seleccionado ($totalOperacionesProcesadas operaciones).");
@@ -653,6 +832,21 @@ class OperacionController extends Controller
 
                     $nuevaLinea->save();
                 }
+
+                // Registro en Log de Auditoría por Edición Manual
+                CarSiaOperacionLog::create([
+                    'numero_bloque' => $operacion->numero_bloque,
+                    'id_car_sia_origenes_evento' => 1,
+                    'id_car_sia_eventos_auditoria' => 4, // Ej: 4 = Edición manual (Hoja de cálculo)
+                    'id_user' => Auth::id(),
+                    'ip' => $request->ip(),
+                    'detalles_ejecucion' => [
+                        'accion' => 'Modificación manual de parámetros en hoja de cálculo',
+                        'nuevo_hash_generado' => $auditoria['hash'],
+                        'cantidad_lineas_modificadas' => count($request->lineas),
+                        'operacion_id' => $operacion->id
+                    ],
+                ]);
             });
 
             return redirect()->back()->with('success', 'Cambios guardados. Se ha generado una nueva revisión (Nuevo Hash) conservando la versión anterior.');
@@ -661,5 +855,17 @@ class OperacionController extends Controller
             Log::error("Error actualizando líneas tipo Excel: " . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al intentar guardar los cambios.');
         }
+    }
+
+    public function generarInformeCliente($id)
+    {
+        // 1. Obtenemos la operación con sus relaciones (tercero y líneas)
+        $operacion = CarSiaOperacion::with(['tercero', 'lineas'])->findOrFail($id);
+
+        // 2. Cargamos la vista exacta usando la ruta que indicaste
+        $pdf = Pdf::loadView('certificados.operaciones.pdf', compact('operacion'));
+
+        // 3. Mostramos el PDF en el navegador (stream) o forzamos descarga (download)
+        return $pdf->stream('informe_cliente_' . $operacion->numero_radicado . '.pdf');
     }
 }
