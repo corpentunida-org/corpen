@@ -26,7 +26,7 @@ class CarSiaOperacion extends Model
 
     // 2. Campos asignables masivamente
     protected $fillable = [
-        'numero_radicado', 
+        'numero_radicado',
         'numero_bloque',   // INT
         'id_tercero',
     ];
@@ -47,7 +47,7 @@ class CarSiaOperacion extends Model
     // ==========================================
     // RELACIONES INDIVIDUALES (Operación específica)
     // ==========================================
-    
+
     public function estados()
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'id_car_sia_operaciones');
@@ -66,7 +66,7 @@ class CarSiaOperacion extends Model
     // ==========================================
     // RELACIONES MASIVAS (A nivel de Lote/Bloque)
     // ==========================================
-    
+
     public function estadosBloque()
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'numero_bloque', 'numero_bloque')
@@ -88,7 +88,7 @@ class CarSiaOperacion extends Model
     // ==========================================
     // OTRAS RELACIONES (Configuraciones y Detalle)
     // ==========================================
-    
+
     public function configuraciones()
     {
         return $this->hasMany(CarSiaOperacionConfig::class, 'id_car_sia_operaciones');
@@ -101,5 +101,13 @@ class CarSiaOperacion extends Model
     {
         // Esto asume que la llave primaria de esta tabla (car_sia_operaciones) es 'id'.
         return $this->hasMany(CarSiaOperacionLinea::class, 'id_car_sia_operaciones');
+    }
+    /**
+     * Relación: Esta operación pertenece a un bloque específico.
+     * Enlazamos la columna local 'numero_bloque' con la llave foránea 'numero_bloque' del modelo CarSiaBloque.
+     */
+    public function bloque()
+    {
+        return $this->belongsTo(CarSiaBloque::class, 'numero_bloque', 'numero_bloque');
     }
 }
