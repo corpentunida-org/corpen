@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sgrh;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sgrh\StoreEmpleadoRequest;
+use App\Http\Requests\Sgrh\UpdateEmpleadoRequest;
 use App\Models\Maestras\EstadoCivil;
 use App\Models\Maestras\MaeDepartamento;
 use App\Models\Maestras\MaeTerceros;
@@ -12,6 +13,7 @@ use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\Parentesco;
 use App\Models\Maestras\TipoDocumento;
 use App\Models\Sgrh\Arl;
+use App\Models\Sgrh\Cargo;
 use App\Models\Sgrh\Empleado;
 use App\Models\Sgrh\Eps;
 use App\Models\Sgrh\FondoPension;
@@ -81,6 +83,7 @@ class EmpleadoController extends Controller
             'listaEps' => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaArl' => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'cargos' => Cargo::with('area')->where('activo', true)->orderBy('nombre')->get(),
         ]);
     }
 
@@ -194,6 +197,44 @@ class EmpleadoController extends Controller
     }
 
     /**
+     * Formulario de edición de los datos propios del colaborador (no del tercero — eso vive
+     * en editTercero()). Sin paso de búsqueda: el tercero ya está identificado por cod_ter.
+     */
+    public function edit(Empleado $empleado)
+    {
+        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato');
+
+        return view('sgrh.empleado.edit', [
+            'empleado' => $empleado,
+            'listaEps' => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'listaArl' => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
+            'cargos' => Cargo::with('area')->where('activo', true)->orderBy('nombre')->get(),
+        ]);
+    }
+
+    /**
+     * Actualiza los datos propios del colaborador (cargo, salario asignado, EPS/ARL/fondo de
+     * pensión, contacto de emergencia, observaciones). El estado se cambia aparte, desde
+     * updateEstado().
+     */
+    public function update(UpdateEmpleadoRequest $request, Empleado $empleado)
+    {
+        $datos = $request->validated();
+
+        if (!empty($datos['contacto_emergencia_nombre'])) {
+            $datos['contacto_emergencia_nombre'] = mb_strtoupper($datos['contacto_emergencia_nombre'], 'UTF-8');
+        }
+
+        $empleado->update($datos);
+
+        $this->auditoria("Actualización de datos del colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
+
+        return redirect()->route('sgrh.empleado.index')
+            ->with('success', 'Colaborador actualizado correctamente.');
+    }
+
+    /**
      * Metadatos compartidos entre la vista de solo lectura y la de edición del tercero
      * (iconos, etiquetas legibles, agrupación en secciones). Viven en un solo lugar para que
      * las dos vistas no se desincronicen entre sí con el tiempo.
@@ -208,7 +249,7 @@ class EmpleadoController extends Controller
                 'dv' => 'hash', 'fec_expcc' => 'calendar', 'lugar_expcc' => 'map-pin', 'lugar_naci' => 'map-pin',
                 'digito_v' => 'hash', 'razon_soc' => 'briefcase', 'nom_conyug' => 'user-plus',
                 'id_conyuge' => 'hash', 'parentesco' => 'link', 'mail_conyu' => 'mail', 'num_hijos' => 'users',
-                'fec_falle' => 'activity', 'contacto' => 'phone', 'cont_tel' => 'phone', 'cargo' => 'briefcase',
+                'fec_falle' => 'activity', 'contacto' => 'phone', 'cont_tel' => 'phone',
                 'dir' => 'map-pin', 'ciu_comer' => 'map', 'ciudad' => 'map', 'dpto' => 'map', 'pais' => 'globe',
                 'tel' => 'phone', 'cel' => 'smartphone', 'email' => 'mail',
             ],
@@ -225,7 +266,7 @@ class EmpleadoController extends Controller
                 'id_conyuge' => 'Cédula del cónyuge', 'parentesco' => 'Parentesco',
                 'mail_conyu' => 'Correo del cónyuge', 'num_hijos' => 'Número de hijos',
                 'fec_falle' => 'Fecha de fallecimiento', 'contacto' => 'Contacto',
-                'cont_tel' => 'Teléfono de contacto', 'cargo' => 'Cargo', 'dir' => 'Dirección principal',
+                'cont_tel' => 'Teléfono de contacto', 'dir' => 'Dirección principal',
                 'dir1' => 'Dirección alterna 1', 'dir2' => 'Dirección alterna 2',
                 'dir_comer' => 'Dirección comercial', 'ciu_comer' => 'Ciudad comercial', 'ciudad' => 'Ciudad',
                 'dpto' => 'Departamento', 'mun' => 'Municipio', 'pais' => 'País',
@@ -247,9 +288,12 @@ class EmpleadoController extends Controller
                     // lugar_naci y lugar_expcc se movieron aquí desde Ubicación, junto a
                     // tdoc/dv/fec_expcc, según el orden pedido. Los campos del cónyuge se
                     // movieron a su propia sección "Información Cónyuge" (ver abajo).
+                    // 'cargo' (texto libre de MaeTerceros) ya no se muestra aquí: el cargo del
+                    // colaborador ahora se gestiona en Empleado::cargo_id, relacionado con el
+                    // catálogo sgrh_cargos (ver EmpleadoController::edit()/update()).
                     'estado', 'apl1', 'apl2', 'nom1', 'nom2', 'sexo', 'fec_nac', 'est_civil',
                     'tipo_ter', 'tip_pers', 'tdoc', 'dv', 'fec_expcc', 'lugar_expcc', 'lugar_naci',
-                    'fec_falle', 'contacto', 'cargo',
+                    'fec_falle', 'contacto',
                 ],
                 'Información Cónyuge' => [
                     'id_conyuge', 'nom_conyug', 'mail_conyu', 'parentesco', 'num_hijos', 'cont_tel',
@@ -392,7 +436,8 @@ class EmpleadoController extends Controller
             'fec_falle' => 'nullable|date',
             'contacto' => 'nullable|string',
             'cont_tel' => 'nullable|string|max:10',
-            'cargo' => 'nullable|string|max:100',
+            // 'cargo' (MaeTerceros, texto libre) ya no se valida/guarda desde aquí — se
+            // reemplazó por Empleado::cargo_id (ver terceroFieldMeta()).
 
             // Ubicación
             'dir' => 'nullable|string|max:255',

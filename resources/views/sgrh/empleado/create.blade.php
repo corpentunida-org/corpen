@@ -60,6 +60,34 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-briefcase me-1 text-primary"></i>Cargo
+                        </label>
+                        <select name="cargo_id" id="select_cargo" class="form-select">
+                            <option value="" data-salario="" @selected(old('cargo_id') === null)>Sin definir</option>
+                            @foreach ($cargos as $cargo)
+                                <option value="{{ $cargo->id }}" data-salario="{{ $cargo->salario_base }}"
+                                        @selected((string) old('cargo_id') === (string) $cargo->id)>
+                                    {{ $cargo->nombre }}{{ $cargo->area ? " ({$cargo->area->nombre})" : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario base (del cargo)
+                        </label>
+                        <input type="text" id="display_salario_base" class="form-control" readonly>
+                        <div class="form-text">Se toma automáticamente del cargo seleccionado.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario asignado
+                        </label>
+                        <input type="number" step="0.01" min="0" name="salario_asignado" class="form-control"
+                               value="{{ old('salario_asignado') }}" placeholder="Si difiere del salario base">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-droplet me-1 text-primary"></i>Tipo de sangre
                         </label>
                         <select name="tipo_sangre" class="form-select">
@@ -195,6 +223,24 @@
             activarOtraOpcion('select_eps', 'wrapper_otra_eps', 'input_otra_eps', 'eps');
             activarOtraOpcion('select_arl', 'wrapper_otra_arl', 'input_otra_arl', 'arl');
             activarOtraOpcion('select_fondo_pension', 'wrapper_otra_fondo_pension', 'input_otra_fondo_pension', 'fondo_pension');
+
+            // Salario base: solo informativo (no se envía), se lee del data-salario de la
+            // opción de cargo elegida. El salario_asignado sigue siendo 100% manual.
+            (function () {
+                const selectCargo = document.getElementById('select_cargo');
+                const displaySalarioBase = document.getElementById('display_salario_base');
+                if (!selectCargo || !displaySalarioBase) {
+                    return;
+                }
+
+                function actualizarSalarioBase() {
+                    const salario = selectCargo.options[selectCargo.selectedIndex].getAttribute('data-salario');
+                    displaySalarioBase.value = salario ? '$' + Number(salario).toLocaleString('es-CO') : '';
+                }
+
+                selectCargo.addEventListener('change', actualizarSalarioBase);
+                actualizarSalarioBase();
+            })();
 
             function buscarTerceros() {
                 const q = document.getElementById('buscarQ').value.trim();

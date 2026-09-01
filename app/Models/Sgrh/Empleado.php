@@ -14,6 +14,8 @@ class Empleado extends Model
 
     protected $fillable = [
         'cod_ter',
+        'cargo_id',
+        'salario_asignado',
         'fecha_ingreso',
         'estado',
         'fecha_retiro',
@@ -30,6 +32,7 @@ class Empleado extends Model
     protected $casts = [
         'fecha_ingreso' => 'date',
         'fecha_retiro' => 'date',
+        'salario_asignado' => 'decimal:2',
     ];
 
     /**
@@ -39,6 +42,29 @@ class Empleado extends Model
     public function tercero()
     {
         return $this->belongsTo(MaeTerceros::class, 'cod_ter', 'cod_ter');
+    }
+
+    /**
+     * Cargo del catálogo sgrh_cargos que ocupa este colaborador (opcional).
+     */
+    public function cargo()
+    {
+        return $this->belongsTo(Cargo::class, 'cargo_id');
+    }
+
+    public function contratos()
+    {
+        return $this->hasMany(Contrato::class, 'empleado_id')->latest('fecha_inicio');
+    }
+
+    /**
+     * Contrato vigente del colaborador (el más reciente con estado='Activo'), si tiene uno.
+     */
+    public function contratoActivo()
+    {
+        return $this->hasOne(Contrato::class, 'empleado_id')
+            ->where('estado', 'Activo')
+            ->latestOfMany('fecha_inicio');
     }
 
     public function getNombreCompletoAttribute()
