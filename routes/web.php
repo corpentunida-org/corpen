@@ -1439,6 +1439,9 @@ Route::middleware(['auth'])
         // NUEVA RUTA: Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 
+        // INFORME CLIENTE: Generación de reporte de comportamiento
+        Route::get('operaciones/{id}/informe-cliente', [OperacionController::class, 'generarInformeCliente'])->name('operaciones.informe_cliente');
+
         // CERTIFICADOS:
         Route::get('operaciones/{id}/generar-pdf', [CertificadoController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
         Route::post('operaciones/generar-masivo', [CertificadoController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
