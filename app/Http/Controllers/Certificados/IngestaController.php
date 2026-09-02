@@ -142,7 +142,7 @@ class IngestaController extends Controller
 
     /**
      * =========================================================================
-     * 2. CARGAR EXCEL (ASIGNACIÓN DE NÚMERO DE BLOQUE BLINDADA)
+     * 2. CARGAR EXCEL (ASIGNACIÓN DE NÚMERO DE BLOQUE BLINDADA) - DESAVILITADA
      * =========================================================================
      */
     /* public function cargarExcel(Request $request)
@@ -255,44 +255,56 @@ class IngestaController extends Controller
             return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
         }
     } */
+    /**
+     * =========================================================================
+     * 2. CARGAR EXCEL (ASIGNACIÓN BLINDADA Y PROCESAMIENTO EN COLA)
+     * =========================================================================
+     */
     public function cargarExcel(Request $request)
     {
+        // 1. Validar parámetros de entrada
         $request->validate([
             'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480',
             'id_periodo'    => 'required|integer|exists:car_sia_periodos,id'
         ]);
 
         try {
-            // 1. Guardar el archivo físicamente en storage temporal
-            // Se guardará en storage/app/ingestas_temporales/
+            // 2. Almacenar el archivo físicamente para la lectura en segundo plano
             $rutaArchivo = $request->file('archivo_excel')->store('ingestas_temporales');
 
-            // 2. Calcular el número de bloque
-            $maxStaging = CarSiaApi::max('numero_bloque') ?? 0;
-            $maxOperacion = CarSiaOperacion::max('numero_bloque') ?? 0;
-            $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
-            $nuevoBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
+            // 3. Transacción para evitar Race Conditions (colisiones en alta concurrencia)
+            $nuevoBloque = DB::transaction(function () use ($request) {
+                $maxStaging    = CarSiaApi::max('numero_bloque') ?? 0;
+                $maxOperacion  = CarSiaOperacion::max('numero_bloque') ?? 0;
+                $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
 
-            // 3. Crear el bloque padre inmediatamente
-            CarSiaBloque::create([
-                'numero_bloque' => $nuevoBloque,
-                'id_periodo'    => $request->id_periodo,
-                'descripcion'   => 'Lote de carga masiva #' . $nuevoBloque,
-                'estado'        => 'PENDIENTE'
-            ]);
+                $siguienteBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
 
-            // 4. Encolar el procesamiento del Excel (Esto dispara la lectura por chunks en background)
-            Excel::queueImport(new IngestaExcelImport($nuevoBloque), $rutaArchivo);
+                // Crear el bloque maestro de inmediato
+                CarSiaBloque::create([
+                    'numero_bloque' => $siguienteBloque,
+                    'id_periodo'    => $request->id_periodo,
+                    'descripcion'   => 'Lote de carga masiva #' . $siguienteBloque,
+                    'estado'        => 'PENDIENTE' // Cambiará a PROCESADO o ERROR vía eventos
+                ]);
 
-            // 5. Retornar vista instantáneamente sin esperar que termine el Excel
+                return $siguienteBloque;
+            });
+
+            // 4. Encolar la lectura por Chunks en la tabla jobs
+            // Pasa tanto la variable del bloque como la ruta para los eventos de AfterImport
+            Excel::queueImport(new IngestaExcelImport($nuevoBloque, $rutaArchivo), $rutaArchivo);
+
+            // 5. Retornar vista al usuario en milisegundos sin esperar la lectura
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                            ->with('success', "Archivo recibido. Los registros del Lote #{$nuevoBloque} se están procesando en segundo plano. Refresca la página en unos momentos.");
+                             ->with('success', "Archivo recibido. Los registros del Lote #{$nuevoBloque} se están procesando en segundo plano.");
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Ingesta - Error encolando Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fallo técnico preparando el archivo: ' . $e->getMessage());
+            Log::error('CERTIFICADOS Ingesta - Error encolando masivo Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Fallo técnico preparando el Excel: ' . $e->getMessage());
         }
     }
+
     /**
      * =========================================================================
      * 3. MOTOR DE INYECCIÓN (ALTO RENDIMIENTO - OPTIMIZADO POR BLOQUE)
