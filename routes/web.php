@@ -1431,6 +1431,9 @@ Route::middleware(['auth'])
         // Programar alerta a nivel de Lote/Bloque (sin {id})
         Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
 
+        // Proceso de creación automática de terceros faltantes
+        Route::post('ingesta/crear-terceros', [IngestaController::class, 'crearTercerosFaltantes'])->name('ingesta.crear_terceros');
+
         // Detalle y trazabilidad de una operación específica (Líneas, Estados, Alertas)
         Route::get('operaciones/{id}', [OperacionController::class, 'show'])->name('operaciones.show');
 
@@ -1508,8 +1511,11 @@ Route::middleware(['auth'])
         // Proceso de Inyección Masiva (Motor ETL)
         Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');
 
-        // Anulación Manual de un lote corrupto
-        Route::put('ingesta/{id}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular');
+        // Anulación INDIVIDUAL de un registro (Mantiene el nombre que ya usas en la vista)
+        Route::put('ingesta/registro/{id}/anular', [IngestaController::class, 'anularRegistro'])->name('ingesta.anular');
+
+        // Anulación MASIVA de todo un lote
+        Route::put('ingesta/bloque/{bloque}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular_bloque');
 
         // ---------------------------------------------------
         // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA
