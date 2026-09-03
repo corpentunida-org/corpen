@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Maatwebsite\Excel\Facades\Excel;
 
 // AUDITORIA
 use App\Models\Certificados\CarSiaOperacionLog;
@@ -29,7 +28,7 @@ use App\Models\Creditos\LineaCredito;
 use App\Models\Maestras\MaeTerceros;
 
 //INGESTA
-use App\Imports\Certificados\IngestaExcelImport;
+use App\Jobs\Certificados\ProcesarIngestaExcel;
 
 class IngestaController extends Controller
 {
@@ -140,124 +139,9 @@ class IngestaController extends Controller
     }
 
 
-    /**
+/**
      * =========================================================================
-     * 2. CARGAR EXCEL (ASIGNACIÓN DE NÚMERO DE BLOQUE BLINDADA) - DESAVILITADA
-     * =========================================================================
-     */
-    /* public function cargarExcel(Request $request)
-    {
-        // 1. Validar que el archivo y el periodo sean enviados
-        $request->validate([
-            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480',
-            'id_periodo'    => 'required|integer|exists:car_sia_periodos,id'
-        ]);
-
-        try {
-            ini_set('max_execution_time', 300);
-            ini_set('memory_limit', '512M');
-
-            $datosExcel = Excel::toArray(new \stdClass(), $request->file('archivo_excel'));
-            $hoja = $datosExcel[0];
-
-            if (count($hoja) < 2) {
-                return redirect()->back()->with('error', 'El archivo está vacío o no tiene registros.');
-            }
-
-            $encabezados = array_map(function($columna) {
-                return trim(strtolower(preg_replace('/\s+/', ' ', $columna)));
-            }, $hoja[0]);
-
-            array_shift($hoja); // Quitar encabezados
-
-            $mapaColumnas = [
-                'id factura'     => 'id_factura',
-                'tercero'        => 'tercero',
-                'nombre tercero' => 'nombre_tercero',
-                'valor'          => 'valor',
-                'fecha venc.'    => 'fecha_venci',
-                '# documento'    => 'numero_documento',
-                'año'            => 'anio',
-                'mes'            => 'mes',
-                'cuenta'         => 'cuenta',
-                'banco'          => 'banco'
-            ];
-
-            $ahora = now()->format('Y-m-d H:i:s');
-
-            // 2. SOLUCIÓN CRÍTICA: Bloque Máximo Global (Añadimos tu nueva tabla a la verificación)
-            $maxStaging = CarSiaApi::max('numero_bloque') ?? 0;
-            $maxOperacion = CarSiaOperacion::max('numero_bloque') ?? 0;
-            $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
-            $nuevoBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
-
-            DB::transaction(function () use ($hoja, $encabezados, $mapaColumnas, $ahora, $nuevoBloque, $request) {
-
-                // 3. INTEGRACIÓN DEL MODELO: Registramos el bloque y lo asociamos al periodo
-                CarSiaBloque::create([
-                    'numero_bloque' => $nuevoBloque,
-                    'id_periodo'    => $request->id_periodo,
-                    'descripcion'   => 'Lote de carga masiva #' . $nuevoBloque,
-                    'estado'        => 'PENDIENTE'
-                ]);
-
-                $loteInsercionMasiva = [];
-
-                foreach ($hoja as $fila) {
-                    if (empty(array_filter($fila, function($value) { return $value !== null && $value !== ''; }))) {
-                        continue;
-                    }
-
-                    $datosInsertar = [
-                        'estado'        => 'PENDIENTE',
-                        'fecha_ad'      => $ahora,
-                        'created_at'    => $ahora,
-                        'updated_at'    => $ahora,
-                        'numero_bloque' => $nuevoBloque,
-                    ];
-
-                    foreach ($mapaColumnas as $columnaExcel => $campoBD) {
-                        $indiceColumna = array_search($columnaExcel, $encabezados);
-
-                        if ($indiceColumna !== false && array_key_exists($indiceColumna, $fila)) {
-                            $valorCelda = $fila[$indiceColumna];
-
-                            if ($campoBD === 'valor' && $valorCelda !== null) {
-                                $valorCelda = preg_replace('/[^0-9.-]/', '', (string)$valorCelda);
-                                $valorCelda = $valorCelda === '' ? 0 : (float)$valorCelda;
-                            }
-
-                            if ($campoBD === 'fecha_venci' && is_numeric($valorCelda)) {
-                                try {
-                                    $valorCelda = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valorCelda)->format('Y-m-d');
-                                } catch (\Exception $e) {
-                                    $valorCelda = null;
-                                }
-                            }
-
-                            $datosInsertar[$campoBD] = $valorCelda;
-                        }
-                    }
-                    $loteInsercionMasiva[] = $datosInsertar;
-                }
-
-                $bloques = array_chunk($loteInsercionMasiva, 1000);
-                foreach ($bloques as $bloque) {
-                    CarSiaApi::insert($bloque);
-                }
-            });
-
-            return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                             ->with('success', "Archivo cargado exitosamente. Asignado al Lote #{$nuevoBloque}");
-
-        } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Ingesta - Error masivo Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
-        }
-    } */
-    /**
-     * =========================================================================
-     * 2. CARGAR EXCEL (ASIGNACIÓN BLINDADA Y PROCESAMIENTO EN COLA)
+    * 2. CARGAR EXCEL (PROCESAMIENTO EN SEGUNDO PLANO)
      * =========================================================================
      */
     public function cargarExcel(Request $request)
@@ -269,10 +153,7 @@ class IngestaController extends Controller
         ]);
 
         try {
-            // 2. Almacenar el archivo físicamente para la lectura en segundo plano
-            $rutaArchivo = $request->file('archivo_excel')->store('ingestas_temporales');
-
-            // 3. Transacción para evitar Race Conditions (colisiones en alta concurrencia)
+            // 2. Transacción para el número de bloque (previene duplicados si 2 suben al tiempo)
             $nuevoBloque = DB::transaction(function () use ($request) {
                 $maxStaging    = CarSiaApi::max('numero_bloque') ?? 0;
                 $maxOperacion  = CarSiaOperacion::max('numero_bloque') ?? 0;
@@ -280,28 +161,31 @@ class IngestaController extends Controller
 
                 $siguienteBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
 
-                // Crear el bloque maestro de inmediato
                 CarSiaBloque::create([
                     'numero_bloque' => $siguienteBloque,
                     'id_periodo'    => $request->id_periodo,
                     'descripcion'   => 'Lote de carga masiva #' . $siguienteBloque,
-                    'estado'        => 'PENDIENTE' // Cambiará a PROCESADO o ERROR vía eventos
+                    'estado'        => 'PROCESANDO'
                 ]);
 
                 return $siguienteBloque;
             });
 
-            // 4. Encolar la lectura por Chunks en la tabla jobs
-            // Pasa tanto la variable del bloque como la ruta para los eventos de AfterImport
-            Excel::queueImport(new IngestaExcelImport($nuevoBloque, $rutaArchivo), $rutaArchivo);
+            // 3. Guardar el archivo para que lo procese el worker fuera de la petición web
+            $rutaArchivo = $request->file('archivo_excel')->store('ingesta');
+            ProcesarIngestaExcel::dispatch($nuevoBloque, $rutaArchivo);
 
-            // 5. Retornar vista al usuario en milisegundos sin esperar la lectura
+            // 4. Responder inmediatamente; el lote queda en estado PROCESANDO
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                             ->with('success', "Archivo recibido. Los registros del Lote #{$nuevoBloque} se están procesando en segundo plano.");
+                             ->with('success', "El archivo fue recibido. El Lote #{$nuevoBloque} se está procesando en segundo plano.");
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Ingesta - Error encolando masivo Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fallo técnico preparando el Excel: ' . $e->getMessage());
+            // Reversión visual: si algo estalla a mitad de lectura, marcamos el bloque con error
+            if (isset($nuevoBloque)) {
+                CarSiaBloque::where('numero_bloque', $nuevoBloque)->update(['estado' => 'ERROR']);
+            }
+            Log::error('CERTIFICADOS Ingesta - Error al encolar Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo iniciar el procesamiento del Excel: ' . $e->getMessage());
         }
     }
 
