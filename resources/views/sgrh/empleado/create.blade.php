@@ -42,51 +42,15 @@
                 @csrf
                 <input type="hidden" name="cod_ter" id="input_cod_ter">
 
+                <div class="alert alert-info small mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    La fecha de ingreso, el cargo y el salario se registran con el contrato — una vez guardado el
+                    colaborador, usa "Registrar contrato" en su ficha para dejarlos definidos. El colaborador nace
+                    "Inactivo" y pasa a "Activo" automáticamente al registrarle su primer contrato.
+                </div>
+
                 <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-calendar me-1 text-primary"></i>Fecha de ingreso
-                        </label>
-                        <input type="date" name="fecha_ingreso" class="form-control" value="{{ old('fecha_ingreso') }}">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-activity me-1 text-primary"></i>Estado
-                        </label>
-                        <select name="estado" class="form-select">
-                            <option value="activo" selected>Activo</option>
-                            <option value="inactivo">Inactivo</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-briefcase me-1 text-primary"></i>Cargo
-                        </label>
-                        <select name="cargo_id" id="select_cargo" class="form-select">
-                            <option value="" data-salario="" @selected(old('cargo_id') === null)>Sin definir</option>
-                            @foreach ($cargos as $cargo)
-                                <option value="{{ $cargo->id }}" data-salario="{{ $cargo->salario_base }}"
-                                        @selected((string) old('cargo_id') === (string) $cargo->id)>
-                                    {{ $cargo->nombre }}{{ $cargo->area ? " ({$cargo->area->nombre})" : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario base (del cargo)
-                        </label>
-                        <input type="text" id="display_salario_base" class="form-control" readonly>
-                        <div class="form-text">Se toma automáticamente del cargo seleccionado.</div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario asignado
-                        </label>
-                        <input type="number" step="0.01" min="0" name="salario_asignado" class="form-control"
-                               value="{{ old('salario_asignado') }}" placeholder="Si difiere del salario base">
-                    </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-droplet me-1 text-primary"></i>Tipo de sangre
                         </label>
@@ -96,6 +60,49 @@
                                 <option value="{{ $grupo }}" @selected(old('tipo_sangre') === $grupo)>{{ $grupo }}</option>
                             @endforeach
                         </select>
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="my-1">
+                        <p class="text-muted small fw-bold text-uppercase mb-0" style="letter-spacing: .04em;">Contacto corporativo</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-phone me-1 text-primary"></i>Teléfono
+                        </label>
+                        <input type="text" name="telefono_corporativo" class="form-control" value="{{ old('telefono_corporativo') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-smartphone me-1 text-primary"></i>Celular
+                        </label>
+                        <input type="text" name="celular_corporativo" class="form-control" value="{{ old('celular_corporativo') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-hash me-1 text-primary"></i>Ext.
+                        </label>
+                        <input type="text" name="ext_corporativo" class="form-control" value="{{ old('ext_corporativo') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-mail me-1 text-primary"></i>Correo corporativo
+                        </label>
+                        <input type="email" name="correo_corporativo" class="form-control @error('correo_corporativo') is-invalid @enderror"
+                               value="{{ old('correo_corporativo') }}">
+                        @error('correo_corporativo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-mail me-1 text-primary"></i>Gmail corporativo
+                        </label>
+                        <input type="email" name="gmail_corporativo" class="form-control @error('gmail_corporativo') is-invalid @enderror"
+                               value="{{ old('gmail_corporativo') }}">
+                        @error('gmail_corporativo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="col-md-4">
@@ -142,6 +149,23 @@
                         <div id="wrapper_otra_fondo_pension" class="mt-2" style="display: none;">
                             <input type="text" id="input_otra_fondo_pension" class="form-control" placeholder="Escribe el nombre del fondo">
                         </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-briefcase me-1 text-primary"></i>Fondo de pensión 2
+                        </label>
+                        <select id="select_fondo_pension_2" name="fondo_pension_2" class="form-select">
+                            <option value="">Sin definir</option>
+                            <option value="No aplica" @selected(old('fondo_pension_2') === 'No aplica')>No aplica</option>
+                            @foreach ($listaFondosPension as $nombre)
+                                <option value="{{ $nombre }}" @selected(old('fondo_pension_2') === $nombre)>{{ $nombre }}</option>
+                            @endforeach
+                            <option value="__otra__">Otra (especificar)</option>
+                        </select>
+                        <div id="wrapper_otra_fondo_pension_2" class="mt-2" style="display: none;">
+                            <input type="text" id="input_otra_fondo_pension_2" class="form-control" placeholder="Escribe el nombre del fondo">
+                        </div>
+                        <div class="form-text">Preparación para la reforma pensional (pilar complementario).</div>
                     </div>
 
                     <div class="col-md-6">
@@ -223,24 +247,7 @@
             activarOtraOpcion('select_eps', 'wrapper_otra_eps', 'input_otra_eps', 'eps');
             activarOtraOpcion('select_arl', 'wrapper_otra_arl', 'input_otra_arl', 'arl');
             activarOtraOpcion('select_fondo_pension', 'wrapper_otra_fondo_pension', 'input_otra_fondo_pension', 'fondo_pension');
-
-            // Salario base: solo informativo (no se envía), se lee del data-salario de la
-            // opción de cargo elegida. El salario_asignado sigue siendo 100% manual.
-            (function () {
-                const selectCargo = document.getElementById('select_cargo');
-                const displaySalarioBase = document.getElementById('display_salario_base');
-                if (!selectCargo || !displaySalarioBase) {
-                    return;
-                }
-
-                function actualizarSalarioBase() {
-                    const salario = selectCargo.options[selectCargo.selectedIndex].getAttribute('data-salario');
-                    displaySalarioBase.value = salario ? '$' + Number(salario).toLocaleString('es-CO') : '';
-                }
-
-                selectCargo.addEventListener('change', actualizarSalarioBase);
-                actualizarSalarioBase();
-            })();
+            activarOtraOpcion('select_fondo_pension_2', 'wrapper_otra_fondo_pension_2', 'input_otra_fondo_pension_2', 'fondo_pension_2');
 
             function buscarTerceros() {
                 const q = document.getElementById('buscarQ').value.trim();

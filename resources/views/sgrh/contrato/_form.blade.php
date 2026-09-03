@@ -29,7 +29,7 @@
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
             <i class="feather-file-text me-1 text-primary"></i>Tipo de contrato
         </label>
-        <select name="tipo_contrato_id" class="form-select @error('tipo_contrato_id') is-invalid @enderror" required>
+        <select name="tipo_contrato_id" id="select_tipo_contrato" class="form-select @error('tipo_contrato_id') is-invalid @enderror" required>
             <option value="">Selecciona un tipo</option>
             @foreach ($tiposContrato as $tipo)
                 <option value="{{ $tipo->id }}"
@@ -47,8 +47,8 @@
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
             <i class="feather-briefcase me-1 text-primary"></i>Cargo
         </label>
-        <select name="cargo_id" class="form-select @error('cargo_id') is-invalid @enderror">
-            <option value="">Sin definir</option>
+        <select name="cargo_id" class="form-select @error('cargo_id') is-invalid @enderror" required>
+            <option value="">Selecciona un cargo</option>
             @foreach ($cargos as $cargo)
                 <option value="{{ $cargo->id }}"
                         @selected((string) old('cargo_id', $contrato->cargo_id ?? $cargoIdPrefill ?? '') === (string) $cargo->id)>
@@ -88,9 +88,9 @@
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
             <i class="feather-calendar me-1 text-primary"></i>Fecha de vencimiento
         </label>
-        <input type="date" name="fecha_vencimiento" class="form-control @error('fecha_vencimiento') is-invalid @enderror"
+        <input type="date" name="fecha_vencimiento" id="input_fecha_vencimiento" class="form-control @error('fecha_vencimiento') is-invalid @enderror"
                value="{{ old('fecha_vencimiento', optional($contrato?->fecha_vencimiento)->format('Y-m-d') ?? $fechaVencimientoPrefill ?? null) }}">
-        <div class="form-text">Vacío = contrato indefinido.</div>
+        <div class="form-text">Obligatoria salvo para contratos a término indefinido.</div>
         @error('fecha_vencimiento')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -112,27 +112,26 @@
             <i class="feather-dollar-sign me-1 text-primary"></i>Salario del contrato
         </label>
         <input type="number" step="0.01" min="0" name="salario_contrato" class="form-control @error('salario_contrato') is-invalid @enderror"
-               value="{{ old('salario_contrato', $contrato->salario_contrato ?? '') }}">
+               value="{{ old('salario_contrato', $contrato->salario_contrato ?? '') }}" required>
         @error('salario_contrato')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
     <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-paperclip me-1 text-primary"></i>PDF firmado del contrato
+            <i class="feather-paperclip me-1 text-primary"></i>PDF firmado del contrato (enlace)
         </label>
-        @if ($contrato?->documento_path)
-            <div class="mb-2">
-                <a href="{{ route('sgrh.contrato.documento.ver', $contrato) }}" target="_blank" class="small">
-                    <i class="bi bi-file-earmark-pdf"></i> Ver documento actual
-                </a>
-            </div>
-        @endif
-        <input type="file" name="documento" accept="application/pdf" class="form-control @error('documento') is-invalid @enderror">
-        <div class="form-text">Solo PDF, máx. 5 MB. @if ($contrato?->documento_path) Subir uno nuevo reemplaza el actual. @endif</div>
-        @error('documento')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+        <div class="input-group">
+            <input type="url" name="documento_url" id="input_documento_url" class="form-control @error('documento_url') is-invalid @enderror"
+                   value="{{ old('documento_url', $contrato->documento_url ?? '') }}" placeholder="https://...">
+            <button type="button" id="btn_ver_documento" class="btn btn-outline-secondary" @disabled(empty($contrato->documento_url ?? old('documento_url')))>
+                <i class="bi bi-box-arrow-up-right"></i> Ver
+            </button>
+            @error('documento_url')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="form-text">Enlace al documento en el gestor documental — no se sube el archivo aquí.</div>
     </div>
 
     <div class="col-12">
@@ -145,3 +144,26 @@
         @enderror
     </div>
 </div>
+
+<script>
+    // Fecha de vencimiento: obligatoria salvo para contratos a término indefinido — se ajusta
+    // en vivo según el tipo seleccionado, sin necesidad de recargar el formulario.
+    (function () {
+        const selectTipo = document.getElementById('select_tipo_contrato');
+        const inputVencimiento = document.getElementById('input_fecha_vencimiento');
+        if (!selectTipo || !inputVencimiento) {
+            return;
+        }
+        function actualizarRequerido() {
+            const opcion = selectTipo.options[selectTipo.selectedIndex];
+            const esIndefinido = opcion && opcion.text.trim() === 'Indefinido';
+            if (esIndefinido) {
+                inputVencimiento.removeAttribute('required');
+            } else {
+                inputVencimiento.setAttribute('required', 'required');
+            }
+        }
+        selectTipo.addEventListener('change', actualizarRequerido);
+        actualizarRequerido();
+    })();
+</script>

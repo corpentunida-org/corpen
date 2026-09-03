@@ -100,6 +100,31 @@
             background-color: #f8f9fa !important;
             cursor: pointer;
         }
+
+        /* Fix: .navbar-content (menú lateral) tiene altura fija en theme.min.css sin
+           overflow en CSS — el scroll depende 100% de PerfectScrollbar, que se inicializa
+           una sola vez al cargar la página y nunca se recalcula (ni al redimensionar la
+           ventana, ni cuando el menú crece con más módulos). Con más ítems que espacio
+           visible, los últimos quedaban inalcanzables. overflow-y:auto da scroll nativo
+           como respaldo garantizado, sin depender del estado del plugin. !important porque
+           PerfectScrollbar añade su propia clase .ps con overflow:hidden!important una vez
+           inicializado, que si no se sobreescribe también con !important gana igual.
+        */
+        .nxl-navigation .navbar-content {
+            overflow-y: auto !important;
+            /* Aire extra al final de la lista: el tema solo reserva 10px de padding-bottom
+               (padding:10px 0), así que el último ítem quedaba pegado justo al borde. */
+            padding-bottom: 50px !important;
+        }
+
+        .nxl-navigation .navbar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .nxl-navigation .navbar-content::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
     </style>
 </head>
 

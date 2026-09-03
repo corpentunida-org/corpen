@@ -30,12 +30,14 @@
                 Cargos
             </a>
         </li>
-        <li class="nxl-item {{ request()->routeIs('sgrh.contrato.*') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('sgrh.contrato.index') }}">
-                <span class="nxl-micon"><i class="bi bi-file-earmark-text"></i></span>
-                Contratos
-            </a>
-        </li>
+        @can('sgrh.contrato.index')
+            <li class="nxl-item {{ request()->routeIs('sgrh.contrato.*') ? 'active' : '' }}">
+                <a class="nxl-link" href="{{ route('sgrh.contrato.index') }}">
+                    <span class="nxl-micon"><i class="bi bi-file-earmark-text"></i></span>
+                    Contratos
+                </a>
+            </li>
+        @endcan
         <li class="nxl-item {{ request()->routeIs('sgrh.tipo-contrato.*') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('sgrh.tipo-contrato.index') }}">
                 <span class="nxl-micon"><i class="bi bi-tags"></i></span>
