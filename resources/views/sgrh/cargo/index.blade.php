@@ -50,7 +50,6 @@
                         <th class="ps-4">Nombre</th>
                         <th>Área</th>
                         <th>Jornada</th>
-                        <th class="text-end">Salario base</th>
                         <th class="text-center">Colaboradores</th>
                         <th class="text-center">Estado</th>
                         <th class="text-end pe-4">Acciones</th>
@@ -62,7 +61,6 @@
                             <td class="ps-4 py-3 fw-bold">{{ $cargo->nombre }}</td>
                             <td class="text-muted small">{{ $cargo->area->nombre ?? '—' }}</td>
                             <td class="text-muted small">{{ $cargo->jornada ?: '—' }}</td>
-                            <td class="text-end">{{ $cargo->salario_base ? '$' . number_format($cargo->salario_base, 0, ',', '.') : '—' }}</td>
                             <td class="text-center">{{ $cargo->empleados_count }}</td>
                             <td class="text-center">
                                 @if ($cargo->activo)
@@ -98,7 +96,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-5 text-center text-muted">No hay cargos registrados todavía.</td>
+                            <td colspan="6" class="py-5 text-center text-muted">No hay cargos registrados todavía.</td>
                         </tr>
                     @endforelse
                 </tbody>

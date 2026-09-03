@@ -88,9 +88,13 @@ class SegNovedadesController extends Controller
 
     public function store(Request $request)
     {
-        /*$request->validate([
-            'formulario_nov' => 'required|mimes:pdf|max:2048',
-        ]);*/
+        // Reactivada (estaba comentada, sin ninguna restricción de tipo/tamaño de archivo).
+        // 'nullable' en vez del 'required' original: el código de abajo ya trata el archivo
+        // como opcional (solo lo procesa si hasFile('formulario_nov')), así que exigirlo
+        // rompería el alta de novedades sin formulario adjunto.
+        $request->validate([
+            'formulario_nov' => 'nullable|mimes:pdf|max:2048',
+        ]);
 
         // 2. MANEJO DEL ARCHIVO
         $formulario = null;
@@ -113,7 +117,8 @@ class SegNovedadesController extends Controller
         ]);
         // 5. GUARDAR ARCHIVO EN S3 SI EXISTE
         if ($formulario) {
-            $ruta = Storage::disk('s3')->put('corpentunida/seguros_vida/' . $novedad->id, $formulario);
+            // store() (no put()): put() devuelve un booleano, no la ruta real del archivo.
+            $ruta = $formulario->store('corpentunida/seguros_vida/' . $novedad->id, 's3');
             $novedad->update(['formulario' => $ruta]);
         }
         // 6. REGISTRAR EL CAMBIO DE ESTADO (AUDITORÍA INTERNA)
@@ -323,13 +328,15 @@ class SegNovedadesController extends Controller
     public function destroy(Request $request, $id)
     {
         //registrar una novedad de retiro
-        /*$request->validate([
-            'formulario_nov' => 'required|mimes:pdf|max:2048',
-        ]);*/
-        //dd($request->all());
+        // Reactivada por el mismo motivo que en store(): 'nullable' porque el archivo se sigue
+        // tratando como opcional más abajo.
+        $request->validate([
+            'formulario_nov' => 'nullable|mimes:pdf|max:2048',
+        ]);
         $formulario = null;
         if ($request->hasFile('formulario_nov')) {
-            $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/' . $id, $request->file('formulario_nov'));
+            // store() (no put()): put() devuelve un booleano, no la ruta real del archivo.
+            $formulario = $request->file('formulario_nov')->store('corpentunida/seguros_vida/novedades/' . $id, 's3');
         }
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza,

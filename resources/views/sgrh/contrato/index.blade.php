@@ -10,9 +10,11 @@
             <a href="{{ route('sgrh.contrato.alertas') }}" class="btn btn-outline-danger me-2">
                 <i class="bi bi-exclamation-triangle"></i> Próximos a vencer
             </a>
-            <a href="{{ route('sgrh.contrato.create') }}" class="btn btn-primary px-4">
-                <i class="bi bi-plus-circle"></i> Registrar contrato
-            </a>
+            @can('sgrh.contrato.store')
+                <a href="{{ route('sgrh.contrato.create') }}" class="btn btn-primary px-4">
+                    <i class="bi bi-plus-circle"></i> Registrar contrato
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -102,30 +104,44 @@
                                         <i class="feather feather-more-horizontal"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item" href="{{ route('sgrh.contrato.edit', $contrato) }}">
-                                                <i class="feather-edit-3 me-2"></i> Editar
-                                            </a>
-                                        </li>
-                                        @if ($contrato->estado === 'Activo')
+                                        @can('sgrh.contrato.update')
                                             <li>
-                                                <form action="{{ route('sgrh.contrato.renovar', $contrato) }}" method="POST"
-                                                      onsubmit="return confirm('¿Cerrar este contrato y registrar uno nuevo?');">
-                                                    @csrf
-                                                    @method('PUT')
-                                                    <button type="submit" class="dropdown-item">
-                                                        <i class="feather-refresh-cw me-2"></i> Renovar
-                                                    </button>
-                                                </form>
+                                                <a class="dropdown-item" href="{{ route('sgrh.contrato.edit', $contrato) }}">
+                                                    <i class="feather-edit-3 me-2"></i> Editar
+                                                </a>
                                             </li>
-                                        @endif
-                                        @if ($contrato->documento_path)
+                                            @if ($contrato->estado === 'Activo')
+                                                <li>
+                                                    <form action="{{ route('sgrh.contrato.renovar', $contrato) }}" method="POST"
+                                                          onsubmit="return confirm('¿Cerrar este contrato y registrar uno nuevo?');">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <button type="submit" class="dropdown-item">
+                                                            <i class="feather-refresh-cw me-2"></i> Renovar
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            @endif
+                                        @endcan
+                                        @if ($contrato->documento_url)
                                             <li>
-                                                <a class="dropdown-item" href="{{ route('sgrh.contrato.documento.ver', $contrato) }}" target="_blank">
-                                                    <i class="bi bi-file-earmark-pdf me-2"></i> Ver PDF
+                                                <a class="dropdown-item" href="{{ $contrato->documento_url }}" target="_blank" rel="noopener">
+                                                    <i class="bi bi-file-earmark-pdf me-2"></i> Ver documento
                                                 </a>
                                             </li>
                                         @endif
+                                        @can('sgrh.contrato.destroy')
+                                            <li>
+                                                <form action="{{ route('sgrh.contrato.destroy', $contrato) }}" method="POST"
+                                                      onsubmit="return confirm('¿Eliminar este contrato de forma permanente, junto con su historial de modificaciones? Esta acción no se puede deshacer.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger">
+                                                        <i class="bi bi-trash3 me-2"></i> Eliminar
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        @endcan
                                     </ul>
                                 </div>
                             </td>

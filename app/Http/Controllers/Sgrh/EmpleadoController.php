@@ -13,7 +13,6 @@ use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\Parentesco;
 use App\Models\Maestras\TipoDocumento;
 use App\Models\Sgrh\Arl;
-use App\Models\Sgrh\Cargo;
 use App\Models\Sgrh\Empleado;
 use App\Models\Sgrh\Eps;
 use App\Models\Sgrh\FondoPension;
@@ -83,7 +82,6 @@ class EmpleadoController extends Controller
             'listaEps' => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaArl' => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
-            'cargos' => Cargo::with('area')->where('activo', true)->orderBy('nombre')->get(),
         ]);
     }
 
@@ -176,6 +174,11 @@ class EmpleadoController extends Controller
             $datos['contacto_emergencia_nombre'] = mb_strtoupper($datos['contacto_emergencia_nombre'], 'UTF-8');
         }
 
+        // Siempre nace 'inactivo': no puede haber colaboradores activos sin contrato, y a esta
+        // altura todavía no existe ninguno — pasa a 'activo' solo, y automáticamente, cuando se
+        // le registre el primer contrato (ver ContratoController::sincronizarEstadoColaborador()).
+        $datos['estado'] = 'inactivo';
+
         $empleado = Empleado::create($datos);
 
         $this->auditoria("Alta de colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
@@ -202,14 +205,15 @@ class EmpleadoController extends Controller
      */
     public function edit(Empleado $empleado)
     {
-        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato');
+        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato', 'contratos.modificaciones', 'dependientes');
 
         return view('sgrh.empleado.edit', [
             'empleado' => $empleado,
             'listaEps' => Eps::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaArl' => Arl::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
-            'cargos' => Cargo::with('area')->where('activo', true)->orderBy('nombre')->get(),
+            'parentescos' => Parentesco::orderBy('name')->pluck('name', 'code'),
+            'tiposDocumento' => TipoDocumento::orderBy('codigo')->pluck('nombre', 'codigo'),
         ]);
     }
 
@@ -289,8 +293,9 @@ class EmpleadoController extends Controller
                     // tdoc/dv/fec_expcc, según el orden pedido. Los campos del cónyuge se
                     // movieron a su propia sección "Información Cónyuge" (ver abajo).
                     // 'cargo' (texto libre de MaeTerceros) ya no se muestra aquí: el cargo del
-                    // colaborador ahora se gestiona en Empleado::cargo_id, relacionado con el
-                    // catálogo sgrh_cargos (ver EmpleadoController::edit()/update()).
+                    // colaborador ahora se deriva del contrato activo (Empleado::getCargoIdAttribute(),
+                    // relacionado con el catálogo sgrh_cargos) — se edita desde "Registrar
+                    // contrato"/"Editar contrato", no aquí.
                     'estado', 'apl1', 'apl2', 'nom1', 'nom2', 'sexo', 'fec_nac', 'est_civil',
                     'tipo_ter', 'tip_pers', 'tdoc', 'dv', 'fec_expcc', 'lugar_expcc', 'lugar_naci',
                     'fec_falle', 'contacto',
@@ -437,7 +442,7 @@ class EmpleadoController extends Controller
             'contacto' => 'nullable|string',
             'cont_tel' => 'nullable|string|max:10',
             // 'cargo' (MaeTerceros, texto libre) ya no se valida/guarda desde aquí — se
-            // reemplazó por Empleado::cargo_id (ver terceroFieldMeta()).
+            // reemplazó por el cargo del contrato activo (ver terceroFieldMeta()).
 
             // Ubicación
             'dir' => 'nullable|string|max:255',
@@ -514,6 +519,13 @@ class EmpleadoController extends Controller
         $validated = $request->validate([
             'estado' => 'required|in:activo,inactivo,retirado',
         ]);
+
+        // No puede haber colaboradores activos sin contrato: si no tiene uno vigente, activarlo
+        // a mano aquí dejaría la regla rota hasta que alguien le registre un contrato.
+        if ($validated['estado'] === 'activo' && !$empleado->contratoActivo) {
+            return redirect()->route('sgrh.empleado.index')
+                ->with('error', 'No se puede activar un colaborador sin un contrato activo. Regístrale uno primero.');
+        }
 
         $estadoAnterior = $empleado->estado;
         $empleado->estado = $validated['estado'];

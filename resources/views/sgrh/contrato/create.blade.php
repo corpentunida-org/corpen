@@ -19,7 +19,7 @@
         <div class="card-body p-4">
             <h5 class="fw-bold mb-3">Datos del contrato</h5>
 
-            <form method="POST" action="{{ route('sgrh.contrato.store') }}" enctype="multipart/form-data" id="formRegistrarContrato">
+            <form method="POST" action="{{ route('sgrh.contrato.store') }}" id="formRegistrarContrato">
                 @csrf
                 @include('sgrh.contrato._form', ['contrato' => null])
                 <div class="mt-4 text-end">
@@ -49,6 +49,24 @@
                     }
                     boton.disabled = true;
                     boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
+                });
+            })();
+
+            // Botón "Ver": abre el enlace al gestor documental en otra pestaña, para que el
+            // usuario mismo verifique que apunta al documento correcto.
+            (function () {
+                const input = document.getElementById('input_documento_url');
+                const botonVer = document.getElementById('btn_ver_documento');
+                if (!input || !botonVer) {
+                    return;
+                }
+                input.addEventListener('input', function () {
+                    botonVer.disabled = input.value.trim() === '';
+                });
+                botonVer.addEventListener('click', function () {
+                    if (input.value.trim() !== '') {
+                        window.open(input.value.trim(), '_blank', 'noopener');
+                    }
                 });
             })();
         </script>
