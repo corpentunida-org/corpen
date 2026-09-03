@@ -50,6 +50,7 @@
                         <th>Código (cod_ter)</th>
                         <th>Fecha de ingreso</th>
                         <th class="text-center">Estado</th>
+                        <th></th>
                         <th class="text-end pe-4">Cambiar estado</th>
                     </tr>
                 </thead>
@@ -78,6 +79,12 @@
                                                 <i class="bi bi-exclamation-triangle"></i> Sin clasificar
                                             </span>
                                         @endif
+                                        @if (!$empleado->tercero->fec_act || (string) $empleado->tercero->fec_act < $fechaLimiteActualizacion)
+                                            <span class="badge rounded-pill ms-1 px-2 py-1" style="background-color: #ffe4e6; color: #e11d48; font-weight: 600;" data-bs-toggle="tooltip"
+                                                  title="Última actualización: {{ $empleado->tercero->fec_act ? \Illuminate\Support\Carbon::parse($empleado->tercero->fec_act)->format('d/m/Y') : 'nunca registrada' }}">
+                                                <i class="bi bi-exclamation-triangle"></i> Información de usuario requiere actualizar
+                                            </span>
+                                        @endif
                                     </div>
                                 @else
                                     <div class="text-danger small">
@@ -100,6 +107,11 @@
                                         <span class="badge bg-warning-subtle text-warning">Inactivo</span>
                                 @endswitch
                             </td>
+                            <td class="text-end">
+                                <a href="{{ route('sgrh.empleado.edit', $empleado) }}" class="small">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </a>
+                            </td>
                             <td class="text-end pe-4">
                                 <form action="{{ route('sgrh.empleado.updateEstado', $empleado->id) }}" method="POST"
                                       class="d-inline-flex gap-2 justify-content-end">
@@ -116,7 +128,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-5 text-center text-muted">
+                            <td colspan="6" class="py-5 text-center text-muted">
                                 No hay colaboradores registrados todavía.
                             </td>
                         </tr>
