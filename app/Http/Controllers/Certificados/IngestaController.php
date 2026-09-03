@@ -172,8 +172,9 @@ class IngestaController extends Controller
             });
 
             // 3. Guardar el archivo para que lo procese el worker fuera de la petición web
-            $rutaArchivo = $request->file('archivo_excel')->store('ingesta');
-            ProcesarIngestaExcel::dispatch($nuevoBloque, $rutaArchivo);
+            $discoArchivo = config('filesystems.default');
+            $rutaArchivo = $request->file('archivo_excel')->store('ingesta', $discoArchivo);
+            ProcesarIngestaExcel::dispatch($nuevoBloque, $rutaArchivo, $discoArchivo);
 
             // 4. Responder inmediatamente; el lote queda en estado PROCESANDO
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])

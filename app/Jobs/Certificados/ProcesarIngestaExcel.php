@@ -23,7 +23,8 @@ class ProcesarIngestaExcel implements ShouldQueue
 
     public function __construct(
         private readonly int $numeroBloque,
-        private readonly string $rutaArchivo
+        private readonly string $rutaArchivo,
+        private readonly string $discoArchivo
     ) {
     }
 
@@ -33,13 +34,13 @@ class ProcesarIngestaExcel implements ShouldQueue
             Excel::import(
                 new IngestaExcelImport($this->numeroBloque),
                 $this->rutaArchivo,
-                'local'
+                $this->discoArchivo
             );
 
             CarSiaBloque::where('numero_bloque', $this->numeroBloque)
                 ->update(['estado' => 'PROCESADO']);
 
-            Storage::disk('local')->delete($this->rutaArchivo);
+            Storage::disk($this->discoArchivo)->delete($this->rutaArchivo);
         } catch (Throwable $exception) {
             CarSiaBloque::where('numero_bloque', $this->numeroBloque)
                 ->update(['estado' => 'ERROR']);
@@ -60,6 +61,6 @@ class ProcesarIngestaExcel implements ShouldQueue
             ]);
         }
 
-        Storage::disk('local')->delete($this->rutaArchivo);
+        Storage::disk($this->discoArchivo)->delete($this->rutaArchivo);
     }
 }
