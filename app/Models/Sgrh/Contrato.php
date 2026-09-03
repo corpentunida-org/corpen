@@ -17,7 +17,9 @@ class Contrato extends Model
         'fecha_terminacion_real',
         'estado',
         'salario_contrato',
-        'documento_path',
+        // Enlace externo al gestor documental de la empresa (no se sube/almacena el PDF en
+        // S3 desde SGRH — el archivo ya vive aparte).
+        'documento_url',
         'observaciones',
     ];
 
@@ -41,6 +43,11 @@ class Contrato extends Model
     public function cargo()
     {
         return $this->belongsTo(Cargo::class, 'cargo_id');
+    }
+
+    public function modificaciones()
+    {
+        return $this->hasMany(ContratoModificacion::class, 'contrato_id')->latest();
     }
 
     /**

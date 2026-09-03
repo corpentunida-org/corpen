@@ -22,7 +22,12 @@ class CargoController extends Controller
     {
         // Eager load: evita una consulta a sgrh_areas por fila listada (N+1); igual con
         // empleados_count, que se resuelve en un solo COUNT() en vez de uno por cargo.
-        $query = Cargo::with('area')->withCount('empleados');
+        // Cuenta contratos activos con este cargo (no Empleado.cargo_id directo, que ya no es
+        // una columna real) — como un colaborador tiene a lo sumo un contrato activo, equivale
+        // a "colaboradores actuales en este cargo".
+        $query = Cargo::with('area')->withCount(['contratos as empleados_count' => function ($q) {
+            $q->where('estado', 'Activo');
+        }]);
 
         if ($request->filled('search')) {
             $query->where('nombre', 'like', "%{$request->search}%");
@@ -42,8 +47,9 @@ class CargoController extends Controller
     {
         $areas = Area::where('activo', true)->orderBy('nombre')->get();
         $jornadas = self::JORNADAS;
+        $cargos = Cargo::where('activo', true)->orderBy('nombre')->get();
 
-        return view('sgrh.cargo.create', compact('areas', 'jornadas'));
+        return view('sgrh.cargo.create', compact('areas', 'jornadas', 'cargos'));
     }
 
     public function store(Request $request)
@@ -62,14 +68,20 @@ class CargoController extends Controller
     {
         $areas = Area::where('activo', true)->orderBy('nombre')->get();
         $jornadas = self::JORNADAS;
+        // Un cargo no puede ser su propio jefe inmediato/director: se excluye de las opciones.
+        $cargos = Cargo::where('activo', true)->where('id', '!=', $cargo->id)->orderBy('nombre')->get();
 
-        return view('sgrh.cargo.edit', compact('cargo', 'areas', 'jornadas'));
+        return view('sgrh.cargo.edit', compact('cargo', 'areas', 'jornadas', 'cargos'));
     }
 
     public function update(Request $request, Cargo $cargo)
     {
         $validated = $this->validado($request);
         $validated['activo'] = $request->boolean('activo', true);
+
+        if (($validated['jefe_inmediato_id'] ?? null) == $cargo->id || ($validated['director_id'] ?? null) == $cargo->id) {
+            return back()->withInput()->with('error', 'Un cargo no puede ser su propio jefe inmediato o director.');
+        }
 
         $cargo->update($validated);
 
@@ -80,10 +92,12 @@ class CargoController extends Controller
 
     public function destroy(Cargo $cargo)
     {
-        // Guardia de aplicación, no de BD: sgrh_empleados.cargo_id es nullOnDelete, así que
-        // sin este chequeo el cargo se borraría igual y solo dejaría empleados sin cargo.
-        if ($cargo->empleados()->exists()) {
-            return back()->with('error', 'No se puede eliminar el cargo porque tiene colaboradores asignados. Reasígnalos primero.');
+        // Guardia de aplicación: sgrh_contratos.cargo_id es nullOnDelete, así que sin este
+        // chequeo el cargo se borraría igual y solo dejaría esos contratos sin cargo. Se
+        // revisa por contrato ACTIVO (no cualquier contrato histórico con este cargo — un
+        // cargo descontinuado con solo contratos ya cerrados sí debe poder eliminarse).
+        if ($cargo->contratos()->where('estado', 'Activo')->exists()) {
+            return back()->with('error', 'No se puede eliminar el cargo porque tiene colaboradores con contrato activo en él. Reasígnalos primero.');
         }
 
         $nombre = $cargo->nombre;
@@ -99,13 +113,9 @@ class CargoController extends Controller
         return $request->validate([
             'nombre' => 'required|string|max:255',
             'sgrh_area_id' => 'nullable|exists:sgrh_areas,id',
-            'salario_base' => 'nullable|numeric|min:0',
             'jornada' => 'nullable|string|in:' . implode(',', self::JORNADAS),
-            'telefono_corporativo' => 'nullable|string|max:50',
-            'celular_corporativo' => 'nullable|string|max:50',
-            'ext_corporativo' => 'nullable|string|max:20',
-            'correo_corporativo' => 'nullable|email|max:255',
-            'gmail_corporativo' => 'nullable|email|max:255',
+            'jefe_inmediato_id' => 'nullable|exists:sgrh_cargos,id',
+            'director_id' => 'nullable|exists:sgrh_cargos,id',
             // manual_funciones no se valida aquí: no hay campo de carga en el formulario
             // todavía. update() simplemente no lo toca (conserva el valor migrado de
             // gdo_cargo si lo tenía); en cargos nuevos queda null hasta que exista esa UI.

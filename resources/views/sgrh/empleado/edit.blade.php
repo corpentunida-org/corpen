@@ -22,43 +22,37 @@
                 @csrf
                 @method('PUT')
 
-                <div class="row g-3">
+                <div class="row g-3 mb-2">
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-calendar me-1 text-primary"></i>Fecha de ingreso
                         </label>
-                        <input type="date" name="fecha_ingreso" class="form-control"
-                               value="{{ old('fecha_ingreso', $empleado->fecha_ingreso?->format('Y-m-d')) }}">
+                        <input type="text" class="form-control" disabled
+                               value="{{ $empleado->fecha_ingreso?->format('d/m/Y') ?? 'Sin contrato activo' }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-briefcase me-1 text-primary"></i>Cargo
+                            <i class="feather-briefcase me-1 text-primary"></i>Cargo actual
                         </label>
-                        <select name="cargo_id" id="select_cargo" class="form-select">
-                            <option value="" data-salario="" @selected(old('cargo_id', $empleado->cargo_id) === null)>Sin definir</option>
-                            @foreach ($cargos as $cargo)
-                                <option value="{{ $cargo->id }}" data-salario="{{ $cargo->salario_base }}"
-                                        @selected((string) old('cargo_id', $empleado->cargo_id) === (string) $cargo->id)>
-                                    {{ $cargo->nombre }}{{ $cargo->area ? " ({$cargo->area->nombre})" : '' }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <input type="text" class="form-control" disabled
+                               value="{{ $empleado->cargo->nombre ?? 'Sin contrato activo' }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario base (del cargo)
+                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario actual
                         </label>
-                        <input type="text" id="display_salario_base" class="form-control" readonly>
-                        <div class="form-text">Se toma automáticamente del cargo seleccionado.</div>
+                        <input type="text" class="form-control" disabled
+                               value="{{ $empleado->salario_asignado ? '$' . number_format($empleado->salario_asignado, 0, ',', '.') : 'Sin contrato activo' }}">
                     </div>
+                    <div class="col-12">
+                        <div class="form-text mb-0">Fecha de ingreso, cargo y salario vienen del contrato activo — se editan desde "Registrar contrato"/"Editar contrato" abajo.</div>
+                    </div>
+                </div>
 
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-dollar-sign me-1 text-primary"></i>Salario asignado
-                        </label>
-                        <input type="number" step="0.01" min="0" name="salario_asignado" class="form-control"
-                               value="{{ old('salario_asignado', $empleado->salario_asignado) }}" placeholder="Si difiere del salario base">
-                    </div>
+                <hr class="my-1">
+                <p class="text-muted small fw-bold text-uppercase mb-3 mt-2" style="letter-spacing: .04em;">Datos del colaborador</p>
+
+                <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-droplet me-1 text-primary"></i>Tipo de sangre
@@ -70,7 +64,6 @@
                             @endforeach
                         </select>
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-shield me-1 text-primary"></i>EPS
@@ -103,6 +96,7 @@
                                    value="{{ !is_null($empleado->arl) && !$listaArl->contains($empleado->arl) ? $empleado->arl : '' }}">
                         </div>
                     </div>
+
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-briefcase me-1 text-primary"></i>Fondo de pensión
@@ -119,8 +113,29 @@
                                    value="{{ !is_null($empleado->fondo_pension) && !$listaFondosPension->contains($empleado->fondo_pension) ? $empleado->fondo_pension : '' }}">
                         </div>
                     </div>
-
-                    <div class="col-md-6">
+                    @php
+                        $fp2 = $empleado->fondo_pension_2;
+                        $fp2EsOtra = !is_null($fp2) && $fp2 !== 'No aplica' && !$listaFondosPension->contains($fp2);
+                    @endphp
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-briefcase me-1 text-primary"></i>Fondo de pensión 2
+                        </label>
+                        <select id="select_fondo_pension_2" name="fondo_pension_2" class="form-select">
+                            <option value="">Sin definir</option>
+                            <option value="No aplica" @selected(old('fondo_pension_2', $fp2) === 'No aplica')>No aplica</option>
+                            @foreach ($listaFondosPension as $nombre)
+                                <option value="{{ $nombre }}" @selected(old('fondo_pension_2', $fp2) === $nombre)>{{ $nombre }}</option>
+                            @endforeach
+                            <option value="__otra__" @selected($fp2EsOtra)>Otra (especificar)</option>
+                        </select>
+                        <div id="wrapper_otra_fondo_pension_2" class="mt-2" style="{{ $fp2EsOtra ? '' : 'display: none;' }}">
+                            <input type="text" id="input_otra_fondo_pension_2" class="form-control" placeholder="Escribe el nombre del fondo"
+                                   value="{{ $fp2EsOtra ? $fp2 : '' }}">
+                        </div>
+                        <div class="form-text">Preparación para la reforma pensional (pilar complementario).</div>
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-user-plus me-1 text-primary"></i>Contacto de emergencia — nombre
                         </label>
@@ -128,7 +143,7 @@
                                value="{{ old('contacto_emergencia_nombre', $empleado->contacto_emergencia_nombre) }}">
                         <div class="form-text">Se guarda en mayúsculas.</div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-phone me-1 text-primary"></i>Contacto de emergencia — teléfono
                         </label>
@@ -142,6 +157,52 @@
                         </label>
                         <textarea name="observaciones" class="form-control" rows="2">{{ old('observaciones', $empleado->observaciones) }}</textarea>
                     </div>
+
+                    <div class="col-12">
+                        <hr class="my-1">
+                        <p class="text-muted small fw-bold text-uppercase mb-0" style="letter-spacing: .04em;">Contacto corporativo</p>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-phone me-1 text-primary"></i>Teléfono
+                        </label>
+                        <input type="text" name="telefono_corporativo" class="form-control"
+                               value="{{ old('telefono_corporativo', $empleado->telefono_corporativo) }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-smartphone me-1 text-primary"></i>Celular
+                        </label>
+                        <input type="text" name="celular_corporativo" class="form-control"
+                               value="{{ old('celular_corporativo', $empleado->celular_corporativo) }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-hash me-1 text-primary"></i>Ext.
+                        </label>
+                        <input type="text" name="ext_corporativo" class="form-control"
+                               value="{{ old('ext_corporativo', $empleado->ext_corporativo) }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-mail me-1 text-primary"></i>Correo corporativo
+                        </label>
+                        <input type="email" name="correo_corporativo" class="form-control @error('correo_corporativo') is-invalid @enderror"
+                               value="{{ old('correo_corporativo', $empleado->correo_corporativo) }}">
+                        @error('correo_corporativo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-mail me-1 text-primary"></i>Gmail corporativo
+                        </label>
+                        <input type="email" name="gmail_corporativo" class="form-control @error('gmail_corporativo') is-invalid @enderror"
+                               value="{{ old('gmail_corporativo', $empleado->gmail_corporativo) }}">
+                        @error('gmail_corporativo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="mt-4 text-end">
@@ -153,14 +214,80 @@
         </div>
     </div>
 
+    {{-- DEPENDIENTES ECONÓMICOS --}}
+    <div class="card mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Dependientes económicos</h5>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalDependiente"
+                        onclick="abrirModalDependiente()">
+                    <i class="bi bi-plus-circle"></i> Agregar dependiente
+                </button>
+            </div>
+
+            @if ($empleado->dependientes->isEmpty())
+                <p class="text-muted small mb-0">Este colaborador no tiene dependientes económicos registrados todavía.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Nombre completo</th>
+                                <th>Documento</th>
+                                <th>Fecha de nacimiento</th>
+                                <th>Género</th>
+                                <th>Parentesco</th>
+                                <th class="text-end pe-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($empleado->dependientes as $dependiente)
+                                <tr>
+                                    <td class="ps-3 py-2">{{ $dependiente->nombre_completo }}</td>
+                                    <td>
+                                        @if ($dependiente->documento_identificacion)
+                                            <span class="text-muted small">{{ $tiposDocumento[$dependiente->tipo_documento] ?? '' }}</span>
+                                            {{ $dependiente->documento_identificacion }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>{{ $dependiente->fecha_nacimiento->format('d/m/Y') }}</td>
+                                    <td>{{ $dependiente->genero === 'V' ? 'Varón' : ($dependiente->genero === 'H' ? 'Hembra' : '—') }}</td>
+                                    <td>{{ $parentescos[$dependiente->parentesco] ?? '—' }}</td>
+                                    <td class="text-end pe-3">
+                                        <a href="javascript:void(0)" class="small me-2" data-bs-toggle="modal" data-bs-target="#modalDependiente"
+                                           onclick='abrirModalDependiente(@json($dependiente))'>
+                                            <i class="bi bi-pencil-square"></i> Editar
+                                        </a>
+                                        <form action="{{ route('sgrh.dependiente.destroy', $dependiente) }}" method="POST" class="d-inline"
+                                              onsubmit="return confirm('¿Eliminar a {{ $dependiente->nombre_completo }} como dependiente?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
+                                                <i class="bi bi-trash3"></i> Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+
     {{-- HISTORIAL DE CONTRATOS --}}
     <div class="card mt-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Historial de contratos</h5>
-                <a href="{{ route('sgrh.contrato.create', ['empleado_id' => $empleado->id]) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-plus-circle"></i> Registrar contrato
-                </a>
+                @can('sgrh.contrato.store')
+                    <a href="{{ route('sgrh.contrato.create', ['empleado_id' => $empleado->id]) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Registrar contrato
+                    </a>
+                @endcan
             </div>
 
             @if ($empleado->contratos->isEmpty())
@@ -174,6 +301,7 @@
                                 <th>Inicio</th>
                                 <th>Vencimiento</th>
                                 <th class="text-center">Estado</th>
+                                <th class="text-center">Origen</th>
                                 <th class="text-end pe-3">Acciones</th>
                             </tr>
                         </thead>
@@ -205,20 +333,50 @@
                                                 <span class="badge bg-warning-subtle text-warning">Renovado</span>
                                         @endswitch
                                     </td>
+                                    <td class="text-center">
+                                        @if ($contrato->modificaciones->isEmpty())
+                                            <button type="button" class="badge border-0 bg-success-subtle text-success"
+                                                    data-bs-toggle="modal" data-bs-target="#modalEventos{{ $contrato->id }}">
+                                                Creación
+                                            </button>
+                                        @else
+                                            @php $ultimaCausal = $contrato->modificaciones->first()->causal; @endphp
+                                            <button type="button"
+                                                    class="badge border-0 {{ $ultimaCausal === 'Renovación' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info' }}"
+                                                    data-bs-toggle="modal" data-bs-target="#modalEventos{{ $contrato->id }}">
+                                                {{ $ultimaCausal }}
+                                                @if ($contrato->modificaciones->count() > 1)
+                                                    (+{{ $contrato->modificaciones->count() - 1 }})
+                                                @endif
+                                            </button>
+                                        @endif
+                                    </td>
                                     <td class="text-end pe-3">
-                                        <a href="{{ route('sgrh.contrato.edit', $contrato) }}" class="small me-2">
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </a>
-                                        @if ($contrato->estado === 'Activo')
-                                            <form action="{{ route('sgrh.contrato.renovar', $contrato) }}" method="POST" class="d-inline"
-                                                  onsubmit="return confirm('¿Cerrar este contrato y registrar uno nuevo?');">
+                                        @can('sgrh.contrato.update')
+                                            <a href="{{ route('sgrh.contrato.edit', $contrato) }}" class="small me-2">
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </a>
+                                            @if ($contrato->estado === 'Activo')
+                                                <form action="{{ route('sgrh.contrato.renovar', $contrato) }}" method="POST" class="d-inline"
+                                                      onsubmit="return confirm('¿Cerrar este contrato y registrar uno nuevo?');">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <button type="submit" class="small border-0 bg-transparent p-0 text-primary me-2">
+                                                        <i class="bi bi-arrow-repeat"></i> Renovar
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endcan
+                                        @can('sgrh.contrato.destroy')
+                                            <form action="{{ route('sgrh.contrato.destroy', $contrato) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('¿Eliminar este contrato de forma permanente, junto con su historial de modificaciones? Esta acción no se puede deshacer.');">
                                                 @csrf
-                                                @method('PUT')
-                                                <button type="submit" class="small border-0 bg-transparent p-0 text-primary">
-                                                    <i class="bi bi-arrow-repeat"></i> Renovar
+                                                @method('DELETE')
+                                                <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
+                                                    <i class="bi bi-trash3"></i> Eliminar
                                                 </button>
                                             </form>
-                                        @endif
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach
@@ -229,10 +387,222 @@
         </div>
     </div>
 
+    {{-- MODALES: listado de eventos (creación + modificaciones) por cada contrato --}}
+    @foreach ($empleado->contratos as $contrato)
+        <div class="modal fade" id="modalEventos{{ $contrato->id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Eventos del contrato — {{ $contrato->tipoContrato->nombre }} ({{ $contrato->fecha_inicio->format('d/m/Y') }})
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="badge bg-success-subtle text-success mb-1">Creación</span>
+                                    <div class="small text-muted">{{ $contrato->created_at->format('d/m/Y H:i') }}</div>
+                                </div>
+                            </li>
+                            @foreach ($contrato->modificaciones->sortBy('created_at') as $modificacion)
+                                <li class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="badge {{ $modificacion->causal === 'Renovación' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info' }} mb-1">
+                                            {{ $modificacion->causal }}
+                                        </span>
+                                        @if ($modificacion->observacion)
+                                            <div class="small">{{ $modificacion->observacion }}</div>
+                                        @endif
+                                        <div class="small text-muted">
+                                            {{ $modificacion->created_at->format('d/m/Y H:i') }} — {{ $modificacion->usuario->name ?? '—' }}
+                                        </div>
+                                    </div>
+                                    @can('sgrh.contrato.destroy')
+                                        <form action="{{ route('sgrh.contrato.modificacion.destroy', $modificacion) }}" method="POST"
+                                              onsubmit="return confirm('¿Eliminar este registro del historial? Esta acción no se puede deshacer.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar registro">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        @can('sgrh.contrato.update')
+                            <a href="{{ route('sgrh.contrato.edit', $contrato) }}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-pencil-square"></i> Editar contrato
+                            </a>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endforeach
+
+    {{-- MODAL: agregar/editar dependiente --}}
+    <div class="modal fade" id="modalDependiente" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" id="formDependiente" action="{{ route('sgrh.dependiente.store', $empleado) }}">
+                    @csrf
+                    <input type="hidden" name="_method" id="dependiente_method" value="POST">
+                    <input type="hidden" name="dependiente_id" id="dependiente_id" value="{{ old('dependiente_id') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="dependiente_titulo">Agregar dependiente</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Tipo de documento</label>
+                                <select name="tipo_documento" id="dependiente_tipo_documento" class="form-select @error('tipo_documento') is-invalid @enderror">
+                                    <option value="">Sin definir</option>
+                                    @foreach ($tiposDocumento as $codigo => $nombre)
+                                        <option value="{{ $codigo }}" @selected(old('tipo_documento') === $codigo)>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                                @error('tipo_documento')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Número de documento</label>
+                                <input type="text" name="documento_identificacion" id="dependiente_documento_identificacion"
+                                       class="form-control @error('documento_identificacion') is-invalid @enderror" value="{{ old('documento_identificacion') }}">
+                                @error('documento_identificacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Primer nombre</label>
+                                <input type="text" name="nombre1" id="dependiente_nombre1"
+                                       class="form-control @error('nombre1') is-invalid @enderror" value="{{ old('nombre1') }}" required>
+                                @error('nombre1')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Segundo nombre</label>
+                                <input type="text" name="nombre2" id="dependiente_nombre2" class="form-control" value="{{ old('nombre2') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Primer apellido</label>
+                                <input type="text" name="apellido1" id="dependiente_apellido1"
+                                       class="form-control @error('apellido1') is-invalid @enderror" value="{{ old('apellido1') }}" required>
+                                @error('apellido1')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Segundo apellido</label>
+                                <input type="text" name="apellido2" id="dependiente_apellido2" class="form-control" value="{{ old('apellido2') }}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Fecha de nacimiento</label>
+                                <input type="date" name="fecha_nacimiento" id="dependiente_fecha_nacimiento"
+                                       class="form-control @error('fecha_nacimiento') is-invalid @enderror" value="{{ old('fecha_nacimiento') }}" required>
+                                @error('fecha_nacimiento')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Género</label>
+                                <select name="genero" id="dependiente_genero" class="form-select">
+                                    <option value="">Sin definir</option>
+                                    <option value="V" @selected(old('genero') === 'V')>Varón</option>
+                                    <option value="H" @selected(old('genero') === 'H')>Hembra</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Parentesco</label>
+                                <select name="parentesco" id="dependiente_parentesco" class="form-select">
+                                    <option value="">Sin definir</option>
+                                    @foreach ($parentescos as $codigo => $nombre)
+                                        <option value="{{ $codigo }}" @selected(old('parentesco') === $codigo)>{{ $nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardarDependiente">
+                            <i class="bi bi-check-circle"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             @if ($errors->any())
                 toastr.error("{{ $errors->first() }}");
+            @endif
+
+            // Un solo modal para agregar y editar dependientes: sin argumento = modo alta
+            // (POST a la ruta del colaborador); con un dependiente = modo edición (PUT a la
+            // ruta de ese dependiente, formulario precargado).
+            function abrirModalDependiente(dependiente) {
+                const form = document.getElementById('formDependiente');
+                const metodo = document.getElementById('dependiente_method');
+                const titulo = document.getElementById('dependiente_titulo');
+
+                form.reset();
+
+                if (dependiente) {
+                    titulo.textContent = 'Editar dependiente';
+                    form.action = `{{ url('sgrh/dependientes') }}/${dependiente.id}`;
+                    metodo.value = 'PUT';
+                    document.getElementById('dependiente_id').value = dependiente.id;
+                    document.getElementById('dependiente_tipo_documento').value = dependiente.tipo_documento || '';
+                    document.getElementById('dependiente_documento_identificacion').value = dependiente.documento_identificacion || '';
+                    document.getElementById('dependiente_nombre1').value = dependiente.nombre1 || '';
+                    document.getElementById('dependiente_nombre2').value = dependiente.nombre2 || '';
+                    document.getElementById('dependiente_apellido1').value = dependiente.apellido1 || '';
+                    document.getElementById('dependiente_apellido2').value = dependiente.apellido2 || '';
+                    document.getElementById('dependiente_fecha_nacimiento').value = (dependiente.fecha_nacimiento || '').substring(0, 10);
+                    document.getElementById('dependiente_genero').value = dependiente.genero || '';
+                    document.getElementById('dependiente_parentesco').value = dependiente.parentesco || '';
+                } else {
+                    titulo.textContent = 'Agregar dependiente';
+                    form.action = "{{ route('sgrh.dependiente.store', $empleado) }}";
+                    metodo.value = 'POST';
+                    document.getElementById('dependiente_id').value = '';
+                }
+            }
+
+            @php
+                $camposDependiente = ['nombre1', 'nombre2', 'apellido1', 'apellido2', 'tipo_documento', 'documento_identificacion', 'fecha_nacimiento', 'genero', 'parentesco'];
+                $hayErrorDependiente = collect($camposDependiente)->contains(fn ($campo) => $errors->has($campo));
+            @endphp
+            @if ($hayErrorDependiente)
+                // El formulario del modal sí falló (ej. fecha futura, nombre vacío) — sin esto,
+                // el envío recarga la página, cierra el modal y el usuario solo ve el toastr
+                // genérico de arriba, sin saber a qué campo corresponde el error.
+                document.addEventListener('DOMContentLoaded', function () {
+                    const depId = document.getElementById('dependiente_id').value;
+                    const titulo = document.getElementById('dependiente_titulo');
+                    const form = document.getElementById('formDependiente');
+                    const metodo = document.getElementById('dependiente_method');
+                    if (depId) {
+                        titulo.textContent = 'Editar dependiente';
+                        form.action = `{{ url('sgrh/dependientes') }}/${depId}`;
+                        metodo.value = 'PUT';
+                    } else {
+                        titulo.textContent = 'Agregar dependiente';
+                        form.action = "{{ route('sgrh.dependiente.store', $empleado) }}";
+                        metodo.value = 'POST';
+                    }
+                    new bootstrap.Modal(document.getElementById('modalDependiente')).show();
+                });
             @endif
 
             // Selects con opción "Otra (especificar)": al elegirla, el select deja de
@@ -268,28 +638,28 @@
             activarOtraOpcion('select_eps', 'wrapper_otra_eps', 'input_otra_eps', 'eps');
             activarOtraOpcion('select_arl', 'wrapper_otra_arl', 'input_otra_arl', 'arl');
             activarOtraOpcion('select_fondo_pension', 'wrapper_otra_fondo_pension', 'input_otra_fondo_pension', 'fondo_pension');
-
-            // Salario base: solo informativo (no se envía), se lee del data-salario de la
-            // opción de cargo elegida. El salario_asignado sigue siendo 100% manual.
-            (function () {
-                const selectCargo = document.getElementById('select_cargo');
-                const displaySalarioBase = document.getElementById('display_salario_base');
-                if (!selectCargo || !displaySalarioBase) {
-                    return;
-                }
-
-                function actualizarSalarioBase() {
-                    const salario = selectCargo.options[selectCargo.selectedIndex].getAttribute('data-salario');
-                    displaySalarioBase.value = salario ? '$' + Number(salario).toLocaleString('es-CO') : '';
-                }
-
-                selectCargo.addEventListener('change', actualizarSalarioBase);
-                actualizarSalarioBase();
-            })();
+            activarOtraOpcion('select_fondo_pension_2', 'wrapper_otra_fondo_pension_2', 'input_otra_fondo_pension_2', 'fondo_pension_2');
 
             (function () {
                 const form = document.getElementById('formEditarColaborador');
                 const boton = document.getElementById('btnGuardarColaborador');
+                if (!form || !boton) {
+                    return;
+                }
+                form.addEventListener('submit', function () {
+                    if (!form.checkValidity()) {
+                        return;
+                    }
+                    boton.disabled = true;
+                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
+                });
+            })();
+
+            // Evita registros duplicados por doble clic en "Guardar" (el modal hace un submit
+            // normal con recarga de página, así que el botón vuelve a su estado inicial solo).
+            (function () {
+                const form = document.getElementById('formDependiente');
+                const boton = document.getElementById('btnGuardarDependiente');
                 if (!form || !boton) {
                     return;
                 }

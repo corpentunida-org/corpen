@@ -19,7 +19,7 @@
             <form method="POST" action="{{ route('sgrh.cargo.update', $cargo) }}" id="formEditarCargo">
                 @csrf
                 @method('PUT')
-                @include('sgrh.cargo._form', ['cargo' => $cargo, 'areas' => $areas, 'jornadas' => $jornadas])
+                @include('sgrh.cargo._form', ['cargo' => $cargo, 'areas' => $areas, 'jornadas' => $jornadas, 'cargos' => $cargos])
                 <div class="mt-4 text-end">
                     <button type="submit" class="btn btn-primary px-4" id="btnGuardarCargo">
                         <i class="bi bi-check-circle"></i> Guardar cambios
