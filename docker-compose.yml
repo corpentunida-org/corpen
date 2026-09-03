@@ -10,3 +10,13 @@ services:
         volumes:
             - ".:/var/www/html"
             - ./public/assets/img:/var/www/html/public/assets/img
+
+    worker:
+        image: corpen-app
+        env_file:
+            - .env
+        volumes:
+            - ".:/var/www/html"
+            - ./public/assets/img:/var/www/html/public/assets/img
+        command: php artisan queue:work database --queue=default --timeout=1800 --tries=3 --memory=512 -vvv
+        restart: unless-stopped
