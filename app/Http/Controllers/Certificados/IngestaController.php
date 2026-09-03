@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 // AUDITORIA
 use App\Models\Certificados\CarSiaOperacionLog;
@@ -28,7 +29,7 @@ use App\Models\Creditos\LineaCredito;
 use App\Models\Maestras\MaeTerceros;
 
 //INGESTA
-use App\Jobs\Certificados\ProcesarIngestaExcel;
+use App\Imports\Certificados\IngestaExcelImport;
 
 class IngestaController extends Controller
 {
@@ -139,9 +140,9 @@ class IngestaController extends Controller
     }
 
 
-/**
+    /**
      * =========================================================================
-    * 2. CARGAR EXCEL (PROCESAMIENTO EN SEGUNDO PLANO)
+    * 2. CARGAR EXCEL (PROCESAMIENTO DIRECTO)
      * =========================================================================
      */
     public function cargarExcel(Request $request)
@@ -153,6 +154,9 @@ class IngestaController extends Controller
         ]);
 
         try {
+            ini_set('max_execution_time', 3600);
+            ini_set('memory_limit', '1024M');
+
             // 2. Transacción para el número de bloque (previene duplicados si 2 suben al tiempo)
             $nuevoBloque = DB::transaction(function () use ($request) {
                 $maxStaging    = CarSiaApi::max('numero_bloque') ?? 0;
@@ -171,22 +175,23 @@ class IngestaController extends Controller
                 return $siguienteBloque;
             });
 
-            // 3. Guardar el archivo para que lo procese el worker fuera de la petición web
-            $discoArchivo = config('filesystems.default');
-            $rutaArchivo = $request->file('archivo_excel')->store('ingesta', $discoArchivo);
-            ProcesarIngestaExcel::dispatch($nuevoBloque, $rutaArchivo, $discoArchivo);
+            // 3. Leer e insertar el Excel completo dentro de esta petición
+            Excel::import(new IngestaExcelImport($nuevoBloque), $request->file('archivo_excel'));
 
-            // 4. Responder inmediatamente; el lote queda en estado PROCESANDO
+            CarSiaBloque::where('numero_bloque', $nuevoBloque)
+                ->update(['estado' => 'PROCESADO']);
+
+            // 4. Responder cuando todo el archivo ya fue insertado
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                             ->with('success', "El archivo fue recibido. El Lote #{$nuevoBloque} se está procesando en segundo plano.");
+                             ->with('success', "Archivo procesado exitosamente. Los registros del Lote #{$nuevoBloque} están listos.");
 
         } catch (\Exception $e) {
             // Reversión visual: si algo estalla a mitad de lectura, marcamos el bloque con error
             if (isset($nuevoBloque)) {
                 CarSiaBloque::where('numero_bloque', $nuevoBloque)->update(['estado' => 'ERROR']);
             }
-            Log::error('CERTIFICADOS Ingesta - Error al encolar Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'No se pudo iniciar el procesamiento del Excel: ' . $e->getMessage());
+            Log::error('CERTIFICADOS Ingesta - Error procesando Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
         }
     }
 
