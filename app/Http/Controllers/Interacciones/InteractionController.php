@@ -925,7 +925,12 @@ class InteractionController extends Controller
                 // Recorremos los seguimientos para borrar todos los archivos en S3
                 foreach ($interaction->seguimientos as $seguimiento) {
                     if (! empty($seguimiento->attachment_urls)) {
-                        foreach ($seguimiento->attachment_urls as $ruta) {
+                        // attachment_urls se guarda como una sola ruta (string) en store()/update()
+                        // (líneas 803/913), nunca como array real — el cast 'array' del modelo hace
+                        // mal el round-trip con un string simple (json_decode de un string JSON
+                        // devuelve el string, no un array), así que un foreach directo lo saltaba
+                        // sin borrar el archivo en S3. (array) normaliza ambos casos.
+                        foreach ((array) $seguimiento->attachment_urls as $ruta) {
                             Storage::disk('s3')->delete($ruta);
                         }
                     }

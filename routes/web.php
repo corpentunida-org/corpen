@@ -74,6 +74,7 @@ use App\Http\Controllers\Sgrh\AreaController as SgrhAreaController;
 use App\Http\Controllers\Sgrh\CargoController as SgrhCargoController;
 use App\Http\Controllers\Sgrh\ContratoController as SgrhContratoController;
 use App\Http\Controllers\Sgrh\TipoContratoController as SgrhTipoContratoController;
+use App\Http\Controllers\Sgrh\DependienteController as SgrhDependienteController;
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -1548,6 +1549,12 @@ Route::prefix('sgrh')
         Route::get('empleados/{empleado}/edit', [SgrhEmpleadoController::class, 'edit'])->name('empleado.edit');
         Route::put('empleados/{empleado}', [SgrhEmpleadoController::class, 'update'])->name('empleado.update');
 
+        // Dependientes económicos: se gestionan inline desde la ficha del colaborador (modal
+        // en sgrh.empleado.edit), sin páginas propias de index/create/edit.
+        Route::post('empleados/{empleado}/dependientes', [SgrhDependienteController::class, 'store'])->name('dependiente.store');
+        Route::put('dependientes/{dependiente}', [SgrhDependienteController::class, 'update'])->name('dependiente.update');
+        Route::delete('dependientes/{dependiente}', [SgrhDependienteController::class, 'destroy'])->name('dependiente.destroy');
+
         // Consulta/edición acotada del tercero (solo Identificación/Información Personal/
         // Ubicación/Contacto) para RR. HH. — no usa el editor genérico de Maestras/Terceros,
         // que trae secciones (Financiera, Comercial, Tributaria) que no aplican aquí.
@@ -1571,11 +1578,31 @@ Route::prefix('sgrh')
 
         // Gestión contractual: historial de contratos por colaborador + alertas de vencimiento
         // (30/60 días). Sin 'show': se edita o se consulta desde el índice/alertas/colaborador.
-        Route::get('contratos/alertas', [SgrhContratoController::class, 'alertas'])->name('contrato.alertas');
-        Route::put('contratos/{contrato}/renovar', [SgrhContratoController::class, 'renovar'])->name('contrato.renovar');
-        Route::get('contratos/{contrato}/documento', [SgrhContratoController::class, 'verDocumento'])->name('contrato.documento.ver');
-        Route::get('contratos/{contrato}/documento/descargar', [SgrhContratoController::class, 'downloadDocumento'])->name('contrato.documento.descargar');
-        Route::resource('contratos', SgrhContratoController::class)->except('show')->names('contrato')->parameters(['contratos' => 'contrato']);
+        // Permisos por acción (sgrh.contrato.index|store|update|destroy), combinables al armar
+        // roles en Admin > Roles: solo lectura = solo index; "solo nuevo" = index+store; editar
+        // sin eliminar = index+store+update; admin con CRUD completo = los 4. Igual criterio que
+        // sgrh.tercero.show/edit más arriba: se usa `can:` (no `candirect`) para que funcione
+        // tanto si el permiso se asigna directo al usuario como si se hereda de un rol.
+        Route::middleware('can:sgrh.contrato.index')->group(function () {
+            Route::get('contratos', [SgrhContratoController::class, 'index'])->name('contrato.index');
+            Route::get('contratos/alertas', [SgrhContratoController::class, 'alertas'])->name('contrato.alertas');
+        });
+        Route::middleware('can:sgrh.contrato.store')->group(function () {
+            Route::get('contratos/create', [SgrhContratoController::class, 'create'])->name('contrato.create');
+            Route::post('contratos', [SgrhContratoController::class, 'store'])->name('contrato.store');
+        });
+        Route::middleware('can:sgrh.contrato.update')->group(function () {
+            Route::get('contratos/{contrato}/edit', [SgrhContratoController::class, 'edit'])->name('contrato.edit');
+            Route::put('contratos/{contrato}', [SgrhContratoController::class, 'update'])->name('contrato.update');
+            Route::put('contratos/{contrato}/renovar', [SgrhContratoController::class, 'renovar'])->name('contrato.renovar');
+        });
+        // Eliminar (contrato completo o un registro puntual de su historial de modificaciones):
+        // única acción que, por decisión del usuario, queda reservada al rol admin con CRUD
+        // completo — los contratos son historial legal/laboral, no se borran salvo excepción.
+        Route::middleware('can:sgrh.contrato.destroy')->group(function () {
+            Route::delete('contratos/{contrato}', [SgrhContratoController::class, 'destroy'])->name('contrato.destroy');
+            Route::delete('contrato-modificaciones/{modificacion}', [SgrhContratoController::class, 'destroyModificacion'])->name('contrato.modificacion.destroy');
+        });
         Route::resource('tipos-contrato', SgrhTipoContratoController::class)->except('show')->names('tipo-contrato')->parameters(['tipos-contrato' => 'tipo_contrato']);
     });
 // FIN MÓDULO SGRH

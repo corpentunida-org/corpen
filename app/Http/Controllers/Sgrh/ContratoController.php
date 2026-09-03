@@ -6,12 +6,13 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use App\Models\Sgrh\Cargo;
 use App\Models\Sgrh\Contrato;
+use App\Models\Sgrh\ContratoModificacion;
 use App\Models\Sgrh\Empleado;
 use App\Models\Sgrh\TipoContrato;
 use Illuminate\Http\Request;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ContratoController extends Controller
 {
@@ -24,6 +25,8 @@ class ContratoController extends Controller
     // y lo asigna el comando programado — pero se acepta como valor guardado por si alguien lo
     // marca manualmente, así que sigue siendo válido en la validación.
     private const ESTADOS = ['Activo', 'Vencido', 'Liquidado', 'Renovado'];
+
+    private const CAUSALES_MODIFICACION = ['Cambio de cargo o salario', 'Cambio de ubicación', 'Otra'];
 
     public function index(Request $request)
     {
@@ -117,14 +120,11 @@ class ContratoController extends Controller
             $validated['fecha_terminacion_real'] = now()->format('Y-m-d');
         }
 
-        if ($request->hasFile('documento')) {
-            $validated['documento_path'] = $this->subirDocumento($request->file('documento'), $validated['empleado_id']);
-        }
-        unset($validated['documento']);
-
         $contrato = Contrato::create($validated);
 
         $this->auditoria("Contrato creado #{$contrato->id} para colaborador #{$contrato->empleado_id}");
+
+        $this->sincronizarEstadoColaborador($contrato->empleado);
 
         return redirect()->route('sgrh.empleado.edit', $contrato->empleado_id)
             ->with('success', 'Contrato registrado correctamente.');
@@ -132,19 +132,21 @@ class ContratoController extends Controller
 
     public function edit(Contrato $contrato)
     {
-        $contrato->load('empleado.tercero');
+        $contrato->load('empleado.tercero', 'modificaciones.usuario');
 
         return view('sgrh.contrato.edit', [
             'contrato' => $contrato,
             'tiposContrato' => TipoContrato::where('activo', true)->orderBy('nombre')->get(),
             'cargos' => Cargo::with('area')->where('activo', true)->orderBy('nombre')->get(),
             'estados' => self::ESTADOS,
+            'causalesModificacion' => self::CAUSALES_MODIFICACION,
         ]);
     }
 
     public function update(Request $request, Contrato $contrato)
     {
         $validated = $this->validado($request);
+        $modificacion = $this->validadoModificacion($request);
 
         if ($this->tieneOtroContratoActivo($validated['empleado_id'], $validated['estado'], $contrato->id)) {
             return back()->withInput()->with('error', 'Este colaborador ya tiene otro contrato activo.');
@@ -154,14 +156,16 @@ class ContratoController extends Controller
             $validated['fecha_terminacion_real'] = now()->format('Y-m-d');
         }
 
-        if ($request->hasFile('documento')) {
-            $validated['documento_path'] = $this->subirDocumento($request->file('documento'), $validated['empleado_id']);
-        }
-        unset($validated['documento']);
-
         $contrato->update($validated);
 
         $this->auditoria("Contrato actualizado #{$contrato->id} (colaborador #{$contrato->empleado_id})");
+
+        // Cada edición de contrato deja un registro propio en sgrh_contrato_modificaciones
+        // (causal + observación), aparte del log genérico de Auditoria — es lo que permite
+        // luego consultar específicamente "por qué cambió este contrato", no solo "que cambió".
+        $this->registrarModificacion($contrato, $modificacion['causal_modificacion'], $modificacion['observacion_modificacion'] ?? null);
+
+        $this->sincronizarEstadoColaborador($contrato->empleado);
 
         return redirect()->route('sgrh.empleado.edit', $contrato->empleado_id)
             ->with('success', 'Contrato actualizado correctamente.');
@@ -184,6 +188,16 @@ class ContratoController extends Controller
 
         $this->auditoria("Contrato #{$contrato->id} renovado (colaborador #{$contrato->empleado_id})");
 
+        // La renovación también es una modificación del contrato (cierra su vigencia) — sin
+        // formulario propio para elegir causal, así que se registra con una causal fija y
+        // distinta de 'Otra', para poder identificarla claramente en el historial.
+        $this->registrarModificacion($contrato, 'Renovación', 'Contrato renovado: se cierra y se crea uno nuevo.');
+
+        // El colaborador queda momentáneamente sin contrato activo hasta que se complete el
+        // formulario de alta que sigue a continuación — sincronizarEstadoColaborador() lo
+        // refleja de inmediato (lo vuelve a activar solo cuando se guarde el contrato nuevo).
+        $this->sincronizarEstadoColaborador($contrato->empleado);
+
         // Sugerencia para el caso típico de aquí (término fijo < 1 año, renovación anual): el
         // nuevo contrato empieza al día siguiente del vencimiento del anterior y dura 1 año —
         // el formulario la precarga pero sigue siendo editable, no se fuerza.
@@ -199,43 +213,89 @@ class ContratoController extends Controller
         ])->with('success', 'Contrato anterior cerrado. Completa los datos del nuevo contrato.');
     }
 
-    public function verDocumento(Contrato $contrato)
+    /**
+     * Borrado real, reservado a sgrh.contrato.destroy (rol admin). Los contratos son historial
+     * legal/laboral — por eso el resto de acciones (index/store/update) nunca lo permiten y solo
+     * se cierran/editan — pero el admin con CRUD completo puede corregir un registro erróneo.
+     * Se arrastra también su historial de modificaciones (no puede quedar huérfano: contrato_id
+     * es RESTRICT, no cascade) y se resincroniza el estado del colaborador por si el contrato
+     * borrado era el activo.
+     */
+    public function destroy(Contrato $contrato)
     {
-        return $this->responderDocumento($contrato, 'inline');
+        $empleadoId = $contrato->empleado_id;
+        $descripcion = "{$contrato->tipoContrato->nombre} ({$contrato->fecha_inicio->format('d/m/Y')})";
+
+        DB::transaction(function () use ($contrato) {
+            $contrato->modificaciones()->delete();
+            $contrato->delete();
+        });
+
+        $this->auditoria("Contrato eliminado [{$descripcion}] del colaborador #{$empleadoId}");
+
+        $this->sincronizarEstadoColaborador(Empleado::findOrFail($empleadoId));
+
+        return redirect()->route('sgrh.empleado.edit', $empleadoId)
+            ->with('success', 'Contrato eliminado correctamente.');
     }
 
-    public function downloadDocumento(Contrato $contrato)
+    /**
+     * Regla: no puede haber colaboradores activos sin contrato activo. Se llama después de
+     * cualquier cambio de estado de un contrato (alta, edición, renovación) para mantener
+     * Empleado::estado sincronizado en ambos sentidos:
+     * - Sin contrato activo → colaborador pasa a 'inactivo' (ej. al liquidar/vencer el
+     *   contrato, o justo después de renovar, antes de crear el reemplazo).
+     * - Con contrato activo → colaborador pasa a 'activo' (incluye el caso de recontratación:
+     *   alguien 'retirado' que recibe un contrato nuevo vuelve a quedar activo).
+     * No toca 'retirado' cuando ya no tiene contrato — evita pisar esa marca con 'inactivo'
+     * sin necesidad, ya que ambas implican lo mismo (sin contrato vigente).
+     */
+    private function sincronizarEstadoColaborador(Empleado $empleado): void
     {
-        return $this->responderDocumento($contrato, 'attachment');
-    }
+        $tieneContratoActivo = $empleado->contratoActivo()->exists();
 
-    private function responderDocumento(Contrato $contrato, string $disposicion)
-    {
-        if (!$contrato->documento_path) {
-            abort(404, 'Este contrato no tiene un documento adjunto.');
+        if ($tieneContratoActivo && $empleado->estado !== 'activo') {
+            $empleado->update(['estado' => 'activo']);
+            $this->auditoria("Colaborador #{$empleado->id} reactivado automáticamente (tiene un contrato activo)");
+        } elseif (!$tieneContratoActivo && $empleado->estado === 'activo') {
+            $empleado->update(['estado' => 'inactivo']);
+            $this->auditoria("Colaborador #{$empleado->id} inactivado automáticamente (sin contrato activo)");
         }
-
-        $nombreDescarga = 'contrato_' . $contrato->id . '.' . pathinfo($contrato->documento_path, PATHINFO_EXTENSION);
-
-        // Mismo patrón que GdoEmpleadoController::verDocumento/downloadDocumento: URL temporal
-        // de S3 (no se sirve el archivo a través de Laravel).
-        $url = Storage::disk('s3')->temporaryUrl(
-            $contrato->documento_path,
-            now()->addMinutes(15),
-            [
-                'ResponseContentType' => 'application/pdf',
-                'ResponseContentDisposition' => "{$disposicion}; filename=\"{$nombreDescarga}\"",
-            ]
-        );
-
-        return redirect($url);
     }
 
-    private function subirDocumento(UploadedFile $archivo, int $empleadoId): string
+    private function registrarModificacion(Contrato $contrato, string $causal, ?string $observacion): void
     {
-        $nombre = 'DOC_' . time() . '_' . Str::random(5) . '.' . $archivo->getClientOriginalExtension();
+        ContratoModificacion::create([
+            'contrato_id' => $contrato->id,
+            'causal' => $causal,
+            'observacion' => $observacion,
+            'user_id' => Auth::id(),
+        ]);
+    }
 
-        return $archivo->storeAs("sgrh/contratos/{$empleadoId}", $nombre, 's3');
+    /**
+     * Elimina un registro puntual del historial de modificaciones (ej. una prueba mal
+     * registrada) — no afecta el contrato en sí, solo su bitácora de causales/observaciones.
+     */
+    public function destroyModificacion(ContratoModificacion $modificacion)
+    {
+        $contrato = $modificacion->contrato;
+        $causal = $modificacion->causal;
+        $modificacion->delete();
+
+        $this->auditoria("Modificación ({$causal}) eliminada del historial del contrato #{$contrato->id}");
+
+        return back()->with('success', 'Registro de modificación eliminado.');
+    }
+
+    private function validadoModificacion(Request $request): array
+    {
+        return $request->validate([
+            'causal_modificacion' => 'required|in:' . implode(',', self::CAUSALES_MODIFICACION),
+            // Si la causal es "Otra", la observación deja de ser opcional — es lo único que
+            // explica qué pasó.
+            'observacion_modificacion' => 'required_if:causal_modificacion,Otra|nullable|string',
+        ]);
     }
 
     private function tieneOtroContratoActivo(int $empleadoId, string $estadoNuevo, ?int $exceptoId = null): bool
@@ -252,17 +312,32 @@ class ContratoController extends Controller
 
     private function validado(Request $request): array
     {
+        // La fecha de vencimiento solo es obligatoria para contratos con término definido —
+        // "Indefinido" es el único tipo del catálogo sin fecha de fin por definición.
+        $tipoIndefinidoId = TipoContrato::where('nombre', 'Indefinido')->value('id');
+
         return $request->validate([
             'empleado_id' => 'required|exists:sgrh_empleados,id',
             'tipo_contrato_id' => 'required|exists:sgrh_tipos_contrato,id',
-            'cargo_id' => 'nullable|exists:sgrh_cargos,id',
+            // Único campo verdaderamente opcional aparte de cierre real/PDF/observaciones: por
+            // decisión del usuario, todo lo demás del contrato debe quedar completo.
+            'cargo_id' => 'required|exists:sgrh_cargos,id',
             'fecha_inicio' => 'required|date',
-            'fecha_vencimiento' => 'nullable|date|after_or_equal:fecha_inicio',
+            // 'bail' evita que after_or_equal intente comparar contra un valor ausente cuando
+            // la condición de abajo ya falló (si no, Laravel lanza un error de parseo de fecha real).
+            'fecha_vencimiento' => [
+                'bail',
+                Rule::requiredIf(fn () => (int) $request->input('tipo_contrato_id') !== (int) $tipoIndefinidoId),
+                'nullable',
+                'date',
+                'after_or_equal:fecha_inicio',
+            ],
             'fecha_terminacion_real' => 'nullable|date',
             'estado' => 'required|in:' . implode(',', self::ESTADOS),
-            'salario_contrato' => 'nullable|numeric|min:0',
+            'salario_contrato' => 'required|numeric|min:0',
             'observaciones' => 'nullable|string',
-            'documento' => 'nullable|file|mimes:pdf|max:5120',
+            // Enlace al gestor documental de la empresa (el PDF ya no se sube a S3 desde aquí).
+            'documento_url' => 'nullable|url|max:2048',
         ]);
     }
 }

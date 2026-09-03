@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Sgrh;
 
 use App\Models\Sgrh\Contrato;
+use App\Models\Sgrh\Empleado;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -33,24 +34,36 @@ class MarcarContratosVencidos extends Command
      */
     public function handle()
     {
-        $ids = Contrato::where('estado', 'Activo')
+        $contratosVencidos = Contrato::where('estado', 'Activo')
             ->whereNotNull('fecha_vencimiento')
             ->where('fecha_vencimiento', '<', now())
-            ->pluck('id');
+            ->get(['id', 'empleado_id']);
 
-        if ($ids->isEmpty()) {
+        if ($contratosVencidos->isEmpty()) {
             $this->info('No hay contratos vencidos por marcar.');
 
             return;
         }
 
+        $ids = $contratosVencidos->pluck('id');
         Contrato::whereIn('id', $ids)->update(['estado' => 'Vencido']);
+
+        // No puede haber colaboradores activos sin contrato activo: cada colaborador afectado
+        // se queda sin contrato vigente al perder este (misma regla que
+        // ContratoController::sincronizarEstadoColaborador(), duplicada aquí porque este
+        // comando de consola no puede llamar a un método de ese controlador).
+        $empleadosInactivados = Empleado::whereIn('id', $contratosVencidos->pluck('empleado_id')->unique())
+            ->where('estado', 'activo')
+            ->get()
+            ->filter(fn(Empleado $empleado) => !$empleado->contratoActivo)
+            ->each(fn(Empleado $empleado) => $empleado->update(['estado' => 'inactivo']));
 
         // AuditoriaController::create() exige un usuario autenticado (Auth::user()->name) y no
         // aplica en un comando de consola/cron — mismo motivo por el que
         // reservas:cancelar-vencidas usa Log::info() en vez de la tabla Auditoria.
-        Log::info("sgrh:marcar-contratos-vencidos marcó {$ids->count()} contrato(s) como Vencido: " . $ids->implode(', '));
+        Log::info("sgrh:marcar-contratos-vencidos marcó {$ids->count()} contrato(s) como Vencido: " . $ids->implode(', ')
+            . ". Colaboradores inactivados: " . $empleadosInactivados->pluck('id')->implode(', '));
 
-        $this->info("{$ids->count()} contrato(s) marcados como Vencido.");
+        $this->info("{$ids->count()} contrato(s) marcados como Vencido. {$empleadosInactivados->count()} colaborador(es) inactivados.");
     }
 }

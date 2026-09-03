@@ -1,4 +1,4 @@
-{{-- Espera: $cargo (null en creación), $areas, $jornadas --}}
+{{-- Espera: $cargo (null en creación), $areas, $jornadas, $cargos --}}
 <div class="row g-3">
     <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
@@ -26,17 +26,7 @@
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
-    <div class="col-md-4">
-        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-dollar-sign me-1 text-primary"></i>Salario base
-        </label>
-        <input type="number" step="0.01" min="0" name="salario_base" class="form-control @error('salario_base') is-invalid @enderror"
-               value="{{ old('salario_base', $cargo->salario_base ?? '') }}">
-        @error('salario_base')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
             <i class="feather-clock me-1 text-primary"></i>Jornada
         </label>
@@ -52,7 +42,7 @@
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
-    <div class="col-md-4">
+    <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
             <i class="feather-activity me-1 text-primary"></i>Estado
         </label>
@@ -64,55 +54,38 @@
     </div>
     <div class="col-12">
         <hr class="my-1">
-        <p class="text-muted small fw-bold text-uppercase mb-0" style="letter-spacing: .04em;">Contacto corporativo del cargo</p>
+        <p class="text-muted small fw-bold text-uppercase mb-0" style="letter-spacing: .04em;">Cadena de aprobación</p>
+        <p class="text-muted small mb-0">Preparación para las aprobaciones de permisos y vacaciones (uso futuro).</p>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-phone me-1 text-primary"></i>Teléfono
+            <i class="feather-user-check me-1 text-primary"></i>Jefe inmediato
         </label>
-        <input type="text" name="telefono_corporativo" class="form-control @error('telefono_corporativo') is-invalid @enderror"
-               value="{{ old('telefono_corporativo', $cargo->telefono_corporativo ?? '') }}">
-        @error('telefono_corporativo')
+        <select name="jefe_inmediato_id" class="form-select @error('jefe_inmediato_id') is-invalid @enderror">
+            <option value="">Sin definir</option>
+            @foreach ($cargos as $c)
+                <option value="{{ $c->id }}" @selected((string) old('jefe_inmediato_id', $cargo->jefe_inmediato_id ?? '') === (string) $c->id)>
+                    {{ $c->nombre }}
+                </option>
+            @endforeach
+        </select>
+        @error('jefe_inmediato_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6">
         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-smartphone me-1 text-primary"></i>Celular
+            <i class="feather-user-check me-1 text-primary"></i>Director
         </label>
-        <input type="text" name="celular_corporativo" class="form-control @error('celular_corporativo') is-invalid @enderror"
-               value="{{ old('celular_corporativo', $cargo->celular_corporativo ?? '') }}">
-        @error('celular_corporativo')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-    <div class="col-md-2">
-        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-hash me-1 text-primary"></i>Ext.
-        </label>
-        <input type="text" name="ext_corporativo" class="form-control @error('ext_corporativo') is-invalid @enderror"
-               value="{{ old('ext_corporativo', $cargo->ext_corporativo ?? '') }}">
-        @error('ext_corporativo')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-mail me-1 text-primary"></i>Correo corporativo
-        </label>
-        <input type="email" name="correo_corporativo" class="form-control @error('correo_corporativo') is-invalid @enderror"
-               value="{{ old('correo_corporativo', $cargo->correo_corporativo ?? '') }}">
-        @error('correo_corporativo')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-    <div class="col-md-4">
-        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-            <i class="feather-mail me-1 text-primary"></i>Gmail corporativo
-        </label>
-        <input type="email" name="gmail_corporativo" class="form-control @error('gmail_corporativo') is-invalid @enderror"
-               value="{{ old('gmail_corporativo', $cargo->gmail_corporativo ?? '') }}">
-        @error('gmail_corporativo')
+        <select name="director_id" class="form-select @error('director_id') is-invalid @enderror">
+            <option value="">Sin definir</option>
+            @foreach ($cargos as $c)
+                <option value="{{ $c->id }}" @selected((string) old('director_id', $cargo->director_id ?? '') === (string) $c->id)>
+                    {{ $c->nombre }}
+                </option>
+            @endforeach
+        </select>
+        @error('director_id')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
     </div>
