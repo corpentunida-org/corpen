@@ -3,50 +3,48 @@
 namespace App\Imports\Certificados;
 
 use App\Models\Certificados\CarSiaApi;
-use App\Models\Certificados\CarSiaBloque;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Maatwebsite\Excel\Concerns\ToArray;
 use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Events\AfterImport;
-use Maatwebsite\Excel\Events\ImportFailed;
 
-class IngestaExcelImport implements ToArray, WithChunkReading, WithHeadingRow, ShouldQueue, WithEvents
+class IngestaExcelImport implements ToArray, WithChunkReading, WithHeadingRow
 {
     private $nuevoBloque;
-    private $rutaArchivo;
     private $ahora;
 
-    public function __construct($nuevoBloque, $rutaArchivo = null)
+    public function __construct($nuevoBloque)
     {
         $this->nuevoBloque = $nuevoBloque;
-        $this->rutaArchivo = $rutaArchivo;
         $this->ahora = now()->format('Y-m-d H:i:s');
     }
 
-    // Usar array() en lugar de collection() reduce drásticamente el consumo de RAM
     public function array(array $rows)
     {
+        if (empty($rows)) return;
+
         $loteInsercionMasiva = [];
 
         foreach ($rows as $row) {
-            // Validación robusta de fila vacía
-            if (empty($row['tercero']) && empty($row['id_factura'])) {
+            // Buscamos la columna tercero con varios nombres posibles
+            $tercero = $row['tercero'] ?? $row['nit'] ?? $row['cedula'] ?? $row['documento'] ?? null;
+            $idFactura = $row['id_factura'] ?? $row['factura'] ?? $row['id_fac'] ?? null;
+
+            if (empty($tercero) && empty($idFactura)) {
                 continue;
             }
 
-            $valorCelda = isset($row['valor']) ? preg_replace('/[^0-9.-]/', '', (string)$row['valor']) : 0;
-            $valorCelda = $valorCelda === '' ? 0 : (float)$valorCelda;
+            $valorCelda = $row['valor'] ?? 0;
+            if ($valorCelda !== null) {
+                $valorCelda = preg_replace('/[^0-9.-]/', '', (string)$valorCelda);
+                $valorCelda = $valorCelda === '' ? 0 : (float)$valorCelda;
+            }
 
             $fechaVenci = $row['fecha_venc'] ?? $row['fecha_venci'] ?? null;
             if (is_numeric($fechaVenci)) {
                 try {
                     $fechaVenci = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaVenci)->format('Y-m-d');
                 } catch (\Throwable $e) {
-                    $fechaVenci = null; // Failsafe para fechas corruptas
+                    $fechaVenci = null;
                 }
             }
 
@@ -56,9 +54,9 @@ class IngestaExcelImport implements ToArray, WithChunkReading, WithHeadingRow, S
                 'created_at'       => $this->ahora,
                 'updated_at'       => $this->ahora,
                 'numero_bloque'    => $this->nuevoBloque,
-                'id_factura'       => $row['id_factura'] ?? null,
-                'tercero'          => $row['tercero'] ?? null,
-                'nombre_tercero'   => $row['nombre_tercero'] ?? null,
+                'id_factura'       => $idFactura,
+                'tercero'          => $tercero,
+                'nombre_tercero'   => $row['nombre_tercero'] ?? $row['nombre'] ?? null,
                 'valor'            => $valorCelda,
                 'fecha_venci'      => $fechaVenci,
                 'numero_documento' => $row['documento'] ?? $row['numero_documento'] ?? null,
@@ -69,31 +67,17 @@ class IngestaExcelImport implements ToArray, WithChunkReading, WithHeadingRow, S
             ];
         }
 
-        if (!empty($loteInsercionMasiva)) {
-            CarSiaApi::insert($loteInsercionMasiva);
+        // 🚨 EL SEGURO: Si el lote quedó vacío, aborta y muestra los títulos reales
+        if (empty($loteInsercionMasiva)) {
+            $cabecerasDetectadas = implode(', ', array_keys($rows[0]));
+            throw new \Exception("ERROR DE TÍTULOS: Laravel detectó estos títulos en tu Excel [ {$cabecerasDetectadas} ] y no coinciden con 'tercero' ni 'id_factura'.");
         }
+
+        CarSiaApi::insert($loteInsercionMasiva);
     }
 
     public function chunkSize(): int
     {
-        return 1000;
-    }
-
-    // Hooks para automatizar la limpieza y cambiar el estado del bloque padre
-    public function registerEvents(): array
-    {
-        return [
-            AfterImport::class => function (AfterImport $event) {
-                CarSiaBloque::where('numero_bloque', $this->nuevoBloque)->update(['estado' => 'PROCESADO']);
-
-                if ($this->rutaArchivo && Storage::exists($this->rutaArchivo)) {
-                    Storage::delete($this->rutaArchivo);
-                }
-            },
-            ImportFailed::class => function (ImportFailed $event) {
-                CarSiaBloque::where('numero_bloque', $this->nuevoBloque)->update(['estado' => 'ERROR']);
-                Log::error("CERTIFICADOS Ingesta - Error en bloque {$this->nuevoBloque}: " . $event->getException()->getMessage());
-            },
-        ];
+        return 100;
     }
 }
