@@ -18,5 +18,31 @@
                 Terceros (maestro)
             </a>
         </li>
+        <li class="nxl-item {{ request()->routeIs('sgrh.area.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('sgrh.area.index') }}">
+                <span class="nxl-micon"><i class="bi bi-diagram-3"></i></span>
+                Áreas
+            </a>
+        </li>
+        <li class="nxl-item {{ request()->routeIs('sgrh.cargo.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('sgrh.cargo.index') }}">
+                <span class="nxl-micon"><i class="bi bi-briefcase"></i></span>
+                Cargos
+            </a>
+        </li>
+        @can('sgrh.contrato.index')
+            <li class="nxl-item {{ request()->routeIs('sgrh.contrato.*') ? 'active' : '' }}">
+                <a class="nxl-link" href="{{ route('sgrh.contrato.index') }}">
+                    <span class="nxl-micon"><i class="bi bi-file-earmark-text"></i></span>
+                    Contratos
+                </a>
+            </li>
+        @endcan
+        <li class="nxl-item {{ request()->routeIs('sgrh.tipo-contrato.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('sgrh.tipo-contrato.index') }}">
+                <span class="nxl-micon"><i class="bi bi-tags"></i></span>
+                Tipos de contrato
+            </a>
+        </li>
     </ul>
 </li>

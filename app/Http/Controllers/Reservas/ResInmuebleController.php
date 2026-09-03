@@ -72,7 +72,10 @@ class ResInmuebleController extends Controller
         if ($request->hasFile('imagenes')) {
             $basePath = 'corpentunida/reserva/inmueble_' . $inmueblecreado->id;
             foreach ($request->file('imagenes') as $foto) {
-                $path = Storage::disk('s3')->put($basePath, $foto);
+                // store() (no put()): put() devuelve un booleano, no la ruta real, y con la
+                // misma $basePath para todas las fotos cada una sobreescribía a la anterior en
+                // S3. store() genera un nombre único por archivo dentro de $basePath.
+                $path = $foto->store($basePath, 's3');
 
                 Res_inmueble_foto::create([
                     'res_inmueble_id' => $inmueblecreado->id,
