@@ -1508,6 +1508,7 @@ Route::middleware(['auth'])
 
         // Carga el EXCEL
         Route::post('ingesta/cargar', [IngestaController::class, 'cargarExcel'])->name('ingesta.cargar');
+        Route::get('ingesta/cargar/progreso', [IngestaController::class, 'progresoCarga'])->name('ingesta.cargar.progreso');
 
         // Proceso de Inyección Masiva (Motor ETL)
         Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');
