@@ -19,7 +19,7 @@ class ProcesarIngestaExcel implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 1800;
+    public int $timeout = 1800; // 30 minutos máximo para el job
     public int $tries = 3;
 
     public function __construct(
@@ -42,6 +42,7 @@ class ProcesarIngestaExcel implements ShouldQueue
                 throw new \RuntimeException("El archivo de ingesta no existe en el disco {$this->discoArchivo}: {$this->rutaArchivo}");
             }
 
+            // Aquí se llama a la clase Importadora que divide en bloques de 1.000
             Excel::import(
                 new IngestaExcelImport($this->numeroBloque),
                 $this->rutaArchivo,
@@ -52,7 +53,9 @@ class ProcesarIngestaExcel implements ShouldQueue
             CarSiaBloque::where('numero_bloque', $this->numeroBloque)
                 ->update(['estado' => 'PROCESADO']);
 
+            // Limpiamos el archivo temporal del disco
             Storage::disk($this->discoArchivo)->delete($this->rutaArchivo);
+
             $this->writeRuntimeLog('Importación finalizada', [
                 'numero_bloque' => $this->numeroBloque,
                 'registros' => $registros,
@@ -64,6 +67,7 @@ class ProcesarIngestaExcel implements ShouldQueue
             Log::error('CERTIFICADOS Ingesta - Error procesando Excel en cola: ' . $exception->getMessage(), [
                 'numero_bloque' => $this->numeroBloque,
             ]);
+
             $this->writeRuntimeLog('Importación fallida', [
                 'numero_bloque' => $this->numeroBloque,
                 'error' => $exception->getMessage(),
