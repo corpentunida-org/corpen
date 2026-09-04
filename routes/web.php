@@ -1506,6 +1506,10 @@ Route::middleware(['auth'])
         // Crear un Periodo contable (Año/Mes)
         Route::post('ingesta/periodos', [IngestaController::class, 'storePeriodo'])->name('periodos.store');
 
+        // Activar/Desactivar periodos (Interruptores)
+        Route::put('ingesta/periodos/{id}/toggle', [IngestaController::class, 'togglePeriodo'])->name('periodos.toggle');
+        Route::put('ingesta/periodos/anio/{anio}/toggle', [IngestaController::class, 'toggleAnio'])->name('periodos.toggle_anio');
+
         // Carga el EXCEL
         Route::post('ingesta/cargar', [IngestaController::class, 'cargarExcel'])->name('ingesta.cargar');
         Route::get('ingesta/cargar/progreso', [IngestaController::class, 'progresoCarga'])->name('ingesta.cargar.progreso');

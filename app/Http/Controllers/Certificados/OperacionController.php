@@ -120,6 +120,7 @@ class OperacionController extends Controller
             });
 
             $tiposAlerta = CarSiaTipoAlerta::all();
+            $tipos = CarSiaTipo::all();
 
             return view('certificados.operaciones.index', compact(
                 'operaciones',
@@ -128,6 +129,7 @@ class OperacionController extends Controller
                 'bloqueActivo',
                 'kpi',
                 'tiposAlerta',
+                'tipos',
                 'historialBloque'
             ));
 
