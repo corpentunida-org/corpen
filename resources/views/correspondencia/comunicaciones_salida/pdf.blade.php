@@ -12,7 +12,7 @@
             font-family: 'Helvetica', Arial, sans-serif;
             color: #1a1a1a;
             line-height: 1.5;
-            font-size: 13px;
+            font-size: 12pt; /* Tamaño estándar ideal para PDF */
             margin: 0;
             padding: 0;
         }
@@ -71,12 +71,12 @@
         .nombre-firmante {
             font-weight: bold;
             text-transform: uppercase;
-            font-size: 12px;
+            font-size: 12pt; /* Ajustado al tamaño del body */
             display: block;
         }
 
         .cargo-firmante {
-            font-size: 11px;
+            font-size: 11pt; /* Un punto más pequeño por estética */
             color: #444;
         }
 
