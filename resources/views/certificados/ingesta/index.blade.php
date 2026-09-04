@@ -959,6 +959,30 @@
                                 </div>
                             </div>
                         </div>
+                    {{-- BANNER DE ÉXITO MINIMALISTA CUANDO YA NO HAY PENDIENTES --}}
+                    @elseif(isset($bloqueActivo) && isset($kpi['total_registros']) && $kpi['total_registros'] > 0 && ($kpi['pendientes'] ?? 0) == 0)
+                        <div class="d-flex flex-column flex-md-row align-items-center justify-content-between p-3 mb-4 shadow-sm" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px;">
+
+                            {{-- Mensaje Compacto --}}
+                            <div class="d-flex align-items-center gap-2 mb-3 mb-md-0">
+                                <i class="fas fa-check-circle text-success fs-5"></i>
+                                <div style="color: #14532d; font-size: 0.95rem;">
+                                    <strong>¡Proceso completado!</strong>
+                                    <span style="color: #166534; opacity: 0.85;">
+                                        Se generaron {{ number_format($kpi['procesados'] ?? 0, 0, ',', '.') }} operaciones.
+                                    </span>
+                                </div>
+                            </div>
+
+                            {{-- Botón Pequeño --}}
+                            <a href="{{ route('certificados.operaciones.index', ['bloque' => $bloqueActivo]) }}"
+                               class="btn btn-sm d-inline-flex align-items-center text-white text-decoration-none shadow-sm"
+                               style="background: #10b981; border: none; border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;"
+                               onmouseover="this.style.background='#059669';"
+                               onmouseout="this.style.background='#10b981';">
+                                Ir a Operaciones <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        </div>
                     @endif
 
                     {{-- 7. TABLA DE AUDITORÍA --}}
@@ -1044,87 +1068,188 @@
                         </div>
 
                         <div class="collapsible-table show" id="tableCollapse">
-                            <div class="table-responsive">
-                                <table class="table tbl align-middle mb-0" aria-label="Registros del bloque de ingesta">
-                                    <thead style="background-color: #f8fafc; color: var(--c-muted); font-size: .75rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                                        <tr>
-                                            <th class="ps-4 py-3" style="width:105px; font-weight: 600;">Bloque</th>
-                                            <th class="py-3" style="width:120px; font-weight: 600;">Factura</th>
-                                            <th class="py-3" style="font-weight: 600;">Cliente / Tercero</th>
-                                            <th class="text-end py-3" style="width:145px; font-weight: 600;">Valor Neto</th>
-                                            <th class="py-3" style="width:140px; font-weight: 600;">Estado ETL</th>
-                                            <th class="py-3" style="width:155px; font-weight: 600;">Recepción</th>
-                                            <th class="text-center pe-4 py-3" style="width:85px; font-weight: 600;">Acción</th>
+                            <!-- Contenedor scrolleable: max-height para scroll vertical, table-responsive para horizontal -->
+                            <div class="table-responsive border rounded shadow-sm bg-white mb-3" style="max-height: 65vh; overflow: auto;">
+
+                                <!--
+                                table-sm: Padding ultra reducido (filas angostas)
+                                text-nowrap: Evita saltos de línea (estilo Excel)
+                                table-hover: Resalta fila
+                                align-middle: Centra verticalmente
+                                -->
+                                <table class="table table-sm table-bordered table-hover text-nowrap align-middle mb-0" style="font-size: 0.75rem;" aria-label="Registros del bloque de ingesta">
+
+                                    <!-- THEAD CONGELADO (position-sticky top-0) -->
+                                    <thead class="position-sticky top-0 align-top" style="z-index: 15;">
+
+                                        <!-- PRIMERA FILA: Categorías -->
+                                        <tr class="text-center text-uppercase bg-light text-secondary" style="font-size: 0.65rem; letter-spacing: 0.05em;">
+                                            <!-- Grupo Operación (Congelado a la izquierda) -->
+                                            <th colspan="3" class="position-sticky border-end border-2 bg-light" style="left: 0; z-index: 20; box-shadow: 2px 0 4px -1px rgba(0,0,0,0.1);">Siasoft</th>
+
+                                            <th colspan="3" class="border-end border-2 bg-light">Sistema</th>
+                                            <th colspan="6" class="border-end border-2 bg-light">Tercero / Cuenta</th>
+                                            <th colspan="7" class="border-end border-2 bg-light">Detalle Documento</th>
+                                            <th colspan="4" class="border-end border-2 bg-light">Fechas</th>
+
+                                            <!-- Resalte de color para Valores -->
+                                            <th colspan="4" class="border-end border-2 bg-info bg-opacity-10 text-primary">Valores Financieros</th>
+
+                                            <th colspan="2" class="border-end border-2 bg-light">Bancos</th>
+                                            <th colspan="6" class="border-end border-2 bg-light">Auditoría</th>
+                                            <th colspan="2" class="bg-light">Trazabilidad</th>
+                                        </tr>
+
+                                        <!-- SEGUNDA FILA: Columnas -->
+                                        <tr class="bg-light text-secondary" style="font-size: 0.7rem;">
+
+                                            <!-- CONGELADAS IZQUIERDA (z-index: 20 para sobreponerse al scroll) -->
+                                            <th class="text-center position-sticky bg-light border-end-0" style="left: 0; width: 40px; min-width: 40px; max-width: 40px; z-index: 20;">#</th>
+                                            <th class="text-center position-sticky bg-light border-end-0" style="left: 40px; width: 70px; min-width: 70px; max-width: 70px; z-index: 20;">Acción</th>
+                                            <th class="position-sticky bg-light border-end border-2 text-dark" style="left: 90px; width: 110px; min-width: 110px; max-width: 110px; z-index: 20; box-shadow: 2px 0 4px -1px rgba(0,0,0,0.1);">Factura</th>
+
+                                            <!-- Sistema -->
+                                            <th>Bloque</th>
+                                            <th>Estado</th>
+                                            <th class="text-center border-end border-2">Sel.</th>
+
+                                            <!-- Tercero / Cuenta -->
+                                            <th>Cuenta</th>
+                                            <th>Nom. Cuenta</th>
+                                            <th>NIT Base</th>
+                                            <th>NIT (Tercero)</th>
+                                            <th>Razón Social</th>
+                                            <th class="border-end border-2">Tercero CCO</th>
+
+                                            <!-- Documento -->
+                                            <th class="text-center">Tipo</th>
+                                            <th>Doc Mov</th>
+                                            <th>CCO</th>
+                                            <th>TRN</th>
+                                            <th>Nº Doc</th>
+                                            <th>Pagaré</th>
+                                            <th class="text-center border-end border-2">Cuota</th>
+
+                                            <!-- Fechas -->
+                                            <th class="text-center">Año</th>
+                                            <th class="text-center">Mes</th>
+                                            <th class="text-center">Vence</th>
+                                            <th class="text-center border-end border-2">TRN Banco</th>
+
+                                            <!-- Valores (Fondo sutil tintado) -->
+                                            <th class="text-end bg-info bg-opacity-10">V. Inicial</th>
+                                            <th class="text-end bg-info bg-opacity-10">V. Pago Ofic</th>
+                                            <th class="text-end bg-info bg-opacity-10 text-dark">Valor Neto</th>
+                                            <th class="text-end bg-info bg-opacity-10 border-end border-2">Valor Banco</th>
+
+                                            <!-- Bancos -->
+                                            <th>Banco</th>
+                                            <th class="border-end border-2">UID Banco</th>
+
+                                            <!-- Auditoría -->
+                                            <th class="text-center">Contab.</th>
+                                            <th>Nota</th>
+                                            <th>Detalle</th>
+                                            <th>Log RQ</th>
+                                            <th>ID Cab</th>
+                                            <th class="border-end border-2">ID Reg Ref</th>
+
+                                            <!-- Trazabilidad -->
+                                            <th class="text-center">Fecha AD</th>
+                                            <th class="text-center">Fecha Edit</th>
                                         </tr>
                                     </thead>
+
                                     <tbody>
-                                        @forelse($lotesCrudos as $lote)
-                                        <tr style="border-bottom: 1px solid #f1f5f9;">
-                                            <td class="ps-4">
-                                                <span class="badge bg-light text-secondary border fw-semibold" style="font-family:monospace;font-size:.78rem;">
-                                                    API-{{ str_pad($lote->numero_bloque ?? 0, 4, '0', STR_PAD_LEFT) }}
-                                                </span>
+                                        @forelse($lotesCrudos as $index => $lote)
+                                        <tr>
+                                            <!-- CONGELADAS IZQUIERDA -->
+                                            <td class="text-center text-muted fw-medium position-sticky bg-light border-end-0" style="left: 0; width: 40px; min-width: 40px; max-width: 40px; z-index: 5;">
+                                                {{ $lotesCrudos->firstItem() + $index }}
                                             </td>
-                                            <td>
-                                                <span class="fw-bold" style="font-family:monospace;color:var(--c-text);">#{{ $lote->id_factura ?? 'N/A' }}</span>
-                                            </td>
-                                            <td>
-                                                <div class="fw-bold text-dark" style="font-size:.85rem;">{{ $lote->nombre_tercero ?? 'Tercero desconocido' }}</div>
-                                                <div style="color:var(--c-muted);font-size:.75rem;margin-top:.1rem;">
-                                                    <i class="fas fa-id-card me-1" style="font-size:.65rem; opacity: .7;"></i> NIT: {{ $lote->tercero ?? '—' }}
-                                                </div>
-                                            </td>
-                                            <td class="text-end fw-bold" style="font-size:.9rem; color: #0f172a;">
-                                                ${{ number_format((float)($lote->valor ?? 0), 2, ',', '.') }}
-                                            </td>
-                                            <td>
-                                                @if($lote->anular == 1)
-                                                    <span class="badge-g badge-danger"><i class="fas fa-ban"></i> Anulado</span>
-                                                @elseif($lote->estado == 'PROCESADO')
-                                                    <span class="badge-g badge-ok"><i class="fas fa-check-circle"></i> Procesado</span>
-                                                @else
-                                                    <span class="badge-g badge-warn"><i class="fas fa-hourglass-half"></i> Pendiente</span>
-                                                @endif
-                                            </td>
-                                            <td style="color:var(--c-muted);font-size:.8rem;">
-                                                <i class="far fa-calendar-alt me-1 opacity-75"></i>
-                                                {{ $lote->fecha_ad ? \Carbon\Carbon::parse($lote->fecha_ad)->format('d/m/Y') : ($lote->created_at ? \Carbon\Carbon::parse($lote->created_at)->format('d/m/Y') : '—') }}
-                                            </td>
-                                            <td class="text-center pe-4">
+                                            <td class="text-center position-sticky bg-light border-end-0" style="left: 40px; width: 50px; min-width: 50px; max-width: 50px; z-index: 5;">
                                                 @if($lote->estado != 'PROCESADO' && $lote->anular != 1)
-                                                    <form action="{{ route('certificados.ingesta.anular', $lote->id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Confirmas excluir la factura #{{ $lote->id_factura }} del bloque?')">
+                                                    <form action="{{ route('certificados.ingesta.anular', $lote->id) }}" method="POST" class="m-0 d-inline" onsubmit="return confirm('¿Excluir factura #{{ $lote->id_factura }}?')">
                                                         @csrf @method('PUT')
-                                                        <button type="submit" class="btn btn-sm border-0 bg-transparent p-2" style="color:#ef4444; transition: transform 0.2s;" title="Excluir del bloque" aria-label="Excluir factura {{ $lote->id_factura }}" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                                                        <button type="submit" class="btn btn-sm p-0 m-0 border-0 bg-transparent text-danger" title="Excluir">
                                                             <i class="fas fa-trash-alt"></i>
                                                         </button>
                                                     </form>
                                                 @else
-                                                    <span style="color:var(--c-muted);opacity:.3;" title="{{ $lote->anular == 1 ? 'Anulado' : 'Ya procesado' }}">
-                                                        <i class="fas fa-lock"></i>
-                                                    </span>
+                                                    <i class="fas fa-lock text-secondary opacity-50" title="Bloqueado"></i>
                                                 @endif
                                             </td>
+                                            <td class="fw-bold text-dark position-sticky bg-white border-end border-2" style="left: 90px; width: 110px; min-width: 110px; max-width: 110px; z-index: 5; box-shadow: 2px 0 4px -1px rgba(0,0,0,0.1);">
+                                                {{ $lote->id_factura ?? '—' }}
+                                            </td>
+
+                                            <!-- Sistema -->
+                                            <td class="text-muted font-monospace">API-{{ str_pad($lote->numero_bloque ?? 0, 4, '0', STR_PAD_LEFT) }}</td>
+                                            <td>
+                                                @if($lote->anular == 1)
+                                                    <span class="text-danger fw-semibold"><span class="d-inline-block rounded-circle bg-danger me-1" style="width:6px; height:6px;"></span>Anulado</span>
+                                                @elseif($lote->estado == 'PROCESADO')
+                                                    <span class="text-success fw-semibold"><span class="d-inline-block rounded-circle bg-success me-1" style="width:6px; height:6px;"></span>Procesado</span>
+                                                @else
+                                                    <span class="text-warning fw-semibold text-darken"><span class="d-inline-block rounded-circle bg-warning me-1" style="width:6px; height:6px;"></span>Pendiente</span>
+                                                @endif
+                                            </td>
+                                            <td class="text-center text-muted border-end border-2">{{ $lote->is_selected ?? '0' }}</td>
+
+                                            <!-- Tercero / Cuenta -->
+                                            <td class="text-muted">{{ $lote->cuenta ?? '—' }}</td>
+                                            <td><span class="d-inline-block text-truncate text-muted" style="max-width: 120px;" title="{{ $lote->nombre_cuenta }}">{{ $lote->nombre_cuenta ?? '—' }}</span></td>
+                                            <td class="text-muted">{{ $lote->tercero_base ?? '—' }}</td>
+                                            <td class="fw-bold">{{ $lote->tercero ?? '—' }}</td>
+                                            <td><span class="d-inline-block text-truncate" style="max-width: 160px;" title="{{ $lote->nombre_tercero }}">{{ $lote->nombre_tercero ?? '—' }}</span></td>
+                                            <td class="text-muted border-end border-2">{{ $lote->tercero_cco ?? '—' }}</td>
+
+                                            <!-- Documento -->
+                                            <td class="text-center">{{ $lote->tipo ?? '—' }}</td>
+                                            <td>{{ $lote->doc_mov ?? '—' }}</td>
+                                            <td>{{ $lote->cco ?? '—' }}</td>
+                                            <td>{{ $lote->trn ?? '—' }}</td>
+                                            <td>{{ $lote->numero_documento ?? '—' }}</td>
+                                            <td>{{ $lote->pagare ?? '—' }}</td>
+                                            <td class="text-center border-end border-2">{{ $lote->cuota ?? '—' }}</td>
+
+                                            <!-- Fechas -->
+                                            <td class="text-center text-muted">{{ $lote->anio ?? '—' }}</td>
+                                            <td class="text-center text-muted">{{ $lote->mes ? str_pad($lote->mes, 2, '0', STR_PAD_LEFT) : '—' }}</td>
+                                            <td class="text-center text-primary fw-medium">{{ $lote->fecha_venci ? \Carbon\Carbon::parse($lote->fecha_venci)->format('d/m/y') : '—' }}</td>
+                                            <td class="text-center text-muted border-end border-2">{{ $lote->fecha_trn_banco ? \Carbon\Carbon::parse($lote->fecha_trn_banco)->format('d/m/y') : '—' }}</td>
+
+                                            <!-- Valores (font-monospace para tabular, bg-light para separar) -->
+                                            <td class="text-end text-muted font-monospace bg-light">${{ number_format((float)($lote->valor_inicial ?? 0), 2, ',', '.') }}</td>
+                                            <td class="text-end text-muted font-monospace bg-light">${{ number_format((float)($lote->valor_pago_ofic ?? 0), 2, ',', '.') }}</td>
+                                            <td class="text-end text-dark fw-bold font-monospace bg-light">${{ number_format((float)($lote->valor ?? 0), 2, ',', '.') }}</td>
+                                            <td class="text-end text-muted font-monospace bg-light border-end border-2">${{ number_format((float)($lote->valor_banco ?? 0), 2, ',', '.') }}</td>
+
+                                            <!-- Bancos -->
+                                            <td><span class="d-inline-block text-truncate text-muted" style="max-width: 100px;">{{ $lote->banco ?? '—' }}</span></td>
+                                            <td class="text-muted font-monospace border-end border-2" style="font-size: 0.65rem;">{{ $lote->uid_banco ?? '—' }}</td>
+
+                                            <!-- Auditoría -->
+                                            <td class="text-center">
+                                                {!! $lote->contabilizado ? '<i class="fas fa-check text-success"></i>' : '<span class="text-secondary opacity-50">—</span>' !!}
+                                            </td>
+                                            <td><span class="d-inline-block text-truncate text-muted" style="max-width: 100px;" title="{{ $lote->nota }}">{{ $lote->nota ?? '—' }}</span></td>
+                                            <td><span class="d-inline-block text-truncate text-muted" style="max-width: 100px;" title="{{ $lote->detalle }}">{{ $lote->detalle ?? '—' }}</span></td>
+                                            <td><span class="d-inline-block text-truncate text-muted" style="max-width: 100px;" title="{{ $lote->log_rq }}">{{ $lote->log_rq ?? '—' }}</span></td>
+                                            <td class="text-muted">{{ $lote->id_cab ?? '—' }}</td>
+                                            <td class="text-muted border-end border-2">{{ $lote->id_reg_cab_ref ?? '—' }}</td>
+
+                                            <!-- Trazabilidad -->
+                                            <td class="text-center text-secondary opacity-75" style="font-size: 0.65rem;">{{ $lote->fecha_ad ? \Carbon\Carbon::parse($lote->fecha_ad)->format('d/m H:i') : '—' }}</td>
+                                            <td class="text-center text-secondary opacity-75" style="font-size: 0.65rem;">{{ $lote->fecha_edit ? \Carbon\Carbon::parse($lote->fecha_edit)->format('d/m H:i') : '—' }}</td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="7" class="text-center py-5">
-                                                <div class="d-flex flex-column align-items-center py-4">
-                                                    <div class="p-3 rounded-circle mb-3 d-flex justify-content-center align-items-center" style="background:#f1f5f9; width: 60px; height: 60px;">
-                                                        <i class="fas fa-inbox fs-3" style="color:#94a3b8;"></i>
-                                                    </div>
-                                                    <h6 class="fw-bold text-dark mb-1">Sin registros en este lote</h6>
-                                                    <p class="mb-3" style="color:var(--c-muted);max-width:360px;font-size:.85rem;">
-                                                        @if(request('buscar_cedula') || request('estado'))
-                                                            Ningún registro coincide con los filtros de búsqueda.
-                                                        @else
-                                                            Carga un archivo Excel para poblar este bloque de datos.
-                                                        @endif
-                                                    </p>
-                                                    @if(request('buscar_cedula') || request('estado'))
-                                                        <a href="{{ route('certificados.ingesta.index', ['bloque' => $bloqueActivo]) }}" class="btn-g btn-outline-g shadow-sm text-decoration-none">
-                                                            <i class="fas fa-times me-1"></i> Limpiar filtros
-                                                        </a>
-                                                    @endif
+                                            <td colspan="37" class="text-center py-5 bg-light">
+                                                <div class="d-flex flex-column align-items-center">
+                                                    <i class="fas fa-table fs-2 mb-2 text-secondary opacity-50"></i>
+                                                    <h6 class="fw-bold text-dark mb-1">Sin registros</h6>
+                                                    <p class="text-muted small">Carga un archivo para poblar este bloque de datos.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1133,12 +1258,13 @@
                                 </table>
                             </div>
 
+                            <!-- Paginación Footer -->
                             @if($lotesCrudos->hasPages() || $lotesCrudos->total() > 0)
-                            <div class="bg-white border-top px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                                <p class="m-0 text-muted" style="font-size:.8rem;">
-                                    Mostrando <strong class="text-dark">{{ $lotesCrudos->firstItem() ?? 0 }}</strong> – <strong class="text-dark">{{ $lotesCrudos->lastItem()  ?? 0 }}</strong> de <strong class="text-dark">{{ number_format($lotesCrudos->total(), 0, ',', '.') }}</strong> registros
-                                </p>
-                                <div class="pagination-minimal">
+                            <div class="d-flex justify-content-between align-items-center pt-2 px-1">
+                                <span class="text-muted" style="font-size: 0.75rem;">
+                                    Filas <b class="text-dark">{{ $lotesCrudos->firstItem() ?? 0 }} - {{ $lotesCrudos->lastItem() ?? 0 }}</b> de <b class="text-dark">{{ number_format($lotesCrudos->total(), 0, ',', '.') }}</b>
+                                </span>
+                                <div style="transform: scale(0.9); transform-origin: right center;">
                                     {{ $lotesCrudos->appends(request()->query())->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
@@ -1148,162 +1274,270 @@
 
                 </div>
 
-                {{-- COLUMNA LATERAL (SIDEBAR FIJO) CON FLIP CARD ANIMADO --}}
+                {{-- COLUMNA LATERAL (SIDEBAR FIJO UNIFICADO 50/50) --}}
                 <div class="col-12 col-xl-3">
-                    {{-- 8. SIDEBAR PERIODOS --}}
-                    <div class="card-g p-4 sticky-sidebar">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="fw-bold text-dark d-flex align-items-center gap-2 m-0" style="font-size: 1.1rem;">
-                                <i class="far fa-calendar-alt text-muted" style="font-size:.9rem;"></i> Periodos y Lotes
-                            </h5>
-                            <div class="text-end">
-                                <span class="badge bg-primary text-white shadow-sm" style="font-size:.7rem;">
-                                    <i class="far fa-clock me-1"></i> {{ date('m/Y') }}
-                                </span>
+                    {{-- Contenedor Sticky Principal que contiene y divide el alto para ambas tarjetas --}}
+                    <div class="d-flex flex-column gap-3" style="position: sticky; top: 1.5rem; height: calc(100vh - 3rem);">
+
+                        {{-- 8. SIDEBAR PERIODOS --}}
+                        <div class="card-g p-3 d-flex flex-column shadow-sm" style="flex: 1; min-height: 0;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 m-0" style="font-size: 1.05rem;">
+                                    <i class="far fa-calendar-alt text-muted" style="font-size:.9rem;"></i> Periodos
+                                </h5>
+                                <div class="text-end">
+                                    <span class="badge bg-primary text-white shadow-sm" style="font-size:.7rem;">
+                                        <i class="far fa-clock me-1"></i> {{ date('m/Y') }}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="flip-wrapper">
-                            <div class="flip-card" id="sidebarFlipCard">
+                            <div class="flip-wrapper">
+                                <div class="flip-card" id="sidebarFlipCard">
+                                    <div class="flip-face flip-front">
+                                        <p class="text-muted mb-3 pb-2 border-bottom" style="font-size:.8rem;">Historial contable y lotes asociados.</p>
 
-                                <div class="flip-face flip-front">
-                                    <p class="text-muted mb-3 pb-2 border-bottom" style="font-size:.8rem;">Historial contable y lotes asociados.</p>
+                                        <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2 mb-3">
+                                            @php
+                                                $periodosAgrupados = collect($periodos)->groupBy('anio')->sortKeysDesc();
+                                            @endphp
 
-                                    <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2 mb-3">
-                                        @php
-                                            $periodosAgrupados = collect($periodos)->groupBy('anio')->sortKeysDesc();
-                                        @endphp
+                                            @forelse($periodosAgrupados as $anio => $meses)
+                                                @php
+                                                    // Verifica si absolutamente todos los meses de este año están abiertos
+                                                    $todosAbiertos = $meses->every('abierto', true);
+                                                @endphp
+                                                <div class="mb-3">
+                                                    {{-- HEADER DEL AÑO CON INTERRUPTOR MASIVO --}}
+                                                    <div class="year-toggle-btn d-flex align-items-center gap-2 mb-2" id="year-toggle-{{ $anio }}" data-target="year-content-{{ $anio }}">
+                                                        <span class="badge bg-light text-dark border shadow-sm w-100 d-flex justify-content-between align-items-center py-2 px-3">
+                                                            <span><i class="fas fa-folder text-muted me-1"></i> Año {{ $anio }}</span>
 
-                                        @forelse($periodosAgrupados as $anio => $meses)
-                                            <div class="mb-3">
-                                                <div class="year-toggle-btn d-flex align-items-center gap-2 mb-2" id="year-toggle-{{ $anio }}" data-target="year-content-{{ $anio }}">
-                                                    <span class="badge bg-light text-dark border shadow-sm w-100 d-flex justify-content-between align-items-center py-2 px-3">
-                                                        <span><i class="fas fa-folder text-muted me-1"></i> Año {{ $anio }}</span>
-                                                        <i class="fas fa-chevron-down text-muted chevron-icon"></i>
-                                                    </span>
-                                                </div>
-
-                                                <div class="year-content flex-column gap-2 ps-2 ms-2 mb-3" id="year-content-{{ $anio }}" style="border-left: 2px solid var(--c-border); display: none;">
-                                                    @foreach($meses->sortByDesc('mes') as $p)
-                                                        @php
-                                                            $bloquesDelPeriodo = \App\Models\Certificados\CarSiaBloque::where('id_periodo', $p->id)
-                                                                ->orderBy('numero_bloque', 'desc')
-                                                                ->get();
-                                                            $esMesActual = ($anio == date('Y') && $p->mes == date('n'));
-                                                            $mesTieneActivo = $bloquesDelPeriodo->contains('numero_bloque', $bloqueActivo);
-                                                        @endphp
-
-                                                        <div class="d-flex flex-column rounded mb-1 shadow-sm {{ $esMesActual ? 'mes-actual-highlight' : '' }}" style="background: var(--c-surface); border: 1px solid var(--c-border);">
-                                                            <div class="month-toggle-btn p-2 d-flex justify-content-between align-items-center {{ $mesTieneActivo ? 'is-open' : '' }}"
-                                                                 data-target="month-content-{{ $p->id }}"
-                                                                 style="cursor: pointer; transition: background 0.2s;">
-                                                                <div>
-                                                                    <div class="fw-bold {{ $esMesActual ? 'text-primary' : 'text-dark' }}" style="font-size:.8rem; line-height:1.2;">
-                                                                        <i class="fas fa-chevron-right chevron-month text-muted me-1" style="font-size:.65rem; transition: transform 0.3s;"></i>
-                                                                        {{ $p->nombre }}
-                                                                        @if($esMesActual)
-                                                                            <span class="badge bg-primary text-white ms-1 shadow-sm" style="font-size:.55rem; vertical-align:middle;">ACTUAL</span>
-                                                                        @endif
-                                                                    </div>
-                                                                    <div class="ms-3 ps-1 mt-1" style="font-size:.65rem; color:var(--c-muted); font-family:monospace;">
-                                                                        {{ $bloquesDelPeriodo->count() }} lotes registrados
-                                                                    </div>
+                                                            <div class="d-flex align-items-center gap-3">
+                                                                {{-- Interruptor Masivo del Año --}}
+                                                                <div onclick="event.stopPropagation();" title="{{ $todosAbiertos ? 'Cerrar todo el año' : 'Abrir todo el año' }}">
+                                                                    <form action="{{ route('certificados.periodos.toggle_anio', $anio) }}" method="POST" class="m-0">
+                                                                        @csrf
+                                                                        @method('PUT')
+                                                                        <input type="hidden" name="estado" value="{{ $todosAbiertos ? 0 : 1 }}">
+                                                                        <div class="form-check form-switch m-0" style="min-height: 0;">
+                                                                            <input class="form-check-input" type="checkbox" onchange="this.form.submit()" {{ $todosAbiertos ? 'checked' : '' }} style="cursor:pointer; margin-top: 2px;">
+                                                                        </div>
+                                                                    </form>
                                                                 </div>
-                                                                <div>
-                                                                    @if($p->abierto)
-                                                                        <span style="color:var(--c-success); font-size:.7rem; font-weight:600;"><i class="fas fa-circle" style="font-size:.4rem; vertical-align:middle; margin-right:3px;"></i> Abierto</span>
+                                                                <i class="fas fa-chevron-down text-muted chevron-icon"></i>
+                                                            </div>
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="year-content flex-column gap-2 ps-2 ms-2 mb-3" id="year-content-{{ $anio }}" style="border-left: 2px solid var(--c-border); display: none;">
+                                                        @foreach($meses->sortByDesc('mes') as $p)
+                                                            @php
+                                                                $bloquesDelPeriodo = \App\Models\Certificados\CarSiaBloque::where('id_periodo', $p->id)
+                                                                    ->orderBy('numero_bloque', 'desc')
+                                                                    ->get();
+                                                                $esMesActual = ($anio == date('Y') && $p->mes == date('n'));
+                                                                $mesTieneActivo = $bloquesDelPeriodo->contains('numero_bloque', $bloqueActivo);
+                                                            @endphp
+
+                                                            <div class="d-flex flex-column rounded mb-1 shadow-sm {{ $esMesActual ? 'mes-actual-highlight' : '' }}" style="background: var(--c-surface); border: 1px solid var(--c-border);">
+                                                                <div class="month-toggle-btn p-2 d-flex justify-content-between align-items-center {{ $mesTieneActivo ? 'is-open' : '' }}"
+                                                                     data-target="month-content-{{ $p->id }}"
+                                                                     style="cursor: pointer; transition: background 0.2s;">
+
+                                                                    <div>
+                                                                        <div class="fw-bold {{ $esMesActual ? 'text-primary' : 'text-dark' }}" style="font-size:.8rem; line-height:1.2;">
+                                                                            <i class="fas fa-chevron-right chevron-month text-muted me-1" style="font-size:.65rem; transition: transform 0.3s;"></i>
+                                                                            {{ $p->nombre }}
+                                                                            @if($esMesActual)
+                                                                                <span class="badge bg-primary text-white ms-1 shadow-sm" style="font-size:.55rem; vertical-align:middle;">ACTUAL</span>
+                                                                            @endif
+                                                                        </div>
+                                                                        <div class="ms-3 ps-1 mt-1" style="font-size:.65rem; color:var(--c-muted); font-family:monospace;">
+                                                                            {{ $bloquesDelPeriodo->count() }} lotes registrados
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {{-- INTERRUPTOR INDIVIDUAL DEL MES --}}
+                                                                    <div onclick="event.stopPropagation();" class="me-1">
+                                                                        <form action="{{ route('certificados.periodos.toggle', $p->id) }}" method="POST" class="m-0">
+                                                                            @csrf
+                                                                            @method('PUT')
+                                                                            <div class="form-check form-switch m-0 d-flex flex-column align-items-end" title="Cambiar estado">
+                                                                                <input class="form-check-input" type="checkbox" onchange="this.form.submit()" {{ $p->abierto ? 'checked' : '' }} style="cursor:pointer; width:28px; height:14px; margin-top:0;">
+                                                                                <span style="font-size: .6rem; font-weight: bold; margin-top:2px; color: {{ $p->abierto ? 'var(--c-success)' : 'var(--c-muted)' }}">
+                                                                                    {{ $p->abierto ? 'ABIERTO' : 'CERRADO' }}
+                                                                                </span>
+                                                                            </div>
+                                                                        </form>
+                                                                    </div>
+
+                                                                </div>
+
+                                                                <div class="month-content flex-column gap-1 p-2 pt-0 mt-1 border-top" id="month-content-{{ $p->id }}" style="display: {{ $mesTieneActivo ? 'flex' : 'none' }};">
+                                                                    {{-- ... AQUÍ QUEDA EXACTAMENTE TU BUCLE DE LOS LOTES COMO LO TENÍAS ... --}}
+                                                                    @if($bloquesDelPeriodo->count() > 0)
+                                                                        <div class="mt-2">
+                                                                            @foreach($bloquesDelPeriodo as $bloque)
+                                                                                @php $esActivo = ($bloqueActivo == $bloque->numero_bloque); @endphp
+                                                                                <a href="{{ route('certificados.ingesta.index', ['bloque' => $bloque->numero_bloque]) }}"
+                                                                                   onclick="mostrarCargandoLote()"
+                                                                                   class="block-link d-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded {{ $esActivo ? 'active-block' : '' }}"
+                                                                                   style="font-size: .75rem;"
+                                                                                   title="{{ $bloque->descripcion ?? 'Lote #'.$bloque->numero_bloque }}">
+                                                                                    <span class="fw-semibold d-flex align-items-center gap-2">
+                                                                                        <i class="fas fa-cube ico-cube" style="font-size: .65rem;"></i>
+                                                                                        Lote API-{{ str_pad($bloque->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                                                    </span>
+                                                                                    @if($esActivo)
+                                                                                        <i class="fas fa-check" style="font-size: .65rem; color: #fff;"></i>
+                                                                                    @endif
+                                                                                </a>
+                                                                            @endforeach
+                                                                        </div>
                                                                     @else
-                                                                        <span style="color:var(--c-muted); font-size:.7rem; font-weight:600;"><i class="fas fa-circle" style="font-size:.4rem; vertical-align:middle; margin-right:3px;"></i> Cerrado</span>
+                                                                        <div class="mt-1 text-center" style="font-size: .65rem; color: var(--c-muted);">
+                                                                            Sin lotes asignados
+                                                                        </div>
                                                                     @endif
                                                                 </div>
                                                             </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <p class="text-muted text-center py-4 mb-0" style="font-size:.8rem;"><i class="fas fa-inbox d-block mb-2 fs-3 opacity-50"></i>No hay periodos registrados.</p>
+                                            @endforelse
+                                        </div>
 
-                                                            <div class="month-content flex-column gap-1 p-2 pt-0 mt-1 border-top" id="month-content-{{ $p->id }}" style="display: {{ $mesTieneActivo ? 'flex' : 'none' }};">
-                                                                @if($bloquesDelPeriodo->count() > 0)
-                                                                    <div class="mt-2">
-                                                                        @foreach($bloquesDelPeriodo as $bloque)
-                                                                            @php $esActivo = ($bloqueActivo == $bloque->numero_bloque); @endphp
-                                                                            <a href="{{ route('certificados.ingesta.index', ['bloque' => $bloque->numero_bloque]) }}"
-                                                                               onclick="mostrarCargandoLote()"
-                                                                               class="block-link d-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded {{ $esActivo ? 'active-block' : '' }}"
-                                                                               style="font-size: .75rem;"
-                                                                               title="{{ $bloque->descripcion ?? 'Lote #'.$bloque->numero_bloque }}">
-                                                                                <span class="fw-semibold d-flex align-items-center gap-2">
-                                                                                    <i class="fas fa-cube ico-cube" style="font-size: .65rem;"></i>
-                                                                                    Lote API-{{ str_pad($bloque->numero_bloque, 4, '0', STR_PAD_LEFT) }}
-                                                                                </span>
-                                                                                @if($esActivo)
-                                                                                    <i class="fas fa-check" style="font-size: .65rem; color: #fff;"></i>
-                                                                                @endif
-                                                                            </a>
-                                                                        @endforeach
-                                                                    </div>
-                                                                @else
-                                                                    <div class="mt-1 text-center" style="font-size: .65rem; color: var(--c-muted);">
-                                                                        Sin lotes asignados
-                                                                    </div>
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
+                                        <button type="button" id="btnFlipToForm" class="btn-g btn-outline-g w-100 justify-content-center mt-auto" style="padding:.6rem 0;">
+                                            <i class="fas fa-plus" style="color:var(--c-primary);"></i> Nuevo Periodo
+                                        </button>
+                                    </div>
+
+                                    <div class="flip-face flip-back">
+                                        <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+                                            <button type="button" id="btnFlipToList" class="btn btn-sm btn-light border-0 shadow-none d-flex align-items-center justify-content-center" title="Volver al historial" style="width:32px;height:32px;border-radius:50%;background:var(--c-bg);">
+                                                <i class="fas fa-arrow-left text-muted"></i>
+                                            </button>
+                                            <span class="fw-bold text-dark m-0" style="font-size: .95rem;">Crear Periodo</span>
+                                        </div>
+
+                                        <p class="text-muted mb-4" style="font-size:.8rem;">Abre un nuevo mes contable para asignar operaciones.</p>
+
+                                        <form action="{{ route('certificados.periodos.store') }}" method="POST" class="d-flex flex-column flex-grow-1">
+                                            @csrf
+                                            <div class="row g-2 mb-3">
+                                                <div class="col-6">
+                                                    <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Año</label>
+                                                    <input type="number" name="anio" class="form-control form-control-sm border-0 bg-light" value="{{ date('Y') }}" required min="2020" max="2099" style="box-shadow:none;">
+                                                </div>
+                                                <div class="col-6">
+                                                    <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Mes</label>
+                                                    <select name="mes" class="form-select form-select-sm border-0 bg-light" required style="box-shadow:none; cursor:pointer;">
+                                                        @for($i=1; $i<=12; $i++)
+                                                            <option value="{{ $i }}" {{ date('n') == $i ? 'selected' : '' }}>{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</option>
+                                                        @endfor
+                                                    </select>
                                                 </div>
                                             </div>
-                                        @empty
-                                            <p class="text-muted text-center py-4 mb-0" style="font-size:.8rem;"><i class="fas fa-inbox d-block mb-2 fs-3 opacity-50"></i>No hay periodos registrados.</p>
-                                        @endforelse
+
+                                            <div class="mb-4">
+                                                <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Nombre del Periodo</label>
+                                                <input type="text" name="nombre" class="form-control form-control-sm border-0 bg-light" placeholder="Ej: AGOSTO 2026" required style="box-shadow:none;">
+                                            </div>
+
+                                            <div class="d-flex align-items-center justify-content-between mb-4 pb-3" style="border-bottom: 1px dashed var(--c-border);">
+                                                <span class="fw-medium text-dark" style="font-size:.85rem;">Mantener Abierto</span>
+                                                <div class="form-check form-switch m-0">
+                                                    <input class="form-check-input" type="checkbox" name="abierto" id="switchAbierto" checked style="cursor:pointer; width:35px; height:18px;">
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" class="btn-g btn-primary-g w-100 justify-content-center mt-auto" style="padding:.6rem 0;">
+                                                <i class="fas fa-save me-1"></i> Guardar Mes
+                                            </button>
+                                        </form>
                                     </div>
-
-                                    <button type="button" id="btnFlipToForm" class="btn-g btn-outline-g w-100 justify-content-center mt-auto" style="padding:.6rem 0;">
-                                        <i class="fas fa-plus" style="color:var(--c-primary);"></i> Nuevo Periodo
-                                    </button>
-                                </div>
-
-                                <div class="flip-face flip-back">
-                                    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
-                                        <button type="button" id="btnFlipToList" class="btn btn-sm btn-light border-0 shadow-none d-flex align-items-center justify-content-center" title="Volver al historial" style="width:32px;height:32px;border-radius:50%;background:var(--c-bg);">
-                                            <i class="fas fa-arrow-left text-muted"></i>
-                                        </button>
-                                        <span class="fw-bold text-dark m-0" style="font-size: .95rem;">Crear Periodo</span>
-                                    </div>
-
-                                    <p class="text-muted mb-4" style="font-size:.8rem;">Abre un nuevo mes contable para asignar operaciones.</p>
-
-                                    <form action="{{ route('certificados.periodos.store') }}" method="POST" class="d-flex flex-column flex-grow-1">
-                                        @csrf
-                                        <div class="row g-2 mb-3">
-                                            <div class="col-6">
-                                                <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Año</label>
-                                                <input type="number" name="anio" class="form-control form-control-sm border-0 bg-light" value="{{ date('Y') }}" required min="2020" max="2099" style="box-shadow:none;">
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Mes</label>
-                                                <select name="mes" class="form-select form-select-sm border-0 bg-light" required style="box-shadow:none; cursor:pointer;">
-                                                    @for($i=1; $i<=12; $i++)
-                                                        <option value="{{ $i }}" {{ date('n') == $i ? 'selected' : '' }}>{{ str_pad($i, 2, '0', STR_PAD_LEFT) }}</option>
-                                                    @endfor
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div class="mb-4">
-                                            <label class="fw-semibold mb-1" style="font-size:.7rem; color:var(--c-muted); text-transform:uppercase;">Nombre del Periodo</label>
-                                            <input type="text" name="nombre" class="form-control form-control-sm border-0 bg-light" placeholder="Ej: AGOSTO 2026" required style="box-shadow:none;">
-                                        </div>
-
-                                        <div class="d-flex align-items-center justify-content-between mb-4 pb-3" style="border-bottom: 1px dashed var(--c-border);">
-                                            <span class="fw-medium text-dark" style="font-size:.85rem;">Mantener Abierto</span>
-                                            <div class="form-check form-switch m-0">
-                                                <input class="form-check-input" type="checkbox" name="abierto" id="switchAbierto" checked style="cursor:pointer; width:35px; height:18px;">
-                                            </div>
-                                        </div>
-
-                                        <button type="submit" class="btn-g btn-primary-g w-100 justify-content-center mt-auto" style="padding:.6rem 0;">
-                                            <i class="fas fa-save me-1"></i> Guardar Mes
-                                        </button>
-                                    </form>
                                 </div>
                             </div>
                         </div>
+
+                        {{-- 9. SIDEBAR LOGS / TRAZABILIDAD (Minimalista) --}}
+                        <div class="card border-0 shadow-sm rounded-3 p-3 bg-white" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                <h5 class="fw-bold text-dark d-flex align-items-center gap-2 m-0" style="font-size: 1.05rem;">
+                                    <i class="fas fa-history text-muted" style="font-size:.9rem;"></i> Auditoría
+                                </h5>
+                                <div class="text-end">
+                                    <span class="badge bg-light text-secondary border shadow-sm" style="font-size:.7rem; font-family: monospace;">
+                                        API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p class="text-muted mb-3" style="font-size:.8rem;">Registro de eventos del lote actual.</p>
+
+                            <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2">
+                                @if(isset($logsBloque) && $logsBloque->count() > 0)
+                                    <div class="position-relative ms-2" style="border-left: 2px solid var(--c-border);">
+                                        @foreach($logsBloque as $log)
+                                            <div class="position-relative mb-3 ps-3 pt-1">
+                                                {{-- Punto del Timeline --}}
+                                                <span class="position-absolute bg-primary rounded-circle border border-2 border-white shadow-sm" style="width: 12px; height: 12px; left: -7px; top: 8px;"></span>
+
+                                                {{-- Tarjeta del Log --}}
+                                                <div class="p-2 rounded bg-light border border-light shadow-sm">
+                                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                                        <span class="fw-bold text-dark" style="font-size: .75rem; line-height: 1.2;">
+                                                            {{ $log->eventoAuditoria->nombre ?? 'Evento de Sistema' }}
+                                                        </span>
+                                                        <span class="text-muted" style="font-size: .65rem; white-space: nowrap;">
+                                                            {{ $log->created_at ? $log->created_at->format('d/m/Y H:i') : '—' }}
+                                                        </span>
+                                                    </div>
+
+                                                    <div class="text-muted mb-2" style="font-size: .7rem;">
+                                                        <i class="fas fa-user-circle me-1 opacity-50"></i>
+                                                        <span class="fw-medium text-dark">{{ $log->usuario->name ?? 'Sistema Automático' }}</span>
+                                                    </div>
+
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div class="d-flex gap-2 align-items-center">
+                                                            <span class="badge bg-white text-secondary border shadow-none" style="font-size: .6rem; padding: .2rem .4rem;">
+                                                                <i class="fas fa-sitemap me-1"></i> {{ $log->origenEvento->nombre ?? 'API' }}
+                                                            </span>
+                                                            @if($log->ip)
+                                                                <span class="text-muted" style="font-size: .6rem; font-family: monospace;">
+                                                                    {{ $log->ip }}
+                                                                </span>
+                                                            @endif
+                                                        </div>
+
+                                                        @if(!empty($log->detalles_ejecucion))
+                                                            <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium" style="font-size: .65rem;" onclick="document.getElementById('jsonViewer-{{ $log->id }}').classList.toggle('d-none')">
+                                                                <i class="fas fa-code me-1"></i>Payload
+                                                            </button>
+                                                        @endif
+                                                    </div>
+
+                                                    @if(!empty($log->detalles_ejecucion))
+                                                        <pre id="jsonViewer-{{ $log->id }}" class="d-none text-start p-2 mt-2 bg-dark text-light rounded mb-0 custom-scrollbar" style="font-size: .6rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap;">{{ json_encode($log->detalles_ejecucion, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div class="text-center py-4 d-flex flex-column align-items-center justify-content-center h-100">
+                                        <i class="fas fa-list-ul fs-2 mb-3 text-secondary opacity-25"></i>
+                                        <h6 class="fw-bold text-dark mb-1" style="font-size: .9rem;">Sin Movimientos</h6>
+                                        <p class="text-muted mb-0" style="font-size: .75rem; max-width: 200px;">No hay eventos de auditoría registrados para este lote.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 

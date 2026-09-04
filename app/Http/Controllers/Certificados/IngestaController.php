@@ -128,11 +128,34 @@ class IngestaController extends Controller
                 ];
             });
 
+            // 5. NUEVO: CONSULTA DE LOGS PARA EL SIDEBAR
+            // Si hay un bloque activo, consultamos los logs asociados, ordenados del más reciente al más antiguo.
+            $logsBloque = collect(); // Inicializamos vacía por defecto
+
+            if ($bloqueActivo) {
+                $logsBloque = CarSiaOperacionLog::with(['usuario', 'eventoAuditoria', 'origenEvento'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(50) // Límite prudente para no saturar la vista si hay miles de logs
+                    ->get();
+            }
+
             $totalPendientes = $kpi['pendientes'];
             $estados = CarSiaEstado::all();
             $tipos = DB::table('car_sia_tipos')->get();
 
-            return view('certificados.ingesta.index', compact('lotesCrudos', 'totalPendientes', 'estados', 'tipos', 'kpi', 'bloquesDisponibles', 'bloqueActivo', 'periodos'));
+            // 6. INYECTAR $logsBloque A LA VISTA
+            return view('certificados.ingesta.index', compact(
+                'lotesCrudos',
+                'totalPendientes',
+                'estados',
+                'tipos',
+                'kpi',
+                'bloquesDisponibles',
+                'bloqueActivo',
+                'periodos',
+                'logsBloque' // <-- Añadido aquí
+            ));
 
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Ingesta - Error al cargar staging: ' . $e->getMessage());
@@ -208,6 +231,22 @@ class IngestaController extends Controller
                 ], now()->addMinutes(10));
             }
 
+            // --- INICIO DE INSERCIÓN DEL LOG ---
+            CarSiaOperacionLog::create([
+                'numero_bloque'                 => $nuevoBloque,
+                'id_car_sia_operaciones_lineas' => null, // Deja null si el log es de todo el bloque, o pon el ID si aplica
+                'id_car_sia_origenes_evento'    => 1, // Ajusta al ID real que corresponda a "Web" o "Carga" en tu BD
+                'id_car_sia_eventos_auditoria'  => 1, // Ajusta al ID real que corresponda a "Ingesta de Excel"
+                'id_user'                       => Auth::id(),
+                'ip'                            => $request->ip(),
+                'detalles_ejecucion'            => [
+                    'mensaje'           => 'Carga masiva de Excel ejecutada exitosamente.',
+                    'nombre_archivo'    => $request->file('archivo_excel')->getClientOriginalName(),
+                    'total_filas_leidas'=> $totalFilas
+                ],
+            ]);
+            // --- FIN DE INSERCIÓN DEL LOG ---
+
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
                              ->with('success', "Archivo procesado exitosamente por bloques. Los registros del Lote #{$nuevoBloque} están listos.");
 
@@ -223,6 +262,28 @@ class IngestaController extends Controller
                     'porcentaje' => 0,
                 ], now()->addMinutes(10));
             }
+
+            // --- INSERCIÓN DEL LOG DE ERROR MEJORADA ---
+            $nombreArchivo = $request->hasFile('archivo_excel')
+                ? $request->file('archivo_excel')->getClientOriginalName()
+                : 'Archivo no identificado';
+
+            CarSiaOperacionLog::create([
+                'numero_bloque'                 => $nuevoBloque ?? null,
+                'id_car_sia_operaciones_lineas' => null,
+                'id_car_sia_origenes_evento'    => 1,
+                'id_car_sia_eventos_auditoria'  => 13, // Si tienes un ID específico para errores, ponlo aquí
+                'id_user'                       => Auth::id(),
+                'ip'                            => $request->ip(),
+                'detalles_ejecucion'            => [
+                    'mensaje'           => 'Error procesando Excel.',
+                    'error_tecnico'     => $e->getMessage(), // <-- Te ayudará mucho para depurar
+                    'nombre_archivo'    => $nombreArchivo,
+                    'total_filas_leidas'=> 0
+                ],
+            ]);
+            // --- FIN LOG DE ERROR ---
+
             \Illuminate\Support\Facades\Log::error('CERTIFICADOS Ingesta - Error procesando Excel: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
         }
@@ -327,9 +388,6 @@ class IngestaController extends Controller
                     })
                     ->count();
 
-                $origen = CarSiaOrigenEvento::firstOrCreate(['nombre' => 'Interfaz Web']);
-                $evento = CarSiaEventoAuditoria::firstOrCreate(['nombre' => 'Inyección Masiva ERP']);
-
                 $anioActual = date('Y');
 
                 // 3. OPTIMIZACIÓN CRÍTICA: REEMPLAZO DE whereYear()
@@ -425,8 +483,8 @@ class IngestaController extends Controller
                     CarSiaOperacionLog::create([
                         'numero_bloque'                 => $bloqueOrigen,
                         'id_car_sia_operaciones_lineas' => null,
-                        'id_car_sia_origenes_evento'    => $origen->id,
-                        'id_car_sia_eventos_auditoria'  => $evento->id,
+                        'id_car_sia_origenes_evento'    => 1,
+                        'id_car_sia_eventos_auditoria'  => 2,
                         'id_user'                       => Auth::check() ? Auth::id() : null,
                         'ip'                            => $request->ip() ?? '127.0.0.1',
                         'detalles_ejecucion'            => [
@@ -535,7 +593,23 @@ class IngestaController extends Controller
             $registro->anular = 1;
             $registro->save();
 
-            // 3. Borramos el caché de este bloque
+            // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
+            CarSiaOperacionLog::create([
+                'numero_bloque'                => $registro->numero_bloque,
+                'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
+                'id_car_sia_eventos_auditoria' => 6, // Ej: 6 = Anulación de Registro
+                'id_user'                      => Auth::id(), // Captura el ID del usuario en sesión
+                'ip'                           => request()->ip(), // Captura la IP de la solicitud
+                'detalles_ejecucion'           => [
+                    'accion'     => 'Anulación Individual',
+                    'id_interno' => $registro->id,
+                    'factura'    => $registro->id_factura,
+                    'tercero'    => $registro->tercero,
+                    'valor'      => $registro->valor
+                ]
+            ]);
+
+            // 4. Borramos el caché de este bloque
             Cache::forget("kpis_ingesta_staging_bloque_{$registro->numero_bloque}");
 
             return back()->with('success', "La factura #{$registro->id_factura} fue excluida del bloque.");
@@ -554,22 +628,39 @@ class IngestaController extends Controller
     public function anularLote($numero_bloque)
     {
         try {
-            // Usamos una transacción para garantizar que ambas tablas se actualicen juntas
-            \Illuminate\Support\Facades\DB::transaction(function () use ($numero_bloque) {
+            // Capturamos el request y el ID de usuario fuera del closure de la transacción
+            $ipActual = request()->ip();
+            $idUsuario = Auth::id();
+
+            // Usamos una transacción para garantizar que ambas tablas y el log se actualicen juntos
+            \Illuminate\Support\Facades\DB::transaction(function () use ($numero_bloque, $ipActual, $idUsuario) {
 
                 // 1. Actualizamos masivamente todos los registros en Staging (CarSiaApi)
                 // que aún estén pendientes (no podemos anular algo que ya se procesó en el ERP)
-                CarSiaApi::where('numero_bloque', $numero_bloque)
-                         ->where('estado', '!=', 'PROCESADO')
-                         ->update(['anular' => 1]);
+                $afectadosStaging = CarSiaApi::where('numero_bloque', $numero_bloque)
+                                         ->where('estado', '!=', 'PROCESADO')
+                                         ->update(['anular' => 1]);
 
                 // 2. Actualizamos el estado del bloque padre (CarSiaBloque) a ANULADO
                 CarSiaBloque::where('numero_bloque', $numero_bloque)
                             ->update(['estado' => 'ANULADO']);
 
+                // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
+                CarSiaOperacionLog::create([
+                    'numero_bloque'                => $numero_bloque,
+                    'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
+                    'id_car_sia_eventos_auditoria' => 5, // Ej: 4 = Anulación Masiva (Lote)
+                    'id_user'                      => $idUsuario,
+                    'ip'                           => $ipActual,
+                    'detalles_ejecucion'           => [
+                        'accion'              => 'Anulación de Lote Completo',
+                        'registros_afectados' => $afectadosStaging,
+                        'estado_final'        => 'ANULADO'
+                    ]
+                ]);
             });
 
-            // 3. Borramos el caché del bloque para que los KPIs se actualicen inmediatamente
+            // 4. Borramos el caché del bloque para que los KPIs se actualicen inmediatamente
             Cache::forget("kpis_ingesta_staging_bloque_{$numero_bloque}");
 
             return redirect()->back()->with('success', "El Lote API-" . str_pad($numero_bloque, 4, '0', STR_PAD_LEFT) . " fue anulado por completo.");
@@ -689,6 +780,42 @@ class IngestaController extends Controller
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS - Error al crear periodo: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al crear el periodo.');
+        }
+    }
+    /**
+     * Cambiar estado (Abierto/Cerrado) de un periodo individual
+     */
+    public function togglePeriodo(Request $request, $id)
+    {
+        try {
+            $periodo = CarSiaPeriodo::findOrFail($id);
+            $periodo->abierto = !$periodo->abierto; // Invierte el estado actual
+            $periodo->save();
+
+            $estadoStr = $periodo->abierto ? 'abierto' : 'cerrado';
+            return redirect()->back()->with('success', "El periodo {$periodo->nombre} ahora está {$estadoStr}.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SIA - Error al cambiar estado de periodo: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el estado del periodo.');
+        }
+    }
+
+    /**
+     * Cambiar estado masivamente para todos los periodos de un Año
+     */
+    public function toggleAnio(Request $request, $anio)
+    {
+        try {
+            // El interruptor enviará estado 1 (para abrir todos) o 0 (para cerrar todos)
+            $estadoDeseado = $request->input('estado', 0);
+
+            CarSiaPeriodo::where('anio', $anio)->update(['abierto' => $estadoDeseado]);
+
+            $estadoStr = $estadoDeseado ? 'abiertos' : 'cerrados';
+            return redirect()->back()->with('success', "Todos los periodos del año {$anio} han sido {$estadoStr}.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SIA - Error al cambiar estado de año: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el estado del año.');
         }
     }
 }
