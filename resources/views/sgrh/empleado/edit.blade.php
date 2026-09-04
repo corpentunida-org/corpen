@@ -14,6 +14,21 @@
         </div>
     </div>
 
+    @if ($desactualizado)
+        <div class="alert alert-danger d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>Los datos del tercero llevan más de un año sin actualizarse.</strong>
+                No se pueden modificar los datos del colaborador hasta actualizarlos.
+            </div>
+            @can('sgrh.tercero.edit')
+                <a href="{{ route('sgrh.tercero.edit', $empleado->cod_ter) }}" class="btn btn-sm btn-danger">
+                    <i class="bi bi-pencil-square"></i> Actualizar tercero
+                </a>
+            @endcan
+        </div>
+    @endif
+
     <div class="card">
         <div class="card-body p-4">
             <h5 class="fw-bold mb-3">Datos del colaborador</h5>
@@ -169,19 +184,19 @@
                         <input type="text" name="telefono_corporativo" class="form-control"
                                value="{{ old('telefono_corporativo', $empleado->telefono_corporativo) }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-smartphone me-1 text-primary"></i>Celular
-                        </label>
-                        <input type="text" name="celular_corporativo" class="form-control"
-                               value="{{ old('celular_corporativo', $empleado->celular_corporativo) }}">
-                    </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-hash me-1 text-primary"></i>Ext.
                         </label>
                         <input type="text" name="ext_corporativo" class="form-control"
                                value="{{ old('ext_corporativo', $empleado->ext_corporativo) }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-smartphone me-1 text-primary"></i>Celular
+                        </label>
+                        <input type="text" name="celular_corporativo" class="form-control"
+                               value="{{ old('celular_corporativo', $empleado->celular_corporativo) }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
@@ -205,11 +220,15 @@
                     </div>
                 </div>
 
-                <div class="mt-4 text-end">
-                    <button type="submit" class="btn btn-primary px-4" id="btnGuardarColaborador">
-                        <i class="bi bi-check-circle"></i> Guardar cambios
-                    </button>
-                </div>
+                @can('sgrh.empleado.update')
+                    @unless ($desactualizado)
+                        <div class="mt-4 text-end">
+                            <button type="submit" class="btn btn-primary px-4" id="btnGuardarColaborador">
+                                <i class="bi bi-check-circle"></i> Guardar cambios
+                            </button>
+                        </div>
+                    @endunless
+                @endcan
             </form>
         </div>
     </div>
@@ -219,10 +238,12 @@
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Dependientes económicos</h5>
-                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalDependiente"
-                        onclick="abrirModalDependiente()">
-                    <i class="bi bi-plus-circle"></i> Agregar dependiente
-                </button>
+                @can('sgrh.empleado.update')
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalDependiente"
+                            onclick="abrirModalDependiente()">
+                        <i class="bi bi-plus-circle"></i> Agregar dependiente
+                    </button>
+                @endcan
             </div>
 
             @if ($empleado->dependientes->isEmpty())
@@ -256,18 +277,92 @@
                                     <td>{{ $dependiente->genero === 'V' ? 'Varón' : ($dependiente->genero === 'H' ? 'Hembra' : '—') }}</td>
                                     <td>{{ $parentescos[$dependiente->parentesco] ?? '—' }}</td>
                                     <td class="text-end pe-3">
-                                        <a href="javascript:void(0)" class="small me-2" data-bs-toggle="modal" data-bs-target="#modalDependiente"
-                                           onclick='abrirModalDependiente(@json($dependiente))'>
-                                            <i class="bi bi-pencil-square"></i> Editar
-                                        </a>
-                                        <form action="{{ route('sgrh.dependiente.destroy', $dependiente) }}" method="POST" class="d-inline"
-                                              onsubmit="return confirm('¿Eliminar a {{ $dependiente->nombre_completo }} como dependiente?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
-                                                <i class="bi bi-trash3"></i> Eliminar
-                                            </button>
-                                        </form>
+                                        @can('sgrh.empleado.update')
+                                            <a href="javascript:void(0)" class="small me-2" data-bs-toggle="modal" data-bs-target="#modalDependiente"
+                                               onclick='abrirModalDependiente(@json($dependiente))'>
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </a>
+                                            <form action="{{ route('sgrh.dependiente.destroy', $dependiente) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('¿Eliminar a {{ $dependiente->nombre_completo }} como dependiente?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
+                                                    <i class="bi bi-trash3"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        @endcan
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </div>
+    </div>
+
+    {{-- ESTUDIOS --}}
+    <div class="card mt-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Estudios</h5>
+                @can('sgrh.empleado.update')
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalEstudio"
+                            onclick="abrirModalEstudio()">
+                        <i class="bi bi-plus-circle"></i> Agregar estudio
+                    </button>
+                @endcan
+            </div>
+
+            @if ($empleado->estudios->isEmpty())
+                <p class="text-muted small mb-0">Este colaborador no tiene estudios registrados todavía.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-3">Programa</th>
+                                <th>Tipo de formación</th>
+                                <th>Nivel de formación</th>
+                                <th class="text-center">Graduado</th>
+                                <th>Fecha terminación</th>
+                                <th class="text-end pe-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($empleado->estudios as $estudio)
+                                <tr>
+                                    <td class="ps-3 py-2">
+                                        {{ $estudio->programa }}
+                                        @if ($estudio->institucion_educativa)
+                                            <div class="text-muted small">{{ $estudio->institucion_educativa }}</div>
+                                        @endif
+                                    </td>
+                                    <td>{{ $estudio->tipo_formacion }}</td>
+                                    <td>{{ $estudio->nivel_formacion }}</td>
+                                    <td class="text-center">
+                                        @if ($estudio->graduado)
+                                            <span class="badge bg-success-subtle text-success">Sí</span>
+                                        @else
+                                            <span class="badge bg-secondary-subtle text-secondary">No</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $estudio->fecha_terminacion?->format('d/m/Y') ?? 'En curso' }}</td>
+                                    <td class="text-end pe-3">
+                                        @can('sgrh.empleado.update')
+                                            <a href="javascript:void(0)" class="small me-2" data-bs-toggle="modal" data-bs-target="#modalEstudio"
+                                               onclick='abrirModalEstudio(@json($estudio))'>
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </a>
+                                            <form action="{{ route('sgrh.estudio.destroy', $estudio) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('¿Eliminar el estudio {{ addslashes($estudio->programa) }}?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
+                                                    <i class="bi bi-trash3"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach
@@ -283,11 +378,18 @@
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="fw-bold mb-0">Historial de contratos</h5>
-                @can('sgrh.contrato.store')
-                    <a href="{{ route('sgrh.contrato.create', ['empleado_id' => $empleado->id]) }}" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-plus-circle"></i> Registrar contrato
-                    </a>
-                @endcan
+                <div class="d-flex gap-2">
+                    @can('sgrh.contrato.index')
+                        <a href="{{ route('sgrh.contrato.historial.imprimir', $empleado) }}" class="btn btn-outline-secondary btn-sm" target="_blank">
+                            <i class="bi bi-printer"></i> Imprimir historial
+                        </a>
+                    @endcan
+                    @can('sgrh.contrato.store')
+                        <a href="{{ route('sgrh.contrato.create', ['empleado_id' => $empleado->id]) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-plus-circle"></i> Registrar contrato
+                        </a>
+                    @endcan
+                </div>
             </div>
 
             @if ($empleado->contratos->isEmpty())
@@ -302,6 +404,7 @@
                                 <th>Vencimiento</th>
                                 <th class="text-center">Estado</th>
                                 <th class="text-center">Origen</th>
+                                <th>Última modificación</th>
                                 <th class="text-end pe-3">Acciones</th>
                             </tr>
                         </thead>
@@ -309,7 +412,7 @@
                             @foreach ($empleado->contratos as $contrato)
                                 <tr>
                                     <td class="ps-3 py-2">{{ $contrato->tipoContrato->nombre }}</td>
-                                    <td>{{ $contrato->fecha_inicio->format('d/m/Y') }}</td>
+                                    <td>{{ $contrato->fecha_inicio?->format('d/m/Y') ?? 'Sin definir' }}</td>
                                     <td>
                                         {{ $contrato->fecha_vencimiento?->format('d/m/Y') ?? 'Indefinido' }}
                                         @if ($contrato->estado === 'Activo' && $contrato->estaVencido)
@@ -334,22 +437,26 @@
                                         @endswitch
                                     </td>
                                     <td class="text-center">
-                                        @if ($contrato->modificaciones->isEmpty())
-                                            <button type="button" class="badge border-0 bg-success-subtle text-success"
-                                                    data-bs-toggle="modal" data-bs-target="#modalEventos{{ $contrato->id }}">
-                                                Creación
-                                            </button>
-                                        @else
-                                            @php $ultimaCausal = $contrato->modificaciones->first()->causal; @endphp
-                                            <button type="button"
-                                                    class="badge border-0 {{ $ultimaCausal === 'Renovación' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info' }}"
-                                                    data-bs-toggle="modal" data-bs-target="#modalEventos{{ $contrato->id }}">
-                                                {{ $ultimaCausal }}
-                                                @if ($contrato->modificaciones->count() > 1)
-                                                    (+{{ $contrato->modificaciones->count() - 1 }})
-                                                @endif
-                                            </button>
-                                        @endif
+                                        @php
+                                            // Null-safe a propósito: modificaciones() debería
+                                            // traer siempre al menos el evento de Creación, pero
+                                            // un contrato huérfano (fallo a mitad de camino antes
+                                            // de la transacción en store()) no debe tumbar toda
+                                            // la ficha del colaborador.
+                                            $ultimaCausal = $contrato->modificaciones->first()?->causal ?? 'Sin eventos';
+                                            $totalModificacionesReales = $contrato->modificaciones->where('causal', '!=', 'Creación')->count();
+                                        @endphp
+                                        <button type="button"
+                                                class="badge border-0 {{ $ultimaCausal === 'Creación' ? 'bg-success-subtle text-success' : ($ultimaCausal === 'Renovación' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info') }}"
+                                                data-bs-toggle="modal" data-bs-target="#modalEventos{{ $contrato->id }}">
+                                            {{ $ultimaCausal }}
+                                            @if ($ultimaCausal !== 'Creación' && $totalModificacionesReales > 1)
+                                                (+{{ $totalModificacionesReales - 1 }})
+                                            @endif
+                                        </button>
+                                    </td>
+                                    <td class="text-muted small">
+                                        {{ $contrato->updated_at->gt($contrato->created_at) ? $contrato->updated_at->format('d/m/Y') : '—' }}
                                     </td>
                                     <td class="text-end pe-3">
                                         @can('sgrh.contrato.update')
@@ -394,24 +501,28 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            Eventos del contrato — {{ $contrato->tipoContrato->nombre }} ({{ $contrato->fecha_inicio->format('d/m/Y') }})
+                            Eventos del contrato — {{ $contrato->tipoContrato->nombre }} ({{ $contrato->fecha_inicio?->format('d/m/Y') ?? 'sin fecha de inicio' }})
                         </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
+                        {{-- Más reciente primero (es la modificación vigente); la Creación
+                             queda siempre al final, como el origen del historial — ambas son
+                             filas reales de sgrh_contrato_modificaciones. --}}
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between align-items-start">
-                                <div>
-                                    <span class="badge bg-success-subtle text-success mb-1">Creación</span>
-                                    <div class="small text-muted">{{ $contrato->created_at->format('d/m/Y H:i') }}</div>
-                                </div>
-                            </li>
-                            @foreach ($contrato->modificaciones->sortBy('created_at') as $modificacion)
+                            @foreach ($contrato->modificaciones as $modificacion)
                                 <li class="list-group-item d-flex justify-content-between align-items-start">
                                     <div>
-                                        <span class="badge {{ $modificacion->causal === 'Renovación' ? 'bg-warning-subtle text-warning' : 'bg-info-subtle text-info' }} mb-1">
-                                            {{ $modificacion->causal }}
-                                        </span>
+                                        @if ($loop->first)
+                                            <span class="badge bg-primary-subtle text-primary mb-1">Vigente</span>
+                                        @endif
+                                        @if ($modificacion->causal === 'Creación')
+                                            <span class="badge bg-success-subtle text-success mb-1">Creación</span>
+                                        @elseif ($modificacion->causal === 'Renovación')
+                                            <span class="badge bg-warning-subtle text-warning mb-1">Renovación</span>
+                                        @else
+                                            <span class="badge bg-info-subtle text-info mb-1">{{ $modificacion->causal }}</span>
+                                        @endif
                                         @if ($modificacion->observacion)
                                             <div class="small">{{ $modificacion->observacion }}</div>
                                         @endif
@@ -419,16 +530,23 @@
                                             {{ $modificacion->created_at->format('d/m/Y H:i') }} — {{ $modificacion->usuario->name ?? '—' }}
                                         </div>
                                     </div>
-                                    @can('sgrh.contrato.destroy')
-                                        <form action="{{ route('sgrh.contrato.modificacion.destroy', $modificacion) }}" method="POST"
-                                              onsubmit="return confirm('¿Eliminar este registro del historial? Esta acción no se puede deshacer.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar registro">
-                                                <i class="bi bi-trash3"></i>
-                                            </button>
-                                        </form>
-                                    @endcan
+                                    <div class="text-nowrap">
+                                        <a href="{{ route('sgrh.contrato.modificacion.ver', $modificacion) }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Ver/imprimir">
+                                            <i class="bi bi-printer"></i>
+                                        </a>
+                                        @can('sgrh.contrato.destroy')
+                                            @if ($modificacion->causal !== 'Creación')
+                                                <form action="{{ route('sgrh.contrato.modificacion.destroy', $modificacion) }}" method="POST" class="d-inline"
+                                                      onsubmit="return confirm('¿Eliminar este registro del historial? Esta acción no se puede deshacer.');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar registro">
+                                                        <i class="bi bi-trash3"></i>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endcan
+                                    </div>
                                 </li>
                             @endforeach
                         </ul>
@@ -541,6 +659,82 @@
         </div>
     </div>
 
+    {{-- MODAL: agregar/editar estudio --}}
+    <div class="modal fade" id="modalEstudio" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" id="formEstudio" action="{{ route('sgrh.estudio.store', $empleado) }}">
+                    @csrf
+                    <input type="hidden" name="_method" id="estudio_method" value="POST">
+                    <input type="hidden" name="estudio_id" id="estudio_id" value="{{ old('estudio_id') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="estudio_titulo">Agregar estudio</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Programa</label>
+                                <input type="text" name="programa" id="estudio_programa"
+                                       class="form-control @error('programa') is-invalid @enderror" value="{{ old('programa') }}" required>
+                                @error('programa')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Graduado</label>
+                                <select name="graduado" id="estudio_graduado" class="form-select">
+                                    <option value="0" @selected(old('graduado', '0') === '0')>No</option>
+                                    <option value="1" @selected(old('graduado') === '1')>Sí</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Institución educativa</label>
+                                <input type="text" name="institucion_educativa" id="estudio_institucion_educativa" class="form-control"
+                                       value="{{ old('institucion_educativa') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Tipo de formación</label>
+                                <select name="tipo_formacion" id="estudio_tipo_formacion" class="form-select @error('tipo_formacion') is-invalid @enderror" required>
+                                    <option value="">Selecciona un tipo</option>
+                                    @foreach ($tiposFormacion as $tipo)
+                                        <option value="{{ $tipo }}" @selected(old('tipo_formacion') === $tipo)>{{ $tipo }}</option>
+                                    @endforeach
+                                </select>
+                                @error('tipo_formacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Nivel de formación</label>
+                                <select name="nivel_formacion" id="estudio_nivel_formacion" class="form-select @error('nivel_formacion') is-invalid @enderror" required>
+                                    <option value="">Selecciona un nivel</option>
+                                    @foreach ($nivelesFormacion as $nivel)
+                                        <option value="{{ $nivel }}" @selected(old('nivel_formacion') === $nivel)>{{ $nivel }}</option>
+                                    @endforeach
+                                </select>
+                                @error('nivel_formacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Fecha de terminación</label>
+                                <input type="date" name="fecha_terminacion" id="estudio_fecha_terminacion" class="form-control" value="{{ old('fecha_terminacion') }}">
+                                <div class="form-text">Déjala en blanco si el estudio sigue en curso.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary" id="btnGuardarEstudio">
+                            <i class="bi bi-check-circle"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             @if ($errors->any())
@@ -605,6 +799,55 @@
                 });
             @endif
 
+            function abrirModalEstudio(estudio) {
+                const form = document.getElementById('formEstudio');
+                const metodo = document.getElementById('estudio_method');
+                const titulo = document.getElementById('estudio_titulo');
+
+                form.reset();
+
+                if (estudio) {
+                    titulo.textContent = 'Editar estudio';
+                    form.action = `{{ url('sgrh/estudios') }}/${estudio.id}`;
+                    metodo.value = 'PUT';
+                    document.getElementById('estudio_id').value = estudio.id;
+                    document.getElementById('estudio_programa').value = estudio.programa || '';
+                    document.getElementById('estudio_institucion_educativa').value = estudio.institucion_educativa || '';
+                    document.getElementById('estudio_tipo_formacion').value = estudio.tipo_formacion || '';
+                    document.getElementById('estudio_nivel_formacion').value = estudio.nivel_formacion || '';
+                    document.getElementById('estudio_graduado').value = estudio.graduado ? '1' : '0';
+                    document.getElementById('estudio_fecha_terminacion').value = (estudio.fecha_terminacion || '').substring(0, 10);
+                } else {
+                    titulo.textContent = 'Agregar estudio';
+                    form.action = "{{ route('sgrh.estudio.store', $empleado) }}";
+                    metodo.value = 'POST';
+                    document.getElementById('estudio_id').value = '';
+                }
+            }
+
+            @php
+                $camposEstudio = ['programa', 'institucion_educativa', 'tipo_formacion', 'nivel_formacion', 'graduado', 'fecha_terminacion'];
+                $hayErrorEstudio = collect($camposEstudio)->contains(fn ($campo) => $errors->has($campo));
+            @endphp
+            @if ($hayErrorEstudio)
+                document.addEventListener('DOMContentLoaded', function () {
+                    const estId = document.getElementById('estudio_id').value;
+                    const titulo = document.getElementById('estudio_titulo');
+                    const form = document.getElementById('formEstudio');
+                    const metodo = document.getElementById('estudio_method');
+                    if (estId) {
+                        titulo.textContent = 'Editar estudio';
+                        form.action = `{{ url('sgrh/estudios') }}/${estId}`;
+                        metodo.value = 'PUT';
+                    } else {
+                        titulo.textContent = 'Agregar estudio';
+                        form.action = "{{ route('sgrh.estudio.store', $empleado) }}";
+                        metodo.value = 'POST';
+                    }
+                    new bootstrap.Modal(document.getElementById('modalEstudio')).show();
+                });
+            @endif
+
             // Selects con opción "Otra (especificar)": al elegirla, el select deja de
             // enviarse y el texto escrito pasa a ser el valor real del campo.
             function activarOtraOpcion(selectId, wrapperId, inputId, nombreCampo) {
@@ -660,6 +903,21 @@
             (function () {
                 const form = document.getElementById('formDependiente');
                 const boton = document.getElementById('btnGuardarDependiente');
+                if (!form || !boton) {
+                    return;
+                }
+                form.addEventListener('submit', function () {
+                    if (!form.checkValidity()) {
+                        return;
+                    }
+                    boton.disabled = true;
+                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
+                });
+            })();
+
+            (function () {
+                const form = document.getElementById('formEstudio');
+                const boton = document.getElementById('btnGuardarEstudio');
                 if (!form || !boton) {
                     return;
                 }

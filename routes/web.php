@@ -75,6 +75,7 @@ use App\Http\Controllers\Sgrh\CargoController as SgrhCargoController;
 use App\Http\Controllers\Sgrh\ContratoController as SgrhContratoController;
 use App\Http\Controllers\Sgrh\TipoContratoController as SgrhTipoContratoController;
 use App\Http\Controllers\Sgrh\DependienteController as SgrhDependienteController;
+use App\Http\Controllers\Sgrh\EstudioController as SgrhEstudioController;
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -193,6 +194,8 @@ Route::get('/base', function () {
 //ADMIN
 Route::resource('users', UserController::class)
     ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/copiar-permisos', [UserController::class, 'copiarPermisos'])
+    ->name('admin.users.copiar-permisos')->middleware(['auth', 'candirect:admin.users.index']);
 
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
@@ -1552,19 +1555,34 @@ Route::prefix('sgrh')
     ->name('sgrh.')
     ->middleware(['auth'])
     ->group(function () {
-        Route::get('empleados', [SgrhEmpleadoController::class, 'index'])->name('empleado.index');
-        Route::get('empleados/create', [SgrhEmpleadoController::class, 'create'])->name('empleado.create');
-        Route::get('empleados/buscar-tercero', [SgrhEmpleadoController::class, 'buscarTercero'])->name('empleado.buscarTercero');
-        Route::post('empleados', [SgrhEmpleadoController::class, 'store'])->name('empleado.store');
-        Route::put('empleados/{empleado}/estado', [SgrhEmpleadoController::class, 'updateEstado'])->name('empleado.updateEstado');
-        Route::get('empleados/{empleado}/edit', [SgrhEmpleadoController::class, 'edit'])->name('empleado.edit');
-        Route::put('empleados/{empleado}', [SgrhEmpleadoController::class, 'update'])->name('empleado.update');
+        // Colaboradores: permisos por acción (sgrh.empleado.index|store|update), igual criterio
+        // que sgrh.contrato.* — index es de solo lectura (para poder darle acceso a alguien
+        // únicamente para consultar, ej. auditoría, sin poder editar nada). No hay
+        // sgrh.empleado.destroy: no existe una acción de borrar colaboradores.
+        Route::middleware('can:sgrh.empleado.index')->group(function () {
+            Route::get('empleados', [SgrhEmpleadoController::class, 'index'])->name('empleado.index');
+            Route::get('empleados/{empleado}/edit', [SgrhEmpleadoController::class, 'edit'])->name('empleado.edit');
+        });
+        Route::middleware('can:sgrh.empleado.store')->group(function () {
+            Route::get('empleados/create', [SgrhEmpleadoController::class, 'create'])->name('empleado.create');
+            Route::get('empleados/buscar-tercero', [SgrhEmpleadoController::class, 'buscarTercero'])->name('empleado.buscarTercero');
+            Route::post('empleados', [SgrhEmpleadoController::class, 'store'])->name('empleado.store');
+        });
+        Route::middleware('can:sgrh.empleado.update')->group(function () {
+            Route::put('empleados/{empleado}', [SgrhEmpleadoController::class, 'update'])->name('empleado.update');
 
-        // Dependientes económicos: se gestionan inline desde la ficha del colaborador (modal
-        // en sgrh.empleado.edit), sin páginas propias de index/create/edit.
-        Route::post('empleados/{empleado}/dependientes', [SgrhDependienteController::class, 'store'])->name('dependiente.store');
-        Route::put('dependientes/{dependiente}', [SgrhDependienteController::class, 'update'])->name('dependiente.update');
-        Route::delete('dependientes/{dependiente}', [SgrhDependienteController::class, 'destroy'])->name('dependiente.destroy');
+            // Dependientes económicos: se gestionan inline desde la ficha del colaborador
+            // (modal en sgrh.empleado.edit), sin páginas propias de index/create/edit — es
+            // parte de "editar" al colaborador, mismo permiso.
+            Route::post('empleados/{empleado}/dependientes', [SgrhDependienteController::class, 'store'])->name('dependiente.store');
+            Route::put('dependientes/{dependiente}', [SgrhDependienteController::class, 'update'])->name('dependiente.update');
+            Route::delete('dependientes/{dependiente}', [SgrhDependienteController::class, 'destroy'])->name('dependiente.destroy');
+
+            // Estudios: mismo patrón que dependientes — inline desde la ficha del colaborador.
+            Route::post('empleados/{empleado}/estudios', [SgrhEstudioController::class, 'store'])->name('estudio.store');
+            Route::put('estudios/{estudio}', [SgrhEstudioController::class, 'update'])->name('estudio.update');
+            Route::delete('estudios/{estudio}', [SgrhEstudioController::class, 'destroy'])->name('estudio.destroy');
+        });
 
         // Consulta/edición acotada del tercero (solo Identificación/Información Personal/
         // Ubicación/Contacto) para RR. HH. — no usa el editor genérico de Maestras/Terceros,
@@ -1597,6 +1615,8 @@ Route::prefix('sgrh')
         Route::middleware('can:sgrh.contrato.index')->group(function () {
             Route::get('contratos', [SgrhContratoController::class, 'index'])->name('contrato.index');
             Route::get('contratos/alertas', [SgrhContratoController::class, 'alertas'])->name('contrato.alertas');
+            Route::get('contrato-modificaciones/{modificacion}/ver', [SgrhContratoController::class, 'verModificacion'])->name('contrato.modificacion.ver');
+            Route::get('empleados/{empleado}/historial-contratos/imprimir', [SgrhContratoController::class, 'imprimirHistorialEmpleado'])->name('contrato.historial.imprimir');
         });
         Route::middleware('can:sgrh.contrato.store')->group(function () {
             Route::get('contratos/create', [SgrhContratoController::class, 'create'])->name('contrato.create');
