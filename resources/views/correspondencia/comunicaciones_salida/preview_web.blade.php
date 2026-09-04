@@ -6,13 +6,19 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/dist/css/all.min.css">
 
     <style>
+        /* --- ESTILOS GLOBALES (Se aplican a ambos) --- */
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            font-size: 12pt; /* Tamaño estándar para todo el documento */
+            line-height: 1.5; /* Mejor legibilidad */
+        }
+
         /* --- ESTILOS PARA LA PANTALLA (MODO EDITOR) --- */
         @media screen {
             body {
                 background-color: #f0f2f5;
                 margin: 0;
                 padding: 20px;
-                font-family: 'Helvetica', Arial, sans-serif;
             }
 
             .barra-herramientas {
@@ -63,7 +69,6 @@
                 background: white;
                 margin: 0;
                 padding: 0;
-                font-family: 'Helvetica', Arial, sans-serif;
             }
             .barra-herramientas {
                 display: none !important;
@@ -90,7 +95,7 @@
             width: 21cm;
             height: 29.7cm;
             z-index: 1;
-            pointer-events: none; /* Crucial para poder hacer click en los inputs */
+            pointer-events: none;
         }
         #fondo-plantilla img { width: 100%; height: 100%; }
 
@@ -109,7 +114,7 @@
 
         .contenido-dinamico {
             position: relative;
-            z-index: 10; /* Por encima del fondo y de la marca de agua */
+            z-index: 10;
         }
 
         /* --- BLOQUES DE CONTENIDO --- */
@@ -123,8 +128,8 @@
         .input-editable {
             border: 1px dashed transparent;
             background: transparent;
-            font-family: 'Helvetica', Arial, sans-serif;
-            font-size: 13px;
+            font-family: inherit;
+            font-size: inherit; /* Hereda los 12pt del body */
             color: #1a1a1a;
             width: 100%;
             padding: 2px 5px;
@@ -158,8 +163,8 @@
         .espacio-rubrica { height: 65px; position: relative; }
         .img-firma { max-height: 75px; width: auto; object-fit: contain;position: absolute; bottom: 5px; left: 0; }
         .linea { border-top: 1px solid #000; width: 100%; margin-bottom: 5px; }
-        .nombre-firmante { font-weight: bold; text-transform: uppercase; font-size: 12px; display: block; }
-        .cargo-firmante { font-size: 11px; color: #444; }
+        .nombre-firmante { font-weight: bold; text-transform: uppercase; font-size: 12pt; display: block; }
+        .cargo-firmante { font-size: 11pt; color: #444; }
     </style>
 </head>
 <body>
@@ -218,7 +223,6 @@
                 <div style="margin-top: 15px;">
                     {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
                 </div>
-                {{-- <br> --}}
                 <br>
                 <br>
             </div>

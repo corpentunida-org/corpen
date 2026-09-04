@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 // AUDITORIA
 use App\Models\Certificados\CarSiaOperacionLog;
@@ -127,11 +128,34 @@ class IngestaController extends Controller
                 ];
             });
 
+            // 5. NUEVO: CONSULTA DE LOGS PARA EL SIDEBAR
+            // Si hay un bloque activo, consultamos los logs asociados, ordenados del más reciente al más antiguo.
+            $logsBloque = collect(); // Inicializamos vacía por defecto
+
+            if ($bloqueActivo) {
+                $logsBloque = CarSiaOperacionLog::with(['usuario', 'eventoAuditoria', 'origenEvento'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->limit(50) // Límite prudente para no saturar la vista si hay miles de logs
+                    ->get();
+            }
+
             $totalPendientes = $kpi['pendientes'];
             $estados = CarSiaEstado::all();
             $tipos = DB::table('car_sia_tipos')->get();
 
-            return view('certificados.ingesta.index', compact('lotesCrudos', 'totalPendientes', 'estados', 'tipos', 'kpi', 'bloquesDisponibles', 'bloqueActivo', 'periodos'));
+            // 6. INYECTAR $logsBloque A LA VISTA
+            return view('certificados.ingesta.index', compact(
+                'lotesCrudos',
+                'totalPendientes',
+                'estados',
+                'tipos',
+                'kpi',
+                'bloquesDisponibles',
+                'bloqueActivo',
+                'periodos',
+                'logsBloque' // <-- Añadido aquí
+            ));
 
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Ingesta - Error al cargar staging: ' . $e->getMessage());
@@ -142,172 +166,158 @@ class IngestaController extends Controller
 
     /**
      * =========================================================================
-     * 2. CARGAR EXCEL (ASIGNACIÓN DE NÚMERO DE BLOQUE BLINDADA) - DESAVILITADA
-     * =========================================================================
-     */
-    /* public function cargarExcel(Request $request)
-    {
-        // 1. Validar que el archivo y el periodo sean enviados
-        $request->validate([
-            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480',
-            'id_periodo'    => 'required|integer|exists:car_sia_periodos,id'
-        ]);
-
-        try {
-            ini_set('max_execution_time', 300);
-            ini_set('memory_limit', '512M');
-
-            $datosExcel = Excel::toArray(new \stdClass(), $request->file('archivo_excel'));
-            $hoja = $datosExcel[0];
-
-            if (count($hoja) < 2) {
-                return redirect()->back()->with('error', 'El archivo está vacío o no tiene registros.');
-            }
-
-            $encabezados = array_map(function($columna) {
-                return trim(strtolower(preg_replace('/\s+/', ' ', $columna)));
-            }, $hoja[0]);
-
-            array_shift($hoja); // Quitar encabezados
-
-            $mapaColumnas = [
-                'id factura'     => 'id_factura',
-                'tercero'        => 'tercero',
-                'nombre tercero' => 'nombre_tercero',
-                'valor'          => 'valor',
-                'fecha venc.'    => 'fecha_venci',
-                '# documento'    => 'numero_documento',
-                'año'            => 'anio',
-                'mes'            => 'mes',
-                'cuenta'         => 'cuenta',
-                'banco'          => 'banco'
-            ];
-
-            $ahora = now()->format('Y-m-d H:i:s');
-
-            // 2. SOLUCIÓN CRÍTICA: Bloque Máximo Global (Añadimos tu nueva tabla a la verificación)
-            $maxStaging = CarSiaApi::max('numero_bloque') ?? 0;
-            $maxOperacion = CarSiaOperacion::max('numero_bloque') ?? 0;
-            $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
-            $nuevoBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
-
-            DB::transaction(function () use ($hoja, $encabezados, $mapaColumnas, $ahora, $nuevoBloque, $request) {
-
-                // 3. INTEGRACIÓN DEL MODELO: Registramos el bloque y lo asociamos al periodo
-                CarSiaBloque::create([
-                    'numero_bloque' => $nuevoBloque,
-                    'id_periodo'    => $request->id_periodo,
-                    'descripcion'   => 'Lote de carga masiva #' . $nuevoBloque,
-                    'estado'        => 'PENDIENTE'
-                ]);
-
-                $loteInsercionMasiva = [];
-
-                foreach ($hoja as $fila) {
-                    if (empty(array_filter($fila, function($value) { return $value !== null && $value !== ''; }))) {
-                        continue;
-                    }
-
-                    $datosInsertar = [
-                        'estado'        => 'PENDIENTE',
-                        'fecha_ad'      => $ahora,
-                        'created_at'    => $ahora,
-                        'updated_at'    => $ahora,
-                        'numero_bloque' => $nuevoBloque,
-                    ];
-
-                    foreach ($mapaColumnas as $columnaExcel => $campoBD) {
-                        $indiceColumna = array_search($columnaExcel, $encabezados);
-
-                        if ($indiceColumna !== false && array_key_exists($indiceColumna, $fila)) {
-                            $valorCelda = $fila[$indiceColumna];
-
-                            if ($campoBD === 'valor' && $valorCelda !== null) {
-                                $valorCelda = preg_replace('/[^0-9.-]/', '', (string)$valorCelda);
-                                $valorCelda = $valorCelda === '' ? 0 : (float)$valorCelda;
-                            }
-
-                            if ($campoBD === 'fecha_venci' && is_numeric($valorCelda)) {
-                                try {
-                                    $valorCelda = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($valorCelda)->format('Y-m-d');
-                                } catch (\Exception $e) {
-                                    $valorCelda = null;
-                                }
-                            }
-
-                            $datosInsertar[$campoBD] = $valorCelda;
-                        }
-                    }
-                    $loteInsercionMasiva[] = $datosInsertar;
-                }
-
-                $bloques = array_chunk($loteInsercionMasiva, 1000);
-                foreach ($bloques as $bloque) {
-                    CarSiaApi::insert($bloque);
-                }
-            });
-
-            return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                             ->with('success', "Archivo cargado exitosamente. Asignado al Lote #{$nuevoBloque}");
-
-        } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Ingesta - Error masivo Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
-        }
-    } */
-    /**
-     * =========================================================================
-     * 2. CARGAR EXCEL (ASIGNACIÓN BLINDADA Y PROCESAMIENTO EN COLA)
+     * 2. CARGAR EXCEL (PROCESAMIENTO DIRECTO EN PRIMER PLANO POR BLOQUES)
      * =========================================================================
      */
     public function cargarExcel(Request $request)
     {
         // 1. Validar parámetros de entrada
         $request->validate([
-            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:20480',
+            'archivo_excel' => 'required|mimes:xlsx,xls,csv|max:51200',
             'id_periodo'    => 'required|integer|exists:car_sia_periodos,id'
         ]);
 
         try {
-            // 2. Almacenar el archivo físicamente para la lectura en segundo plano
-            $rutaArchivo = $request->file('archivo_excel')->store('ingestas_temporales');
+            $progresoToken = $request->input('progreso_token');
+            $totalFilas = $this->obtenerTotalFilasExcel($request->file('archivo_excel'));
 
-            // 3. Transacción para evitar Race Conditions (colisiones en alta concurrencia)
+            if ($progresoToken) {
+                Cache::put('ingesta_progreso_' . $progresoToken, [
+                    'estado' => 'iniciando',
+                    'procesadas' => 0,
+                    'total' => $totalFilas,
+                    'porcentaje' => 0,
+                ], now()->addHour());
+            }
+
+            // 2. Transacción segura para el número de bloque
             $nuevoBloque = DB::transaction(function () use ($request) {
+
+                $ultimoBloque = CarSiaBloque::lockForUpdate()->orderBy('numero_bloque', 'desc')->first();
+                $siguienteBloque = $ultimoBloque ? $ultimoBloque->numero_bloque + 1 : 1;
+
+                // Verificación extra con otras tablas
                 $maxStaging    = CarSiaApi::max('numero_bloque') ?? 0;
                 $maxOperacion  = CarSiaOperacion::max('numero_bloque') ?? 0;
-                $maxRelacional = CarSiaBloque::max('numero_bloque') ?? 0;
+                $siguienteBloque = max($siguienteBloque, (int)$maxStaging + 1, (int)$maxOperacion + 1);
 
-                $siguienteBloque = max((int)$maxStaging, (int)$maxOperacion, (int)$maxRelacional) + 1;
-
-                // Crear el bloque maestro de inmediato
                 CarSiaBloque::create([
                     'numero_bloque' => $siguienteBloque,
                     'id_periodo'    => $request->id_periodo,
-                    'descripcion'   => 'Lote de carga masiva #' . $siguienteBloque,
-                    'estado'        => 'PENDIENTE' // Cambiará a PROCESADO o ERROR vía eventos
+                    'descripcion'   => 'Lote masivo #' . $siguienteBloque . ' (MODO DIRECTO)',
+                    'estado'        => 'PROCESANDO'
                 ]);
 
                 return $siguienteBloque;
             });
 
-            // 4. Encolar la lectura por Chunks en la tabla jobs
-            // Pasa tanto la variable del bloque como la ruta para los eventos de AfterImport
-            Excel::queueImport(new IngestaExcelImport($nuevoBloque, $rutaArchivo), $rutaArchivo);
+            // 3. Preparar el servidor para un proceso largo en primer plano
+            set_time_limit(0); // Tiempo ilimitado para que no se caiga a la mitad
+            ini_set('memory_limit', '2048M'); // 2GB de RAM permitidos
 
-            // 5. Retornar vista al usuario en milisegundos sin esperar la lectura
+            // 4. Ejecutar la importación (la clase Import hará el trabajo por bloques)
+            Excel::import(new IngestaExcelImport($nuevoBloque, $progresoToken, $totalFilas), $request->file('archivo_excel'));
+
+            // 5. Si termina sin errores, actualizamos el estado
+            CarSiaBloque::where('numero_bloque', $nuevoBloque)
+                ->update(['estado' => 'PROCESADO']);
+
+            if ($progresoToken) {
+                Cache::put('ingesta_progreso_' . $progresoToken, [
+                    'estado' => 'completado',
+                    'procesadas' => $totalFilas,
+                    'total' => $totalFilas,
+                    'porcentaje' => 100,
+                ], now()->addMinutes(10));
+            }
+
+            // --- INICIO DE INSERCIÓN DEL LOG ---
+            CarSiaOperacionLog::create([
+                'numero_bloque'                 => $nuevoBloque,
+                'id_car_sia_operaciones_lineas' => null, // Deja null si el log es de todo el bloque, o pon el ID si aplica
+                'id_car_sia_origenes_evento'    => 1, // Ajusta al ID real que corresponda a "Web" o "Carga" en tu BD
+                'id_car_sia_eventos_auditoria'  => 1, // Ajusta al ID real que corresponda a "Ingesta de Excel"
+                'id_user'                       => Auth::id(),
+                'ip'                            => $request->ip(),
+                'detalles_ejecucion'            => [
+                    'mensaje'           => 'Carga masiva de Excel ejecutada exitosamente.',
+                    'nombre_archivo'    => $request->file('archivo_excel')->getClientOriginalName(),
+                    'total_filas_leidas'=> $totalFilas
+                ],
+            ]);
+            // --- FIN DE INSERCIÓN DEL LOG ---
+
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
-                             ->with('success', "Archivo recibido. Los registros del Lote #{$nuevoBloque} se están procesando en segundo plano.");
+                             ->with('success', "Archivo procesado exitosamente por bloques. Los registros del Lote #{$nuevoBloque} están listos.");
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Ingesta - Error encolando masivo Excel: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fallo técnico preparando el Excel: ' . $e->getMessage());
+            // Reversión visual si estalla a mitad de lectura
+            if (isset($nuevoBloque)) {
+                CarSiaBloque::where('numero_bloque', $nuevoBloque)->update(['estado' => 'ERROR']);
+            }
+            if (isset($progresoToken)) {
+                Cache::put('ingesta_progreso_' . $progresoToken, [
+                    'estado' => 'error',
+                    'mensaje' => 'No fue posible procesar el archivo.',
+                    'porcentaje' => 0,
+                ], now()->addMinutes(10));
+            }
+
+            // --- INSERCIÓN DEL LOG DE ERROR MEJORADA ---
+            $nombreArchivo = $request->hasFile('archivo_excel')
+                ? $request->file('archivo_excel')->getClientOriginalName()
+                : 'Archivo no identificado';
+
+            CarSiaOperacionLog::create([
+                'numero_bloque'                 => $nuevoBloque ?? null,
+                'id_car_sia_operaciones_lineas' => null,
+                'id_car_sia_origenes_evento'    => 1,
+                'id_car_sia_eventos_auditoria'  => 13, // Si tienes un ID específico para errores, ponlo aquí
+                'id_user'                       => Auth::id(),
+                'ip'                            => $request->ip(),
+                'detalles_ejecucion'            => [
+                    'mensaje'           => 'Error procesando Excel.',
+                    'error_tecnico'     => $e->getMessage(), // <-- Te ayudará mucho para depurar
+                    'nombre_archivo'    => $nombreArchivo,
+                    'total_filas_leidas'=> 0
+                ],
+            ]);
+            // --- FIN LOG DE ERROR ---
+
+            \Illuminate\Support\Facades\Log::error('CERTIFICADOS Ingesta - Error procesando Excel: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Fallo técnico leyendo el Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function progresoCarga(Request $request)
+    {
+        $request->validate(['token' => 'required|uuid']);
+
+        $progreso = Cache::get('ingesta_progreso_' . $request->token);
+
+        if (!$progreso) {
+            return response()->json(['estado' => 'no_encontrado'], 404);
+        }
+
+        return response()->json($progreso);
+    }
+
+    private function obtenerTotalFilasExcel($archivo): int
+    {
+        try {
+            $reader = IOFactory::createReaderForFile($archivo->getRealPath());
+            $hojas = call_user_func([$reader, 'listWorksheetInfo'], $archivo->getRealPath());
+
+            return max(0, (int) ($hojas[0]['totalRows'] ?? 0) - 1);
+        } catch (\Throwable $e) {
+            Log::warning('CERTIFICADOS Ingesta - No se pudo calcular el total de filas: ' . $e->getMessage());
+            return 0;
         }
     }
 
     /**
      * =========================================================================
-     * 3. MOTOR DE INYECCIÓN (ALTO RENDIMIENTO - OPTIMIZADO POR BLOQUE)
+     * 3. MOTOR DE INYECCIÓN (ALTO RENDIMIENTO - OPTIMIZADO PARA 30K+ REGISTROS)
      * =========================================================================
      */
     public function inyectarBloques(Request $request)
@@ -319,70 +329,91 @@ class IngestaController extends Controller
         ]);
 
         try {
+            // Aumentamos los límites para procesos masivos
             ini_set('max_execution_time', 600);
-            ini_set('memory_limit', '512M');
+            ini_set('memory_limit', '1024M');
 
             $bloqueOrigen = $request->bloque_origen;
+            $progresoToken = $request->input('progreso_token');
+
             $clientesProcesados = 0;
-            $registrosIgnorados = 0; // Cambiamos el nombre de la variable para mayor claridad
+            $registrosIgnorados = 0;
 
-            DB::transaction(function () use (&$clientesProcesados, &$registrosIgnorados, $request, $bloqueOrigen) {
+            $this->guardarProgresoInyeccion($progresoToken, 'iniciando', 0, 0, 'Preparando el lote...');
 
-                // 1. Obtenemos todas las cédulas que el Excel quiere procesar
-                $cedulasPendientes = CarSiaApi::where('numero_bloque', $bloqueOrigen)
-                    ->where('estado', 'PENDIENTE')
+            DB::transaction(function () use (&$clientesProcesados, &$registrosIgnorados, $request, $bloqueOrigen, $progresoToken) {
+
+                // 1. OBTENER SÓLO CÉDULAS VÁLIDAS CRUZANDO DIRECTAMENTE EN BASE DE DATOS (JOIN IMPLÍCITO)
+                // Esto evita traer 30.000 registros a PHP solo para validarlos
+                $cedulasValidas = DB::table('car_sia_api')
+                    ->join('MaeTerceros', 'car_sia_api.tercero', '=', 'MaeTerceros.cod_ter')
+                    ->where('car_sia_api.numero_bloque', $bloqueOrigen)
+                    ->where('car_sia_api.estado', 'PENDIENTE')
                     ->where(function ($query) {
-                        $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                        $query->whereNull('car_sia_api.anular')->orWhere('car_sia_api.anular', '!=', 1);
                     })
                     ->distinct()
-                    ->pluck('tercero')
+                    ->pluck('car_sia_api.tercero')
                     ->toArray();
 
-                if (empty($cedulasPendientes)) {
-                    return;
+                $totalValidas = count($cedulasValidas);
+
+                // Si no hay válidas, calculamos cuántos fallaron para mostrar la alerta
+                if ($totalValidas === 0) {
+                    $hayPendientes = CarSiaApi::where('numero_bloque', $bloqueOrigen)
+                        ->where('estado', 'PENDIENTE')
+                        ->where(function ($query) {
+                            $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                        })->exists();
+
+                    if ($hayPendientes) {
+                        throw new \Exception('Ninguna de las cédulas del lote existe en el maestro de terceros (MaeTerceros).');
+                    }
+                    return; // No hay nada que procesar
                 }
 
-                // 2. EL PORTERO: Buscamos cuáles de esas cédulas REALMENTE existen en MaeTerceros
-                $cedulasValidas = DB::table('MaeTerceros')
-                    ->whereIn('cod_ter', $cedulasPendientes)
-                    ->pluck('cod_ter')
-                    ->toArray();
+                $this->guardarProgresoInyeccion($progresoToken, 'procesando', 10, $totalValidas, 'Terceros validados...');
 
-                // NUEVO CÁLCULO: Contamos cuántos REGISTROS (filas de facturas) se quedaron por fuera
+                // 2. CONTAR REGISTROS IGNORADOS (SIN USAR WHERENOTIN CON ARRAYS GIGANTES)
+                // Se usa whereNotExists para que el motor de BD haga el cruce internamente súper rápido
                 $registrosIgnorados = CarSiaApi::where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
                     ->where(function ($query) {
                         $query->whereNull('anular')->orWhere('anular', '!=', 1);
                     })
-                    ->whereNotIn('tercero', $cedulasValidas)
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                              ->from('MaeTerceros')
+                              ->whereColumn('MaeTerceros.cod_ter', 'car_sia_api.tercero');
+                    })
                     ->count();
 
-                if (empty($cedulasValidas)) {
-                    throw new \Exception('Ninguna de las cédulas del lote existe en el maestro de terceros (MaeTerceros).');
-                }
-
-                $origen = CarSiaOrigenEvento::firstOrCreate(['nombre' => 'Interfaz Web']);
-                $evento = CarSiaEventoAuditoria::firstOrCreate(['nombre' => 'Inyección Masiva ERP']);
-
                 $anioActual = date('Y');
-                $cantidadActual = CarSiaOperacion::whereYear('created_at', $anioActual)->count();
+
+                // 3. OPTIMIZACIÓN CRÍTICA: REEMPLAZO DE whereYear()
+                // Al usar rangos (>= y <=), la base de datos SÍ usa los índices de fecha.
+                $inicioAnio = "{$anioActual}-01-01 00:00:00";
+                $finAnio    = "{$anioActual}-12-31 23:59:59";
+
+                $cantidadActual = CarSiaOperacion::where('created_at', '>=', $inicioAnio)
+                                                 ->where('created_at', '<=', $finAnio)
+                                                 ->count();
 
                 $idEstadoReal = $request->id_car_sia_estados;
                 $idTipoEvento = $request->id_car_sia_tipos;
-                $numeroBloqueNuevo = $bloqueOrigen;
-
                 $ahora = now()->format('Y-m-d H:i:s');
 
-                // 3. PREPARACIÓN EN MEMORIA (SOLO LAS CÉDULAS VÁLIDAS)
+                // 4. PREPARACIÓN EN MEMORIA DE LA MATRIZ
                 $operacionesMatriz = [];
+                $validasProcesadas = 0;
+
                 foreach ($cedulasValidas as $cedula) {
                     $cantidadActual++;
                     $consecutivo = str_pad($cantidadActual, 4, '0', STR_PAD_LEFT);
-                    $numeroRadicado = "INI-{$anioActual}-{$consecutivo}";
 
                     $operacionesMatriz[] = [
-                        'numero_radicado' => $numeroRadicado,
-                        'numero_bloque'   => $numeroBloqueNuevo,
+                        'numero_radicado' => "INI-{$anioActual}-{$consecutivo}",
+                        'numero_bloque'   => $bloqueOrigen,
                         'id_tercero'      => $cedula,
                         'created_at'      => $ahora,
                         'updated_at'      => $ahora,
@@ -390,72 +421,74 @@ class IngestaController extends Controller
                     $clientesProcesados++;
                 }
 
-                // 4. INSERCIÓN MASIVA DE MATRIZ
+                // 5. INSERCIÓN MASIVA CHUNKEADA
                 foreach (array_chunk($operacionesMatriz, 1000) as $bloque) {
                     CarSiaOperacion::insert($bloque);
+                    $validasProcesadas += count($bloque);
+                    $porcentaje = 10 + (int) floor(($validasProcesadas / $totalValidas) * 70);
+
+                    $this->guardarProgresoInyeccion(
+                        $progresoToken, 'procesando', min(80, $porcentaje), $totalValidas, "Creando operaciones: {$validasProcesadas} de {$totalValidas}"
+                    );
                 }
 
-                // =========================================================
-                // 5. INSERCIÓN DE PIVOTES (SOLO SI EL BLOQUE ES NUEVO)
-                // =========================================================
+                $this->guardarProgresoInyeccion($progresoToken, 'procesando', 85, $totalValidas, 'Actualizando el lote...');
 
-                $existeTipo = DB::table('car_sia_tipos_operacion')
-                                ->where('numero_bloque', $numeroBloqueNuevo)
-                                ->exists();
-
+                // 6. INSERCIÓN DE PIVOTES
+                $existeTipo = DB::table('car_sia_tipos_operacion')->where('numero_bloque', $bloqueOrigen)->exists();
                 if (!$existeTipo) {
-                    // Un solo registro para el Tipo de Operación
                     DB::table('car_sia_tipos_operacion')->insert([
                         'id_car_sia_operaciones' => null,
                         'id_car_sia_tipos'       => $idTipoEvento,
-                        'numero_bloque'          => $numeroBloqueNuevo,
+                        'numero_bloque'          => $bloqueOrigen,
                         'created_at'             => $ahora,
                         'updated_at'             => $ahora,
                     ]);
                 }
 
-                $existeEstado = DB::table('car_sia_estados_operacion')
-                                  ->where('numero_bloque', $numeroBloqueNuevo)
-                                  ->exists();
-
+                $existeEstado = DB::table('car_sia_estados_operacion')->where('numero_bloque', $bloqueOrigen)->exists();
                 if (!$existeEstado) {
-                    // Un solo registro para el Estado de la Operación
                     DB::table('car_sia_estados_operacion')->insert([
                         'id_car_sia_operaciones' => null,
                         'id_car_sia_estados'     => $idEstadoReal,
-                        'numero_bloque'          => $numeroBloqueNuevo,
+                        'numero_bloque'          => $bloqueOrigen,
                         'created_at'             => $ahora,
                         'updated_at'             => $ahora,
                     ]);
                 }
-                // =========================================================
 
-                // 6. ACTUALIZACIÓN MASIVA SOLO A LOS CLIENTES VÁLIDOS PROCESADOS
+                // 7. ACTUALIZACIÓN MASIVA EFICIENTE (SIN USAR whereIn Gigante)
                 CarSiaApi::where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
-                    ->whereIn('tercero', $cedulasValidas)
                     ->where(function ($query) {
                         $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                    })
+                    ->whereExists(function ($query) {
+                        $query->select(DB::raw(1))
+                              ->from('MaeTerceros')
+                              ->whereColumn('MaeTerceros.cod_ter', 'car_sia_api.tercero');
                     })
                     ->update([
                         'estado'     => 'PROCESADO',
                         'updated_at' => $ahora
                     ]);
 
-                // 7. ACTUALIZACIÓN DE ESTADO DEL BLOQUE PADRE A PROCESADO
-                CarSiaBloque::where('numero_bloque', $numeroBloqueNuevo)->update(['estado' => 'PROCESADO']);
+                // 8. ACTUALIZAR BLOQUE PADRE
+                CarSiaBloque::where('numero_bloque', $bloqueOrigen)->update(['estado' => 'PROCESADO']);
 
-                // 8. LOG DE AUDITORÍA
+                $this->guardarProgresoInyeccion($progresoToken, 'procesando', 95, $totalValidas, 'Registrando auditoría...');
+
+                // 9. LOG DE AUDITORÍA
                 try {
                     CarSiaOperacionLog::create([
-                        'numero_bloque'                 => $numeroBloqueNuevo,
+                        'numero_bloque'                 => $bloqueOrigen,
                         'id_car_sia_operaciones_lineas' => null,
-                        'id_car_sia_origenes_evento'    => $origen->id,
-                        'id_car_sia_eventos_auditoria'  => $evento->id,
+                        'id_car_sia_origenes_evento'    => 1,
+                        'id_car_sia_eventos_auditoria'  => 2,
                         'id_user'                       => Auth::check() ? Auth::id() : null,
                         'ip'                            => $request->ip() ?? '127.0.0.1',
                         'detalles_ejecucion'            => [
-                            'accion'              => 'Generacion Automatica Operacion Lote (Validada contra Maestro)',
+                            'accion'              => 'Generacion Automatica Operacion Lote',
                             'bloque_origen'       => $bloqueOrigen,
                             'clientes_procesados' => $clientesProcesados,
                             'registros_ignorados' => $registrosIgnorados,
@@ -469,19 +502,20 @@ class IngestaController extends Controller
             });
 
             if ($clientesProcesados === 0 && $registrosIgnorados === 0) {
+                $this->guardarProgresoInyeccion($progresoToken, 'error', 0, 0, 'No se encontraron registros pendientes.');
                 if ($request->ajax()) return response()->json(['error' => 'No hay lotes válidos.'], 400);
                 return redirect()->back()->with('error', 'No se encontraron lotes pendientes.');
             }
 
-            // Mensajes para el usuario final
             session()->flash('inyeccion_exitosa', true);
             session()->flash('resumen_clientes', $clientesProcesados);
+
+            $this->guardarProgresoInyeccion($progresoToken, 'completado', 100, $clientesProcesados, 'Lote procesado correctamente.');
 
             if ($registrosIgnorados > 0) {
                 session()->flash('warning', "ATENCIÓN: Se omitieron {$registrosIgnorados} registros de facturas porque su NIT/cédula no existe en el sistema.");
             }
 
-            // --- LIMPIEZA DE MEMORIAS (Pantalla A y Pantalla B) ---
             Cache::forget("kpis_ingesta_staging_bloque_{$bloqueOrigen}");
             Cache::forget('sia_bloques_disponibles');
             Cache::forget('sia_anios_disponibles');
@@ -495,26 +529,53 @@ class IngestaController extends Controller
             Log::error('CERTIFICADOS Ingesta - Error crítico: ' . $e->getMessage());
 
             if (str_contains($e->getMessage(), 'Ninguna de las cédulas del lote existe en el maestro de terceros')) {
-                // Rescatar los terceros únicos que causaron el error para previsualizarlos
-                $tercerosFaltantes = \App\Models\Certificados\CarSiaApi::where('numero_bloque', $request->bloque_origen)
-                    ->where('estado', 'PENDIENTE')
+                // Recuperar faltantes usando query pura (más rápido)
+                $tercerosFaltantes = DB::table('car_sia_api')
                     ->select('tercero', 'nombre_tercero')
+                    ->where('numero_bloque', $request->bloque_origen)
+                    ->where('estado', 'PENDIENTE')
                     ->whereNotNull('tercero')
                     ->where('tercero', '!=', '')
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                              ->from('MaeTerceros')
+                              ->whereColumn('MaeTerceros.cod_ter', 'car_sia_api.tercero');
+                    })
                     ->distinct()
                     ->get()
                     ->toArray();
+
+                $tercerosFaltantesArray = json_decode(json_encode($tercerosFaltantes), true);
+
+                $this->guardarProgresoInyeccion($progresoToken ?? null, 'error', 0, 0, 'Faltan terceros en la maestra.');
 
                 return redirect()->back()
                     ->with('error', 'Faltan clientes en la Maestra de Terceros para procesar este lote.')
                     ->with('requiere_crear_terceros', true)
                     ->with('bloque_fallido', $request->bloque_origen)
-                    ->with('lista_faltantes', $tercerosFaltantes);
+                    ->with('lista_faltantes', $tercerosFaltantesArray);
             }
+
+            $this->guardarProgresoInyeccion($progresoToken ?? null, 'error', 0, 0, 'No fue posible procesar el lote.');
 
             if ($request->ajax()) return response()->json(['error' => 'Error SQL: ' . $e->getMessage()], 500);
             return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
         }
+    }
+
+    private function guardarProgresoInyeccion(?string $token, string $estado, int $porcentaje, int $total, string $mensaje): void
+    {
+        if (!$token) {
+            return;
+        }
+
+        Cache::put('ingesta_progreso_' . $token, [
+            'estado' => $estado,
+            'procesadas' => $porcentaje === 100 ? $total : 0,
+            'total' => $total,
+            'porcentaje' => $porcentaje,
+            'mensaje' => $mensaje,
+        ], $estado === 'completado' || $estado === 'error' ? now()->addMinutes(10) : now()->addHour());
     }
 
     /**
@@ -532,7 +593,23 @@ class IngestaController extends Controller
             $registro->anular = 1;
             $registro->save();
 
-            // 3. Borramos el caché de este bloque
+            // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
+            CarSiaOperacionLog::create([
+                'numero_bloque'                => $registro->numero_bloque,
+                'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
+                'id_car_sia_eventos_auditoria' => 6, // Ej: 6 = Anulación de Registro
+                'id_user'                      => Auth::id(), // Captura el ID del usuario en sesión
+                'ip'                           => request()->ip(), // Captura la IP de la solicitud
+                'detalles_ejecucion'           => [
+                    'accion'     => 'Anulación Individual',
+                    'id_interno' => $registro->id,
+                    'factura'    => $registro->id_factura,
+                    'tercero'    => $registro->tercero,
+                    'valor'      => $registro->valor
+                ]
+            ]);
+
+            // 4. Borramos el caché de este bloque
             Cache::forget("kpis_ingesta_staging_bloque_{$registro->numero_bloque}");
 
             return back()->with('success', "La factura #{$registro->id_factura} fue excluida del bloque.");
@@ -551,13 +628,39 @@ class IngestaController extends Controller
     public function anularLote($numero_bloque)
     {
         try {
-            // 1. Actualizamos masivamente todos los registros que pertenezcan a este bloque
-            // y que aún estén pendientes (no podemos anular algo que ya se procesó en el ERP)
-            CarSiaApi::where('numero_bloque', $numero_bloque)
-                     ->where('estado', '!=', 'PROCESADO')
-                     ->update(['anular' => 1]);
+            // Capturamos el request y el ID de usuario fuera del closure de la transacción
+            $ipActual = request()->ip();
+            $idUsuario = Auth::id();
 
-            // 2. Borramos el caché del bloque
+            // Usamos una transacción para garantizar que ambas tablas y el log se actualicen juntos
+            \Illuminate\Support\Facades\DB::transaction(function () use ($numero_bloque, $ipActual, $idUsuario) {
+
+                // 1. Actualizamos masivamente todos los registros en Staging (CarSiaApi)
+                // que aún estén pendientes (no podemos anular algo que ya se procesó en el ERP)
+                $afectadosStaging = CarSiaApi::where('numero_bloque', $numero_bloque)
+                                         ->where('estado', '!=', 'PROCESADO')
+                                         ->update(['anular' => 1]);
+
+                // 2. Actualizamos el estado del bloque padre (CarSiaBloque) a ANULADO
+                CarSiaBloque::where('numero_bloque', $numero_bloque)
+                            ->update(['estado' => 'ANULADO']);
+
+                // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
+                CarSiaOperacionLog::create([
+                    'numero_bloque'                => $numero_bloque,
+                    'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
+                    'id_car_sia_eventos_auditoria' => 5, // Ej: 4 = Anulación Masiva (Lote)
+                    'id_user'                      => $idUsuario,
+                    'ip'                           => $ipActual,
+                    'detalles_ejecucion'           => [
+                        'accion'              => 'Anulación de Lote Completo',
+                        'registros_afectados' => $afectadosStaging,
+                        'estado_final'        => 'ANULADO'
+                    ]
+                ]);
+            });
+
+            // 4. Borramos el caché del bloque para que los KPIs se actualicen inmediatamente
             Cache::forget("kpis_ingesta_staging_bloque_{$numero_bloque}");
 
             return redirect()->back()->with('success', "El Lote API-" . str_pad($numero_bloque, 4, '0', STR_PAD_LEFT) . " fue anulado por completo.");
@@ -677,6 +780,42 @@ class IngestaController extends Controller
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS - Error al crear periodo: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al crear el periodo.');
+        }
+    }
+    /**
+     * Cambiar estado (Abierto/Cerrado) de un periodo individual
+     */
+    public function togglePeriodo(Request $request, $id)
+    {
+        try {
+            $periodo = CarSiaPeriodo::findOrFail($id);
+            $periodo->abierto = !$periodo->abierto; // Invierte el estado actual
+            $periodo->save();
+
+            $estadoStr = $periodo->abierto ? 'abierto' : 'cerrado';
+            return redirect()->back()->with('success', "El periodo {$periodo->nombre} ahora está {$estadoStr}.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SIA - Error al cambiar estado de periodo: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el estado del periodo.');
+        }
+    }
+
+    /**
+     * Cambiar estado masivamente para todos los periodos de un Año
+     */
+    public function toggleAnio(Request $request, $anio)
+    {
+        try {
+            // El interruptor enviará estado 1 (para abrir todos) o 0 (para cerrar todos)
+            $estadoDeseado = $request->input('estado', 0);
+
+            CarSiaPeriodo::where('anio', $anio)->update(['abierto' => $estadoDeseado]);
+
+            $estadoStr = $estadoDeseado ? 'abiertos' : 'cerrados';
+            return redirect()->back()->with('success', "Todos los periodos del año {$anio} han sido {$estadoStr}.");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('SIA - Error al cambiar estado de año: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al actualizar el estado del año.');
         }
     }
 }
