@@ -1444,8 +1444,13 @@ Route::middleware(['auth'])
         Route::post('operaciones/{id}/programar-alerta', [OperacionController::class, 'programarAlerta'])->name('operaciones.programar_alerta');
         Route::post('operaciones/{id}/toggle-notificacion', [OperacionController::class, 'toggleNotificacion'])->name('operaciones.toggle_notificacion');
 
-        // NUEVA RUTA: Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
+        // Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
+
+        // Configuración de Notificaciones (Masiva, Selectiva e Individual)
+        Route::post('operaciones/config/masivo', [OperacionController::class, 'configuracionMasiva'])->name('operaciones.config.masivo');
+        Route::post('operaciones/config/selectivo', [OperacionController::class, 'configuracionSelectiva'])->name('operaciones.config.selectivo');
+        Route::post('operaciones/config/individual', [OperacionController::class, 'configuracionIndividual'])->name('operaciones.config.individual');
 
         // INFORME CLIENTE: Generación de reporte de comportamiento
         Route::get('operaciones/{id}/informe-cliente', [OperacionController::class, 'generarInformeCliente'])->name('operaciones.informe_cliente');

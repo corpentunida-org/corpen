@@ -118,10 +118,10 @@
         }
 
         /* --- BLOQUES DE CONTENIDO --- */
-        .header-content { margin-bottom: 30px; }
+        .header-content { margin-bottom: 10px; } /* Ajustado de 30px a 10px */
         .fecha { font-weight: bold; margin-bottom: 25px; }
         .destinatario-block { margin-bottom: 20px; }
-        .asunto { font-weight: bold; text-transform: uppercase; margin-bottom: 30px; }
+        .asunto { font-weight: bold; text-transform: uppercase; margin-bottom: 10px; } /* Ajustado de 30px a 10px */
         .cuerpo-carta { text-align: justify; min-height: 350px; margin-bottom: 20px; }
 
         /* --- CONFIGURACIÓN DE EDICIÓN FLUIDA --- */
@@ -219,8 +219,8 @@
             </div>
 
             <div class="cuerpo-carta">
-                <br>
-                <div style="margin-top: 15px;">
+                {{-- Eliminado el <br> y el margin-top para que pegue más al asunto --}}
+                <div>
                     {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
                 </div>
                 <br>
@@ -235,7 +235,31 @@
                 </div>
 
                 <div class="linea"></div>
-                <span class="nombre-firmante">{{ $comunicacionSalida->usuario->name ?? 'BRAYAM STIVED CASTILLO MORENO' }}</span>
+
+                @php
+                    // 1. Obtenemos el nombre tal como viene de la BD (o el valor por defecto)
+                    $nombreOriginal = $comunicacionSalida->usuario->name ?? 'CASTILLO MORENO BRAYAM STIVED';
+
+                    // 2. Separamos el texto por espacios
+                    $partes = explode(' ', trim($nombreOriginal));
+
+                    // 3. Verificamos que tenga al menos 3 palabras (Apellido1 Apellido2 Nombre...)
+                    if (count($partes) >= 3) {
+                        $apellido1 = $partes[0];
+                        $apellido2 = $partes[1];
+
+                        // Tomamos desde la 3ra palabra en adelante (los nombres) y los unimos
+                        $nombres = implode(' ', array_slice($partes, 2));
+
+                        // 4. Armamos el nombre final: Nombres + 1er Apellido
+                        $nombreFormateado = $nombres . ' ' . $apellido1;
+                    } else {
+                        // Si el nombre es muy corto o tiene formato inusual, se muestra tal cual
+                        $nombreFormateado = $nombreOriginal;
+                    }
+                @endphp
+
+                <span class="nombre-firmante">{{ $nombreFormateado }}</span>
                 <span class="cargo-firmante">Secretario Corpentunida</span>
             </div>
         </div>

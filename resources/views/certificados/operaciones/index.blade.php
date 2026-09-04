@@ -132,7 +132,7 @@
                                     <i class="fas fa-bell me-2"></i> Alerta de Lote
                                 </button>
                                 <button type="button" class="btn btn-danger shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalMasivo">
-                                    <i class="fas fa-database me-2"></i> Generación Masiva de Certificados
+                                    <i class="fas fa-database me-2"></i> Generación Masiva
                                 </button>
                             @endif
                         </div>
@@ -191,7 +191,19 @@
                         </div>
                     @endif
 
+
+                    {{-- ========================================================================= --}}
+                    {{-- BOTÓN DE CONFIGURACIÓN DEL LOTE (NUEVO) --}}
+                    {{-- ========================================================================= --}}
+                    <div class="d-flex justify-content-end mb-3">
+                        <button type="button" class="btn btn-primary shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalConfiguracionIndex">
+                            <i class="fas fa-cogs me-2"></i> Configurar Notificaciones
+                        </button>
+                    </div>
+
+                    {{-- ========================================================================= --}}
                     {{-- Tarjeta Única: Mensaje, Filtros + Tabla Principal --}}
+                    {{-- ========================================================================= --}}
                     <div class="card card-custom shadow-sm border-0 mb-4">
 
                         {{-- 1. Mensaje Informativo Superior (Callout) --}}
@@ -243,7 +255,6 @@
                             </div>
 
                             {{-- 3. Filtros Colapsables --}}
-                            {{-- La clase 'show' se agrega automáticamente si hay una búsqueda activa para que no se cierre al recargar --}}
                             <div class="collapse {{ (request('anio') || request('buscar')) ? 'show' : '' }}" id="collapseFiltros">
                                 <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="row g-2 align-items-end mt-3 bg-light p-3 rounded-4 border" style="border-color: var(--c-border) !important;">
                                     <input type="hidden" name="bloque" value="{{ $bloqueActivo }}">
@@ -269,7 +280,7 @@
                             </div>
                         </div>
 
-                        {{-- 4. Contenido de la Tabla (Estilo Hoja de Cálculo / Data Grid) --}}
+                        {{-- 4. Contenido de la Tabla --}}
                         <div class="table-responsive border-top" style="border-color: var(--c-border) !important;">
                             <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.8rem;">
                                 <thead class="bg-light text-muted text-uppercase" style="font-size: 0.7rem;">
@@ -374,7 +385,7 @@
                             </table>
                         </div>
 
-                        {{-- 5. Paginación (Más compacta) --}}
+                        {{-- 5. Paginación --}}
                         @if($operaciones->hasPages() || $operaciones->total() > 0)
                             <div class="card-footer bg-light border-top pt-3 pb-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="border-radius: 0 0 20px 20px;">
                                 <span class="text-muted" style="font-size: 0.8rem;">
@@ -386,6 +397,7 @@
                             </div>
                         @endif
                     </div>
+
                 </div>
 
                 {{-- ==========================================
@@ -454,7 +466,7 @@
 
                                                     {{-- Toggle de Mes (Sin interruptores) --}}
                                                     <div class="month-toggle-btn p-2 d-flex justify-content-between align-items-center {{ $mesTieneActivo ? 'is-open' : '' }}"
-                                                            onclick="toggleAcordeon('month-content-{{ $periodo->id }}', this)" style="cursor: pointer;">
+                                                        onclick="toggleAcordeon('month-content-{{ $periodo->id }}', this)" style="cursor: pointer;">
                                                         <div>
                                                             <div class="fw-bold {{ $esMesActual ? 'text-primary' : 'text-dark' }}" style="font-size:.8rem; line-height:1.2;">
                                                                 <i class="fas fa-chevron-right chevron-month text-muted me-1" style="font-size:.65rem; transition: transform 0.3s;"></i>
@@ -570,8 +582,79 @@
     </div>
 
     {{-- ==========================================
-         MODALES Y SCRIPTS (Se mantienen iguales)
+         MODALES Y SCRIPTS (Nuevos y Existentes)
          ========================================== --}}
+
+    {{-- MODAL NUEVO: Configuración de Notificaciones (Masivo / Selectivo) --}}
+    <div class="modal fade" id="modalConfiguracionIndex" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form id="formConfigIndex" action="{{ route('certificados.operaciones.config.masivo') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-sliders-h me-2"></i> Configuración del Lote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+                    <input type="hidden" name="buscar" value="{{ request('buscar') }}">
+
+                    {{-- Selector de Alcance --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark mb-3">Alcance de la configuración:</label>
+
+                        <div class="form-check custom-radio border rounded-3 p-3 mb-2 shadow-sm {{ !request('buscar') ? 'bg-pastel-primary border-primary' : 'bg-white' }}" id="contRadioMasivo">
+                            <input class="form-check-input ms-1 radio-alcance" type="radio" name="tipo_aplicacion" id="alcanceMasivo" value="masivo" data-ruta="{{ route('certificados.operaciones.config.masivo') }}" {{ !request('buscar') ? 'checked' : '' }}>
+                            <label class="form-check-label ms-2 w-100" for="alcanceMasivo" style="cursor: pointer;">
+                                <span class="d-block fw-bold text-dark">Todo el Lote (Masivo)</span>
+                                <span class="d-block text-muted" style="font-size: 0.75rem;">Aplica una regla general a todos los registros del bloque actual.</span>
+                            </label>
+                        </div>
+
+                        <div class="form-check custom-radio border rounded-3 p-3 shadow-sm {{ request('buscar') ? 'bg-pastel-primary border-primary' : 'bg-white' }}" id="contRadioSelectivo">
+                            <input class="form-check-input ms-1 radio-alcance" type="radio" name="tipo_aplicacion" id="alcanceSelectivo" value="selectivo" data-ruta="{{ route('certificados.operaciones.config.selectivo') }}" {{ request('buscar') ? 'checked' : '' }} {{ !request('buscar') ? 'disabled' : '' }}>
+                            <label class="form-check-label ms-2 w-100" for="alcanceSelectivo" style="cursor: {{ request('buscar') ? 'pointer' : 'not-allowed' }};">
+                                <span class="d-block fw-bold {{ request('buscar') ? 'text-dark' : 'text-muted opacity-50' }}">Solo resultados filtrados (Selectivo)</span>
+                                <span class="d-block text-muted {{ request('buscar') ? '' : 'opacity-50' }}" style="font-size: 0.75rem;">Aplica excepciones solo a las operaciones de tu búsqueda actual.</span>
+                                @if(!request('buscar'))
+                                    <span class="badge bg-light text-danger mt-2 border"><i class="fas fa-info-circle"></i> Usa el buscador de arriba para habilitar esta opción.</span>
+                                @endif
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Configuración Base --}}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Configuración a Aplicar</label>
+                        <select name="id_car_sia_config" class="form-select form-select-custom" required>
+                            <option value="">Seleccione una configuración...</option>
+                            @isset($configuracionesBase)
+                                @foreach($configuracionesBase as $cfg)
+                                    <option value="{{ $cfg->id }}">{{ $cfg->nombre }}</option>
+                                @endforeach
+                            @endisset
+                        </select>
+                    </div>
+
+                    {{-- Switch de Estado --}}
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3 border mt-4">
+                        <div>
+                            <span class="fw-bold d-block text-dark">Habilitar Notificaciones</span>
+                            <span class="text-muted" style="font-size: 0.75rem;">Define si se enviarán notificaciones.</span>
+                        </div>
+                        <div class="form-check form-switch fs-4 m-0">
+                            <input class="form-check-input" type="checkbox" name="estado_notificacion" checked>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm border" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Guardar Configuración</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     @if($bloqueActivo)
         {{-- Modal: Alerta de Lote --}}
         <div class="modal fade" id="modalAlertaBloque" tabindex="-1" aria-hidden="true">
@@ -672,6 +755,44 @@
             });
         </script>
     @endif
+
+    {{-- SCRIPT NUEVO: Controlar el estilo visual y el action del modal de configuración --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const radios = document.querySelectorAll('.radio-alcance');
+            const formConfig = document.getElementById('formConfigIndex');
+            const contMasivo = document.getElementById('contRadioMasivo');
+            const contSelectivo = document.getElementById('contRadioSelectivo');
+
+            if(formConfig && contMasivo && contSelectivo) {
+                // Si ya hay una búsqueda activa, aseguramos que la ruta inicial sea "selectivo"
+                const radioSelectivo = document.getElementById('alcanceSelectivo');
+                if(radioSelectivo && radioSelectivo.checked) {
+                    formConfig.action = radioSelectivo.getAttribute('data-ruta');
+                }
+
+                radios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        // Cambiar action del form
+                        formConfig.action = this.getAttribute('data-ruta');
+
+                        // Aplicar estilos de fondo resaltado (pastel)
+                        if(this.value === 'masivo') {
+                            contMasivo.classList.add('bg-pastel-primary', 'border-primary');
+                            contMasivo.classList.remove('bg-white');
+                            contSelectivo.classList.remove('bg-pastel-primary', 'border-primary');
+                            contSelectivo.classList.add('bg-white');
+                        } else {
+                            contSelectivo.classList.add('bg-pastel-primary', 'border-primary');
+                            contSelectivo.classList.remove('bg-white');
+                            contMasivo.classList.remove('bg-pastel-primary', 'border-primary');
+                            contMasivo.classList.add('bg-white');
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 
     {{-- Script para los Acordeones del Menú Lateral --}}
     <script>
