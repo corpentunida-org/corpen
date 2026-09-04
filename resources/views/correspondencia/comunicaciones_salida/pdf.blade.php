@@ -137,7 +137,6 @@
 
         <div class="contenedor-firma">
 
-
             <div class="espacio-rubrica">
                 @if(isset($firmaImg) && $firmaImg)
                     <img src="{{ $firmaImg }}" class="img-firma">
@@ -145,7 +144,31 @@
             </div>
 
             <div class="linea"></div>
-            <span class="nombre-firmante">{{ $comunicacionSalida->usuario->name ?? 'BRAYAM STIVED CASTILLO MORENO' }}</span>
+
+            @php
+                // 1. Obtenemos el nombre tal como viene de la BD (o el valor por defecto)
+                $nombreOriginal = $comunicacionSalida->usuario->name ?? 'CASTILLO MORENO BRAYAM STIVED';
+
+                // 2. Separamos el texto por espacios
+                $partes = explode(' ', trim($nombreOriginal));
+
+                // 3. Verificamos que tenga al menos 3 palabras (Apellido1 Apellido2 Nombre...)
+                if (count($partes) >= 3) {
+                    $apellido1 = $partes[0]; // "LOZANO"
+                    $apellido2 = $partes[1]; // "LOZANO" (El segundo, por ahora no lo usamos en la salida)
+
+                    // Tomamos desde la 3ra palabra en adelante (los nombres) y los unimos
+                    $nombres = implode(' ', array_slice($partes, 2)); // "CARLOS ALBERTO"
+
+                    // 4. Armamos el nombre final: Nombres + 1er Apellido
+                    $nombreFormateado = $nombres . ' ' . $apellido1;
+                } else {
+                    // Si el nombre es muy corto o tiene formato inusual, se muestra tal cual
+                    $nombreFormateado = $nombreOriginal;
+                }
+            @endphp
+
+            <span class="nombre-firmante">{{ $nombreFormateado }}</span>
             <span class="cargo-firmante">Secretario Corpentunida</span>
         </div>
     </main>
