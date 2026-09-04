@@ -6,12 +6,14 @@
     </a>
 
     <ul class="nxl-submenu">
-        <li class="nxl-item {{ request()->routeIs('sgrh.empleado.*') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('sgrh.empleado.index') }}">
-                <span class="nxl-micon"><i class="bi bi-person"></i></span>
-                Colaboradores
-            </a>
-        </li>
+        @can('sgrh.empleado.index')
+            <li class="nxl-item {{ request()->routeIs('sgrh.empleado.*') ? 'active' : '' }}">
+                <a class="nxl-link" href="{{ route('sgrh.empleado.index') }}">
+                    <span class="nxl-micon"><i class="bi bi-person"></i></span>
+                    Colaboradores
+                </a>
+            </li>
+        @endcan
         <li class="nxl-item {{ request()->routeIs('maestras.terceros.*') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('maestras.terceros.index') }}">
                 <span class="nxl-micon"><i class="bi bi-person-vcard"></i></span>

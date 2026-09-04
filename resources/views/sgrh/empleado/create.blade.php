@@ -72,17 +72,17 @@
                         </label>
                         <input type="text" name="telefono_corporativo" class="form-control" value="{{ old('telefono_corporativo') }}">
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-smartphone me-1 text-primary"></i>Celular
-                        </label>
-                        <input type="text" name="celular_corporativo" class="form-control" value="{{ old('celular_corporativo') }}">
-                    </div>
                     <div class="col-md-2">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-hash me-1 text-primary"></i>Ext.
                         </label>
                         <input type="text" name="ext_corporativo" class="form-control" value="{{ old('ext_corporativo') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
+                            <i class="feather-smartphone me-1 text-primary"></i>Celular
+                        </label>
+                        <input type="text" name="celular_corporativo" class="form-control" value="{{ old('celular_corporativo') }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
@@ -341,10 +341,15 @@
                                             </span>
                                         </span>
                                         ${enlaceEditar}
-                                    </div>`;
+                                    </div>
+                                    ${desactualizado
+                                        ? '<div class="alert alert-danger mt-2 mb-0 small"><i class="bi bi-lock-fill"></i> No puedes registrarlo como colaborador hasta actualizar sus datos. Actualízalos en la pestaña nueva y vuelve a buscarlo aquí para continuar.</div>'
+                                        : ''}`;
 
                                 document.getElementById('input_cod_ter').value = codTer;
-                                formColaborador.style.display = 'block';
+                                // Bloqueado mientras el tercero esté desactualizado — el
+                                // backend también lo rechaza igual si se fuerza el envío.
+                                formColaborador.style.display = desactualizado ? 'none' : 'block';
 
                                 const marcarWrapper = document.getElementById('marcarEmpleadoWrapper');
                                 const marcarCheckbox = document.getElementById('marcar_tip_prv');

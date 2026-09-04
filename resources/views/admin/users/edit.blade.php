@@ -426,29 +426,51 @@
                                         PERFIL: {{ strtoupper($rol->role->name) }}
                                     </button>
                                 </h2>
-                                <div id="collapse-{{ $index }}" 
-                                     class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}" 
+                                <div id="collapse-{{ $index }}"
+                                     class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
                                      data-bs-parent="#accordionRolesPermissions">
                                     <div class="accordion-body p-3 p-md-4 bg-light">
-                                        
-                                        <div class="mb-3 pb-3 border-bottom border-light-subtle">
-                                            <h6 class="fw-bold text-dark fs-14">Matriz de Configuración</h6>
-                                        </div>
-                                        
-                                        <div class="row g-3">
-                                            @foreach ($permisosUsuario->where('role_id', $rol->role_id) as $permiso)
-                                                <div class="col-lg-6 col-xl-4">
-                                                    <div class="form-check form-switch ui-switch d-flex align-items-center">
-                                                        <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                            class="form-check-input flex-shrink-0" id="perm_{{ $rol->role_id }}_{{ $permiso->id }}"
-                                                            @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
-                                                        <label class="form-check-label user-select-none text-truncate" for="perm_{{ $rol->role_id }}_{{ $permiso->id }}" style="font-size: 0.85rem;" title="{{ $permiso->name }}">
-                                                            {{ $permiso->name }}
-                                                        </label>
-                                                    </div>
+
+                                        @php $permisosDelRol = $permisosUsuario->where('role_id', $rol->role_id); @endphp
+
+                                        @if ($permisosDelRol->isEmpty())
+                                            <div class="alert alert-warning d-flex align-items-start gap-2 mb-0" role="alert">
+                                                <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                                                <div class="fs-13 mb-0">
+                                                    Este perfil no tiene ningún permiso configurado todavía — contacta a sistemas para
+                                                    que lo vincule antes de poder activarle accesos a este usuario aquí.
                                                 </div>
-                                            @endforeach
-                                        </div>
+                                            </div>
+                                        @else
+                                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 pb-3 border-bottom border-light-subtle">
+                                                <h6 class="fw-bold text-dark fs-14 mb-0">Matriz de Configuración</h6>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <div class="input-group input-group-sm" style="max-width: 220px;">
+                                                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                                        <input type="text" class="form-control border-start-0" placeholder="Buscar permiso..."
+                                                               oninput="filtrarPermisos({{ $index }}, this.value)">
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisos({{ $index }}, true)">Marcar todos</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisos({{ $index }}, false)">Ninguno</button>
+                                                </div>
+                                            </div>
+
+                                            <div class="row g-3" id="matriz-{{ $index }}">
+                                                @foreach ($permisosDelRol as $permiso)
+                                                    <div class="col-lg-6 col-xl-4 permiso-item" data-nombre="{{ strtolower($permiso->name) }}">
+                                                        <div class="form-check form-switch ui-switch d-flex align-items-center">
+                                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
+                                                                class="form-check-input flex-shrink-0" id="perm_{{ $rol->role_id }}_{{ $permiso->id }}"
+                                                                @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
+                                                            <label class="form-check-label user-select-none text-truncate" for="perm_{{ $rol->role_id }}_{{ $permiso->id }}" style="font-size: 0.85rem;" title="{{ $permiso->name }}">
+                                                                {{ $permiso->name }}
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <p class="text-muted fs-13 mb-0 mt-2 d-none" id="sin-resultados-{{ $index }}">Ningún permiso coincide con la búsqueda.</p>
+                                        @endif
 
                                     </div>
                                 </div>
@@ -464,16 +486,55 @@
                         @endforelse
                     </div>
 
-                    <!-- Botonera de Guardado -->
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center bg-white p-3 p-md-4 rounded-4 border border-light-subtle shadow-sm mb-4">
-                        <a href="#cardAddPermisos" class="text-danger fw-semibold text-decoration-none px-2 mb-3 mb-sm-0 fs-14 d-flex align-items-center">
-                            <i class="bi bi-arrow-down-circle me-2"></i> Ir a Zona de Peligro
-                        </a>
-                        <button type="submit" class="ui-btn-primary w-100 w-sm-auto">
-                            <i class="bi bi-save me-2"></i> Guardar Cambios
-                        </button>
+                    <!-- Botonera de Guardado: sticky al fondo de la ventana, siempre visible aunque la
+                         matriz de permisos crezca mucho — antes había que volver a subir/bajar toda la
+                         página para guardar. -->
+                    <div class="ui-card p-3 p-md-4 mb-4 shadow" style="position: sticky; bottom: 1rem; z-index: 20;">
+                        <div class="d-flex flex-column flex-sm-row justify-content-end align-items-center gap-3">
+                            <button type="submit" class="ui-btn-primary w-100 w-sm-auto">
+                                <i class="bi bi-save me-2"></i> Guardar Cambios
+                            </button>
+                        </div>
                     </div>
                 </form>
+
+                <!-- Tarjeta: Copiar Perfil de Otro Usuario -->
+                <div class="ui-card mb-4">
+                    <div class="card-body p-3 p-md-4">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="ui-icon-box ui-pastel-amber me-3" style="width: 38px; height: 38px; font-size: 1rem;">
+                                <i class="bi bi-copy"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0 fs-15">Copiar Perfil de Otro Usuario</h6>
+                                <p class="text-muted fs-13 mb-0 mt-1">
+                                    Suma a este usuario los perfiles y permisos que ya tiene un compañero de referencia,
+                                    sin quitarle nada de lo que ya tiene.
+                                </p>
+                            </div>
+                        </div>
+
+                        <form method="POST" action="{{ route('admin.users.copiar-permisos', $user) }}"
+                              onsubmit="return confirm('¿Copiar el acceso de este usuario? Se sumarán sus perfiles y permisos a los que ya tiene {{ $user->name }}, sin quitar nada.');">
+                            @csrf
+                            <div class="row g-2">
+                                <div class="col-md-8">
+                                    <select class="form-select ui-input cursor-pointer" name="usuario_referencia_id" required>
+                                        <option value="" disabled selected>Seleccione un usuario de referencia...</option>
+                                        @foreach ($usuarios as $otro)
+                                            <option value="{{ $otro->id }}">{{ $otro->name }} ({{ $otro->email }})</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-outline-primary w-100 fw-semibold">
+                                        <i class="bi bi-copy me-1"></i> Copiar acceso
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- Zona de Peligro -->
                 <div class="ui-danger-zone shadow-sm" id="cardAddPermisos">
@@ -533,5 +594,28 @@
                 }
             });
         });
+
+        // Filtra en vivo los permisos visibles dentro de la matriz de un perfil, por nombre.
+        function filtrarPermisos(index, texto) {
+            const termino = texto.trim().toLowerCase();
+            const items = document.querySelectorAll('#matriz-' + index + ' .permiso-item');
+            let visibles = 0;
+            items.forEach(function (item) {
+                const coincide = item.dataset.nombre.includes(termino);
+                item.classList.toggle('d-none', !coincide);
+                if (coincide) visibles++;
+            });
+            const sinResultados = document.getElementById('sin-resultados-' + index);
+            if (sinResultados) {
+                sinResultados.classList.toggle('d-none', visibles > 0);
+            }
+        }
+
+        // Marca o desmarca todos los checkboxes de permisos de un perfil de una sola vez.
+        function marcarPermisos(index, estado) {
+            document.querySelectorAll('#matriz-' + index + ' .permiso-item input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.checked = estado;
+            });
+        }
     </script>
 </x-base-layout>

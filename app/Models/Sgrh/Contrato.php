@@ -10,6 +10,9 @@ class Contrato extends Model
 
     protected $fillable = [
         'empleado_id',
+        // Fecha en que se redactó/suscribió el contrato — distinta de fecha_inicio (cuándo
+        // empieza a regir) y de created_at (cuándo se guardó el registro en el sistema).
+        'fecha_creacion_contrato',
         'tipo_contrato_id',
         'cargo_id',
         'fecha_inicio',
@@ -20,10 +23,10 @@ class Contrato extends Model
         // Enlace externo al gestor documental de la empresa (no se sube/almacena el PDF en
         // S3 desde SGRH — el archivo ya vive aparte).
         'documento_url',
-        'observaciones',
     ];
 
     protected $casts = [
+        'fecha_creacion_contrato' => 'date',
         'fecha_inicio' => 'date',
         'fecha_vencimiento' => 'date',
         'fecha_terminacion_real' => 'date',

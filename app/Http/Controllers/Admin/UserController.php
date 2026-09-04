@@ -54,7 +54,59 @@ class UserController extends Controller
             ->where('model_id', $user->id)
             ->pluck('permission_id')
             ->toArray();
-        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados'));
+
+        // Para "Copiar perfil": lista de otros usuarios de los que se puede clonar acceso.
+        $usuarios = User::where('type', null)
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
+
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados', 'usuarios'));
+    }
+
+    /**
+     * "Copiar perfil": suma al usuario editado los perfiles (roles) y permisos directos que ya
+     * tiene un usuario de referencia — no quita nada de lo que el usuario editado ya tenía. Útil
+     * para replicar el acceso de un compañero con el mismo cargo en vez de armarlo permiso por
+     * permiso.
+     */
+    public function copiarPermisos(Request $request, User $user)
+    {
+        $request->validate([
+            'usuario_referencia_id' => 'required|exists:users,id',
+        ]);
+
+        // 'different:user' no sirve aquí: compararía contra un campo del request llamado
+        // 'user', que no existe (el usuario editado es el modelo enlazado por ruta, no un
+        // input) — la regla nunca se cumplía y dejaba pasar la autorreferencia sin bloquearla.
+        // Se compara directo contra el modelo.
+        if ((int) $request->usuario_referencia_id === $user->id) {
+            return back()->with('error', 'No puedes copiar el acceso de un usuario hacia sí mismo.');
+        }
+
+        $origen = User::with('actions')->findOrFail($request->usuario_referencia_id);
+
+        $rolesActuales = $user->actions()->pluck('role_id');
+        $rolesNuevos = $origen->actions->pluck('role_id')->diff($rolesActuales)->unique();
+        foreach ($rolesNuevos as $roleId) {
+            Action::create(['user_id' => $user->id, 'role_id' => $roleId]);
+        }
+
+        $permisosActuales = DB::table('model_has_permissions')->where('model_id', $user->id)->pluck('permission_id');
+        $permisosOrigen = DB::table('model_has_permissions')->where('model_id', $origen->id)->pluck('permission_id');
+        $permisosNuevos = $permisosOrigen->diff($permisosActuales)->unique();
+        foreach ($permisosNuevos as $permissionId) {
+            DB::table('model_has_permissions')->insert([
+                'permission_id' => $permissionId,
+                'model_type' => 'App\Models\User',
+                'model_id' => $user->id,
+            ]);
+        }
+
+        $this->auditoria("Se copiaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) de {$origen->name} (#{$origen->id}) al usuario {$user->name} (#{$user->id})");
+
+        return redirect()->route('admin.users.edit', $user->id)
+            ->with('success', "Se agregaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) nuevos, copiados de {$origen->name}.");
     }
 
     public function create()

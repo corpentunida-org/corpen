@@ -442,6 +442,26 @@
 
 <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
 <!--! END: Apps Init !-->
+
+<script>
+    // Los menús de acciones (dropdown de 3 puntos) dentro de una tabla con scroll horizontal
+    // (.table-responsive) quedan recortados por el propio overflow de la tabla en vez de
+    // flotar por encima de todo — Bootstrap 5.0 (el que usa este proyecto) no trae la opción
+    // declarativa data-bs-strategy="fixed" que resuelve esto en 5.2+, así que se fuerza aquí al
+    // construir cada instancia, sin perder el resto de la configuración por defecto de Popper.
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof bootstrap === 'undefined' || !bootstrap.Dropdown) {
+            return;
+        }
+        document.querySelectorAll('.table-responsive [data-bs-toggle="dropdown"]').forEach(function (el) {
+            bootstrap.Dropdown.getOrCreateInstance(el, {
+                popperConfig: function (defaultConfig) {
+                    return Object.assign({}, defaultConfig, { strategy: 'fixed' });
+                },
+            });
+        });
+    });
+</script>
 @stack('scripts')
 
 </html>

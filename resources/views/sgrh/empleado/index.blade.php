@@ -7,9 +7,11 @@
             <p class="text-muted mb-0">Listado de colaboradores identificados a partir del maestro de terceros.</p>
         </div>
         <div class="col-md-6 text-md-end mt-3 mt-md-0">
-            <a href="{{ route('sgrh.empleado.create') }}" class="btn btn-primary px-4">
-                <i class="bi bi-plus-circle"></i> Registrar colaborador
-            </a>
+            @can('sgrh.empleado.store')
+                <a href="{{ route('sgrh.empleado.create') }}" class="btn btn-primary px-4">
+                    <i class="bi bi-plus-circle"></i> Registrar colaborador
+                </a>
+            @endcan
         </div>
     </div>
 
@@ -79,7 +81,7 @@
                                                 <i class="bi bi-exclamation-triangle"></i> Sin clasificar
                                             </span>
                                         @endif
-                                        @if (!$empleado->tercero->fec_act || (string) $empleado->tercero->fec_act < $fechaLimiteActualizacion)
+                                        @if ($fechaDesactualizada($empleado->tercero->fec_act))
                                             <span class="badge rounded-pill ms-1 px-2 py-1" style="background-color: #ffe4e6; color: #e11d48; font-weight: 600;" data-bs-toggle="tooltip"
                                                   title="Última actualización: {{ $empleado->tercero->fec_act ? \Illuminate\Support\Carbon::parse($empleado->tercero->fec_act)->format('d/m/Y') : 'nunca registrada' }}">
                                                 <i class="bi bi-exclamation-triangle"></i> Información de usuario requiere actualizar
@@ -113,17 +115,23 @@
                                 </a>
                             </td>
                             <td class="text-end pe-4">
-                                <form action="{{ route('sgrh.empleado.updateEstado', $empleado->id) }}" method="POST"
-                                      class="d-inline-flex gap-2 justify-content-end">
-                                    @csrf
-                                    @method('PUT')
-                                    <select name="estado" class="form-select form-select-sm" style="width: auto;">
-                                        <option value="activo" @selected($empleado->estado === 'activo')>Activo</option>
-                                        <option value="inactivo" @selected($empleado->estado === 'inactivo')>Inactivo</option>
-                                        <option value="retirado" @selected($empleado->estado === 'retirado')>Retirado</option>
-                                    </select>
-                                    <button type="submit" class="btn btn-sm btn-outline-primary">Guardar</button>
-                                </form>
+                                {{-- El estado ya no se toca a mano: sale siempre de un contrato.
+                                     Para activar, se busca/registra un contrato; para retirar,
+                                     se liquida el contrato vigente (con la casilla de retiro
+                                     definitivo). --}}
+                                @if ($empleado->contratoActivo)
+                                    @can('sgrh.contrato.update')
+                                        <a href="{{ route('sgrh.contrato.edit', $empleado->contratoActivo) }}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil-square"></i> Editar contrato
+                                        </a>
+                                    @endcan
+                                @else
+                                    @can('sgrh.contrato.store')
+                                        <a href="{{ route('sgrh.contrato.create', ['empleado_id' => $empleado->id]) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-plus-circle"></i> Registrar contrato
+                                        </a>
+                                    @endcan
+                                @endif
                             </td>
                         </tr>
                     @empty
