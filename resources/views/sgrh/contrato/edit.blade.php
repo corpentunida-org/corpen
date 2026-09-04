@@ -33,12 +33,12 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
-                            <i class="feather-edit-3 me-1 text-primary"></i>Causal
+                            <i class="feather-edit-3 me-1 text-primary"></i>Causa Modificación
                         </label>
                         <select name="causal_modificacion" class="form-select @error('causal_modificacion') is-invalid @enderror" required>
-                            <option value="">Selecciona una causal</option>
+                            <option value="">Selecciona una causa</option>
                             @foreach ($causalesModificacion as $causal)
-                                <option value="{{ $causal }}" @selected(old('causal_modificacion') === $causal)>{{ $causal }}</option>
+                                <option value="{{ $causal }}" @selected(old('causal_modificacion', session('causalSugerida')) === $causal)>{{ $causal }}</option>
                             @endforeach
                         </select>
                         @error('causal_modificacion')
@@ -83,18 +83,19 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td class="ps-3 py-2">{{ $contrato->created_at->format('d/m/Y H:i') }}</td>
-                            <td><span class="badge bg-success-subtle text-success">Creación</span></td>
-                            <td class="text-muted small">—</td>
-                            <td class="text-muted small">—</td>
-                            <td class="text-end pe-3"></td>
-                        </tr>
+                        {{-- Más reciente primero (ya es la modificación vigente/activa); la
+                             Creación queda siempre al final, como el origen del historial —
+                             ambas son filas reales de sgrh_contrato_modificaciones. --}}
                         @foreach ($contrato->modificaciones as $modificacion)
                             <tr>
                                 <td class="ps-3 py-2">{{ $modificacion->created_at->format('d/m/Y H:i') }}</td>
                                 <td>
-                                    @if ($modificacion->causal === 'Renovación')
+                                    @if ($loop->first)
+                                        <span class="badge bg-primary-subtle text-primary me-1">Vigente</span>
+                                    @endif
+                                    @if ($modificacion->causal === 'Creación')
+                                        <span class="badge bg-success-subtle text-success">Creación</span>
+                                    @elseif ($modificacion->causal === 'Renovación')
                                         <span class="badge bg-warning-subtle text-warning">Renovación</span>
                                     @else
                                         <span class="badge bg-info-subtle text-info">{{ $modificacion->causal }}</span>
@@ -103,15 +104,20 @@
                                 <td class="text-muted small">{{ $modificacion->observacion ?: '—' }}</td>
                                 <td class="text-muted small">{{ $modificacion->usuario->name ?? '—' }}</td>
                                 <td class="text-end pe-3">
+                                    <a href="{{ route('sgrh.contrato.modificacion.ver', $modificacion) }}" class="small me-2" target="_blank">
+                                        <i class="bi bi-printer"></i> Ver/Imprimir
+                                    </a>
                                     @can('sgrh.contrato.destroy')
-                                        <form action="{{ route('sgrh.contrato.modificacion.destroy', $modificacion) }}" method="POST"
-                                              onsubmit="return confirm('¿Eliminar este registro del historial? Esta acción no se puede deshacer.');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
-                                                <i class="bi bi-trash3"></i> Eliminar
-                                            </button>
-                                        </form>
+                                        @if ($modificacion->causal !== 'Creación')
+                                            <form action="{{ route('sgrh.contrato.modificacion.destroy', $modificacion) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('¿Eliminar este registro del historial? Esta acción no se puede deshacer.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="small border-0 bg-transparent p-0 text-danger">
+                                                    <i class="bi bi-trash3"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        @endif
                                     @endcan
                                 </td>
                             </tr>

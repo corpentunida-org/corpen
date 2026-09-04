@@ -63,7 +63,7 @@
                             </td>
                             <td class="text-end pe-4">
                                 <div class="dropdown">
-                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
+                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-strategy="fixed">
                                         <i class="feather feather-more-horizontal"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end">

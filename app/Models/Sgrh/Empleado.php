@@ -60,14 +60,16 @@ class Empleado extends Model
     }
 
     /**
-     * Historial de contratos, del más reciente al más antiguo por fecha_inicio. Una renovación
-     * es el mismo contrato continuado en un registro nuevo, así que el más reciente ya es
-     * siempre el vigente — no hace falta forzar el estado 'Activo' aparte.
+     * Historial de contratos, del más reciente al más antiguo por fecha_creacion_contrato (no
+     * fecha_inicio: esta última puede quedar sin definir en contratos Indefinido, y ordenar por
+     * un campo que puede ser null dejaría esos registros fuera de lugar). Una renovación es el
+     * mismo contrato continuado en un registro nuevo, así que el más reciente ya es siempre el
+     * vigente — no hace falta forzar el estado 'Activo' aparte.
      */
     public function contratos()
     {
         return $this->hasMany(Contrato::class, 'empleado_id')
-            ->latest('fecha_inicio');
+            ->latest('fecha_creacion_contrato');
     }
 
     /**
@@ -77,7 +79,7 @@ class Empleado extends Model
     {
         return $this->hasOne(Contrato::class, 'empleado_id')
             ->where('estado', 'Activo')
-            ->latestOfMany('fecha_inicio');
+            ->latestOfMany('fecha_creacion_contrato');
     }
 
     /**
@@ -103,6 +105,18 @@ class Empleado extends Model
     public function dependientes()
     {
         return $this->hasMany(Dependiente::class, 'empleado_id')->orderBy('nombre1');
+    }
+
+    /**
+     * Los estudios "en curso" (fecha_terminacion null) van primero — MySQL ordena NULL como el
+     * valor más chico, así que un simple ->latest() los mandaría al final de la lista, detrás
+     * de todos los ya terminados, cuando en la práctica son los más relevantes de mostrar.
+     */
+    public function estudios()
+    {
+        return $this->hasMany(Estudio::class, 'empleado_id')
+            ->orderByRaw('fecha_terminacion IS NULL DESC')
+            ->latest('fecha_terminacion');
     }
 
     public function getNombreCompletoAttribute()
