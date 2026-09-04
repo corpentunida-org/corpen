@@ -342,80 +342,105 @@
                                     <p class="mb-0 fs-7">Módulo en construcción. Aquí podrás gestionar los parámetros y reglas de negocio específicas para esta operación.</p>
                                 </div>
                             </div>
-                            
-                            {{-- TAB 1: LÍNEAS --}}
+
+                            {{-- TAB 1: LÍNEAS (Estilo Hoja de Cálculo Compacta) --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
+
                                 @if($lineasAgrupadas->count() > 0)
-                                    <div class="accordion accordion-custom" id="accordionLineas">
-                                        @foreach($lineasAgrupadas as $nombreLinea => $datosLinea)
-                                            <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
-                                                <h2 class="accordion-header" id="heading{{ $loop->index }}">
-                                                    <button class="accordion-button {{ $loop->first ? '' : 'collapsed' }} bg-white border-0 shadow-none px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ $loop->index }}">
-                                                        <div class="d-flex align-items-center w-100 me-3">
-                                                            <div class="bg-pastel-primary rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 48px; height: 48px;"><i class="fas fa-box-open text-primary fs-5"></i></div>
-                                                            <div class="flex-grow-1">
-                                                                <h6 class="fw-bold text-dark mb-1 fs-5">{{ $nombreLinea }}</h6>
-                                                                <div class="d-flex align-items-center gap-2 mt-1">
-                                                                    <span class="badge bg-pastel-info text-dark px-2 py-1"><i class="fas fa-file-invoice me-1 opacity-50"></i> {{ $datosLinea['count'] }} Facturas</span>
-                                                                    <span class="badge bg-pastel-success text-dark px-2 py-1"><i class="fas fa-dollar-sign me-1 opacity-50"></i> Total: ${{ number_format((float)$datosLinea['total'], 2) }}</span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                </h2>
-                                                <div id="collapse{{ $loop->index }}" class="accordion-collapse collapse {{ $loop->first ? 'show' : '' }}" data-bs-parent="#accordionLineas">
-                                                    <div class="accordion-body p-0 border-top">
-                                                        <div class="table-responsive">
-                                                            <table class="table table-hover table-inner align-middle mb-0">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th class="ps-4 py-3 border-0">N° Factura</th>
-                                                                        <th class="py-3 border-0 text-center">Cuota</th>
-                                                                        <th class="py-3 border-0">Pagaré</th>
-                                                                        <th class="py-3 border-0">Vencimiento (ERP)</th>
-                                                                        <th class="py-3 border-0 text-end">Valor a Pagar</th>
-                                                                        <th class="py-3 border-0 text-center pe-4">Estado (ETL)</th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    @foreach($datosLinea['facturas'] as $factura)
-                                                                        <tr>
-                                                                            <td class="ps-4 fw-bold text-dark border-bottom py-3" style="font-family: monospace;">#{{ $factura->id_factura ?? 'N/A' }}</td>
-                                                                            <td class="text-center border-bottom py-3"><span class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold cuota-badge">{{ $factura->cuota ?? '-' }}</span></td>
-                                                                            <td class="border-bottom py-3"><div class="fw-semibold text-dark">{{ $factura->pagare ?? 'Sin Pagaré' }}</div></td>
-                                                                            <td class="border-bottom py-3">
-                                                                                @if($factura->fecha_venci)
-                                                                                    <div class="text-dark fw-semibold"><i class="far fa-calendar-alt text-muted me-1"></i> {{ $factura->fechaVFormateada }}</div>
-                                                                                    @if($factura->diasMoraCalculados < 0) <div class="text-danger fs-8 fw-bold mt-1">{{ abs(intval($factura->diasMoraCalculados)) }} días vencidos</div> @endif
-                                                                                @else
-                                                                                    <span class="text-muted">No Definida</span>
-                                                                                @endif
-                                                                            </td>
-                                                                            <td class="text-end border-bottom py-3">
-                                                                                <div class="fw-bold fs-6" style="color: #047857;">${{ number_format((float)$factura->valor, 2) }}</div>
-                                                                                <div class="text-muted fs-8">Bruto: ${{ number_format((float)$factura->valor_inicial, 2) }}</div>
-                                                                            </td>
-                                                                            <td class="text-center pe-4 border-bottom py-3">
-                                                                                @if($factura->estado == 'PROCESADO') <span class="badge bg-pastel-success text-success border border-success border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-check-circle me-1"></i> {{ $factura->estado }}</span>
-                                                                                @elseif($factura->anular == 1) <span class="badge bg-pastel-warning text-danger border border-danger border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-ban me-1"></i> ANULADO</span>
-                                                                                @else <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-1"><i class="fas fa-hourglass-half me-1"></i> PENDIENTE</span>
-                                                                                @endif
-                                                                            </td>
-                                                                        </tr>
-                                                                    @endforeach
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
+
+                                    {{-- Mini-subtítulo Informativo --}}
+                                    <div class="alert bg-light border rounded-3 mb-3 py-2 px-3 d-flex align-items-center shadow-sm" style="border-color: var(--c-border) !important;">
+                                        <i class="fas fa-info-circle text-primary me-2"></i>
+                                        <span class="text-muted" style="font-size: 0.8rem;">
+                                            El cliente <strong class="text-dark">{{ $operacion->tercero ? $operacion->tercero->nom_ter . ' ' . $operacion->tercero->apl1 : 'Seleccionado' }}</strong>
+                                            tiene registradas <strong class="text-primary">{{ $lineasAgrupadas->count() }} {{ $lineasAgrupadas->count() == 1 ? 'línea' : 'líneas' }}</strong> en su historial.
+                                        </span>
+                                    </div>
+
+                                    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem;">
+
+                                                @foreach($lineasAgrupadas as $nombreLinea => $datosLinea)
+                                                    {{-- Fila Agrupadora (Usa un botón 100% ancho para asegurar el clic) --}}
+                                                    <thead class="bg-light">
+                                                        <tr>
+                                                            <th colspan="8" class="p-0 border-bottom-0">
+                                                                <button class="btn btn-light w-100 d-flex justify-content-between align-items-center rounded-0 px-3 py-2 shadow-none border-0 text-start collapsed"
+                                                                        type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#collapseLinea-{{ $loop->index }}"
+                                                                        aria-expanded="false"
+                                                                        aria-controls="collapseLinea-{{ $loop->index }}"
+                                                                        style="background-color: #f8f9fa;">
+
+                                                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                                                        <i class="fas fa-chevron-down text-secondary me-2" style="font-size: 0.7rem;"></i>
+                                                                        <i class="fas fa-layer-group text-primary me-2"></i>{{ $nombreLinea }} - Historial de Siasoft (Solo consulta)
+                                                                    </span>
+                                                                    <div class="d-flex gap-3 fw-normal text-muted" style="font-size: 0.7rem;">
+                                                                        <span><i class="fas fa-file-invoice me-1"></i> {{ $datosLinea['count'] }} Facturas</span>
+                                                                        <span class="fw-bold text-success"><i class="fas fa-dollar-sign me-1"></i> Total: ${{ number_format((float)$datosLinea['total'], 2) }}</span>
+                                                                    </div>
+                                                                </button>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    {{-- Cuerpo Colapsable (Todas arrancan cerradas con 'collapse' puro) --}}
+                                                    <tbody id="collapseLinea-{{ $loop->index }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+
+                                                        {{-- Cabeceras de las Columnas (Se ocultan junto con los datos) --}}
+                                                        <tr class="bg-white text-muted text-uppercase" style="font-size: 0.65rem;">
+                                                            <th class="px-3 py-2 border-bottom text-secondary" style="width: 12%;">N° Factura</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Cuota</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary" style="width: 15%;">Pagaré</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 12%;">F. Vencimiento</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 10%;">Días Mora</th>
+                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 15%;">V. Inicial (Bruto)</th>
+                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 15%;">V. a Pagar (Neto)</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 15%;">Estado</th>
+                                                        </tr>
+
+                                                        {{-- Filas de Datos --}}
+                                                        @foreach($datosLinea['facturas'] as $factura)
+                                                            <tr>
+                                                                <td class="px-3 py-1 fw-bold text-dark" style="font-family: monospace;">{{ $factura->id_factura ?? 'N/A' }}</td>
+                                                                <td class="px-2 py-1 text-center text-muted">{{ $factura->cuota ?? '-' }}</td>
+                                                                <td class="px-2 py-1 text-muted">{{ $factura->pagare ?? 'S/N' }}</td>
+
+                                                                <td class="px-2 py-1 text-center">
+                                                                    @if($factura->fecha_venci) {{ $factura->fechaVFormateada }}
+                                                                    @else <span class="text-muted opacity-50">-</span> @endif
+                                                                </td>
+
+                                                                <td class="px-2 py-1 text-center">
+                                                                    @if($factura->diasMoraCalculados < 0) <span class="text-danger fw-bold">{{ abs(intval($factura->diasMoraCalculados)) }}</span>
+                                                                    @else <span class="text-muted">0</span> @endif
+                                                                </td>
+
+                                                                <td class="px-3 py-1 text-end text-muted">${{ number_format((float)$factura->valor_inicial, 2) }}</td>
+                                                                <td class="px-3 py-1 text-end fw-bold" style="color: #047857;">${{ number_format((float)$factura->valor, 2) }}</td>
+
+                                                                <td class="px-2 py-1 text-center">
+                                                                    @if($factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> PROCESADO</span>
+                                                                    @elseif($factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.7rem;"><i class="fas fa-ban me-1"></i> ANULADO</span>
+                                                                    @else <span class="text-secondary fw-semibold" style="font-size: 0.7rem;"><i class="fas fa-hourglass-half me-1"></i> PENDIENTE</span>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                @endforeach
+
+                                            </table>
+                                        </div>
                                     </div>
                                 @else
-                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
+                                    <div class="text-center py-5 text-muted bg-white rounded-4 border">
                                         <i class="fas fa-database fs-1 text-secondary mb-3 opacity-25"></i>
                                         <h6 class="fw-bold text-dark">Sin Datos en el ERP</h6>
-                                        <p class="mb-0 fs-7">No se encontraron facturas asociadas.</p>
+                                        <p class="mb-0 fs-7">No se encontraron facturas asociadas a este cliente en el bloque.</p>
                                     </div>
                                 @endif
                             </div>
@@ -523,269 +548,350 @@
                                 </div>
                             </div>
 
-                            {{-- TAB 4: CERTIFICADOS --}}
+                            {{-- TAB 4: CERTIFICADOS (Estilo Hoja de Cálculo Compacta) --}}
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
-                                <div class="accordion accordion-custom" id="accordionCertificados">
-                                    @if($operacion->lineas && $operacion->lineas->count() > 0)
+                                @if($operacion->lineas && $operacion->lineas->count() > 0)
 
-                                        @foreach($historialTipos as $registro)
-                                            @php
-                                                $certId = $loop->iteration;
-                                                $tipo = $registro->tipo;
+                                    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 0.75rem;">
+                                                @foreach($historialTipos as $registro)
+                                                    @php
+                                                        $certId = $loop->iteration;
+                                                        $tipo = $registro->tipo;
+                                                        $versionesDeEsteTipo = $registro->versionesDeEsteTipo;
+                                                        $hashActual = $registro->hashActual;
+                                                        $lineasEditor = $registro->lineasEditor;
+                                                    @endphp
 
-                                                // LAS VARIABLES ESTÁN PRE-CALCULADAS EN EL CONTROLADOR
-                                                $versionesDeEsteTipo = $registro->versionesDeEsteTipo;
-                                                $hashActual = $registro->hashActual;
-                                                $lineasEditor = $registro->lineasEditor;
-                                            @endphp
+                                                    {{-- Fila Agrupadora (Botón Colapsable del Certificado) --}}
+                                                    <thead class="bg-light">
+                                                        <tr>
+                                                            <th class="p-0 border-bottom-0">
+                                                                <button class="btn btn-light w-100 d-flex justify-content-between align-items-center rounded-0 px-3 py-2 shadow-none border-0 text-start collapsed"
+                                                                        type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#collapseCertificado-{{ $certId }}"
+                                                                        aria-expanded="false"
+                                                                        aria-controls="collapseCertificado-{{ $certId }}"
+                                                                        style="background-color: #f8f9fa;">
 
-                                            <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
-                                                <h2 class="accordion-header" id="headingCertificado{{ $certId }}">
-                                                    <button class="accordion-button collapsed bg-white border-0 shadow-none px-4 py-3" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCertificado{{ $certId }}">
-                                                        <div class="d-flex align-items-center w-100 me-3">
-                                                            <div class="bg-pastel-danger rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 48px; height: 48px;"><i class="fas fa-file-pdf text-danger fs-5"></i></div>
-                                                            <div class="flex-grow-1">
-                                                                <h6 class="fw-bold text-dark mb-1 fs-5 d-flex align-items-center flex-wrap gap-2">
-                                                                    {{ $tipo->nombre ?? 'Documento ' . $certId }}
-                                                                    @if($registro->es_lote) <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25" style="font-size: 0.7rem;"><i class="fas fa-layer-group me-1"></i> Generado en Lote (API-{{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }})</span>
-                                                                    @else <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.7rem;"><i class="fas fa-user me-1"></i> Generado Individualmente</span>
-                                                                    @endif
-                                                                </h6>
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <i class="fas fa-chevron-down text-secondary" style="font-size: 0.7rem;"></i>
+                                                                        <i class="fas fa-file-pdf text-danger" style="font-size: 1rem;"></i>
+                                                                        <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $tipo->nombre ?? 'Documento ' . $certId }}</span>
 
-                                                                <!-- IMPLEMENTACIÓN DE LAS VARIABLES USUARIO / CARGO -->
-                                                                <div class="d-flex align-items-center flex-wrap gap-3 text-muted mt-2" style="font-size: 0.8rem;">
-                                                                    <span><i class="far fa-clock me-1"></i> Última actualización: {{ $registro->created_at ? $registro->created_at->format('d/m/Y h:i A') : 'Desconocida' }}</span>
-                                                                    <span class="border-start border-secondary ps-3">
-                                                                        <i class="fas fa-user-circle me-1 opacity-75"></i>
-                                                                        <strong class="text-dark">{{ $registro->nombre_user ?? 'Sistema' }}</strong><span class="fst-italic opacity-75">{{ $registro->cargo_user ?? '' }}</span>
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                </h2>
-
-                                                <div id="collapseCertificado{{ $certId }}" class="accordion-collapse collapse" data-bs-parent="#accordionCertificados">
-                                                    <div class="accordion-body p-4 border-top">
-                                                        <div class="d-flex justify-content-between align-items-center mb-4">
-                                                            <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
-
-                                                            <div class="d-flex align-items-center gap-3">
-                                                                @if($versionesDeEsteTipo->count() > 1)
-                                                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
-                                                                        <i class="fas fa-history me-1"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
-                                                                    </button>
-                                                                @endif
-
-                                                                <div class="btn-group shadow-sm bg-white rounded-pill p-1" role="group">
-                                                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 active fw-bold" id="btnModePdf_{{ $certId }}" onclick="toggleMode('pdf', '{{ $certId }}')">
-                                                                        <i class="fas fa-file-pdf me-1"></i> Visor PDF
-                                                                    </button>
-                                                                    <button type="button" class="btn btn-sm btn-light text-success rounded-pill px-3 fw-bold" id="btnModeData_{{ $certId }}" onclick="toggleMode('data', '{{ $certId }}')">
-                                                                        <i class="fas fa-table me-1"></i> Modo Hoja de Cálculo
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-
-                                                        {{-- VISOR PDF DINÁMICO --}}
-                                                        <div id="pdfViewerContainer_{{ $certId }}" class="border-0 rounded-4 overflow-hidden shadow-sm bg-light transition-all" style="height: 650px; position: relative;">
-                                                            <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null, 'hash' => $hashActual]) }}" width="100%" height="100%" frameborder="0" style="border: none; background-color: #f8fafc;"></iframe>
-                                                        </div>
-
-                                                        {{-- HOJA DE CÁLCULO DINÁMICA --}}
-                                                        <div id="dataEditorContainer_{{ $certId }}" class="d-none transition-all mt-2">
-                                                            <form id="formEditor_{{ $certId }}" action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
-                                                                @csrf @method('PUT')
-                                                                <input type="hidden" name="tipo_certificado_id" value="{{ $tipo->id ?? '' }}">
-                                                                <div class="table-responsive rounded-4 shadow-sm border mb-3">
-                                                                    <table class="table table-spreadsheet w-100 mb-0 bg-white">
-                                                                        <thead>
-                                                                            <tr>
-                                                                                <th class="text-center">Factura</th>
-                                                                                <th class="text-center">Cuenta</th>
-                                                                                <th>Calificación</th>
-                                                                                <th class="text-center">Días Mora</th>
-                                                                                <th>Vencimiento</th>
-                                                                                <th>Observación</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            @forelse($lineasEditor as $linea)
-                                                                                <tr>
-                                                                                    <td class="p-2 text-center text-muted fw-bold" style="font-family: monospace; font-size: 0.85rem;">#{{ $linea->id_factura }}</td>
-                                                                                    <td class="p-2 text-center text-muted" style="font-size: 0.85rem;">{{ $linea->id_car_sia_lineas }}</td>
-                                                                                    <td>
-                                                                                        <select name="lineas[{{ $linea->id }}][calificacion]" class="input-spreadsheet fw-semibold {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'input-spreadsheet fw-semibold ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
-                                                                                            <option value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
-                                                                                            <option value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
-                                                                                            <option value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
-                                                                                        </select>
-                                                                                    </td>
-                                                                                    <td><input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="input-spreadsheet text-center fw-bold" value="{{ $linea->dias_mora_automaticos }}" required></td>
-                                                                                    <td><input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="input-spreadsheet text-muted" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}"></td>
-                                                                                    <td><input type="text" name="lineas[{{ $linea->id }}][observacion]" class="input-spreadsheet" value="{{ $linea->observacion }}"></td>
-                                                                                </tr>
-                                                                            @empty
-                                                                                <tr><td colspan="6" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas.</td></tr>
-                                                                            @endforelse
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
-                                                                @if($lineasEditor->count() > 0)
-                                                                    <div class="text-end mt-3">
-                                                                        <button type="button" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalConfirmSave_{{ $certId }}"><i class="fas fa-save me-1"></i> Guardar Cambios</button>
+                                                                        @if($registro->es_lote)
+                                                                            <span class="badge bg-pastel-primary text-primary px-2 py-1 rounded-1" style="font-size: 0.65rem;"><i class="fas fa-layer-group me-1"></i> Lote API-{{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }}</span>
+                                                                        @else
+                                                                            <span class="badge bg-pastel-secondary text-dark px-2 py-1 rounded-1" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
+                                                                        @endif
                                                                     </div>
-                                                                @endif
-                                                            </form>
+
+                                                                    <div class="d-flex align-items-center gap-3 fw-normal text-muted" style="font-size: 0.7rem;">
+                                                                        <span><i class="far fa-clock me-1"></i> {{ $registro->created_at ? $registro->created_at->format('d/m/Y h:i A') : 'N/A' }}</span>
+                                                                        <span class="border-start border-secondary ps-3">
+                                                                            <i class="fas fa-user-circle me-1 opacity-75"></i>
+                                                                            <strong class="text-dark">{{ $registro->nombre_user ?? 'Sistema' }}</strong>
+                                                                            <span class="fst-italic opacity-75">{{ $registro->cargo_user ?? '' }}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </button>
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    {{-- Cuerpo del Certificado (Controles, PDF y Editor) --}}
+                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                                        <tr>
+                                                            <td class="p-3 bg-white">
+
+                                                                {{-- Controles --}}
+                                                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom border-dashed">
+                                                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase mb-2 mb-md-0"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
+
+                                                                    <div class="d-flex align-items-center gap-3">
+                                                                        @if($versionesDeEsteTipo->count() > 1)
+                                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
+                                                                                <i class="fas fa-history me-1"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
+                                                                            </button>
+                                                                        @endif
+
+                                                                        <div class="btn-group shadow-sm bg-light border rounded-1 p-1">
+                                                                            <button type="button" class="btn btn-sm btn-danger px-3 active fw-bold border-0" style="border-radius: 4px;" id="btnModePdf_{{ $certId }}" onclick="toggleMode('pdf', '{{ $certId }}')">
+                                                                                <i class="fas fa-file-pdf me-1"></i> PDF
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-sm btn-light text-success px-3 fw-bold border-0" style="border-radius: 4px;" id="btnModeData_{{ $certId }}" onclick="toggleMode('data', '{{ $certId }}')">
+                                                                                <i class="fas fa-table me-1"></i> Editor de Datos
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {{-- VISOR PDF --}}
+                                                                <div id="pdfViewerContainer_{{ $certId }}" class="border rounded-2 overflow-hidden shadow-sm bg-light" style="height: 650px;">
+                                                                    <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null, 'hash' => $hashActual]) }}" width="100%" height="100%" frameborder="0" style="background-color: #f8fafc;"></iframe>
+                                                                </div>
+
+                                                                {{-- EDITOR DE DATOS (Estilo Excel Integrado Avanzado) --}}
+                                                                <div id="dataEditorContainer_{{ $certId }}" class="d-none">
+                                                                    <form id="formEditor_{{ $certId }}" action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
+                                                                        @csrf @method('PUT')
+                                                                        <input type="hidden" name="tipo_certificado_id" value="{{ $tipo->id ?? '' }}">
+
+                                                                        <div class="alert bg-pastel-primary border-0 rounded-2 py-2 px-3 mb-2 d-flex align-items-center" style="font-size: 0.75rem;">
+                                                                            <i class="fas fa-info-circle text-primary me-2"></i>
+                                                                            <span class="text-muted">Las columnas resaltadas con el ícono <i class="fas fa-pen text-primary mx-1"></i> son editables. Haz clic sobre ellas para modificar su valor.</span>
+                                                                        </div>
+
+                                                                        <div class="table-responsive border rounded-2 shadow-sm mb-3">
+                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1500px;">
+                                                                                <thead class="text-muted text-uppercase" style="font-size: 0.65rem; background-color: #f1f5f9;">
+                                                                                    <tr>
+                                                                                        {{-- SECCIÓN INFO ERP (Read-Only) --}}
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Lote</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Factura</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 4%;">Cuota</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Pagaré</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-end" style="width: 7%;">Valor $</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Estado ERP</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center border-end" style="width: 7%;">Cuenta</th>
+
+                                                                                        {{-- SECCIÓN EDITABLE --}}
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Calificación</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 10%;"><i class="fas fa-pen me-1"></i> Estado Línea</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 6%;"><i class="fas fa-pen me-1"></i> Mora</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Vencimiento</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Último Rec.</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Procesado</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 13%;"><i class="fas fa-pen me-1"></i> Observación</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                                                                    @forelse($lineasEditor as $linea)
+                                                                                        <tr class="bg-white">
+
+                                                                                            {{-- COLUMNAS INFORMATIVAS (Fondo Gris Claro) --}}
+                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">API-{{ str_pad($linea->numero_bloque, 4, '0', STR_PAD_LEFT) }}</td>
+                                                                                            <td class="px-2 py-1 text-center fw-bold text-dark" style="background-color: #f8fafc; font-family: monospace;">#{{ $linea->id_factura }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura->cuota ?? '-' }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura->pagare ?? 'S/N' }}</td>
+                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
+
+                                                                                            <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
+                                                                                                @if(isset($linea->factura) && $linea->factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
+                                                                                                @elseif(isset($linea->factura) && $linea->factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
+                                                                                                @else <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
+                                                                                                @endif
+                                                                                            </td>
+
+                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">{{ $linea->id_car_sia_lineas }}</td>
+
+                                                                                            {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
+                                                                                            <td class="p-0 align-middle">
+                                                                                                <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
+                                                                                                    <option class="text-dark" value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
+                                                                                                    <option class="text-dark" value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
+                                                                                                    <option class="text-dark" value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
+                                                                                                </select>
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle border-start border-end">
+                                                                                                <select name="lineas[{{ $linea->id }}][id_car_sia_estados]" class="form-select form-select-sm border-0 shadow-none text-center text-muted fw-semibold w-100 rounded-0 bg-transparent py-1">
+                                                                                                    <option value="">Seleccione...</option>
+                                                                                                    @foreach($estados as $est)
+                                                                                                        <option value="{{ $est->id }}" {{ $linea->id_car_sia_estados == $est->id ? 'selected' : '' }}>{{ $est->nombre }}</option>
+                                                                                                    @endforeach
+                                                                                                </select>
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle">
+                                                                                                <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="form-control form-control-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->dias_mora_automaticos < 0 ? 'text-danger' : 'text-dark' }}" value="{{ $linea->dias_mora_automaticos }}" required>
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle border-start">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}">
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle border-start">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d') : '' }}">
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle border-start">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][procesado_en]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->procesado_en ? \Carbon\Carbon::parse($linea->procesado_en)->format('Y-m-d') : '' }}">
+                                                                                            </td>
+
+                                                                                            <td class="p-0 align-middle border-start">
+                                                                                                <input type="text" name="lineas[{{ $linea->id }}][observacion]" class="form-control form-control-sm border-0 shadow-none w-100 rounded-0 bg-transparent py-1 px-2" value="{{ $linea->observacion }}" placeholder="...">
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    @empty
+                                                                                        <tr><td colspan="14" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
+                                                                                    @endforelse
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+
+                                                                        @if($lineasEditor->count() > 0)
+                                                                            <div class="text-end">
+                                                                                <button type="button" class="btn btn-success btn-sm rounded-1 px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalConfirmSave_{{ $certId }}">
+                                                                                    <i class="fas fa-save me-1"></i> Guardar Nueva Versión
+                                                                                </button>
+                                                                            </div>
+                                                                        @endif
+                                                                    </form>
+                                                                </div>
+
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                @endforeach
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    {{-- ========================================== --}}
+                                    {{-- BLOQUE DE MODALES (Fuera de la tabla principal para evitar errores de renderizado) --}}
+                                    {{-- ========================================== --}}
+                                    @foreach($historialTipos as $registro)
+                                        @php
+                                            $certId = $loop->iteration;
+                                            $tipo = $registro->tipo;
+                                            $versionesDeEsteTipo = $registro->versionesDeEsteTipo;
+                                            $lineasEditor = $registro->lineasEditor;
+                                        @endphp
+
+                                        {{-- Modal de Historial de Versiones --}}
+                                        @if($versionesDeEsteTipo->count() > 1)
+                                            <div class="modal fade" id="modalVersiones_{{ $certId }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                                        <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                            <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-history me-2"></i> Historial de Versiones</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                        </div>
+                                                        <div class="modal-body p-4">
+                                                            <p class="text-muted fs-7 mb-4">Iteraciones guardadas para el evento <strong>{{ $tipo->nombre }}</strong>.</p>
+                                                            <div class="table-responsive border rounded-3">
+                                                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.8rem;">
+                                                                    <thead class="bg-light text-muted text-uppercase">
+                                                                        <tr>
+                                                                            <th class="ps-3 py-2 border-0">Versión / Hash</th>
+                                                                            <th class="py-2 border-0">Fecha de Edición</th>
+                                                                            <th class="py-2 text-end pe-3 border-0">Acciones</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @foreach($versionesDeEsteTipo as $index => $version)
+                                                                            <tr>
+                                                                                <td class="ps-3 py-2">
+                                                                                    <span class="badge bg-pastel-secondary text-dark border font-monospace text-truncate d-inline-block align-middle" style="max-width: 180px;" title="{{ $version->hash_certificado }}">{{ $version->hash_certificado }}</span>
+                                                                                    @if($loop->first) <span class="badge bg-success ms-1 align-middle">Actual</span> @endif
+                                                                                </td>
+                                                                                <td class="py-2">
+                                                                                    <div class="fw-bold text-dark">{{ $version->created_at->format('d/m/Y') }}</div>
+                                                                                    <div class="text-muted" style="font-size: 0.7rem;">{{ $version->created_at->format('h:i A') }}</div>
+                                                                                </td>
+                                                                                <td class="py-2 text-end pe-3">
+                                                                                    <button type="button" class="btn btn-sm btn-light border rounded-1 px-2 shadow-sm me-1" data-bs-target="#modalRegistros_{{ $version->hash_certificado }}" data-bs-toggle="modal" data-bs-dismiss="modal" title="Ver Registros"><i class="fas fa-list text-secondary"></i></button>
+                                                                                    <a href="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id, 'hash' => $version->hash_certificado]) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-1 px-2 shadow-sm" title="Ver PDF Antiguo"><i class="fas fa-file-pdf"></i></a>
+                                                                                </td>
+                                                                            </tr>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
+                                        @endif
 
-                                            {{-- MODAL PRINCIPAL: HISTORIAL DE VERSIONES --}}
-                                            @if($versionesDeEsteTipo->count() > 1)
-                                                <div class="modal fade" id="modalVersiones_{{ $certId }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                        <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                                                                <h5 class="fw-bold mb-0 text-primary"><i class="fas fa-history me-2"></i> Historial de Versiones</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                                            </div>
-                                                            <div class="modal-body p-4">
-                                                                <p class="text-muted fs-7 mb-4">Iteraciones guardadas para el evento <strong>{{ $tipo->nombre }}</strong>, separadas por Hash de seguridad.</p>
-                                                                <div class="table-responsive border rounded-3">
-                                                                    <table class="table table-hover align-middle mb-0">
-                                                                        <thead class="bg-light text-muted small text-uppercase">
+                                        {{-- Modales de Detalle por Hash --}}
+                                        @foreach($versionesDeEsteTipo as $version)
+                                            <div class="modal fade" id="modalRegistros_{{ $version->hash_certificado }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                                        <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                            <h6 class="fw-bold mb-0 text-secondary"><i class="fas fa-list-alt me-2"></i> Detalle de Registros</h6>
+                                                            <button type="button" class="btn-close" data-bs-target="#modalVersiones_{{ $certId }}" data-bs-toggle="modal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                        </div>
+                                                        <div class="modal-body p-4">
+                                                            <p class="text-muted fs-8 mb-3">Hash: <span class="font-monospace text-dark">{{ $version->hash_certificado }}</span></p>
+                                                            <div class="table-responsive border rounded-3">
+                                                                <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.75rem;">
+                                                                    <thead class="bg-light text-muted text-uppercase">
+                                                                        <tr>
+                                                                            <th class="ps-3 py-2 border-0">Factura</th>
+                                                                            <th class="py-2 border-0 text-center">Calificación</th>
+                                                                            <th class="py-2 border-0 text-center">Días Mora</th>
+                                                                            <th class="py-2 border-0">Fecha</th>
+                                                                            <th class="py-2 pe-3 border-0 text-end">Usuario</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        @php
+                                                                            $lineasDelHash = collect($registro->lineasParaEsteTipo)->where('hash_certificado', $version->hash_certificado);
+                                                                        @endphp
+                                                                        @foreach($lineasDelHash as $lineaHash)
                                                                             <tr>
-                                                                                <th class="ps-3 border-0">Versión / Hash</th>
-                                                                                <th class="border-0">Fecha de Edición</th>
-                                                                                <th class="text-end pe-3 border-0">Acciones</th>
+                                                                                <td class="ps-3 py-2 fw-bold text-dark font-monospace">#{{ $lineaHash->id_factura }}</td>
+                                                                                <td class="py-2 text-center"><span class="badge rounded-1 {{ $lineaHash->calificacion == 'Bueno' ? 'bg-success' : ($lineaHash->calificacion == 'Regular' ? 'bg-warning text-dark' : 'bg-danger') }}">{{ $lineaHash->calificacion }}</span></td>
+                                                                                <td class="py-2 text-center fw-bold">{{ $lineaHash->dias_mora_automaticos }}</td>
+                                                                                <td class="py-2 text-muted">{{ $lineaHash->created_at ? $lineaHash->created_at->format('d/m/y h:i A') : 'N/A' }}</td>
+                                                                                <td class="py-2 pe-3 text-end text-muted"><i class="fas fa-user-circle me-1 opacity-50"></i> {{ optional($lineaHash->usuario)->name ?? 'Sistema' }}</td>
                                                                             </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            @foreach($versionesDeEsteTipo as $index => $version)
-                                                                                <tr>
-                                                                                    <td class="ps-3 py-3">
-                                                                                        <span class="badge bg-pastel-secondary text-dark border font-monospace text-truncate d-inline-block" style="max-width: 220px;" title="{{ $version->hash_certificado }}">
-                                                                                            {{ $version->hash_certificado }}
-                                                                                        </span>
-                                                                                        @if($loop->first) <span class="badge bg-success ms-2">Actual</span> @endif
-                                                                                    </td>
-                                                                                    <td>
-                                                                                        <div class="fw-semibold text-dark fs-7">{{ $version->created_at->format('d/m/Y') }}</div>
-                                                                                        <div class="text-muted" style="font-size: 0.75rem;">{{ $version->created_at->format('h:i A') }}</div>
-                                                                                    </td>
-                                                                                    <td class="text-end pe-3">
-                                                                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm me-2" data-bs-target="#modalRegistros_{{ $version->hash_certificado }}" data-bs-toggle="modal" data-bs-dismiss="modal">
-                                                                                            <i class="fas fa-list me-1"></i> Ver Registros
-                                                                                        </button>
-
-                                                                                        <a href="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id, 'hash' => $version->hash_certificado]) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm">
-                                                                                            <i class="fas fa-file-pdf me-1"></i> Ver PDF Antiguo
-                                                                                        </a>
-                                                                                    </td>
-                                                                                </tr>
-                                                                            @endforeach
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
+                                                                        @endforeach
+                                                                    </tbody>
+                                                                </table>
                                                             </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                                                            <button type="button" class="btn btn-sm btn-light border rounded-1 px-4 shadow-sm" data-bs-target="#modalVersiones_{{ $certId }}" data-bs-toggle="modal" data-bs-dismiss="modal">
+                                                                <i class="fas fa-arrow-left me-1"></i> Volver a Versiones
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @endif
-
-                                            {{-- MODALES SECUNDARIOS: DETALLE DE REGISTROS POR HASH --}}
-                                            @foreach($versionesDeEsteTipo as $version)
-                                                <div class="modal fade" id="modalRegistros_{{ $version->hash_certificado }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                        <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                                                                <h6 class="fw-bold mb-0 text-secondary">
-                                                                    <i class="fas fa-list-alt me-2"></i> Detalle de Registros
-                                                                </h6>
-                                                                <button type="button" class="btn-close" data-bs-target="#modalVersiones_{{ $certId }}" data-bs-toggle="modal" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                                            </div>
-                                                            <div class="modal-body p-4">
-                                                                <p class="text-muted fs-8 mb-3">Líneas asociadas al Hash: <span class="font-monospace text-dark">{{ $version->hash_certificado }}</span></p>
-                                                                <div class="table-responsive border rounded-3">
-                                                                    <table class="table table-sm table-hover align-middle mb-0 fs-8">
-                                                                        <thead class="bg-light text-muted text-uppercase">
-                                                                            <tr>
-                                                                                <th class="ps-3 py-2 border-0">Factura</th>
-                                                                                <th class="py-2 border-0">Calificación</th>
-                                                                                <th class="py-2 border-0">Días Mora</th>
-                                                                                <th class="py-2 border-0">Fecha / Hora</th>
-                                                                                <th class="py-2 pe-3 border-0">Usuario</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            @php
-                                                                                // Esta pequeña asignación es segura mantenerla aquí, pues ya filtramos en el controlador
-                                                                                $lineasDelHash = collect($registro->lineasParaEsteTipo)->where('hash_certificado', $version->hash_certificado);
-                                                                            @endphp
-                                                                            @foreach($lineasDelHash as $lineaHash)
-                                                                                <tr>
-                                                                                    <td class="ps-3 fw-bold text-dark">#{{ $lineaHash->id_factura }}</td>
-                                                                                    <td>
-                                                                                        <span class="badge {{ $lineaHash->calificacion == 'Bueno' ? 'bg-success' : ($lineaHash->calificacion == 'Regular' ? 'bg-warning' : 'bg-danger') }}">
-                                                                                            {{ $lineaHash->calificacion }}
-                                                                                        </span>
-                                                                                    </td>
-                                                                                    <td class="fw-semibold">{{ $lineaHash->dias_mora_automaticos }}</td>
-                                                                                    <td class="text-muted">{{ $lineaHash->created_at ? $lineaHash->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
-                                                                                    <td class="pe-3 text-muted"><i class="fas fa-user-circle me-1 opacity-50"></i> {{ optional($lineaHash->usuario)->name ?? 'Sistema' }}</td>
-                                                                                </tr>
-                                                                            @endforeach
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                                                                <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm" data-bs-target="#modalVersiones_{{ $certId }}" data-bs-toggle="modal" data-bs-dismiss="modal">
-                                                                    <i class="fas fa-arrow-left me-1"></i> Volver a Versiones
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-
-                                            {{-- MODAL DE CONFIRMACIÓN EDICIÓN HOJA CALCULO --}}
-                                            @if($lineasEditor->count() > 0)
-                                                <div class="modal fade" id="modalConfirmSave_{{ $certId }}" tabindex="-1" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                                                                <h5 class="fw-bold mb-0 text-success"><i class="fas fa-code-branch me-2"></i> Generar Nueva Versión</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                                            </div>
-                                                            <div class="modal-body p-4">
-                                                                <div class="alert bg-pastel-success text-dark border-0 rounded-4 mb-0" style="font-size: 0.9rem;">
-                                                                    <i class="fas fa-info-circle fs-5 mb-2 d-block text-success"></i>
-                                                                    Este proceso generará una <strong>nueva versión (nuevo registro)</strong> del certificado con los cambios aplicados en la tabla.<br><br>
-                                                                    La versión antigua que estabas viendo no se perderá y seguirá estando disponible en el historial de opciones.
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                                                                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                                                                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold text-white shadow-sm" onclick="document.getElementById('formEditor_{{ $certId }}').submit(); this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i> Guardando...';">Confirmar y Guardar</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endif
-
+                                            </div>
                                         @endforeach
-                                    @else
-                                        <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
-                                            <i class="fas fa-file-excel fs-1 text-secondary mb-3 opacity-25"></i>
-                                            <h6 class="fw-bold text-dark">Líneas No Estructuradas</h6>
-                                            <p class="mb-0 fs-7">El certificado no cuenta con datos procesados aún. Utiliza el botón <strong class="text-danger">Generar Certificado</strong>.</p>
-                                        </div>
-                                    @endif
-                                </div>
+
+                                        {{-- Modal Guardar Edición --}}
+                                        @if($lineasEditor->count() > 0)
+                                            <div class="modal fade" id="modalConfirmSave_{{ $certId }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                                        <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                            <h5 class="fw-bold mb-0 text-success"><i class="fas fa-code-branch me-2"></i> Generar Nueva Versión</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                        </div>
+                                                        <div class="modal-body p-4">
+                                                            <div class="alert bg-pastel-success text-dark border-0 rounded-3 mb-0" style="font-size: 0.85rem;">
+                                                                <i class="fas fa-info-circle fs-5 mb-2 d-block text-success"></i>
+                                                                Se generará una <strong>nueva versión del certificado</strong> con los cambios aplicados en la tabla.<br><br>
+                                                                La versión antigua no se perderá y seguirá en el historial.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                                                            <button type="button" class="btn btn-sm btn-light rounded-1 px-3" data-bs-dismiss="modal">Cancelar</button>
+                                                            <button type="button" class="btn btn-sm btn-success rounded-1 px-4 fw-bold shadow-sm" onclick="document.getElementById('formEditor_{{ $certId }}').submit(); this.disabled=true; this.innerHTML='<i class=\'fas fa-spinner fa-spin me-2\'></i> Guardando...';">
+                                                                Confirmar y Guardar
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
+                                    @endforeach
+
+                                @else
+                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
+                                        <i class="fas fa-file-excel fs-1 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-bold text-dark">Líneas No Estructuradas</h6>
+                                        <p class="mb-0 fs-7">El certificado no cuenta con datos procesados aún. Utiliza el botón <strong class="text-danger">Generar Certificado</strong>.</p>
+                                    </div>
+                                @endif
                             </div>
 
                             <!-- ======================================================================= -->

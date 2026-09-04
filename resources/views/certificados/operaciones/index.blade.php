@@ -201,11 +201,24 @@
                                     <i class="fas fa-info-circle fs-3 text-primary"></i>
                                 </div>
                                 <div>
-                                    <h6 class="fw-bold mb-1 text-primary">¿Por qué es necesario procesar este Lote?</h6>
+                                    <h6 class="fw-bold mb-1 text-primary">Información del Periodo Seleccionado</h6>
+                                    @php
+                                        // Capturamos el mes exacto del bloque activo para mostrarlo en el texto
+                                        $mesEtiqueta = 'Mes Seleccionado';
+                                        if($bloqueActivo) {
+                                            $bloqueSel = collect($bloquesDisponibles)->firstWhere('numero_bloque', $bloqueActivo);
+                                            if($bloqueSel && $bloqueSel->fecha_ejecucion) {
+                                                $fechaSel = \Carbon\Carbon::parse($bloqueSel->fecha_ejecucion);
+                                                $mesEtiqueta = ucfirst($fechaSel->locale('es')->monthName) . ' ' . $fechaSel->year;
+                                            }
+                                        }
+                                    @endphp
                                     <p class="mb-0 text-muted" style="font-size: 0.85rem; line-height: 1.5;">
-                                        Los registros que estás viendo se encuentran en una zona de contención estructurada por bloques (Lotes API).
-                                        Para poder emitir los certificados finales, debes revisar las alertas, validar los terceros y utilizar el botón de
-                                        <strong>Generación Masiva</strong>. Esto trasladará y ensamblará los datos para convertirlos en documentos oficiales.
+                                        Se muestran exclusivamente los clientes asociados a
+                                        <span class="badge bg-primary text-white px-2 py-1 mx-1 shadow-sm rounded-pill" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                            <i class="far fa-calendar-check me-1"></i> {{ $mesEtiqueta }}
+                                        </span>
+                                        para la gestión de certificados.
                                     </p>
                                 </div>
                             </div>
@@ -256,43 +269,36 @@
                             </div>
                         </div>
 
-                        {{-- 4. Contenido de la Tabla --}}
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" style="border-collapse: separate; border-spacing: 0 12px;">
-                                <thead class="text-muted small text-uppercase bg-white">
+                        {{-- 4. Contenido de la Tabla (Estilo Hoja de Cálculo / Data Grid) --}}
+                        <div class="table-responsive border-top" style="border-color: var(--c-border) !important;">
+                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.8rem;">
+                                <thead class="bg-light text-muted text-uppercase" style="font-size: 0.7rem;">
                                     <tr>
-                                        <th class="ps-5 border-0 py-3 text-secondary">Radicado & Bloque</th>
-                                        <th class="border-0 py-3 text-secondary">Cliente (Tercero)</th>
-                                        <th class="border-0 py-3 text-secondary">Estado Actual</th>
-                                        <th class="border-0 py-3 text-secondary">Último Evento</th>
-                                        <th class="border-0 py-3 text-secondary">Última Alerta</th>
-                                        <th class="border-0 py-3 text-secondary">Fecha Creación</th>
-                                        <th class="border-0 text-end pe-5 py-3 text-secondary">Acciones</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Radicado / Bloque</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 20%;">Cliente (Tercero)</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Estado Actual</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Último Evento</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Última Alerta</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 12%;">Fecha</th>
+                                        <th class="px-3 py-2 border-bottom-0 text-center text-secondary" style="font-weight: 600; width: 8%;">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody class="px-3">
+                                <tbody>
                                     @forelse($operaciones as $operacion)
                                         <tr class="bg-white">
-                                            <td class="ps-5">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="symbol-label bg-pastel-primary me-3" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 12px;">
-                                                        <i class="fas fa-file-invoice fs-4"></i>
-                                                    </div>
-                                                    <div>
-                                                        <div class="fw-bold text-gray-800 fs-6">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
-                                                        <div class="text-muted small fw-semibold"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
-                                                    </div>
-                                                </div>
+                                            <td class="px-3 py-2">
+                                                <div class="fw-bold text-dark">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
+                                                <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-2">
                                                 @if($operacion->tercero)
-                                                    <div class="fw-bold text-dark small">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
-                                                    <div class="text-muted" style="font-size: 0.8rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                                    <div class="fw-bold text-dark">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
+                                                    <div class="text-muted" style="font-size: 0.7rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
                                                 @else
-                                                    <span class="badge bg-pastel-warning px-3 py-2 rounded-pill"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
+                                                    <span class="badge bg-pastel-warning text-dark px-2 py-1 rounded-1"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
                                                 @endif
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-2">
                                                 @php
                                                     $todosLosEstados = collect();
                                                     if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
@@ -307,11 +313,11 @@
                                                         default => 'bg-pastel-primary'
                                                     };
                                                 @endphp
-                                                <span class="badge {{ $clasePastel }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                                <span class="badge {{ $clasePastel }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
                                                     <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-2">
                                                 @php
                                                     $todosLosTipos = collect();
                                                     if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
@@ -320,11 +326,11 @@
                                                     $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
                                                     $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
                                                 @endphp
-                                                <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                                <span class="badge bg-light text-dark border rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
                                                     <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-2">
                                                 @php
                                                     $todasLasAlertas = collect();
                                                     if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
@@ -333,37 +339,33 @@
                                                     $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
                                                 @endphp
                                                 @if($ultimaAlertaObj)
-                                                    <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                                    <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
                                                         <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
                                                         {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
                                                     </span>
                                                 @else
-                                                    <span class="badge bg-light text-muted border rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-                                                        <i class="fas fa-bell-slash me-1 opacity-50"></i> SIN ALERTA
+                                                    <span class="text-muted" style="font-size: 0.7rem;">
+                                                        <i class="fas fa-minus opacity-50"></i>
                                                     </span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                <div class="d-flex flex-column">
-                                                    <span class="text-gray-800 fw-bold small">{{ $operacion->created_at->format('d/m/Y') }}</span>
-                                                    <span class="text-muted" style="font-size: 0.8rem;">{{ $operacion->created_at->format('h:i A') }}</span>
-                                                </div>
+                                            <td class="px-3 py-2">
+                                                <div class="text-gray-800 fw-bold">{{ $operacion->created_at->format('d/m/Y') }}</div>
+                                                <div class="text-muted" style="font-size: 0.7rem;">{{ $operacion->created_at->format('h:i A') }}</div>
                                             </td>
-                                            <td class="text-end pe-5">
-                                                <a href="{{ route('certificados.operaciones.show', $operacion->id) }}" class="btn btn-light rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" title="Ver Detalle">
-                                                    <i class="fas fa-eye" style="color: var(--c-primary);"></i>
+                                            <td class="px-3 py-2 text-center">
+                                                <a href="{{ route('certificados.operaciones.show', $operacion->id) }}" class="btn btn-light btn-sm rounded-1 border shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; padding: 0;" title="Ver Detalle">
+                                                    <i class="fas fa-eye text-primary" style="font-size: 0.75rem;"></i>
                                                 </a>
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="text-center py-5">
-                                                <div class="text-center px-4 py-5">
-                                                    <div class="mb-3 p-4 rounded-circle d-inline-block" style="background-color: #f8f9fa;">
-                                                        <i class="fas fa-search fs-1 text-muted opacity-50"></i>
-                                                    </div>
-                                                    <h5 class="fw-bold text-dark">Lote Vacío o Sin Resultados</h5>
-                                                    <p class="text-muted">No se encontraron operaciones en el Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }} que coincidan con tu búsqueda.</p>
+                                            <td colspan="7" class="text-center py-5 bg-white">
+                                                <div class="text-center px-4 py-4">
+                                                    <i class="fas fa-search fs-2 text-muted opacity-25 mb-3"></i>
+                                                    <h6 class="fw-bold text-dark mb-1">Lote Vacío o Sin Resultados</h6>
+                                                    <p class="text-muted small mb-0">No se encontraron operaciones en el Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}.</p>
                                                 </div>
                                             </td>
                                         </tr>
@@ -372,13 +374,13 @@
                             </table>
                         </div>
 
-                        {{-- 5. Paginación --}}
+                        {{-- 5. Paginación (Más compacta) --}}
                         @if($operaciones->hasPages() || $operaciones->total() > 0)
-                            <div class="card-footer bg-white border-top-0 pt-4 pb-4 px-5 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="border-radius: 0 0 20px 20px;">
-                                <span class="text-muted small">
-                                    Mostrando <span class="fw-bold text-dark">{{ $operaciones->firstItem() ?? 0 }}</span> a <span class="fw-bold text-dark">{{ $operaciones->lastItem() ?? 0 }}</span> de <span class="fw-bold text-dark">{{ number_format($operaciones->total(), 0, ',', '.') }}</span> operaciones
+                            <div class="card-footer bg-light border-top pt-3 pb-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="border-radius: 0 0 20px 20px;">
+                                <span class="text-muted" style="font-size: 0.8rem;">
+                                    Mostrando <span class="fw-bold text-dark">{{ $operaciones->firstItem() ?? 0 }}</span> a <span class="fw-bold text-dark">{{ $operaciones->lastItem() ?? 0 }}</span> de <span class="fw-bold text-dark">{{ number_format($operaciones->total(), 0, ',', '.') }}</span> registros
                                 </span>
-                                <div class="m-0">
+                                <div class="m-0" style="font-size: 0.85rem;">
                                     {{ $operaciones->appends(request()->query())->links('pagination::bootstrap-5') }}
                                 </div>
                             </div>
