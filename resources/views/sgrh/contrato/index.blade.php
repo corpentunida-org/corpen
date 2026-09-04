@@ -74,7 +74,7 @@
                             <td class="ps-4 py-3 fw-bold">{{ $contrato->empleado->nombre_completo ?: 'Tercero no encontrado' }}</td>
                             <td class="text-muted small">{{ $contrato->tipoContrato->nombre }}</td>
                             <td class="text-muted small">{{ $contrato->cargo->nombre ?? '—' }}</td>
-                            <td>{{ $contrato->fecha_inicio->format('d/m/Y') }}</td>
+                            <td>{{ $contrato->fecha_inicio?->format('d/m/Y') ?? 'Sin definir' }}</td>
                             <td>
                                 {{ $contrato->fecha_vencimiento?->format('d/m/Y') ?? 'Indefinido' }}
                                 @if ($contrato->estado === 'Activo' && $contrato->estaVencido)
@@ -100,7 +100,7 @@
                             </td>
                             <td class="text-end pe-4">
                                 <div class="dropdown">
-                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
+                                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-strategy="fixed">
                                         <i class="feather feather-more-horizontal"></i>
                                     </a>
                                     <ul class="dropdown-menu dropdown-menu-end">

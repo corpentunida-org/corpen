@@ -46,7 +46,9 @@ class EmpleadoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Empleado::with('tercero');
+        // contratoActivo se precarga para poder enlazar directo a "Editar contrato" (si está
+        // activo) o "Registrar contrato" (si no) en el listado, sin acción manual de estado.
+        $query = Empleado::with('tercero', 'contratoActivo');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -67,10 +69,15 @@ class EmpleadoController extends Controller
 
         $empleados = $query->latest('id')->paginate(20)->appends($request->query());
         $tipoEmpleadoId = $this->tipoEmpleadoId();
-        // MaeTerceros no tiene updated_at — fec_act cumple ese rol (ver fechaDesactualizada()).
-        $fechaLimiteActualizacion = now()->subYears(1)->format('Y-m-d');
 
-        return view('sgrh.empleado.index', compact('empleados', 'tipoEmpleadoId', 'fechaLimiteActualizacion'));
+        return view('sgrh.empleado.index', [
+            'empleados' => $empleados,
+            'tipoEmpleadoId' => $tipoEmpleadoId,
+            // Se pasa el método como closure (en vez de repetir el umbral de "1 año" como
+            // comparación de fechas suelta en la vista) para que fechaDesactualizada() siga
+            // siendo la única fuente de verdad de esa regla, la use el controlador o la vista.
+            'fechaDesactualizada' => fn (?string $fecAct) => $this->fechaDesactualizada($fecAct),
+        ]);
     }
 
     /**
@@ -170,6 +177,16 @@ class EmpleadoController extends Controller
     {
         $datos = $request->validated();
 
+        // No se puede registrar un colaborador con datos del tercero desactualizados (más de un
+        // año sin refrescar en MaeTerceros.fec_act) — el buscador ya lo advierte visualmente,
+        // pero esto lo garantiza aunque alguien envíe el formulario directamente. Se manda a
+        // actualizar el tercero primero.
+        $tercero = MaeTerceros::where('cod_ter', $datos['cod_ter'])->first();
+        if ($tercero && $this->fechaDesactualizada($tercero->fec_act)) {
+            return redirect()->route('sgrh.tercero.edit', $tercero->cod_ter)
+                ->with('error', 'Los datos de este tercero están desactualizados (más de un año). Actualízalos antes de registrarlo como colaborador.');
+        }
+
         if (!empty($datos['contacto_emergencia_nombre'])) {
             $datos['contacto_emergencia_nombre'] = mb_strtoupper($datos['contacto_emergencia_nombre'], 'UTF-8');
         }
@@ -205,7 +222,7 @@ class EmpleadoController extends Controller
      */
     public function edit(Empleado $empleado)
     {
-        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato', 'contratos.modificaciones', 'dependientes');
+        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato', 'contratos.modificaciones', 'dependientes', 'estudios');
 
         return view('sgrh.empleado.edit', [
             'empleado' => $empleado,
@@ -214,16 +231,30 @@ class EmpleadoController extends Controller
             'listaFondosPension' => FondoPension::where('activo', true)->orderBy('nombre')->pluck('nombre'),
             'parentescos' => Parentesco::orderBy('name')->pluck('name', 'code'),
             'tiposDocumento' => TipoDocumento::orderBy('codigo')->pluck('nombre', 'codigo'),
+            'nivelesFormacion' => EstudioController::NIVELES_FORMACION,
+            'tiposFormacion' => EstudioController::TIPOS_FORMACION,
+            'desactualizado' => $this->fechaDesactualizada($empleado->tercero?->fec_act),
         ]);
     }
 
     /**
      * Actualiza los datos propios del colaborador (cargo, salario asignado, EPS/ARL/fondo de
-     * pensión, contacto de emergencia, observaciones). El estado se cambia aparte, desde
-     * updateEstado().
+     * pensión, contacto de emergencia, observaciones). El estado NO se toca aquí ni desde
+     * ninguna acción manual: sale siempre de un contrato — ver
+     * ContratoController::sincronizarEstadoColaborador() y el checkbox de retiro definitivo en
+     * ContratoController::update().
      */
     public function update(UpdateEmpleadoRequest $request, Empleado $empleado)
     {
+        $empleado->loadMissing('tercero');
+
+        // Mismo criterio que en el alta: no se puede modificar un colaborador cuyo tercero
+        // lleva más de un año sin actualizarse — se manda a actualizarlo primero.
+        if ($this->fechaDesactualizada($empleado->tercero?->fec_act)) {
+            return redirect()->route('sgrh.tercero.edit', $empleado->cod_ter)
+                ->with('error', 'Los datos de este tercero están desactualizados (más de un año). Actualízalos antes de modificar al colaborador.');
+        }
+
         $datos = $request->validated();
 
         if (!empty($datos['contacto_emergencia_nombre'])) {
@@ -511,32 +542,4 @@ class EmpleadoController extends Controller
         return redirect()->back()->with('success', 'Datos del tercero actualizados correctamente.');
     }
 
-    /**
-     * Cambia el estado de un colaborador (activo, inactivo, retirado).
-     */
-    public function updateEstado(Request $request, Empleado $empleado)
-    {
-        $validated = $request->validate([
-            'estado' => 'required|in:activo,inactivo,retirado',
-        ]);
-
-        // No puede haber colaboradores activos sin contrato: si no tiene uno vigente, activarlo
-        // a mano aquí dejaría la regla rota hasta que alguien le registre un contrato.
-        if ($validated['estado'] === 'activo' && !$empleado->contratoActivo) {
-            return redirect()->route('sgrh.empleado.index')
-                ->with('error', 'No se puede activar un colaborador sin un contrato activo. Regístrale uno primero.');
-        }
-
-        $estadoAnterior = $empleado->estado;
-        $empleado->estado = $validated['estado'];
-        $empleado->fecha_retiro = $validated['estado'] === 'retirado'
-            ? ($empleado->fecha_retiro ?? now())
-            : null;
-        $empleado->save();
-
-        $this->auditoria("Cambio de estado del empleado #{$empleado->id} (cod_ter {$empleado->cod_ter}) de '{$estadoAnterior}' a '{$empleado->estado}'");
-
-        return redirect()->route('sgrh.empleado.index')
-            ->with('success', 'El estado del colaborador se actualizó correctamente.');
-    }
 }
