@@ -26,7 +26,7 @@ class ContratoController extends Controller
     // marca manualmente, así que sigue siendo válido en la validación.
     private const ESTADOS = ['Activo', 'Vencido', 'Liquidado', 'Renovado'];
 
-    private const CAUSALES_MODIFICACION = ['Cambio de cargo o salario', 'Cambio de ubicación', 'Otra'];
+    private const CAUSALES_MODIFICACION = ['Cambio de cargo', 'Cambio de salario', 'Cambio de cargo y salario', 'Renovación', 'Otra'];
 
     public function index(Request $request)
     {
@@ -54,7 +54,9 @@ class ContratoController extends Controller
             });
         }
 
-        $contratos = $query->latest('fecha_inicio')->paginate(20)->appends($request->query());
+        // Se ordena por fecha_creacion_contrato (siempre presente) y no por fecha_inicio, que
+        // ahora puede quedar sin definir en contratos Indefinido.
+        $contratos = $query->latest('fecha_creacion_contrato')->paginate(20)->appends($request->query());
         $tiposContrato = TipoContrato::where('activo', true)->orderBy('nombre')->get();
 
         return view('sgrh.contrato.index', compact('contratos', 'tiposContrato'));
@@ -111,6 +113,11 @@ class ContratoController extends Controller
     {
         $validated = $this->validado($request);
 
+        // fecha_creacion_contrato siempre es la fecha del sistema al registrar — el formulario
+        // ya la muestra deshabilitada, pero esto lo garantiza aunque alguien envíe otro valor
+        // directamente. Solo fecha_inicio se digita al crear.
+        $validated['fecha_creacion_contrato'] = now()->format('Y-m-d');
+
         if ($this->tieneOtroContratoActivo($validated['empleado_id'], $validated['estado'])) {
             return back()->withInput()
                 ->with('error', 'Este colaborador ya tiene un contrato activo. Ciérralo o renuévalo antes de crear uno nuevo.');
@@ -120,7 +127,20 @@ class ContratoController extends Controller
             $validated['fecha_terminacion_real'] = now()->format('Y-m-d');
         }
 
-        $contrato = Contrato::create($validated);
+        // Transacción: el contrato y su evento de Creación tienen que quedar juntos o ninguno —
+        // sin esto, si registrarModificacion() fallara después de crear el contrato, quedaría un
+        // contrato sin ningún evento en su historial (modificaciones() vendría vacío), y la
+        // ficha del colaborador asume que siempre hay al menos uno.
+        $contrato = DB::transaction(function () use ($validated) {
+            $contrato = Contrato::create($validated);
+
+            // 'Creación' es el primer evento del historial — lleva su propia foto del contrato,
+            // igual que cada modificación posterior, para poder verlo/imprimirlo tal como quedó
+            // al registrarse.
+            $this->registrarModificacion($contrato, 'Creación', null, $this->snapshotDe($contrato));
+
+            return $contrato;
+        });
 
         $this->auditoria("Contrato creado #{$contrato->id} para colaborador #{$contrato->empleado_id}");
 
@@ -145,8 +165,15 @@ class ContratoController extends Controller
 
     public function update(Request $request, Contrato $contrato)
     {
-        $validated = $this->validado($request);
+        $validated = $this->validado($request, $contrato);
         $modificacion = $this->validadoModificacion($request);
+
+        // fecha_inicio y fecha_creacion_contrato no se pueden modificar una vez creado el
+        // contrato — el formulario las muestra deshabilitadas, pero esto lo garantiza aunque
+        // alguien intente forzar otro valor enviando la petición directamente. fecha_inicio
+        // puede ser null (contrato Indefinido sin fecha de inicio conocida al registrarse).
+        $validated['fecha_inicio'] = $contrato->fecha_inicio?->format('Y-m-d');
+        $validated['fecha_creacion_contrato'] = $contrato->fecha_creacion_contrato->format('Y-m-d');
 
         if ($this->tieneOtroContratoActivo($validated['empleado_id'], $validated['estado'], $contrato->id)) {
             return back()->withInput()->with('error', 'Este colaborador ya tiene otro contrato activo.');
@@ -161,9 +188,23 @@ class ContratoController extends Controller
         $this->auditoria("Contrato actualizado #{$contrato->id} (colaborador #{$contrato->empleado_id})");
 
         // Cada edición de contrato deja un registro propio en sgrh_contrato_modificaciones
-        // (causal + observación), aparte del log genérico de Auditoria — es lo que permite
-        // luego consultar específicamente "por qué cambió este contrato", no solo "que cambió".
-        $this->registrarModificacion($contrato, $modificacion['causal_modificacion'], $modificacion['observacion_modificacion'] ?? null);
+        // (causal + observación + foto del contrato ya actualizado), aparte del log genérico de
+        // Auditoria — es lo que permite luego consultar específicamente "por qué cambió este
+        // contrato" y ver/imprimir cómo quedó vigente a partir de ese momento.
+        $this->registrarModificacion(
+            $contrato,
+            $modificacion['causal_modificacion'],
+            $modificacion['observacion_modificacion'] ?? null,
+            $this->snapshotDe($contrato)
+        );
+
+        // El estado del colaborador nunca se toca a mano: sale de aquí. Liquidar un contrato lo
+        // deja 'inactivo' salvo que se marque retiro definitivo, en cuyo caso queda 'retirado' —
+        // sincronizarEstadoColaborador() ya sabe no pisar 'retirado' con 'inactivo' después.
+        if ($contrato->estado === 'Liquidado' && $request->boolean('retiro_definitivo')) {
+            $contrato->empleado->update(['estado' => 'retirado', 'fecha_retiro' => now()]);
+            $this->auditoria("Colaborador #{$contrato->empleado_id} marcado como retirado definitivamente (contrato #{$contrato->id} liquidado)");
+        }
 
         $this->sincronizarEstadoColaborador($contrato->empleado);
 
@@ -172,9 +213,13 @@ class ContratoController extends Controller
     }
 
     /**
-     * Cierra el contrato vigente (estado='Renovado') y redirige al formulario de alta con
-     * cargo/tipo heredados precargados — evita tener que editar dos registros a mano para el
-     * caso de uso de renovación anual / cambio de tipo de contrato.
+     * Una renovación NO es un contrato nuevo — es el mismo contrato continuado, con su
+     * vencimiento extendido. Por eso no crea un registro en sgrh_contratos aparte: solo manda
+     * al formulario de edición del mismo contrato con una fecha de vencimiento sugerida
+     * (+1 año) y la causa de modificación preseleccionada en 'Renovación'; el administrador
+     * confirma (o ajusta) y el guardado normal de update() deja el evento en su historial. Así
+     * alguien con 12 años de renovaciones anuales sigue siendo UN solo contrato con 12 eventos
+     * en su historial, no 12 contratos distintos en el listado.
      */
     public function renovar(Contrato $contrato)
     {
@@ -182,35 +227,17 @@ class ContratoController extends Controller
             return back()->with('error', 'Solo se puede renovar un contrato activo.');
         }
 
-        $contrato->estado = 'Renovado';
-        $contrato->fecha_terminacion_real = $contrato->fecha_terminacion_real ?? now();
-        $contrato->save();
+        // Igual criterio que el 'ancla' de validado(): si el vencimiento actual ya quedó en el
+        // pasado (contrato vencido hace tiempo pero aún no marcado así), sugerir desde ahí+1año
+        // daría una fecha que sigue en el pasado y la propia sugerencia fallaría la validación
+        // "after:today" al confirmar sin tocarla. Se ancla desde hoy en ese caso.
+        $baseSugerencia = $contrato->fecha_vencimiento?->isFuture() ? $contrato->fecha_vencimiento : now();
+        $fechaVencimientoSugerida = $baseSugerencia->copy()->addYear();
 
-        $this->auditoria("Contrato #{$contrato->id} renovado (colaborador #{$contrato->empleado_id})");
-
-        // La renovación también es una modificación del contrato (cierra su vigencia) — sin
-        // formulario propio para elegir causal, así que se registra con una causal fija y
-        // distinta de 'Otra', para poder identificarla claramente en el historial.
-        $this->registrarModificacion($contrato, 'Renovación', 'Contrato renovado: se cierra y se crea uno nuevo.');
-
-        // El colaborador queda momentáneamente sin contrato activo hasta que se complete el
-        // formulario de alta que sigue a continuación — sincronizarEstadoColaborador() lo
-        // refleja de inmediato (lo vuelve a activar solo cuando se guarde el contrato nuevo).
-        $this->sincronizarEstadoColaborador($contrato->empleado);
-
-        // Sugerencia para el caso típico de aquí (término fijo < 1 año, renovación anual): el
-        // nuevo contrato empieza al día siguiente del vencimiento del anterior y dura 1 año —
-        // el formulario la precarga pero sigue siendo editable, no se fuerza.
-        $fechaInicioSugerida = ($contrato->fecha_vencimiento ?? now())->copy()->addDay();
-        $fechaVencimientoSugerida = $fechaInicioSugerida->copy()->addYear();
-
-        return redirect()->route('sgrh.contrato.create', [
-            'empleado_id' => $contrato->empleado_id,
-            'cargo_id' => $contrato->cargo_id,
-            'tipo_contrato_id' => $contrato->tipo_contrato_id,
-            'fecha_inicio' => $fechaInicioSugerida->format('Y-m-d'),
-            'fecha_vencimiento' => $fechaVencimientoSugerida->format('Y-m-d'),
-        ])->with('success', 'Contrato anterior cerrado. Completa los datos del nuevo contrato.');
+        return redirect()->route('sgrh.contrato.edit', $contrato)
+            ->with('fechaVencimientoSugerida', $fechaVencimientoSugerida->format('Y-m-d'))
+            ->with('causalSugerida', 'Renovación')
+            ->with('success', 'Confirma la nueva fecha de vencimiento para registrar la renovación.');
     }
 
     /**
@@ -224,7 +251,7 @@ class ContratoController extends Controller
     public function destroy(Contrato $contrato)
     {
         $empleadoId = $contrato->empleado_id;
-        $descripcion = "{$contrato->tipoContrato->nombre} ({$contrato->fecha_inicio->format('d/m/Y')})";
+        $descripcion = "{$contrato->tipoContrato->nombre} (" . ($contrato->fecha_inicio?->format('d/m/Y') ?? 'sin fecha de inicio') . ')';
 
         DB::transaction(function () use ($contrato) {
             $contrato->modificaciones()->delete();
@@ -255,7 +282,11 @@ class ContratoController extends Controller
         $tieneContratoActivo = $empleado->contratoActivo()->exists();
 
         if ($tieneContratoActivo && $empleado->estado !== 'activo') {
-            $empleado->update(['estado' => 'activo']);
+            // fecha_retiro se limpia aquí: si venía de 'retirado' (recontratación), no debe
+            // quedar una fecha de retiro vieja colgada en un colaborador que ya volvió a estar
+            // activo — antes vivía en el updateEstado() manual que se eliminó, ahora es este el
+            // único lugar donde 'activo' se asigna.
+            $empleado->update(['estado' => 'activo', 'fecha_retiro' => null]);
             $this->auditoria("Colaborador #{$empleado->id} reactivado automáticamente (tiene un contrato activo)");
         } elseif (!$tieneContratoActivo && $empleado->estado === 'activo') {
             $empleado->update(['estado' => 'inactivo']);
@@ -263,14 +294,148 @@ class ContratoController extends Controller
         }
     }
 
-    private function registrarModificacion(Contrato $contrato, string $causal, ?string $observacion): void
+    private function registrarModificacion(Contrato $contrato, string $causal, ?string $observacion, ?array $snapshot = null): void
     {
         ContratoModificacion::create([
             'contrato_id' => $contrato->id,
             'causal' => $causal,
             'observacion' => $observacion,
+            'snapshot' => $snapshot,
             'user_id' => Auth::id(),
         ]);
+    }
+
+    /**
+     * Foto del contrato en su estado actual — nombres ya resueltos (no solo los IDs), para que
+     * el snapshot siga siendo correcto aunque después se renombre el cargo o el tipo de
+     * contrato: lo que se ve al imprimir es lo que era cierto en ese momento, no lo que el
+     * catálogo dice hoy.
+     */
+    private function snapshotDe(Contrato $contrato): array
+    {
+        // 'load' (no 'loadMissing'): si el cargo/tipo acaba de cambiar en este mismo request,
+        // una relación ya cacheada en memoria seguiría apuntando al valor anterior aunque el
+        // atributo *_id ya esté actualizado — hay que refrescarla siempre, no solo si falta.
+        $contrato->load('tipoContrato', 'cargo.area', 'empleado.tercero');
+
+        return [
+            'tipo_contrato' => $contrato->tipoContrato->nombre,
+            'cargo' => $contrato->cargo->nombre,
+            'area' => $contrato->cargo->area->nombre ?? null,
+            'fecha_creacion_contrato' => $contrato->fecha_creacion_contrato?->format('Y-m-d'),
+            'fecha_inicio' => $contrato->fecha_inicio?->format('Y-m-d'),
+            'fecha_vencimiento' => $contrato->fecha_vencimiento?->format('Y-m-d'),
+            'estado' => $contrato->estado,
+            'salario_contrato' => $contrato->salario_contrato,
+            'documento_url' => $contrato->documento_url,
+            'empleado_nombre' => $contrato->empleado->nombre_completo,
+            'empleado_documento' => $contrato->empleado->tercero->cod_ter ?? null,
+        ];
+    }
+
+    /**
+     * Vista imprimible del contrato tal como quedó vigente a partir de este evento puntual del
+     * historial (creación o una modificación específica) — no el estado actual del contrato,
+     * salvo que sea justo el evento más reciente.
+     */
+    public function verModificacion(ContratoModificacion $modificacion)
+    {
+        $modificacion->load('contrato.empleado.tercero', 'contrato.modificaciones', 'contrato.tipoContrato', 'contrato.cargo.area', 'usuario');
+
+        return view('sgrh.contrato.imprimir', [
+            'modificacion' => $modificacion,
+            'contrato' => $modificacion->contrato,
+        ]);
+    }
+
+    /**
+     * Vista imprimible del historial COMPLETO de contratos de un colaborador: cada contrato,
+     * en orden cronológico (de la creación en adelante), con una línea de "qué cambió" por
+     * evento (comparando el snapshot de cada evento contra el del evento anterior) — ej.
+     * "Cambio tipo de contrato Término fijo por Indefinido" o "Actualización salario de
+     * $1.000.000 a $1.500.000".
+     */
+    public function imprimirHistorialEmpleado(Empleado $empleado)
+    {
+        $empleado->load('tercero', 'contratos.tipoContrato', 'contratos.cargo.area', 'contratos.modificaciones.usuario');
+
+        $historial = $empleado->contratos
+            ->sortBy('fecha_creacion_contrato')
+            ->values()
+            ->map(function (Contrato $contrato) {
+                $anterior = null;
+
+                $eventos = $contrato->modificaciones->sortBy('created_at')->values()->map(function (ContratoModificacion $evento) use (&$anterior) {
+                    $diferencias = ($anterior && $evento->snapshot)
+                        ? $this->diferenciasEntre($anterior, $evento->snapshot, $evento->causal)
+                        : [];
+
+                    if ($evento->snapshot) {
+                        $anterior = $evento->snapshot;
+                    }
+
+                    return ['modificacion' => $evento, 'diferencias' => $diferencias];
+                });
+
+                return ['contrato' => $contrato, 'eventos' => $eventos];
+            });
+
+        return view('sgrh.contrato.imprimir-historial', [
+            'empleado' => $empleado,
+            'historial' => $historial,
+        ]);
+    }
+
+    /**
+     * Compara dos snapshots consecutivos y arma frases legibles de qué cambió — solo para los
+     * campos con valor distinto entre uno y otro.
+     */
+    private function diferenciasEntre(array $anterior, array $nuevo, string $causal): array
+    {
+        $etiquetas = [
+            'tipo_contrato' => 'tipo de contrato',
+            'cargo' => 'cargo',
+            'estado' => 'estado',
+            'salario_contrato' => 'salario',
+            'fecha_vencimiento' => 'fecha de vencimiento',
+            'documento_url' => 'documento firmado',
+        ];
+
+        $diferencias = [];
+        foreach ($etiquetas as $clave => $etiqueta) {
+            $antes = $anterior[$clave] ?? null;
+            $despues = $nuevo[$clave] ?? null;
+            if ((string) $antes === (string) $despues) {
+                continue;
+            }
+
+            $antesTexto = $this->formatearValorCampo($clave, $antes);
+            $despuesTexto = $this->formatearValorCampo($clave, $despues);
+
+            $diferencias[] = match (true) {
+                $clave === 'tipo_contrato' => "Cambio tipo de contrato {$antesTexto} por {$despuesTexto}",
+                $clave === 'salario_contrato' => "Actualización salario de {$antesTexto} a {$despuesTexto}",
+                $clave === 'fecha_vencimiento' && $causal === 'Renovación' => "Actualización fecha por renovación de {$antesTexto} a {$despuesTexto}",
+                $clave === 'fecha_vencimiento' => "Actualización fecha de vencimiento de {$antesTexto} a {$despuesTexto}",
+                $clave === 'documento_url' => 'Documento firmado actualizado',
+                default => "Cambio de {$etiqueta} de {$antesTexto} a {$despuesTexto}",
+            };
+        }
+
+        return $diferencias;
+    }
+
+    private function formatearValorCampo(string $campo, $valor): string
+    {
+        if ($valor === null || $valor === '') {
+            return '—';
+        }
+
+        return match ($campo) {
+            'salario_contrato' => '$' . number_format((float) $valor, 0, ',', '.'),
+            'fecha_vencimiento' => \Illuminate\Support\Carbon::parse($valor)->format('d/m/Y'),
+            default => (string) $valor,
+        };
     }
 
     /**
@@ -279,6 +444,12 @@ class ContratoController extends Controller
      */
     public function destroyModificacion(ContratoModificacion $modificacion)
     {
+        // El evento de Creación es el ancla del historial (de ahí sale el snapshot más antiguo
+        // disponible) — no se borra suelto; si hace falta, se borra el contrato completo.
+        if ($modificacion->causal === 'Creación') {
+            return back()->with('error', 'El evento de creación no se puede eliminar por separado.');
+        }
+
         $contrato = $modificacion->contrato;
         $causal = $modificacion->causal;
         $modificacion->delete();
@@ -310,32 +481,60 @@ class ContratoController extends Controller
             ->exists();
     }
 
-    private function validado(Request $request): array
+    private function validado(Request $request, ?Contrato $contrato = null): array
     {
         // La fecha de vencimiento solo es obligatoria para contratos con término definido —
         // "Indefinido" es el único tipo del catálogo sin fecha de fin por definición.
         $tipoIndefinidoId = TipoContrato::where('nombre', 'Indefinido')->value('id');
 
+        // El límite superior de "dentro del próximo año" se cuenta desde la fecha más tardía
+        // entre hoy y el vencimiento actual del contrato (si ya tiene uno futuro) — así una
+        // renovación hecha días o semanas antes del vencimiento real (el caso típico) no queda
+        // bloqueada por esta regla, sin dejar de detectar años mal digitados.
+        $ancla = $contrato?->fecha_vencimiento?->isFuture() ? $contrato->fecha_vencimiento : now();
+
         return $request->validate([
             'empleado_id' => 'required|exists:sgrh_empleados,id',
+            // Fecha en que se redactó/suscribió el contrato — independiente de fecha_inicio.
+            'fecha_creacion_contrato' => 'required|date',
             'tipo_contrato_id' => 'required|exists:sgrh_tipos_contrato,id',
-            // Único campo verdaderamente opcional aparte de cierre real/PDF/observaciones: por
-            // decisión del usuario, todo lo demás del contrato debe quedar completo.
             'cargo_id' => 'required|exists:sgrh_cargos,id',
-            'fecha_inicio' => 'required|date',
-            // 'bail' evita que after_or_equal intente comparar contra un valor ausente cuando
-            // la condición de abajo ya falló (si no, Laravel lanza un error de parseo de fecha real).
+            // Igual que fecha_vencimiento: "Indefinido" es el único tipo que puede quedar sin
+            // fecha de inicio conocida.
+            'fecha_inicio' => [
+                Rule::requiredIf(fn () => (int) $request->input('tipo_contrato_id') !== (int) $tipoIndefinidoId),
+                'nullable',
+                'date',
+            ],
+            // 'bail' evita que after/before intenten comparar contra un valor ausente cuando la
+            // condición de abajo ya falló (si no, Laravel lanza un error de parseo de fecha real).
+            // Rango "posterior a hoy y dentro del próximo año" solo aplica a contratos Activo —
+            // evita errores de tipeo (ej. un año equivocado) al registrar o renovar un contrato
+            // vigente, sin bloquear la edición de contratos ya cerrados (Vencido/Liquidado/
+            // Renovado), cuya fecha de vencimiento es historia fija y puede estar en el pasado.
             'fecha_vencimiento' => [
                 'bail',
                 Rule::requiredIf(fn () => (int) $request->input('tipo_contrato_id') !== (int) $tipoIndefinidoId),
                 'nullable',
                 'date',
-                'after_or_equal:fecha_inicio',
+                // Siempre >= fecha_inicio cuando esta tiene valor, sin importar el estado — un
+                // contrato no puede vencer antes de empezar. Va condicionada a filled() porque
+                // fecha_inicio puede venir ausente (Indefinido) y after_or_equal contra un campo
+                // sin valor revienta con un error de parseo real en vez de fallar limpio.
+                Rule::when($request->filled('fecha_inicio'), 'after_or_equal:fecha_inicio'),
+                // El rango "posterior a hoy y dentro del próximo año" sí es exclusivo de
+                // contratos Activo — evita errores de tipeo (ej. un año equivocado) al registrar
+                // o renovar uno vigente, sin bloquear la edición de contratos ya cerrados
+                // (Vencido/Liquidado/Renovado), cuya fecha de vencimiento es historia fija y
+                // puede estar en el pasado.
+                Rule::when(
+                    $request->input('estado') === 'Activo',
+                    ['after:today', 'before_or_equal:' . $ancla->copy()->addYear()->format('Y-m-d')]
+                ),
             ],
             'fecha_terminacion_real' => 'nullable|date',
             'estado' => 'required|in:' . implode(',', self::ESTADOS),
             'salario_contrato' => 'required|numeric|min:0',
-            'observaciones' => 'nullable|string',
             // Enlace al gestor documental de la empresa (el PDF ya no se sube a S3 desde aquí).
             'documento_url' => 'nullable|url|max:2048',
         ]);

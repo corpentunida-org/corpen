@@ -5,8 +5,9 @@ namespace App\Http\Requests\Sgrh;
 use Illuminate\Foundation\Http\FormRequest;
 
 // No incluye 'cod_ter' ni 'estado': cod_ter es el enlace al tercero (no se reasigna desde
-// aquí) y el cambio de estado tiene su propio flujo (EmpleadoController::updateEstado, con la
-// lógica de fecha_retiro) para no duplicarla en dos sitios que puedan desincronizarse.
+// aquí) y el estado nunca se toca a mano — sale siempre de un contrato (ver
+// ContratoController::sincronizarEstadoColaborador() y el checkbox de retiro definitivo en
+// ContratoController::update()), no hay ninguna acción manual de cambio de estado.
 // Tampoco incluye 'fecha_ingreso', 'cargo_id' ni 'salario_asignado': el contrato es la única
 // fuente de esos datos ahora (Empleado::getFechaIngresoAttribute()/getCargoIdAttribute()/
 // getSalarioAsignadoAttribute() los derivan de contratoActivo) — se editan desde "Registrar
