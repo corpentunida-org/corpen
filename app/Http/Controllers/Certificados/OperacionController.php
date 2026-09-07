@@ -40,11 +40,11 @@ class OperacionController extends Controller
     public function index(Request $request)
     {
         try {
-            $bloquesDisponibles = \Illuminate\Support\Facades\Cache::remember('sia_bloques_disponibles', 300, function () {
-                return CarSiaOperacion::whereNotNull('numero_bloque')
-                    ->select('numero_bloque', \Illuminate\Support\Facades\DB::raw('MAX(created_at) as fecha_ejecucion'))
-                    ->groupBy('numero_bloque')
-                    ->orderBy('fecha_ejecucion', 'desc')
+            // SOLUCIÓN INTEGRADA: Consulta directa a la tabla de bloques excluyendo los anulados
+            $bloquesDisponibles = Cache::remember('sia_bloques_disponibles', 5, function () {
+                return DB::table('car_sia_bloques')
+                    ->where('estado', '!=', 'ANULADO')
+                    ->orderBy('numero_bloque', 'desc')
                     ->get();
             });
 
@@ -61,7 +61,7 @@ class OperacionController extends Controller
 
                 $kpi['procesados'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)
                     ->whereExists(function ($query) {
-                        $query->select(\Illuminate\Support\Facades\DB::raw(1))
+                        $query->select(DB::raw(1))
                               ->from('car_sia_estados_operacion as eo')
                               ->join('car_sia_estados as e', 'eo.id_car_sia_estados', '=', 'e.id')
                               ->whereColumn('eo.id_car_sia_operaciones', 'car_sia_operaciones.id')
@@ -91,9 +91,21 @@ class OperacionController extends Controller
                     ->get();
 
                 // 2. EXTRAER CONFIGURACIONES MASIVAS (El que le faltaba el id_car_sia_operaciones)
-                $configuracionesMasivas = \App\Models\Certificados\CarSiaOperacionConfig::with('configuracionBase.accionVencimiento')
+                $configuracionesMasivas = CarSiaOperacionConfig::with('configuracionBase.accionVencimiento')
                     ->where('numero_bloque', $bloqueActivo)
                     ->whereNull('id_car_sia_operaciones') // Es masivo, no tiene operacion específica
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // 3. EXTRAER ALERTAS DEL BLOQUE (Masivas e Individuales)
+                $alertasBloqueActivo = \App\Models\Certificados\CarSiaOperacionAlerta::with(['tipoAlerta', 'operacion', 'usuario'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // 4. EXTRAER TIPOLOGÍAS/TIPOS DEL BLOQUE (Masivas e Individuales)
+                $tiposBloqueActivo = \App\Models\Certificados\CarSiaTipoOperacion::with(['tipo', 'operacion', 'usuario'])
+                    ->where('numero_bloque', $bloqueActivo)
                     ->orderBy('created_at', 'desc')
                     ->get();
             }
@@ -128,9 +140,9 @@ class OperacionController extends Controller
                 });
             }
 
-            $operaciones = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+            $operaciones = $query->orderBy('created_at', 'desc')->paginate(5)->withQueryString();
 
-            $aniosDisponibles = \Illuminate\Support\Facades\Cache::remember('sia_anios_disponibles', 3600, function () {
+            $aniosDisponibles = Cache::remember('sia_anios_disponibles', 3600, function () {
                 return CarSiaOperacion::whereNotNull('created_at')
                     ->selectRaw('YEAR(created_at) as anio')
                     ->groupBy('anio')
@@ -140,7 +152,7 @@ class OperacionController extends Controller
 
             $tiposAlerta = CarSiaTipoAlerta::all();
             $tipos = CarSiaTipo::all();
-            $configuracionesBase = \App\Models\Certificados\CarSiaConfig::with('accionVencimiento')->get();
+            $configuracionesBase = CarSiaConfig::with('accionVencimiento')->get();
 
             return view('certificados.operaciones.index', compact(
                 'operaciones',
@@ -153,11 +165,13 @@ class OperacionController extends Controller
                 'historialBloque',
                 'configuracionesBase',
                 'operacionesConfiguradas',
-                'configuracionesMasivas' // <--- PASAMOS LAS MASIVAS A LA VISTA
+                'configuracionesMasivas',
+                'alertasBloqueActivo', 
+                'tiposBloqueActivo'
             ));
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("SIA - Error Index: " . $e->getMessage());
+            Log::error("SIA - Error Index: " . $e->getMessage());
             abort(500, 'Error al cargar la matriz de operaciones.');
         }
     }
