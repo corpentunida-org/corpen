@@ -50,7 +50,7 @@
                         <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">
                             <i class="feather-message-square me-1 text-primary"></i>Observación
                         </label>
-                        <textarea name="observacion_modificacion" class="form-control @error('observacion_modificacion') is-invalid @enderror" rows="2">{{ old('observacion_modificacion') }}</textarea>
+                        <textarea name="observacion_modificacion" class="form-control @error('observacion_modificacion') is-invalid @enderror" style="text-transform: uppercase;" rows="2">{{ old('observacion_modificacion') }}</textarea>
                         @error('observacion_modificacion')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -145,7 +145,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
                 });
             })();
 

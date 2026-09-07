@@ -214,9 +214,7 @@
                 
                 const form = this;
                 const btn = $('#btn-save');
-                const originalHtml = btn.html();
-                
-                btn.html('<span class="spinner-border spinner-soft me-2"></span> Guardando...');
+
                 btn.prop('disabled', true);
                 $('.invalid-feedback').text('');
                 $('.form-control, .form-select').removeClass('is-invalid');
@@ -242,7 +240,6 @@
                         } else {
                             alert('Ocurrió un error al guardar. Inténtelo de nuevo.');
                         }
-                        btn.html(originalHtml);
                         btn.prop('disabled', false);
                         return;
                     }
@@ -260,7 +257,6 @@
 
                 } catch (error) {
                     alert('Error de conexión.');
-                    btn.html(originalHtml);
                     btn.prop('disabled', false);
                 }
             });
@@ -268,12 +264,10 @@
             // 2. LÓGICA AJAX: Enviar TRD y Redirigir al Show del Flujo
             $('#form-trd').on('submit', async function(e) {
                 e.preventDefault();
-                
+
                 const form = this;
                 const btn = $('#btn-save-trd');
-                const originalHtml = btn.html();
-                
-                btn.html('<span class="spinner-border spinner-soft me-2"></span> Finalizando...');
+
                 btn.prop('disabled', true);
 
                 try {
@@ -293,12 +287,10 @@
                         window.location.href = `{{ url('correspondencia/flujos') }}/${flujoId}`;
                     } else {
                         alert('Ocurrió un error al guardar la Serie Documental.');
-                        btn.html(originalHtml);
                         btn.prop('disabled', false);
                     }
                 } catch (error) {
                     alert('Error de conexión.');
-                    btn.html(originalHtml);
                     btn.prop('disabled', false);
                 }
             });

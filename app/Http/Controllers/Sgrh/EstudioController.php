@@ -85,10 +85,12 @@ class EstudioController extends Controller
         ]);
 
         $validated['graduado'] = $request->boolean('graduado');
-        $validated['programa'] = trim(preg_replace('/\s+/', ' ', $validated['programa']));
+        // Mayúsculas para uniformidad en la base de datos, mismo criterio que MaeTerceros y
+        // el resto de campos de texto libre en SGRH.
+        $validated['programa'] = mb_strtoupper(trim(preg_replace('/\s+/', ' ', $validated['programa'])), 'UTF-8');
 
         if (!empty($validated['institucion_educativa'])) {
-            $validated['institucion_educativa'] = trim(preg_replace('/\s+/', ' ', $validated['institucion_educativa']));
+            $validated['institucion_educativa'] = mb_strtoupper(trim(preg_replace('/\s+/', ' ', $validated['institucion_educativa'])), 'UTF-8');
         }
 
         return $validated;

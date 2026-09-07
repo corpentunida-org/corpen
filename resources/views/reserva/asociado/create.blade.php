@@ -545,7 +545,6 @@
                 $('#confirmSubmit').on('click', function() {
                     const btn = $('#confirmSubmit');
                     btn.prop('disabled', true);
-                    btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Procesando...');
                     const form = $('#reservaForm');
                     if (form.length) {
                         form.submit();
