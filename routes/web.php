@@ -1417,6 +1417,7 @@ Route::middleware(['auth'])
 
     });
 // FIN MÓDULO INTEGRACIONES
+
 // ==========================================
 //   MÓDULO SIA CERTIFICADOS (MOTOR DE OPERACIONES)
 // ==========================================
@@ -1432,11 +1433,24 @@ Route::middleware(['auth'])
         // Matriz Principal del Motor de Operaciones
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
 
-        // Programar alerta a nivel de Lote/Bloque (sin {id})
+        // --- RUTAS ESTÁTICAS (Sin {id} - Deben ir antes) ---
+        
+        // Programar alerta a nivel de Lote/Bloque
         Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
+
+        // Configuración de Notificaciones (Masiva, Selectiva e Individual)
+        Route::post('operaciones/config/masivo', [OperacionController::class, 'configuracionMasiva'])->name('operaciones.config.masivo');
+        Route::post('operaciones/config/selectivo', [OperacionController::class, 'configuracionSelectiva'])->name('operaciones.config.selectivo');
+        Route::post('operaciones/config/individual', [OperacionController::class, 'configuracionIndividual'])->name('operaciones.config.individual');
+
+        // CERTIFICADOS: Generación Masiva (CORREGIDO AL OPERACION CONTROLLER)
+        Route::post('operaciones/generar-masivo', [OperacionController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
 
         // Proceso de creación automática de terceros faltantes
         Route::post('ingesta/crear-terceros', [IngestaController::class, 'crearTercerosFaltantes'])->name('ingesta.crear_terceros');
+
+
+        // --- RUTAS DINÁMICAS (Con {id} - Deben ir después) ---
 
         // Detalle y trazabilidad de una operación específica (Líneas, Estados, Alertas)
         Route::get('operaciones/{id}', [OperacionController::class, 'show'])->name('operaciones.show');
@@ -1450,17 +1464,11 @@ Route::middleware(['auth'])
         // Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 
-        // Configuración de Notificaciones (Masiva, Selectiva e Individual)
-        Route::post('operaciones/config/masivo', [OperacionController::class, 'configuracionMasiva'])->name('operaciones.config.masivo');
-        Route::post('operaciones/config/selectivo', [OperacionController::class, 'configuracionSelectiva'])->name('operaciones.config.selectivo');
-        Route::post('operaciones/config/individual', [OperacionController::class, 'configuracionIndividual'])->name('operaciones.config.individual');
-
         // INFORME CLIENTE: Generación de reporte de comportamiento
         Route::get('operaciones/{id}/informe-cliente', [OperacionController::class, 'generarInformeCliente'])->name('operaciones.informe_cliente');
 
-        // CERTIFICADOS:
-        Route::get('operaciones/{id}/generar-pdf', [CertificadoController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
-        Route::post('operaciones/generar-masivo', [CertificadoController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
+        // CERTIFICADOS: Generación Individual (CORREGIDO AL OPERACION CONTROLLER)
+        Route::get('operaciones/{id}/generar-pdf', [OperacionController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
 
 
         // ---------------------------------------------------
@@ -1500,9 +1508,10 @@ Route::middleware(['auth'])
         Route::post('catalogos/store-estado', [ConfiguracionController::class, 'storeEstado'])->name('catalogos.store_estado');
         Route::post('catalogos/store-tipo-alerta', [ConfiguracionController::class, 'storeTipoAlerta'])->name('catalogos.store_tipo_alerta');
 
-        // CORREGIDAS: Sin el slash inicial y sin repetir 'certificados.' en el nombre
+        // Configuración de orígenes y eventos (Catálogos)
         Route::post('config/origen-evento', [ConfiguracionController::class, 'storeOrigenEvento'])->name('catalogos.store_origen_evento');
         Route::post('config/evento-auditoria', [ConfiguracionController::class, 'storeEventoAuditoria'])->name('catalogos.store_evento_auditoria');
+
 
         // ---------------------------------------------------
         // 4. ÁREA TÉCNICA / BACKSTAGE - INGESTA ERP
@@ -1531,6 +1540,7 @@ Route::middleware(['auth'])
         // Anulación MASIVA de todo un lote
         Route::put('ingesta/bloque/{bloque}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular_bloque');
 
+
         // ---------------------------------------------------
         // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA
         // ---------------------------------------------------
@@ -1545,7 +1555,7 @@ Route::middleware(['auth'])
         Route::post('auditoria/store-origen', [AuditoriaCertificadosController::class, 'storeOrigenEvento'])->name('auditoria.store_origen');
         Route::post('auditoria/store-evento', [AuditoriaCertificadosController::class, 'storeEventoAuditoria'])->name('auditoria.store_evento');
 
-        // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN (NUEVO)
+        // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN
         Route::put('auditoria/origen/{id}', [AuditoriaCertificadosController::class, 'updateOrigenEvento'])->name('auditoria.update_origen');
         Route::put('auditoria/evento/{id}', [AuditoriaCertificadosController::class, 'updateEventoAuditoria'])->name('auditoria.update_evento');
 

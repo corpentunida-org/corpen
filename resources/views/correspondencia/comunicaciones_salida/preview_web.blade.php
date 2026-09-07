@@ -194,7 +194,7 @@
                 <div class="fecha">
                     Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
                 </div>
-
+<br>
                 <div class="destinatario-block">
                     <input type="text" class="input-editable" value="Pastor:">
                     <input type="text" class="input-editable font-bold" value="{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'Araujo Hurtado Hernan Enrique' }}">
@@ -216,6 +216,7 @@
                         </tr>
                     </table>
                 </div>
+<br>
             </div>
 
             <div class="cuerpo-carta">
