@@ -107,7 +107,7 @@
             <div class="fecha">
                 Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->locale('es')->isoFormat('D [de] MMMM [de] YYYY') }}
             </div>
-
+            <br>
             <div class="destinatario">
                 Pastor:<br>
                 <strong>{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'NOMBRE DEL ASOCIADO' }}</strong><br>
@@ -122,6 +122,7 @@
             <div class="asunto">
                 Asunto: {{ $comunicacionSalida->correspondencia->asunto ?? 'SOLICITUD' }}
             </div>
+            <br>
         </div>
 
         <div class="cuerpo-carta">
