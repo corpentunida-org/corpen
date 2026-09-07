@@ -155,8 +155,7 @@
                     if (form.checkValidity()) {
                         // Deshabilitar botón para evitar múltiples clics
                         btn.disabled = true;
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-                        
+
                         // Mostrar modal de carga
                         loadingModal.show();
                     }

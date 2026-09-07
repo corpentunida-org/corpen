@@ -567,9 +567,6 @@
                 trdForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
                     const btn = document.getElementById('btn-save-trd');
-                    const originalHtml = btn.innerHTML;
-                    
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
                     btn.disabled = true;
 
                     try {
@@ -595,12 +592,10 @@
                             } else {
                                 alert(data.message || 'Ocurrió un error inesperado al guardar.');
                             }
-                            btn.innerHTML = originalHtml;
                             btn.disabled = false;
                         }
                     } catch (error) {
                         alert('Error de red. Inténtelo de nuevo.');
-                        btn.innerHTML = originalHtml;
                         btn.disabled = false;
                     }
                 });

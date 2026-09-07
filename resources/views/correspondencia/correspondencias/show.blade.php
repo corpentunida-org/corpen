@@ -865,8 +865,7 @@
             if (form.checkValidity()) {
                 // Deshabilitar botón para evitar múltiples clics
                 btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-                
+
                 // Cerrar el modal de formulario
                 $('#modalCrearSalidaRapida').modal('hide');
                 

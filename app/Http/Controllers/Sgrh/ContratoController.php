@@ -461,12 +461,18 @@ class ContratoController extends Controller
 
     private function validadoModificacion(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'causal_modificacion' => 'required|in:' . implode(',', self::CAUSALES_MODIFICACION),
             // Si la causal es "Otra", la observación deja de ser opcional — es lo único que
             // explica qué pasó.
             'observacion_modificacion' => 'required_if:causal_modificacion,Otra|nullable|string',
         ]);
+
+        if (!empty($validated['observacion_modificacion'])) {
+            $validated['observacion_modificacion'] = mb_strtoupper(trim(preg_replace('/\s+/', ' ', $validated['observacion_modificacion'])), 'UTF-8');
+        }
+
+        return $validated;
     }
 
     private function tieneOtroContratoActivo(int $empleadoId, string $estadoNuevo, ?int $exceptoId = null): bool

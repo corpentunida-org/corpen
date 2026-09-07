@@ -649,7 +649,6 @@
                                                 if (confirm('¿Confirmas la creación de estos registros únicos en la maestra?')) {
                                                     let boton = document.getElementById('btnConfirmarTerceros');
                                                     boton.disabled = true;
-                                                    boton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Cargando datos...';
                                                     return true;
                                                 }
                                                 return false;
@@ -1978,7 +1977,6 @@
 
         document.getElementById('progresoTokenInyeccion').value = token;
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Procesando clientes...';
 
         if (barra) barra.classList.remove('d-none');
 
