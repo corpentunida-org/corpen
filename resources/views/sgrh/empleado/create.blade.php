@@ -261,9 +261,7 @@
                 }
 
                 const boton = document.getElementById('btnBuscarTercero');
-                const botonHtmlOriginal = boton.innerHTML;
                 boton.disabled = true;
-                boton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Buscando...';
 
                 resultadoDiv.innerHTML = '<span class="text-muted">Buscando...</span>';
                 seleccionDiv.innerHTML = '';
@@ -275,7 +273,6 @@
                     .then(response => response.json().then(body => ({ ok: response.ok, body })))
                     .finally(function () {
                         boton.disabled = false;
-                        boton.innerHTML = botonHtmlOriginal;
                     })
                     .then(({ ok, body }) => {
                         if (!ok || body.status !== 'success') {
@@ -387,7 +384,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Registrando...';
                 });
             })();
         </script>

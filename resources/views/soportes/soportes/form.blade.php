@@ -484,9 +484,6 @@
 
                 e.preventDefault();
                 btn.prop('disabled', true);
-                btn.html(
-                    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...'
-                    );
 
                 Swal.fire({
                     title: 'Procesando...',
