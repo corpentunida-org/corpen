@@ -870,4 +870,118 @@ class OperacionController extends Controller
         // 3. Mostramos el PDF en el navegador (stream) o forzamos descarga (download)
         return $pdf->stream('informe_cliente_' . $operacion->numero_radicado . '.pdf');
     }
+
+
+    // =========================================================================
+    // INICIO PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
+    // =========================================================================
+
+    /**
+     * 1. CONFIGURACIÓN MASIVA
+     * Aplica la regla a todo el lote (id_car_sia_operaciones = null)
+     */
+    public function configuracionMasiva(Request $request)
+    {
+        $request->validate([
+            'numero_bloque'     => 'required|integer',
+            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+        ]);
+
+        $estado = $request->has('estado_notificacion') ? 1 : 0;
+
+        CarSiaOperacionConfig::updateOrCreate(
+            [
+                'numero_bloque'          => $request->numero_bloque,
+                'id_car_sia_operaciones' => null // Null significa que aplica al bloque general
+            ],
+            [
+                'id_car_sia_config'   => $request->id_car_sia_config,
+                'estado_notificacion' => $estado
+            ]
+        );
+
+        return back()->with('success', "Configuración general aplicada exitosamente al lote API-" . str_pad($request->numero_bloque, 4, '0', STR_PAD_LEFT) . ".");
+    }
+
+    /**
+     * 2. CONFIGURACIÓN SELECTIVA
+     * Aplica la regla a un grupo de operaciones filtradas por el buscador del Index
+     */
+    public function configuracionSelectiva(Request $request)
+    {
+        $request->validate([
+            'numero_bloque'     => 'required|integer',
+            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+        ]);
+
+        $estado = $request->has('estado_notificacion') ? 1 : 0;
+
+        // Recreamos la consulta base del Index
+        $query = CarSiaOperacion::where('numero_bloque', $request->numero_bloque);
+
+        if ($request->filled('buscar')) {
+            $buscar = $request->buscar;
+            $query->where(function($q) use ($buscar) {
+                $q->where('numero_radicado', 'like', "%{$buscar}%")
+                  ->orWhereHas('tercero', function($qTer) use ($buscar) {
+                      $qTer->where('nom_ter', 'like', "%{$buscar}%")
+                           ->orWhere('cod_ter', 'like', "%{$buscar}%");
+                  });
+            });
+        }
+
+        // Extraemos solo los IDs para hacer la inserción/actualización
+        $operacionesIds = $query->pluck('id');
+
+        if ($operacionesIds->isEmpty()) {
+            return back()->with('error', "No hay operaciones que coincidan con la búsqueda actual para aplicar la configuración.");
+        }
+
+        foreach ($operacionesIds as $opId) {
+            CarSiaOperacionConfig::updateOrCreate(
+                ['id_car_sia_operaciones' => $opId],
+                [
+                    'numero_bloque'       => $request->numero_bloque,
+                    'id_car_sia_config'   => $request->id_car_sia_config,
+                    'estado_notificacion' => $estado
+                ]
+            );
+        }
+
+        return back()->with('success', "Configuración selectiva aplicada a " . $operacionesIds->count() . " operaciones filtradas.");
+    }
+
+    /**
+     * 3. CONFIGURACIÓN INDIVIDUAL
+     * Aplica la regla a una sola operación específica (Vista Show)
+     */
+    public function configuracionIndividual(Request $request)
+    {
+        $request->validate([
+            'id_operacion'      => 'required|exists:car_sia_operaciones,id',
+            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+        ]);
+
+        $estado = $request->has('estado_notificacion') ? 1 : 0;
+        $operacion = CarSiaOperacion::findOrFail($request->id_operacion);
+
+        CarSiaOperacionConfig::updateOrCreate(
+            ['id_car_sia_operaciones' => $operacion->id],
+            [
+                'numero_bloque'       => $operacion->numero_bloque,
+                'id_car_sia_config'   => $request->id_car_sia_config,
+                'estado_notificacion' => $estado
+            ]
+        );
+
+        return back()->with('success', "Configuración actualizada como excepción para el radicado {$operacion->numero_radicado}.");
+    }
+
+    // =========================================================================
+    // FIN PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
+    // =========================================================================
+
+
+
+
 }
