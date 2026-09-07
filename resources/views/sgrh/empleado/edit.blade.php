@@ -676,7 +676,7 @@
                             <div class="col-md-8">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Programa</label>
                                 <input type="text" name="programa" id="estudio_programa"
-                                       class="form-control @error('programa') is-invalid @enderror" value="{{ old('programa') }}" required>
+                                       class="form-control @error('programa') is-invalid @enderror" style="text-transform: uppercase;" value="{{ old('programa') }}" required>
                                 @error('programa')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -690,7 +690,7 @@
                             </div>
                             <div class="col-12">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Institución educativa</label>
-                                <input type="text" name="institucion_educativa" id="estudio_institucion_educativa" class="form-control"
+                                <input type="text" name="institucion_educativa" id="estudio_institucion_educativa" class="form-control" style="text-transform: uppercase;"
                                        value="{{ old('institucion_educativa') }}">
                             </div>
                             <div class="col-md-6">
@@ -894,7 +894,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
                 });
             })();
 
@@ -911,7 +910,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
                 });
             })();
 
@@ -926,7 +924,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
                 });
             })();
         </script>

@@ -2086,7 +2086,6 @@
         function buscarGlobal() {
             const valor = inputBuscar.value.trim();
             if (valor.length < 2) return;
-            btnBuscar.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             btnBuscar.disabled = true;
 
             fetch(`{{ route('contabilidad.extractos.buscar-modal') }}?search=${valor}`)
@@ -2144,7 +2143,6 @@
                 })
                 .catch(err => Swal.fire('Error', 'No se pudo completar la búsqueda.', 'error'))
                 .finally(() => {
-                    btnBuscar.innerHTML = 'BUSCAR';
                     btnBuscar.disabled = false;
                 });
         }
@@ -2220,10 +2218,7 @@
             formBancos.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const btnSubmit = document.getElementById('btnSubmitBancos');
-                const originalText = btnSubmit.innerHTML;
                 btnSubmit.disabled = true;
-                btnSubmit.innerHTML =
-                    `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
                 const inputVisible = document.getElementById('input_transaccion_visible').value;
                 const inputHidden = document.getElementById('id_transacciones_bancos');
@@ -2261,7 +2256,6 @@
                     .catch(error => Swal.fire('Error', error.message, 'error'))
                     .finally(() => {
                         btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = originalText;
                     });
             });
         }
@@ -2474,9 +2468,7 @@
 
         function ejecutarEnvioComprobante(forceSave = false) {
             const btnSubmit = document.getElementById('btnSubmitComprobante');
-            const originalText = btnSubmit.innerHTML;
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
             const formData = new FormData(formComprobante);
             if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') formData.set(
@@ -2554,7 +2546,6 @@
                     'Error de red o servidor no responde', 'error'))
                 .finally(() => {
                     btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = originalText;
                 });
         }
 
@@ -2634,8 +2625,6 @@
                 const btn = document.getElementById('btn-submit-interaccion');
                 if (this.checkValidity()) {
                     btn.disabled = true;
-                    btn.innerHTML =
-                        '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
                 }
             });
         }

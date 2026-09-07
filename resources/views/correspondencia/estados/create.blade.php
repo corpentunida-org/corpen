@@ -107,7 +107,6 @@
                         </a>
                         <button type="submit" id="submitBtn" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm order-1 order-sm-2 d-flex align-items-center justify-content-center gap-2" style="background-color: #1976d2; border-color: #1976d2;">
                             <span id="btnText">Guardar Estado</span>
-                            <div id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></div>
                         </button>
                     </div>
                 </form>
@@ -136,15 +135,11 @@
     <script>
         document.getElementById('mainForm').onsubmit = function() {
             const btn = document.getElementById('submitBtn');
-            const spinner = document.getElementById('btnSpinner');
-            const txt = document.getElementById('btnText');
-            
+
             // Bloqueo preventivo de doble envío
             btn.classList.add('disabled');
             btn.style.pointerEvents = 'none';
-            txt.innerText = "Procesando...";
-            spinner.classList.remove('d-none');
-            
+
             return true;
         };
     </script>
