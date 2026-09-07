@@ -125,6 +125,22 @@
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
         }
+
+        /* Indicador global de carga — se activa/desactiva solo desde el script al final del
+           body (ver #global-loading-overlay más abajo); ningún botón necesita implementarlo. */
+        #global-loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            background: rgba(255, 255, 255, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+
+        #global-loading-overlay.active {
+            display: flex;
+        }
     </style>
 </head>
 
@@ -134,6 +150,12 @@
             text-transform: uppercase;
         }
     </style>
+
+    <div id="global-loading-overlay">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
     @auth()
         @if (Auth::user()->actions->count() == 0)
             @include('layouts.norole')
@@ -461,6 +483,81 @@
             });
         });
     });
+</script>
+
+<script>
+    // Indicador global de carga: se activa solo, sin que cada botón/formulario tenga que
+    // implementarlo. Cubre las cuatro formas en que esta app dispara peticiones al servidor:
+    //   1. $.ajax / $.getJSON / $.post (jQuery expone ajaxStart/ajaxStop a nivel documento).
+    //   2. fetch() nativo (se parchea una vez aquí, antes de que corran los scripts de cada vista).
+    //   3. Envío normal de un <form> con recarga de página.
+    //   4. Clic en un enlace de navegación real (menú lateral, breadcrumbs, etc.) — así se ve
+    //      esta animación en vez del indicador nativo del navegador ("Esperando a...") mientras
+    //      carga la página destino.
+    // Un formulario que cancela su propio submit para manejarlo con fetch/$.ajax (patrón usado
+    // en varias vistas) ya llega aquí con defaultPrevented=true, así que esa petición la cuenta
+    // solo el hook de fetch/ajax — no se duplica el overlay.
+    // Para excluir un caso puntual (ej. un autoguardado silencioso, o un enlace que abre un
+    // modal/dropdown vía JS), agrega data-no-loading al <form>/<a> correspondiente.
+    (function () {
+        const overlay = document.getElementById('global-loading-overlay');
+        if (!overlay) {
+            return;
+        }
+
+        let pendientes = 0;
+
+        function mostrarCarga() {
+            pendientes++;
+            overlay.classList.add('active');
+        }
+
+        function ocultarCarga() {
+            pendientes = Math.max(0, pendientes - 1);
+            if (pendientes === 0) {
+                overlay.classList.remove('active');
+            }
+        }
+
+        if (window.jQuery) {
+            jQuery(document).ajaxStart(mostrarCarga).ajaxStop(ocultarCarga);
+        }
+
+        const fetchOriginal = window.fetch;
+        window.fetch = function (...args) {
+            mostrarCarga();
+            return fetchOriginal.apply(this, args).finally(ocultarCarga);
+        };
+
+        document.addEventListener('submit', function (e) {
+            const form = e.target;
+            if (form.hasAttribute('data-no-loading') || e.defaultPrevented) {
+                return;
+            }
+            mostrarCarga();
+        });
+
+        // Navegación por clic en enlaces del menú (izquierdo, breadcrumbs, etc.) — el navegador
+        // reemplaza todo el documento al cargar la página destino, así que no hace falta ocultar
+        // el overlay: desaparece solo junto con el resto del DOM actual.
+        document.addEventListener('click', function (e) {
+            if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+                return;
+            }
+            const link = e.target.closest('a[href]');
+            if (!link || link.hasAttribute('data-no-loading') || link.hasAttribute('data-bs-toggle')) {
+                return;
+            }
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
+                return;
+            }
+            if (link.target && link.target !== '_self') {
+                return;
+            }
+            mostrarCarga();
+        });
+    })();
 </script>
 @stack('scripts')
 
