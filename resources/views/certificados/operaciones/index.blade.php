@@ -222,7 +222,7 @@
                     {{-- END 3.3 KPI --}}
 
                     {{-- 3.4 REPORTE DE CONFIGURACIONES, ALERTAS Y CERTIFICADOS (Acordeón y Controles) --}}
-                    <div class="card card-custom shadow-sm border-0 mb-4">
+                    <div class="card card-custom shadow border-0 mb-4">
                         <div class="card-header bg-white border-bottom p-4" style="border-radius: 20px 20px 0 0;">
                             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-start gap-3 w-100">
                                 <div class="flex-grow-1 pe-md-3">
@@ -238,8 +238,8 @@
                                 <div class="d-flex flex-column align-items-stretch align-items-md-end gap-2 ms-md-auto flex-shrink-0">
                                     <div class="d-flex flex-column flex-md-row align-items-center justify-content-md-end gap-2 w-100">
                                         {{-- Botón Tabla --}}
-                                        <button class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfiguradas" aria-expanded="false" aria-controls="collapseConfiguradas">
-                                            <i class="fas fa-angle-down me-1 text-muted"></i> Tabla
+                                        <button class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConfiguradas" aria-expanded="false" aria-controls="collapseConfiguradas">
+                                            <i class="fas fa-table me-2"></i> Ver Tablas de Gestión
                                         </button>
                                     </div>
                                 </div>
@@ -250,18 +250,18 @@
                             <div class="card-body p-0">
 
                                 {{-- CONTENEDOR PRINCIPAL ACORDEÓN --}}
-                                <div class="accordion accordion-flush border-top" id="accordionMatrizTablas">
+                                <div class="accordion accordion-flush" id="accordionMatrizTablas">
 
                                     {{-- ======================================================== --}}
-                                    {{-- TABLA 1: PARÁMETROS Y CONFIGURACIONES (Abierto por defecto) --}}
+                                    {{-- TABLA 1: PARÁMETROS Y CONFIGURACIONES --}}
                                     {{-- ======================================================== --}}
                                     <div class="accordion-item border-bottom">
                                         <h2 class="accordion-header" id="headingTabla1">
-                                            <button class="accordion-button bg-light px-4 py-3 text-dark fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla1" aria-expanded="true" aria-controls="collapseTabla1" style="font-size: 0.85rem;">
+                                            {{-- Quitamos bg-light para que Bootstrap pinte de azul el acordeón activo automáticamente --}}
+                                            <button class="accordion-button px-4 py-3 fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla1" aria-expanded="true" aria-controls="collapseTabla1" style="font-size: 0.9rem;">
                                                 <div class="d-flex align-items-center justify-content-between w-100 me-3">
                                                     <div>
-                                                        <i class="fas fa-sliders-h text-primary me-2"></i> Tabla 1: Parámetros y Configuraciones generados a este lote
-                                                        <span class="text-muted fw-normal ms-2 d-none d-md-inline" style="font-size: 0.75rem;">(Haz clic en cualquier fila para ver el JSON)</span>
+                                                        <i class="fas fa-sliders-h me-2"></i> Tabla 1: Parámetros y Configuraciones
                                                     </div>
                                                     <div class="d-flex gap-2 align-items-center">
                                                         <span class="badge bg-white text-secondary border shadow-sm px-2 py-1 d-none d-sm-inline-block" style="font-size: 0.7rem;">
@@ -275,179 +275,185 @@
                                             </button>
                                         </h2>
                                         <div id="collapseTabla1" class="accordion-collapse collapse show" aria-labelledby="headingTabla1" data-bs-parent="#accordionMatrizTablas">
-                                            <div class="accordion-body p-0">
+                                            {{-- Fondo gris suave con padding para encapsular la tabla y darle respiro visual --}}
+                                            <div class="accordion-body bg-light p-3 p-md-4">
 
-                                                {{-- BARRA DE ACCIÓN TABLA 1 --}}
-                                                @if($bloqueActivo)
-                                                    <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-end">
-                                                        <button type="button" class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" data-bs-toggle="modal" data-bs-target="#modalConfiguracionIndex">
-                                                            <i class="fas fa-cogs me-1 text-primary"></i> Asignar Parámetros
-                                                        </button>
+                                                {{-- Caja blanca que contiene la tabla --}}
+                                                <div class="bg-white border rounded-3 shadow-sm overflow-hidden">
+
+                                                    {{-- BARRA DE ACCIÓN INTERNA --}}
+                                                    <div class="bg-white px-3 py-2 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                                        <span class="text-muted small"><i class="fas fa-hand-pointer text-primary me-1"></i> Haz clic en cualquier fila para ver el JSON</span>
+                                                        @if($bloqueActivo)
+                                                            <button type="button" class="btn btn-light border rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#modalConfiguracionIndex" style="font-size: 0.85rem;">
+                                                                <i class="fas fa-cogs me-2 text-primary"></i> Asignar Parámetros
+                                                            </button>
+                                                        @endif
                                                     </div>
-                                                @endif
 
-                                                <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
-                                                    <table class="table table-sm table-hover table-bordered m-0 align-middle" style="font-size: 0.8rem;">
-                                                        <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
-                                                            <tr>
-                                                                <th style="width: 12%;" class="ps-3">Radicado</th>
-                                                                <th style="width: 25%;">Cliente</th>
-                                                                <th style="width: 25%;">Regla de Vencimiento</th>
-                                                                <th style="width: 12%; text-align: center;">Frecuencia</th>
-                                                                <th style="width: 10%; text-align: center;">Acción</th>
-                                                                <th style="width: 8%; text-align: center;">Notif.</th>
-                                                                <th style="width: 8%; text-align: center;" class="pe-3">Estado</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @php $hayConfiguradas = false; $index = 0; @endphp
-
-                                                            {{-- MASIVAS --}}
-                                                            @foreach($configuracionesMasivas as $masiva)
-                                                                @php
-                                                                    $hayConfiguradas = true;
-                                                                    $index++;
-                                                                    $configBase = $masiva->configuracionBase;
-                                                                    $accionVenc = $configBase?->accionVencimiento;
-                                                                    $parametros = $configBase?->parametros;
-                                                                @endphp
-                                                                <tr style="background-color: #f8f9fa; cursor: pointer;" onclick="toggleParametros('det-masiva-{{ $index }}')" title="Desplegar JSON">
-                                                                    <td class="font-monospace text-primary text-center fw-bold ps-3"><i class="fas fa-layer-group"></i> LOTE</td>
-                                                                    <td class="fw-bold text-primary"><i class="fas fa-users me-1"></i> Lote API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</td>
-                                                                    <td class="fw-bold text-dark">{{ $accionVenc?->nombre ?? 'N/A' }}</td>
-                                                                    <td class="text-center">
-                                                                        @if($configBase?->frecuencia_recordatorio_dias)
-                                                                            <span class="badge bg-white text-dark border">Cada {{ $configBase->frecuencia_recordatorio_dias }} días</span>
-                                                                        @else
-                                                                            <span class="text-muted">—</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center">
-                                                                        @if(isset($accionVenc?->estado))
-                                                                            <span class="badge {{ $accionVenc->estado ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark' }} px-2 py-1">
-                                                                                {{ $accionVenc->estado ? 'ACTIVA' : 'INACTIVA' }}
-                                                                            </span>
-                                                                        @else
-                                                                            <span class="text-muted">—</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center">
-                                                                        @if($masiva->estado_notificacion)
-                                                                            <span class="text-success"><i class="fas fa-bell"></i></span>
-                                                                        @else
-                                                                            <span class="text-muted"><i class="fas fa-bell-slash"></i></span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center pe-3">
-                                                                        @if($masiva->trashed())
-                                                                            <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
-                                                                        @else
-                                                                            <span class="badge bg-success text-white" style="font-size: 0.60rem;">VIGENTE</span>
-                                                                        @endif
-                                                                    </td>
-                                                                </tr>
-                                                                {{-- JSON Masivas --}}
-                                                                <tr id="det-masiva-{{ $index }}" style="display: none; background-color: #f1f3f5;">
-                                                                    <td colspan="7" class="p-3 border-start border-primary border-3">
-                                                                        <div class="d-flex flex-column gap-2">
-                                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                                <span class="fw-bold text-primary" style="font-size: 0.75rem;"><i class="fas fa-code me-1"></i> Parámetros JSON</span>
-                                                                                <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBase?->id ?? 'N/A' }}</span>
-                                                                            </div>
-                                                                            <div class="bg-dark text-light p-2 rounded shadow-sm overflow-auto" style="max-height: 140px; font-size: 0.75rem; font-family: monospace;">
-                                                                                <pre class="m-0 text-light">@php echo !empty($parametros) ? json_encode($parametros, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '// Sin parámetros'; @endphp</pre>
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-
-                                                            {{-- INDIVIDUALES --}}
-                                                            @foreach($operacionesConfiguradas as $op)
-                                                                @php
-                                                                    $hayConfiguradas = true;
-                                                                    $configOp = $op->configuracion;
-                                                                    $configBaseOp = $configOp?->configuracionBase;
-                                                                    $accionVencOp = $configBaseOp?->accionVencimiento;
-                                                                    $parametrosOp = $configBaseOp?->parametros;
-                                                                @endphp
-                                                                <tr style="cursor: pointer;" onclick="toggleParametros('det-op-{{ $op->id }}')" title="Desplegar JSON">
-                                                                    <td class="font-monospace ps-3">{{ $op->numero_radicado ?? 'N/A' }}</td>
-                                                                    <td class="text-truncate" style="max-width: 180px;" title="{{ $op->tercero?->nom_ter ?? '' }} {{ $op->tercero?->apl1 ?? '' }}">
-                                                                        {{ $op->tercero?->nom_ter ?? 'Sin Tercero' }} {{ $op->tercero?->apl1 ?? '' }}
-                                                                    </td>
-                                                                    <td class="fw-bold text-dark">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
-                                                                    <td class="text-center">
-                                                                        @if($configBaseOp?->frecuencia_recordatorio_dias)
-                                                                            <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} días</span>
-                                                                        @else
-                                                                            <span class="text-muted">—</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center">
-                                                                        @if(isset($accionVencOp?->estado))
-                                                                            <span class="badge {{ $accionVencOp->estado ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark' }} px-2 py-1">
-                                                                                {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
-                                                                            </span>
-                                                                        @else
-                                                                            <span class="text-muted">—</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center">
-                                                                        @if($configOp?->estado_notificacion)
-                                                                            <span class="text-success"><i class="fas fa-bell"></i></span>
-                                                                        @else
-                                                                            <span class="text-muted"><i class="fas fa-bell-slash"></i></span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center pe-3">
-                                                                        @if($configOp?->trashed())
-                                                                            <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
-                                                                        @else
-                                                                            <span class="badge bg-success text-white" style="font-size: 0.60rem;">VIGENTE</span>
-                                                                        @endif
-                                                                    </td>
-                                                                </tr>
-                                                                {{-- JSON Individuales --}}
-                                                                <tr id="det-op-{{ $op->id }}" style="display: none; background-color: #f1f3f5;">
-                                                                    <td colspan="7" class="p-3 border-start border-info border-3">
-                                                                        <div class="d-flex flex-column gap-2">
-                                                                            <div class="d-flex justify-content-between align-items-center">
-                                                                                <span class="fw-bold text-dark" style="font-size: 0.75rem;"><i class="fas fa-code me-1 text-info"></i> Parámetros JSON — Radicado: {{ $op->numero_radicado }}</span>
-                                                                                <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBaseOp?->id ?? 'N/A' }}</span>
-                                                                            </div>
-                                                                            <div class="bg-dark text-light p-2 rounded shadow-sm overflow-auto" style="max-height: 140px; font-size: 0.75rem; font-family: monospace;">
-                                                                                <pre class="m-0 text-light">@php echo !empty($parametrosOp) ? json_encode($parametrosOp, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '// Sin parámetros'; @endphp</pre>
-                                                                            </div>
-                                                                        </div>
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-
-                                                            @if(!$hayConfiguradas)
+                                                    <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
+                                                        <table class="table table-sm table-hover m-0 align-middle" style="font-size: 0.8rem;">
+                                                            <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
                                                                 <tr>
-                                                                    <td colspan="7" class="text-center py-4 bg-white text-muted">
-                                                                        <i class="fas fa-sliders-h mb-2 fs-4 text-primary opacity-50"></i><br>
-                                                                        <span class="fw-bold text-dark">Sin configuraciones en este bloque.</span>
-                                                                    </td>
+                                                                    <th style="width: 12%; border-bottom: 1px solid #dee2e6;" class="ps-3 py-2">Radicado</th>
+                                                                    <th style="width: 25%; border-bottom: 1px solid #dee2e6;" class="py-2">Cliente</th>
+                                                                    <th style="width: 25%; border-bottom: 1px solid #dee2e6;" class="py-2">Regla de Vencimiento</th>
+                                                                    <th style="width: 12%; text-align: center; border-bottom: 1px solid #dee2e6;" class="py-2">Frecuencia</th>
+                                                                    <th style="width: 10%; text-align: center; border-bottom: 1px solid #dee2e6;" class="py-2">Acción</th>
+                                                                    <th style="width: 8%; text-align: center; border-bottom: 1px solid #dee2e6;" class="py-2">Notif.</th>
+                                                                    <th style="width: 8%; text-align: center; border-bottom: 1px solid #dee2e6;" class="pe-3 py-2">Estado</th>
                                                                 </tr>
-                                                            @endif
-                                                        </tbody>
-                                                    </table>
+                                                            </thead>
+                                                            <tbody>
+                                                                @php $hayConfiguradas = false; $index = 0; @endphp
+
+                                                                {{-- MASIVAS --}}
+                                                                @foreach($configuracionesMasivas as $masiva)
+                                                                    @php
+                                                                        $hayConfiguradas = true;
+                                                                        $index++;
+                                                                        $configBase = $masiva->configuracionBase;
+                                                                        $accionVenc = $configBase?->accionVencimiento;
+                                                                        $parametros = $configBase?->parametros;
+                                                                    @endphp
+                                                                    <tr style="background-color: #f8f9fa; cursor: pointer; border-bottom: 1px solid #f1f3f5;" onclick="toggleParametros('det-masiva-{{ $index }}')" title="Desplegar JSON">
+                                                                        <td class="font-monospace text-primary text-center fw-bold ps-3"><i class="fas fa-layer-group"></i> LOTE</td>
+                                                                        <td class="fw-bold text-primary"><i class="fas fa-users me-1"></i> Lote API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</td>
+                                                                        <td class="fw-bold text-dark">{{ $accionVenc?->nombre ?? 'N/A' }}</td>
+                                                                        <td class="text-center">
+                                                                            @if($configBase?->frecuencia_recordatorio_dias)
+                                                                                <span class="badge bg-white text-dark border">Cada {{ $configBase->frecuencia_recordatorio_dias }} días</span>
+                                                                            @else
+                                                                                <span class="text-muted">—</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            @if(isset($accionVenc?->estado))
+                                                                                <span class="badge {{ $accionVenc->estado ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark' }} px-2 py-1">
+                                                                                    {{ $accionVenc->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="text-muted">—</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            @if($masiva->estado_notificacion)
+                                                                                <span class="text-success"><i class="fas fa-bell"></i></span>
+                                                                            @else
+                                                                                <span class="text-muted"><i class="fas fa-bell-slash"></i></span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center pe-3">
+                                                                            @if($masiva->trashed())
+                                                                                <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
+                                                                            @else
+                                                                                <span class="badge bg-success text-white" style="font-size: 0.60rem;">VIGENTE</span>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                    {{-- JSON Masivas --}}
+                                                                    <tr id="det-masiva-{{ $index }}" style="display: none; background-color: #f1f3f5;">
+                                                                        <td colspan="7" class="p-4 border-start border-primary border-4">
+                                                                            <div class="d-flex flex-column gap-2">
+                                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                                    <span class="fw-bold text-primary" style="font-size: 0.75rem;"><i class="fas fa-code me-1"></i> Parámetros JSON</span>
+                                                                                    <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBase?->id ?? 'N/A' }}</span>
+                                                                                </div>
+                                                                                <div class="bg-dark text-light p-3 rounded shadow-inner overflow-auto" style="max-height: 140px; font-size: 0.75rem; font-family: monospace;">
+                                                                                    <pre class="m-0 text-light">@php echo !empty($parametros) ? json_encode($parametros, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '// Sin parámetros'; @endphp</pre>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+
+                                                                {{-- INDIVIDUALES --}}
+                                                                @foreach($operacionesConfiguradas as $op)
+                                                                    @php
+                                                                        $hayConfiguradas = true;
+                                                                        $configOp = $op->configuracion;
+                                                                        $configBaseOp = $configOp?->configuracionBase;
+                                                                        $accionVencOp = $configBaseOp?->accionVencimiento;
+                                                                        $parametrosOp = $configBaseOp?->parametros;
+                                                                    @endphp
+                                                                    <tr style="cursor: pointer; border-bottom: 1px solid #f1f3f5;" onclick="toggleParametros('det-op-{{ $op->id }}')" title="Desplegar JSON">
+                                                                        <td class="font-monospace ps-3">{{ $op->numero_radicado ?? 'N/A' }}</td>
+                                                                        <td class="text-truncate" style="max-width: 180px;" title="{{ $op->tercero?->nom_ter ?? '' }} {{ $op->tercero?->apl1 ?? '' }}">
+                                                                            {{ $op->tercero?->nom_ter ?? 'Sin Tercero' }} {{ $op->tercero?->apl1 ?? '' }}
+                                                                        </td>
+                                                                        <td class="fw-bold text-dark">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
+                                                                        <td class="text-center">
+                                                                            @if($configBaseOp?->frecuencia_recordatorio_dias)
+                                                                                <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} días</span>
+                                                                            @else
+                                                                                <span class="text-muted">—</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            @if(isset($accionVencOp?->estado))
+                                                                                <span class="badge {{ $accionVencOp->estado ? 'bg-success bg-opacity-10 text-success' : 'bg-warning bg-opacity-10 text-dark' }} px-2 py-1">
+                                                                                    {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="text-muted">—</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            @if($configOp?->estado_notificacion)
+                                                                                <span class="text-success"><i class="fas fa-bell"></i></span>
+                                                                            @else
+                                                                                <span class="text-muted"><i class="fas fa-bell-slash"></i></span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center pe-3">
+                                                                            @if($configOp?->trashed())
+                                                                                <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
+                                                                            @else
+                                                                                <span class="badge bg-success text-white" style="font-size: 0.60rem;">VIGENTE</span>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                    {{-- JSON Individuales --}}
+                                                                    <tr id="det-op-{{ $op->id }}" style="display: none; background-color: #f1f3f5;">
+                                                                        <td colspan="7" class="p-4 border-start border-info border-4">
+                                                                            <div class="d-flex flex-column gap-2">
+                                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                                    <span class="fw-bold text-dark" style="font-size: 0.75rem;"><i class="fas fa-code me-1 text-info"></i> Parámetros JSON — Radicado: {{ $op->numero_radicado }}</span>
+                                                                                    <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBaseOp?->id ?? 'N/A' }}</span>
+                                                                                </div>
+                                                                                <div class="bg-dark text-light p-3 rounded shadow-inner overflow-auto" style="max-height: 140px; font-size: 0.75rem; font-family: monospace;">
+                                                                                    <pre class="m-0 text-light">@php echo !empty($parametrosOp) ? json_encode($parametrosOp, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '// Sin parámetros'; @endphp</pre>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+
+                                                                @if(!$hayConfiguradas)
+                                                                    <tr>
+                                                                        <td colspan="7" class="text-center py-5 bg-white text-muted">
+                                                                            <i class="fas fa-sliders-h mb-3 fs-3 text-primary opacity-50"></i><br>
+                                                                            <span class="fw-bold text-dark">Sin configuraciones en este bloque.</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {{-- ======================================================== --}}
-                                    {{-- TABLA 2: ALERTAS PROGRAMADAS (Colapsado por defecto) --}}
+                                    {{-- TABLA 2: ALERTAS PROGRAMADAS --}}
                                     {{-- ======================================================== --}}
                                     <div class="accordion-item border-bottom">
                                         <h2 class="accordion-header" id="headingTabla2">
-                                            <button class="accordion-button collapsed bg-light px-4 py-3 text-dark fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla2" aria-expanded="false" aria-controls="collapseTabla2" style="font-size: 0.85rem;">
+                                            <button class="accordion-button collapsed px-4 py-3 fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla2" aria-expanded="false" aria-controls="collapseTabla2" style="font-size: 0.9rem;">
                                                 <div class="d-flex align-items-center justify-content-between w-100 me-3">
                                                     <div>
-                                                        <i class="fas fa-bell text-info me-2"></i> Tabla 2: Alertas Programadas generados a este lote
+                                                        <i class="fas fa-bell me-2"></i> Tabla 2: Alertas Programadas
                                                     </div>
                                                     <span class="badge bg-white text-dark border shadow-sm px-2 py-1" style="font-size: 0.7rem;">
                                                         {{ count($alertasBloqueActivo ?? []) }} Registros
@@ -456,96 +462,99 @@
                                             </button>
                                         </h2>
                                         <div id="collapseTabla2" class="accordion-collapse collapse" aria-labelledby="headingTabla2" data-bs-parent="#accordionMatrizTablas">
-                                            <div class="accordion-body p-0">
+                                            <div class="accordion-body bg-light p-3 p-md-4">
 
-                                                {{-- BARRA DE ACCIÓN TABLA 2 --}}
-                                                @if($bloqueActivo)
-                                                    <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-end">
-                                                        <button type="button" class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque">
-                                                            <i class="fas fa-bell me-1 text-info"></i> Programar Alertas
-                                                        </button>
+                                                <div class="bg-white border rounded-3 shadow-sm overflow-hidden">
+                                                    {{-- BARRA DE ACCIÓN INTERNA --}}
+                                                    <div class="bg-white px-3 py-2 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                                        <span class="text-muted small"><i class="fas fa-list-ul text-info me-1"></i> Listado de notificaciones pendientes</span>
+                                                        @if($bloqueActivo)
+                                                            <button type="button" class="btn btn-light border rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque" style="font-size: 0.85rem;">
+                                                                <i class="fas fa-bell me-2 text-info"></i> Programar Alertas
+                                                            </button>
+                                                        @endif
                                                     </div>
-                                                @endif
 
-                                                <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
-                                                    <table class="table table-sm table-hover table-bordered m-0 align-middle" style="font-size: 0.8rem;">
-                                                        <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
-                                                            <tr>
-                                                                <th style="width: 15%;" class="ps-3">Radicado / Lote</th>
-                                                                <th style="width: 25%;">Cliente / Tercero</th>
-                                                                <th style="width: 25%;">Tipo de Alerta</th>
-                                                                <th style="width: 15%; text-align: center;">Fec. Programada</th>
-                                                                <th style="width: 10%; text-align: center;">Usuario</th>
-                                                                <th style="width: 10%; text-align: center;" class="pe-3">Estado</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @php $hayAlertas = false; @endphp
-
-                                                            @foreach($alertasBloqueActivo as $alerta)
-                                                                @php
-                                                                    $hayAlertas = true;
-                                                                    $opAlerta = $alerta->operacion;
-                                                                    $terceroAlerta = $opAlerta?->tercero;
-                                                                @endphp
+                                                    <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
+                                                        <table class="table table-sm table-hover m-0 align-middle" style="font-size: 0.8rem;">
+                                                            <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
                                                                 <tr>
-                                                                    <td class="font-monospace text-info fw-bold ps-3">
-                                                                        @if($alerta->id_car_sia_operaciones)
-                                                                            {{ $opAlerta?->numero_radicado ?? 'N/A' }}
-                                                                        @else
-                                                                            <i class="fas fa-layer-group"></i> LOTE API
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="fw-bold text-truncate" style="max-width: 180px;" title="{{ $terceroAlerta ? $terceroAlerta->nom_ter . ' ' . $terceroAlerta->apl1 : 'Aplica a todo el Lote' }}">
-                                                                        @if($terceroAlerta)
-                                                                            {{ $terceroAlerta->nom_ter }} {{ $terceroAlerta->apl1 }}
-                                                                        @else
-                                                                            <span class="text-muted fst-italic">Lote Completo</span>
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="fw-bold text-dark">{{ $alerta->tipoAlerta?->nombre ?? 'N/A' }}</td>
-                                                                    <td class="text-center">
-                                                                        <span class="badge bg-light text-dark border">
-                                                                            {{ $alerta->fecha_programada ? $alerta->fecha_programada->format('d/m/Y') : 'Sin fecha' }}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td class="text-center">
-                                                                        <span class="text-muted">{{ $alerta->usuario?->name ?? 'Sistema' }}</span>
-                                                                    </td>
-                                                                    <td class="text-center pe-3">
-                                                                        @if($alerta->procesado_en)
-                                                                            <span class="badge bg-success bg-opacity-10 text-success">PROCESADA</span>
-                                                                        @else
-                                                                            <span class="badge bg-warning bg-opacity-10 text-dark">PROGRAMADA</span>
-                                                                        @endif
-                                                                    </td>
+                                                                    <th style="width: 15%; border-bottom: 1px solid #dee2e6;" class="ps-3 py-2">Radicado / Lote</th>
+                                                                    <th style="width: 25%; border-bottom: 1px solid #dee2e6;" class="py-2">Cliente / Tercero</th>
+                                                                    <th style="width: 25%; border-bottom: 1px solid #dee2e6;" class="py-2">Tipo de Alerta</th>
+                                                                    <th style="width: 15%; text-align: center; border-bottom: 1px solid #dee2e6;" class="py-2">Fec. Programada</th>
+                                                                    <th style="width: 10%; text-align: center; border-bottom: 1px solid #dee2e6;" class="py-2">Usuario</th>
+                                                                    <th style="width: 10%; text-align: center; border-bottom: 1px solid #dee2e6;" class="pe-3 py-2">Estado</th>
                                                                 </tr>
-                                                            @endforeach
+                                                            </thead>
+                                                            <tbody>
+                                                                @php $hayAlertas = false; @endphp
 
-                                                            @if(!$hayAlertas)
-                                                                <tr>
-                                                                    <td colspan="6" class="text-center py-4 bg-white text-muted">
-                                                                        <i class="fas fa-bell-slash mb-2 fs-4 text-muted opacity-50"></i><br>
-                                                                        <span>No hay alertas programadas.</span>
-                                                                    </td>
-                                                                </tr>
-                                                            @endif
-                                                        </tbody>
-                                                    </table>
+                                                                @foreach($alertasBloqueActivo as $alerta)
+                                                                    @php
+                                                                        $hayAlertas = true;
+                                                                        $opAlerta = $alerta->operacion;
+                                                                        $terceroAlerta = $opAlerta?->tercero;
+                                                                    @endphp
+                                                                    <tr style="border-bottom: 1px solid #f1f3f5;">
+                                                                        <td class="font-monospace text-info fw-bold ps-3">
+                                                                            @if($alerta->id_car_sia_operaciones)
+                                                                                {{ $opAlerta?->numero_radicado ?? 'N/A' }}
+                                                                            @else
+                                                                                <i class="fas fa-layer-group"></i> LOTE API
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="fw-bold text-truncate" style="max-width: 180px;" title="{{ $terceroAlerta ? $terceroAlerta->nom_ter . ' ' . $terceroAlerta->apl1 : 'Aplica a todo el Lote' }}">
+                                                                            @if($terceroAlerta)
+                                                                                {{ $terceroAlerta->nom_ter }} {{ $terceroAlerta->apl1 }}
+                                                                            @else
+                                                                                <span class="text-muted fst-italic">Lote Completo</span>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="fw-bold text-dark">{{ $alerta->tipoAlerta?->nombre ?? 'N/A' }}</td>
+                                                                        <td class="text-center">
+                                                                            <span class="badge bg-light text-dark border">
+                                                                                {{ $alerta->fecha_programada ? $alerta->fecha_programada->format('d/m/Y') : 'Sin fecha' }}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td class="text-center">
+                                                                            <span class="text-muted">{{ $alerta->usuario?->name ?? 'Sistema' }}</span>
+                                                                        </td>
+                                                                        <td class="text-center pe-3">
+                                                                            @if($alerta->procesado_en)
+                                                                                <span class="badge bg-success bg-opacity-10 text-success">PROCESADA</span>
+                                                                            @else
+                                                                                <span class="badge bg-warning bg-opacity-10 text-dark">PROGRAMADA</span>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+
+                                                                @if(!$hayAlertas)
+                                                                    <tr>
+                                                                        <td colspan="6" class="text-center py-5 bg-white text-muted">
+                                                                            <i class="fas fa-bell-slash mb-3 fs-3 text-muted opacity-50"></i><br>
+                                                                            <span>No hay alertas programadas.</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {{-- ======================================================== --}}
-                                    {{-- TABLA 3: TIPOS DE OPERACIÓN (Colapsado por defecto) --}}
+                                    {{-- TABLA 3: TIPOS DE OPERACIÓN --}}
                                     {{-- ======================================================== --}}
                                     <div class="accordion-item">
                                         <h2 class="accordion-header" id="headingTabla3">
-                                            <button class="accordion-button collapsed bg-light px-4 py-3 text-dark fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla3" aria-expanded="false" aria-controls="collapseTabla3" style="font-size: 0.85rem;">
+                                            <button class="accordion-button collapsed px-4 py-3 fw-bold shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTabla3" aria-expanded="false" aria-controls="collapseTabla3" style="font-size: 0.9rem;">
                                                 <div class="d-flex align-items-center justify-content-between w-100 me-3">
                                                     <div>
-                                                        <i class="fas fa-tags text-primary me-2"></i> Tabla 3: Tipos de Certificados generados a este lote
+                                                        <i class="fas fa-tags me-2"></i> Tabla 3: Tipos de Certificados
                                                     </div>
                                                     <span class="badge bg-white text-dark border shadow-sm px-2 py-1" style="font-size: 0.7rem;">
                                                         {{ count($tiposBloqueActivo ?? []) }} Registros
@@ -554,62 +563,65 @@
                                             </button>
                                         </h2>
                                         <div id="collapseTabla3" class="accordion-collapse collapse" aria-labelledby="headingTabla3" data-bs-parent="#accordionMatrizTablas">
-                                            <div class="accordion-body p-0">
+                                            <div class="accordion-body bg-light p-3 p-md-4">
 
-                                                {{-- BARRA DE ACCIÓN TABLA 3 --}}
-                                                @if($bloqueActivo)
-                                                    <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-end">
-                                                        <button type="button" class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" data-bs-toggle="modal" data-bs-target="#modalMasivo">
-                                                            <i class="fas fa-database me-1 text-danger"></i> Generar certificados
-                                                        </button>
+                                                <div class="bg-white border rounded-3 shadow-sm overflow-hidden">
+                                                    {{-- BARRA DE ACCIÓN INTERNA --}}
+                                                    <div class="bg-white px-3 py-2 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                                                        <span class="text-muted small"><i class="fas fa-file-contract text-danger me-1"></i> Tipologías asignadas</span>
+                                                        @if($bloqueActivo)
+                                                            <button type="button" class="btn btn-light border rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center text-nowrap" data-bs-toggle="modal" data-bs-target="#modalMasivo" style="font-size: 0.85rem;">
+                                                                <i class="fas fa-database me-2 text-danger"></i> Generar certificados
+                                                            </button>
+                                                        @endif
                                                     </div>
-                                                @endif
 
-                                                <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
-                                                    <table class="table table-sm table-hover table-bordered m-0 align-middle" style="font-size: 0.8rem;">
-                                                        <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
-                                                            <tr>
-                                                                <th style="width: 10%; text-align: center;" class="ps-3">ID</th>
-                                                                <th style="width: 30%;">Nombre de Tipología</th>
-                                                                <th style="width: 45%;">Asignación / Alcance</th>
-                                                                <th style="width: 15%; text-align: center;" class="pe-3">Usuario</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            @php $tieneTipos = false; @endphp
-
-                                                            @foreach($tiposBloqueActivo as $tipoOp)
-                                                                @php
-                                                                    $tieneTipos = true;
-                                                                    $tipoCat = $tipoOp->tipo;
-                                                                    $opAsignada = $tipoOp->operacion;
-                                                                @endphp
+                                                    <div class="table-responsive custom-scrollbar table-mobile-scroll" style="max-height: 350px; overflow-y: auto;">
+                                                        <table class="table table-sm table-hover m-0 align-middle" style="font-size: 0.8rem;">
+                                                            <thead class="table-light text-uppercase text-muted sticky-top" style="z-index: 10; font-size: 0.7rem;">
                                                                 <tr>
-                                                                    <td class="font-monospace text-center fw-bold ps-3">{{ $tipoOp->id }}</td>
-                                                                    <td class="fw-bold text-dark">{{ $tipoCat?->nombre ?? 'N/A' }}</td>
-                                                                    <td class="text-muted">
-                                                                        @if($tipoOp->id_car_sia_operaciones)
-                                                                            <span class="badge bg-light text-dark border">Individual</span> Radicado: {{ $opAsignada?->numero_radicado ?? 'N/A' }}
-                                                                        @else
-                                                                            <span class="badge bg-primary bg-opacity-10 text-primary border-0">Lote</span> API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}
-                                                                        @endif
-                                                                    </td>
-                                                                    <td class="text-center pe-3">
-                                                                        <span class="text-muted">{{ $tipoOp->usuario?->name ?? 'Sistema' }}</span>
-                                                                    </td>
+                                                                    <th style="width: 10%; text-align: center; border-bottom: 1px solid #dee2e6;" class="ps-3 py-2">ID</th>
+                                                                    <th style="width: 30%; border-bottom: 1px solid #dee2e6;" class="py-2">Nombre de Tipología</th>
+                                                                    <th style="width: 45%; border-bottom: 1px solid #dee2e6;" class="py-2">Asignación / Alcance</th>
+                                                                    <th style="width: 15%; text-align: center; border-bottom: 1px solid #dee2e6;" class="pe-3 py-2">Usuario</th>
                                                                 </tr>
-                                                            @endforeach
+                                                            </thead>
+                                                            <tbody>
+                                                                @php $tieneTipos = false; @endphp
 
-                                                            @if(!$tieneTipos)
-                                                                <tr>
-                                                                    <td colspan="4" class="text-center py-4 bg-white text-muted">
-                                                                        <i class="fas fa-folder-open mb-2 fs-4 text-primary opacity-50"></i><br>
-                                                                        <span>No hay tipos registrados.</span>
-                                                                    </td>
-                                                                </tr>
-                                                            @endif
-                                                        </tbody>
-                                                    </table>
+                                                                @foreach($tiposBloqueActivo as $tipoOp)
+                                                                    @php
+                                                                        $tieneTipos = true;
+                                                                        $tipoCat = $tipoOp->tipo;
+                                                                        $opAsignada = $tipoOp->operacion;
+                                                                    @endphp
+                                                                    <tr style="border-bottom: 1px solid #f1f3f5;">
+                                                                        <td class="font-monospace text-center fw-bold ps-3">{{ $tipoOp->id }}</td>
+                                                                        <td class="fw-bold text-dark">{{ $tipoCat?->nombre ?? 'N/A' }}</td>
+                                                                        <td class="text-muted">
+                                                                            @if($tipoOp->id_car_sia_operaciones)
+                                                                                <span class="badge bg-light text-dark border">Individual</span> Radicado: {{ $opAsignada?->numero_radicado ?? 'N/A' }}
+                                                                            @else
+                                                                                <span class="badge bg-primary bg-opacity-10 text-primary border-0">Lote</span> API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}
+                                                                            @endif
+                                                                        </td>
+                                                                        <td class="text-center pe-3">
+                                                                            <span class="text-muted">{{ $tipoOp->usuario?->name ?? 'Sistema' }}</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+
+                                                                @if(!$tieneTipos)
+                                                                    <tr>
+                                                                        <td colspan="4" class="text-center py-5 bg-white text-muted">
+                                                                            <i class="fas fa-folder-open mb-3 fs-3 text-primary opacity-50"></i><br>
+                                                                            <span>No hay tipos registrados.</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @endif
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -624,7 +636,7 @@
                     {{-- END 3.4 REPORTE CONFIGURACIONES --}}
 
                     {{-- 3.5 TABLA PRINCIPAL Y FILTROS --}}
-                    <div class="card card-custom shadow-sm border-0 mb-4">
+                    <div class="card card-custom shadow border-0 mb-4">
 
                         {{-- Encabezado Integrado y Controles --}}
                         <div class="card-header bg-white border-bottom p-4" style="border-radius: 20px 20px 0 0;">
@@ -632,8 +644,9 @@
 
                                 {{-- IZQUIERDA: Textos y Título --}}
                                 <div class="flex-grow-1 pe-md-3">
-                                    <h6 class="fw-bold m-0" style="color: var(--c-text);">
-                                        <i class="fas fa-list text-muted me-2"></i> Operaciones del Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}
+                                    <h6 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: var(--c-text);">
+                                        <i class="fas fa-list text-secondary border rounded p-1" style="border-color: var(--c-border) !important;"></i>
+                                        Operaciones del Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}
                                     </h6>
                                     <p class="text-muted mb-0 mt-2" style="font-size: 0.85rem; max-width: 650px;">
                                         Se muestran exclusivamente los clientes asociados al periodo de <strong>{{ $textoPeriodo ?? 'Mes Seleccionado' }}</strong> para la gestión de certificados. Revisa el estado, los últimos eventos y alertas de cada operación.
@@ -645,14 +658,15 @@
 
                                     {{-- Botones Superiores --}}
                                     <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-md-end gap-2 w-100">
-                                        <span class="badge bg-pastel-info text-dark rounded-pill px-3 py-2 d-none d-md-inline-block shadow-sm">
-                                            <i class="fas fa-hashtag me-1"></i> {{ number_format($operaciones->total(), 0, ',', '.') }} Registros
+                                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2 d-none d-md-inline-block shadow-sm">
+                                            <i class="fas fa-hashtag text-muted me-1"></i> {{ number_format($operaciones->total(), 0, ',', '.') }} Registros
                                         </span>
-                                        <button class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFiltros" aria-expanded="{{ (request('anio') || request('buscar')) ? 'true' : 'false' }}" aria-controls="collapseFiltros">
+                                        <button class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFiltros" aria-expanded="{{ (request('anio') || request('buscar')) ? 'true' : 'false' }}" aria-controls="collapseFiltros">
                                             <i class="fas fa-filter text-muted me-1"></i> Filtros
                                         </button>
-                                        <button class="btn btn-light border rounded-pill px-3 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTablaOperaciones" aria-expanded="false" aria-controls="collapseTablaOperaciones">
-                                            <i class="fas fa-angle-down me-1"></i> Tabla
+                                        {{-- Botón principal destacado --}}
+                                        <button class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center w-100 w-md-auto text-nowrap" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTablaOperaciones" aria-expanded="false" aria-controls="collapseTablaOperaciones">
+                                            <i class="fas fa-table me-2"></i> Ver Registros
                                         </button>
                                     </div>
 
@@ -682,120 +696,134 @@
 
                         {{-- Contenedor Colapsable para la Tabla y Paginación --}}
                         <div class="collapse" id="collapseTablaOperaciones">
-                            {{-- Tabla de Registros --}}
-                            <div class="table-responsive table-mobile-scroll" style="border-color: var(--c-border) !important;">
-                                <table class="table table-sm table-bordered table-hover align-middle mb-0 text-nowrap" style="font-size: 0.8rem;">
-                                    <thead class="bg-light text-muted text-uppercase" style="font-size: 0.7rem;">
-                                        <tr>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Radicado / Bloque</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 20%;">Cliente (Tercero)</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Estado Actual</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Último Evento</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 15%;">Última Alerta</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-secondary" style="font-weight: 600; width: 12%;">Fecha</th>
-                                            <th class="px-3 py-2 border-bottom-0 text-center text-secondary" style="font-weight: 600; width: 8%;">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($operaciones as $operacion)
-                                            <tr class="bg-white">
-                                                <td class="px-3 py-2">
-                                                    <div class="fw-bold text-dark">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
-                                                    <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    @if($operacion->tercero)
-                                                        <div class="fw-bold text-dark">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
-                                                        <div class="text-muted" style="font-size: 0.7rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
-                                                    @else
-                                                        <span class="badge bg-pastel-warning text-dark px-2 py-1 rounded-1"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    @php
-                                                        $todosLosEstados = collect();
-                                                        if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
-                                                        if(isset($operacion->estadosBloque)) $todosLosEstados = $todosLosEstados->concat($operacion->estadosBloque);
-                                                        $ultimoEstado = $todosLosEstados->sortByDesc('created_at')->first();
-                                                        $esEstadoBloque = $ultimoEstado && is_null($ultimoEstado->id_car_sia_operaciones);
-                                                        $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
-                                                        $clasePastel = match(strtolower(trim($estadoNombre))) {
-                                                            'aprobado', 'completado', 'vigente', 'procesado' => 'bg-pastel-success',
-                                                            'rechazado', 'anulado' => 'bg-pastel-warning',
-                                                            'pendiente', 'nuevo', 'pendiente por procesar' => 'bg-pastel-secondary',
-                                                            default => 'bg-pastel-primary'
-                                                        };
-                                                    @endphp
-                                                    <span class="badge {{ $clasePastel }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                                        <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    @php
-                                                        $todosLosTipos = collect();
-                                                        if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
-                                                        if(isset($operacion->tiposBloque)) $todosLosTipos = $todosLosTipos->concat($operacion->tiposBloque);
-                                                        $ultimoTipoObj = $todosLosTipos->sortByDesc('created_at')->first();
-                                                        $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
-                                                        $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
-                                                    @endphp
-                                                    <span class="badge bg-light text-dark border rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                                        <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    @php
-                                                        $todasLasAlertas = collect();
-                                                        if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
-                                                        if(isset($operacion->alertasBloque)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertasBloque);
-                                                        $ultimaAlertaObj = $todasLasAlertas->sortByDesc('created_at')->first();
-                                                        $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
-                                                    @endphp
-                                                    @if($ultimaAlertaObj)
-                                                        <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
-                                                            <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
-                                                            {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
-                                                        </span>
-                                                    @else
-                                                        <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-minus opacity-50"></i></span>
-                                                    @endif
-                                                </td>
-                                                <td class="px-3 py-2">
-                                                    <div class="text-gray-800 fw-bold">{{ $operacion->created_at->format('d/m/Y') }}</div>
-                                                    <div class="text-muted" style="font-size: 0.7rem;">{{ $operacion->created_at->format('h:i A') }}</div>
-                                                </td>
-                                                <td class="px-3 py-2 text-center">
-                                                    <a href="{{ route('certificados.operaciones.show', $operacion->id) }}" class="btn btn-light btn-sm rounded-1 border shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; padding: 0;" title="Ver Detalle">
-                                                        <i class="fas fa-eye text-primary" style="font-size: 0.75rem;"></i>
-                                                    </a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center py-5 bg-white">
-                                                    <div class="text-center px-4 py-4">
-                                                        <i class="fas fa-search fs-2 text-muted opacity-25 mb-3"></i>
-                                                        <h6 class="fw-bold text-dark mb-1">Lote Vacío o Sin Resultados</h6>
-                                                        <p class="text-muted small mb-0">No se encontraron operaciones en el Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}.</p>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
+                            {{-- Fondo gris suave que encapsula todo el contenido del despliegue --}}
+                            <div class="card-body bg-light p-3 p-md-4 border-top">
 
-                            {{-- Paginación --}}
-                            @if($operaciones->hasPages() || $operaciones->total() > 0)
-                                <div class="card-footer bg-light border-top pt-3 pb-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3" style="border-radius: 0 0 20px 20px;">
-                                    <span class="text-muted text-center" style="font-size: 0.8rem;">
-                                        Mostrando <span class="fw-bold text-dark">{{ $operaciones->firstItem() ?? 0 }}</span> a <span class="fw-bold text-dark">{{ $operaciones->lastItem() ?? 0 }}</span> de <span class="fw-bold text-dark">{{ number_format($operaciones->total(), 0, ',', '.') }}</span> registros
-                                    </span>
-                                    <div class="m-0" style="font-size: 0.85rem; overflow-x: auto; max-width: 100%;">
-                                        {{ $operaciones->appends(request()->query())->links('pagination::bootstrap-5') }}
+                                {{-- Caja blanca con sombra que contiene la tabla --}}
+                                <div class="bg-white border rounded-3 shadow-sm overflow-hidden">
+
+                                    {{-- Barra de título interna (Opcional, para consistencia) --}}
+                                    <div class="bg-white px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small"><i class="fas fa-list text-primary me-1"></i> Detalle de registros individuales</span>
                                     </div>
-                                </div>
-                            @endif
+
+                                    {{-- Tabla de Registros --}}
+                                    <div class="table-responsive custom-scrollbar table-mobile-scroll">
+                                        <table class="table table-sm table-hover align-middle mb-0 text-nowrap" style="font-size: 0.8rem;">
+                                            <thead class="table-light text-muted text-uppercase sticky-top" style="z-index: 10; font-size: 0.7rem;">
+                                                <tr>
+                                                    <th class="ps-3 py-2 text-secondary" style="font-weight: 600; width: 15%; border-bottom: 1px solid #dee2e6;">Radicado / Bloque</th>
+                                                    <th class="py-2 text-secondary" style="font-weight: 600; width: 20%; border-bottom: 1px solid #dee2e6;">Cliente (Tercero)</th>
+                                                    <th class="py-2 text-secondary" style="font-weight: 600; width: 15%; border-bottom: 1px solid #dee2e6;">Estado Actual</th>
+                                                    <th class="py-2 text-secondary" style="font-weight: 600; width: 15%; border-bottom: 1px solid #dee2e6;">Último Evento</th>
+                                                    <th class="py-2 text-secondary" style="font-weight: 600; width: 15%; border-bottom: 1px solid #dee2e6;">Última Alerta</th>
+                                                    <th class="py-2 text-secondary" style="font-weight: 600; width: 12%; border-bottom: 1px solid #dee2e6;">Fecha</th>
+                                                    <th class="pe-3 py-2 text-center text-secondary" style="font-weight: 600; width: 8%; border-bottom: 1px solid #dee2e6;">Acción</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($operaciones as $operacion)
+                                                    <tr style="border-bottom: 1px solid #f1f3f5;">
+                                                        <td class="ps-3 py-2">
+                                                            <div class="fw-bold text-dark">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
+                                                            <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
+                                                        </td>
+                                                        <td class="py-2">
+                                                            @if($operacion->tercero)
+                                                                <div class="fw-bold text-dark">{{ $operacion->tercero->nom_ter }} {{ $operacion->tercero->apl1 }}</div>
+                                                                <div class="text-muted" style="font-size: 0.7rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                                            @else
+                                                                <span class="badge bg-pastel-warning text-dark px-2 py-1 rounded-1"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="py-2">
+                                                            @php
+                                                                $todosLosEstados = collect();
+                                                                if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
+                                                                if(isset($operacion->estadosBloque)) $todosLosEstados = $todosLosEstados->concat($operacion->estadosBloque);
+                                                                $ultimoEstado = $todosLosEstados->sortByDesc('created_at')->first();
+                                                                $esEstadoBloque = $ultimoEstado && is_null($ultimoEstado->id_car_sia_operaciones);
+                                                                $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
+                                                                $clasePastel = match(strtolower(trim($estadoNombre))) {
+                                                                    'aprobado', 'completado', 'vigente', 'procesado' => 'bg-pastel-success text-success',
+                                                                    'rechazado', 'anulado' => 'bg-pastel-warning text-dark',
+                                                                    'pendiente', 'nuevo', 'pendiente por procesar' => 'bg-light text-secondary border',
+                                                                    default => 'bg-pastel-primary text-primary'
+                                                                };
+                                                            @endphp
+                                                            <span class="badge {{ $clasePastel }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                                                <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2">
+                                                            @php
+                                                                $todosLosTipos = collect();
+                                                                if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
+                                                                if(isset($operacion->tiposBloque)) $todosLosTipos = $todosLosTipos->concat($operacion->tiposBloque);
+                                                                $ultimoTipoObj = $todosLosTipos->sortByDesc('created_at')->first();
+                                                                $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
+                                                                $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
+                                                            @endphp
+                                                            <span class="badge bg-light text-dark border rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                                                <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2">
+                                                            @php
+                                                                $todasLasAlertas = collect();
+                                                                if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
+                                                                if(isset($operacion->alertasBloque)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertasBloque);
+                                                                $ultimaAlertaObj = $todasLasAlertas->sortByDesc('created_at')->first();
+                                                                $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
+                                                            @endphp
+                                                            @if($ultimaAlertaObj)
+                                                                <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary text-primary' : 'bg-pastel-info text-info' }} rounded-1 px-2 py-1 fw-semibold" style="font-size: 0.7rem;">
+                                                                    <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
+                                                                    {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
+                                                                </span>
+                                                            @else
+                                                                <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-minus opacity-50"></i></span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="py-2">
+                                                            <div class="text-gray-800 fw-bold">{{ $operacion->created_at->format('d/m/Y') }}</div>
+                                                            <div class="text-muted" style="font-size: 0.7rem;">{{ $operacion->created_at->format('h:i A') }}</div>
+                                                        </td>
+                                                        <td class="pe-3 py-2 text-center">
+                                                            <a href="{{ route('certificados.operaciones.show', $operacion->id) }}" class="btn btn-light btn-sm rounded-1 border shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; padding: 0;" title="Ver Detalle">
+                                                                <i class="fas fa-eye text-primary" style="font-size: 0.75rem;"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="7" class="text-center py-5 bg-white">
+                                                            <div class="text-center px-4 py-4">
+                                                                <i class="fas fa-search fs-2 text-muted opacity-25 mb-3"></i>
+                                                                <h6 class="fw-bold text-dark mb-1">Lote Vacío o Sin Resultados</h6>
+                                                                <p class="text-muted small mb-0">No se encontraron operaciones en el Lote API-{{ str_pad($bloqueActivo ?? 0, 4, '0', STR_PAD_LEFT) }}.</p>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {{-- Paginación Integrada a la caja blanca --}}
+                                    @if($operaciones->hasPages() || $operaciones->total() > 0)
+                                        <div class="bg-light border-top pt-3 pb-3 px-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                                            <span class="text-muted text-center" style="font-size: 0.8rem;">
+                                                Mostrando <span class="fw-bold text-dark">{{ $operaciones->firstItem() ?? 0 }}</span> a <span class="fw-bold text-dark">{{ $operaciones->lastItem() ?? 0 }}</span> de <span class="fw-bold text-dark">{{ number_format($operaciones->total(), 0, ',', '.') }}</span> registros
+                                            </span>
+                                            <div class="m-0 pagination-sm custom-pagination" style="font-size: 0.85rem; overflow-x: auto; max-width: 100%;">
+                                                {{ $operaciones->appends(request()->query())->links('pagination::bootstrap-5') }}
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div> {{-- Fin Caja Blanca --}}
+
+                            </div> {{-- Fin Fondo Gris --}}
                         </div>
                     </div>
                     {{-- END 3.5 TABLA PRINCIPAL --}}
