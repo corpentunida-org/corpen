@@ -608,9 +608,7 @@
                 return;
             }
 
-            const originalText = btn.innerHTML;
             btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Subiendo...';
 
             const formData = new FormData(document.getElementById('form-subir-documento'));
             const url = "{{ route('archivo.empleado.storeDocumento') }}";
@@ -637,7 +635,6 @@
             })
             .catch(err => {
                 btn.disabled = false;
-                btn.innerHTML = originalText;
                 let msg = err.message || (err.errors ? Object.values(err.errors).flat().join('\n') : 'Error técnico al subir');
                 Swal.fire('Error', msg, 'error');
             });
@@ -672,7 +669,6 @@
                     const fd = new FormData(form);
                     
                     btnSv.disabled = true;
-                    btnSv.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
 
                     fetch(form.action, {
                         method: 'POST',
@@ -686,7 +682,6 @@
                             .then(() => window.location.reload());
                         } else {
                             btnSv.disabled = false;
-                            btnSv.innerHTML = 'Guardar Cambios';
                             let errs = d.errors ? Object.values(d.errors).flat().join('\n') : 'No se pudo guardar';
                             Swal.fire('Error', errs, 'error');
                         }

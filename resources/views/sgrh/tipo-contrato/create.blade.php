@@ -44,7 +44,6 @@
                         return;
                     }
                     boton.disabled = true;
-                    boton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Guardando...';
                 });
             })();
         </script>

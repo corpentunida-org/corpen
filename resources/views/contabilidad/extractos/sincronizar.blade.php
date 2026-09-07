@@ -96,7 +96,6 @@
                         document.getElementById('loading-overlay-1').style.display = 'flex';
                         const btn = this.querySelector('button');
                         btn.disabled = true;
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Analizando...';
                     });
                 }
             });
