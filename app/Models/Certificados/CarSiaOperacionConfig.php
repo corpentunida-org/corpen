@@ -13,7 +13,7 @@ class CarSiaOperacionConfig extends Model
     // 1. Especificar la tabla exacta
     protected $table = 'car_sia_operaciones_config';
 
-    // 2. Campos asignables masivamente
+    // 2. Campos asignables masivamente (SIN el 'id' porque MySQL lo genera solo)
     protected $fillable = [
         'numero_bloque',
         'id_car_sia_operaciones',
