@@ -30,6 +30,7 @@ use App\Models\Flujo\Workflow;
 use App\Models\Correspondencia\CorrespondenciaProceso;
 use App\Models\Correspondencia\ComunicacionSalida;
 use App\Models\Archivo\GdoEmpleado;
+use App\Models\Sgrh\Empleado as SgrhEmpleado;
 //Cartera
 use App\Models\Cartera\CarComprobantePago;
 //Certificados
@@ -155,6 +156,22 @@ class User extends Authenticatable
         return null; // Retorna null si no tiene foto, así puedes manejar el "fallback" (iniciales) en la vista
     }
     // ==========================================
+
+    /**
+     * Colaborador de Sgrh (RR. HH. actual) asociado a esta cuenta, resuelto por coincidencia de
+     * correo — mismo criterio que getCargoAttribute() de arriba, pero contra el catálogo
+     * vigente (sgrh_empleados.correo_corporativo) en vez del legado GdoCargo. Usado por el
+     * módulo de Vacaciones para saber "qué Empleado es el usuario logueado".
+     */
+    public function getEmpleadoSgrhAttribute(): ?SgrhEmpleado
+    {
+        if (empty($this->email)) {
+            return null;
+        }
+
+        return SgrhEmpleado::where('correo_corporativo', $this->email)->first();
+    }
+
     public function soportesEscalados()
     {
         return $this->hasMany(ScpSoporte::class, 'usuario_escalado', 'id');

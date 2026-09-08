@@ -431,7 +431,7 @@
                                      data-bs-parent="#accordionRolesPermissions">
                                     <div class="accordion-body p-3 p-md-4 bg-light">
 
-                                        @php $permisosDelRol = $permisosUsuario->where('role_id', $rol->role_id); @endphp
+                                        @php $permisosDelRol = $permisosPorRol->get($rol->role_id) ?? collect(); @endphp
 
                                         @if ($permisosDelRol->isEmpty())
                                             <div class="alert alert-warning d-flex align-items-start gap-2 mb-0" role="alert">

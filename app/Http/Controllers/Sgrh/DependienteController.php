@@ -10,6 +10,11 @@ use Illuminate\Http\Request;
 
 class DependienteController extends Controller
 {
+    // Códigos de tipo_documentos (ver migración add_codigo_to_tipo_documentos_table) cuyo
+    // número siempre es solo dígitos en Colombia. Cédula de Extranjería, Pasaporte y Permiso
+    // por Protección Temporal (22/41/48) quedan fuera a propósito: suelen incluir letras.
+    private const TIPOS_DOCUMENTO_NUMERICOS = ['11', '12', '13', '31'];
+
     private function auditoria($accion)
     {
         app(AuditoriaController::class)->create($accion, 'SGRH');
@@ -51,16 +56,27 @@ class DependienteController extends Controller
 
     private function validado(Request $request): array
     {
+        $esNumerico = in_array($request->input('tipo_documento'), self::TIPOS_DOCUMENTO_NUMERICOS, true);
+
         $validated = $request->validate([
             'nombre1' => 'required|string|max:255',
             'nombre2' => 'nullable|string|max:255',
             'apellido1' => 'required|string|max:255',
             'apellido2' => 'nullable|string|max:255',
             'tipo_documento' => 'nullable|string|exists:tipo_documentos,codigo',
-            'documento_identificacion' => 'nullable|string|max:20',
+            'documento_identificacion' => [
+                'nullable',
+                'string',
+                'max:20',
+                $esNumerico ? 'regex:/^[0-9]+$/' : 'regex:/^[A-Za-z0-9]+$/',
+            ],
             'fecha_nacimiento' => 'required|date|before:today',
             'genero' => 'nullable|in:V,H',
             'parentesco' => 'nullable|string|max:10',
+        ], [
+            'documento_identificacion.regex' => $esNumerico
+                ? 'El número de documento debe contener solo dígitos para este tipo de documento.'
+                : 'El número de documento solo puede contener letras y números, sin espacios ni símbolos.',
         ]);
 
         // Nombres y apellidos siempre en mayúsculas y sin espacios de sobra (al inicio/final ni

@@ -3,6 +3,7 @@
 namespace App\Models\Sgrh;
 
 use App\Models\Maestras\MaeTerceros;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -126,5 +127,45 @@ class Empleado extends Model
         }
 
         return trim("{$this->tercero->nom1} {$this->tercero->nom2} {$this->tercero->apl1} {$this->tercero->apl2}");
+    }
+
+    /**
+     * Cuenta de login (User) de este colaborador, resuelta por coincidencia de correo —
+     * correo_corporativo no es una FK real a users, es el mismo criterio que ya usa
+     * User::getCargoAttribute() para el módulo legado (GdoCargo::where('correo_corporativo',
+     * $this->email)). Sin esto no hay forma de saber a quién notificarle ni qué Empleado
+     * corresponde al usuario logueado (ver VacacionAprobadorResolver::empleadoDeUsuario()).
+     */
+    public function getUserAttribute(): ?User
+    {
+        if (empty($this->correo_corporativo)) {
+            return null;
+        }
+
+        return User::where('email', $this->correo_corporativo)->first();
+    }
+
+    public function vacacionSolicitudes()
+    {
+        return $this->hasMany(VacacionSolicitud::class, 'empleado_id')->latest('fecha_inicio');
+    }
+
+    public function vacacionAjustes()
+    {
+        return $this->hasMany(VacacionSaldoAjuste::class, 'empleado_id')->latest();
+    }
+
+    /**
+     * Antigüedad en meses completos, o null si la fecha de ingreso no está determinada
+     * (contrato Indefinido sin fecha_inicio registrada) — VacacionValidador bloquea el
+     * autoservicio de solicitud en ese caso.
+     */
+    public function getAntiguedadEnMesesAttribute(): ?int
+    {
+        if ($this->fecha_ingreso === null) {
+            return null;
+        }
+
+        return (int) $this->fecha_ingreso->diffInMonths(now());
     }
 }

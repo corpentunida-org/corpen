@@ -494,6 +494,40 @@
         </div>
     </div>
 
+    {{-- VACACIONES --}}
+    @can('sgrh.vacacion.saldo.index')
+        <div class="card mt-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">Vacaciones</h5>
+                    <a href="{{ route('sgrh.vacacion.saldo.show', $empleado) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-calendar-check"></i> Ver saldo y solicitudes
+                    </a>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <p class="text-muted small text-uppercase mb-1">Saldo actual</p>
+                        @if ($saldoVacaciones === null)
+                            <p class="fw-bold text-secondary mb-0">Sin determinar</p>
+                        @else
+                            <p class="fw-bold {{ $saldoVacaciones < 0 ? 'text-danger' : 'text-success' }} mb-0">{{ $saldoVacaciones }} días</p>
+                        @endif
+                    </div>
+                    <div class="col-md-9">
+                        <p class="text-muted small text-uppercase mb-1">Últimas solicitudes</p>
+                        @forelse ($empleado->vacacionSolicitudes->take(3) as $solicitud)
+                            <span class="badge bg-light text-dark border me-1">
+                                {{ $solicitud->fecha_inicio->format('d/m/Y') }} - {{ $solicitud->fecha_fin->format('d/m/Y') }} ({{ $solicitud->estado }})
+                            </span>
+                        @empty
+                            <p class="small text-muted mb-0">Sin solicitudes registradas.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endcan
+
     {{-- MODALES: listado de eventos (creación + modificaciones) por cada contrato --}}
     @foreach ($empleado->contratos as $contrato)
         <div class="modal fade" id="modalEventos{{ $contrato->id }}" tabindex="-1" aria-hidden="true">
@@ -592,14 +626,15 @@
                             <div class="col-md-7">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Número de documento</label>
                                 <input type="text" name="documento_identificacion" id="dependiente_documento_identificacion"
-                                       class="form-control @error('documento_identificacion') is-invalid @enderror" value="{{ old('documento_identificacion') }}">
+                                       class="form-control @error('documento_identificacion') is-invalid @enderror" value="{{ old('documento_identificacion') }}" maxlength="20">
+                                <div class="form-text" id="dependiente_documento_ayuda"></div>
                                 @error('documento_identificacion')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Primer nombre</label>
-                                <input type="text" name="nombre1" id="dependiente_nombre1"
+                                <input type="text" name="nombre1" id="dependiente_nombre1" style="text-transform: uppercase;"
                                        class="form-control @error('nombre1') is-invalid @enderror" value="{{ old('nombre1') }}" required>
                                 @error('nombre1')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -607,11 +642,11 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Segundo nombre</label>
-                                <input type="text" name="nombre2" id="dependiente_nombre2" class="form-control" value="{{ old('nombre2') }}">
+                                <input type="text" name="nombre2" id="dependiente_nombre2" class="form-control" style="text-transform: uppercase;" value="{{ old('nombre2') }}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Primer apellido</label>
-                                <input type="text" name="apellido1" id="dependiente_apellido1"
+                                <input type="text" name="apellido1" id="dependiente_apellido1" style="text-transform: uppercase;"
                                        class="form-control @error('apellido1') is-invalid @enderror" value="{{ old('apellido1') }}" required>
                                 @error('apellido1')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -619,7 +654,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Segundo apellido</label>
-                                <input type="text" name="apellido2" id="dependiente_apellido2" class="form-control" value="{{ old('apellido2') }}">
+                                <input type="text" name="apellido2" id="dependiente_apellido2" class="form-control" style="text-transform: uppercase;" value="{{ old('apellido2') }}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label fw-bold text-dark small text-uppercase" style="letter-spacing: .04em;">Fecha de nacimiento</label>
@@ -741,6 +776,23 @@
                 toastr.error("{{ $errors->first() }}");
             @endif
 
+            // Mismo criterio que DependienteController::TIPOS_DOCUMENTO_NUMERICOS: Cédula de
+            // Extranjería (22), Pasaporte (41) y Permiso por Protección Temporal (48) suelen
+            // incluir letras, el resto es siempre numérico en Colombia.
+            const TIPOS_DOCUMENTO_NUMERICOS_DEPENDIENTE = ['11', '12', '13', '31'];
+
+            function actualizarRestriccionDocumentoDependiente() {
+                const select = document.getElementById('dependiente_tipo_documento');
+                const input = document.getElementById('dependiente_documento_identificacion');
+                const ayuda = document.getElementById('dependiente_documento_ayuda');
+                const esNumerico = TIPOS_DOCUMENTO_NUMERICOS_DEPENDIENTE.includes(select.value);
+
+                ayuda.textContent = esNumerico ? 'Solo números.' : 'Letras y números, sin espacios ni símbolos.';
+                input.value = esNumerico
+                    ? input.value.replace(/[^0-9]/g, '')
+                    : input.value.replace(/[^A-Za-z0-9]/g, '');
+            }
+
             // Un solo modal para agregar y editar dependientes: sin argumento = modo alta
             // (POST a la ruta del colaborador); con un dependiente = modo edición (PUT a la
             // ruta de ese dependiente, formulario precargado).
@@ -771,7 +823,11 @@
                     metodo.value = 'POST';
                     document.getElementById('dependiente_id').value = '';
                 }
+                actualizarRestriccionDocumentoDependiente();
             }
+
+            document.getElementById('dependiente_tipo_documento').addEventListener('change', actualizarRestriccionDocumentoDependiente);
+            document.getElementById('dependiente_documento_identificacion').addEventListener('input', actualizarRestriccionDocumentoDependiente);
 
             @php
                 $camposDependiente = ['nombre1', 'nombre2', 'apellido1', 'apellido2', 'tipo_documento', 'documento_identificacion', 'fecha_nacimiento', 'genero', 'parentesco'];
@@ -795,6 +851,7 @@
                         form.action = "{{ route('sgrh.dependiente.store', $empleado) }}";
                         metodo.value = 'POST';
                     }
+                    actualizarRestriccionDocumentoDependiente();
                     new bootstrap.Modal(document.getElementById('modalDependiente')).show();
                 });
             @endif
