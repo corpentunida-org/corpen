@@ -40,23 +40,21 @@ class OperacionController extends Controller
     public function index(Request $request)
     {
         try {
-            $bloquesDisponibles = Cache::remember('sia_bloques_disponibles', 300, function () {
-                return CarSiaOperacion::whereNotNull('numero_bloque')
-                    ->select('numero_bloque', DB::raw('MAX(created_at) as fecha_ejecucion'))
-                    ->groupBy('numero_bloque')
-                    ->orderBy('fecha_ejecucion', 'desc')
+            // SOLUCIÓN INTEGRADA: Consulta directa a la tabla de bloques excluyendo los anulados
+            $bloquesDisponibles = Cache::remember('sia_bloques_disponibles', 5, function () {
+                return DB::table('car_sia_bloques')
+                    ->where('estado', '!=', 'ANULADO')
+                    ->orderBy('numero_bloque', 'desc')
                     ->get();
             });
 
             $bloqueActivo = $request->input('bloque', $bloquesDisponibles->first()?->numero_bloque);
 
-            $kpi = [
-                'total'      => 0,
-                'procesados' => 0,
-                'pendientes' => 0,
-            ];
+            $kpi = ['total' => 0, 'procesados' => 0, 'pendientes' => 0];
 
             $historialBloque = collect();
+            $operacionesConfiguradas = collect();
+            $configuracionesMasivas = collect(); // <--- NUEVA COLECCIÓN PARA LAS MASIVAS
 
             if ($bloqueActivo) {
                 $kpi['total'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
@@ -81,6 +79,35 @@ class OperacionController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->take(8)
                     ->get();
+
+                // 1. EXTRAER CONFIGURACIONES INDIVIDUALES
+                $operacionesConfiguradas = CarSiaOperacion::with([
+                        'tercero',
+                        'configuracion.configuracionBase.accionVencimiento'
+                    ])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->whereHas('configuracion')
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // 2. EXTRAER CONFIGURACIONES MASIVAS (El que le faltaba el id_car_sia_operaciones)
+                $configuracionesMasivas = CarSiaOperacionConfig::with('configuracionBase.accionVencimiento')
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->whereNull('id_car_sia_operaciones') // Es masivo, no tiene operacion específica
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // 3. EXTRAER ALERTAS DEL BLOQUE (Masivas e Individuales)
+                $alertasBloqueActivo = \App\Models\Certificados\CarSiaOperacionAlerta::with(['tipoAlerta', 'operacion', 'usuario'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
+
+                // 4. EXTRAER TIPOLOGÍAS/TIPOS DEL BLOQUE (Masivas e Individuales)
+                $tiposBloqueActivo = \App\Models\Certificados\CarSiaTipoOperacion::with(['tipo', 'operacion', 'usuario'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
             }
 
             $query = CarSiaOperacion::with([
@@ -88,7 +115,8 @@ class OperacionController extends Controller
                 'lineas.factura',
                 'estados.estado', 'estadosBloque.estado',
                 'tipos.tipo', 'tiposBloque.tipo',
-                'alertas.tipoAlerta', 'alertasBloque.tipoAlerta'
+                'alertas.tipoAlerta', 'alertasBloque.tipoAlerta',
+                'configuracion.configuracionBase.accionVencimiento'
             ]);
 
             if ($bloqueActivo) {
@@ -105,11 +133,14 @@ class OperacionController extends Controller
                 $search = trim($request->buscar);
                 $query->where(function($q) use ($search) {
                     $q->where('numero_radicado', 'LIKE', "%{$search}%")
-                      ->orWhere('id_tercero', 'LIKE', "%{$search}%");
+                      ->orWhereHas('tercero', function($qTer) use ($search) {
+                          $qTer->where('nom_ter', 'like', "%{$search}%")
+                               ->orWhere('cod_ter', 'like', "%{$search}%");
+                      });
                 });
             }
 
-            $operaciones = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+            $operaciones = $query->orderBy('created_at', 'desc')->paginate(5)->withQueryString();
 
             $aniosDisponibles = Cache::remember('sia_anios_disponibles', 3600, function () {
                 return CarSiaOperacion::whereNotNull('created_at')
@@ -121,6 +152,7 @@ class OperacionController extends Controller
 
             $tiposAlerta = CarSiaTipoAlerta::all();
             $tipos = CarSiaTipo::all();
+            $configuracionesBase = CarSiaConfig::with('accionVencimiento')->get();
 
             return view('certificados.operaciones.index', compact(
                 'operaciones',
@@ -130,7 +162,12 @@ class OperacionController extends Controller
                 'kpi',
                 'tiposAlerta',
                 'tipos',
-                'historialBloque'
+                'historialBloque',
+                'configuracionesBase',
+                'operacionesConfiguradas',
+                'configuracionesMasivas',
+                'alertasBloqueActivo', 
+                'tiposBloqueActivo'
             ));
 
         } catch (\Exception $e) {
@@ -878,7 +915,6 @@ class OperacionController extends Controller
 
     /**
      * 1. CONFIGURACIÓN MASIVA
-     * Aplica la regla a todo el lote (id_car_sia_operaciones = null)
      */
     public function configuracionMasiva(Request $request)
     {
@@ -889,23 +925,24 @@ class OperacionController extends Controller
 
         $estado = $request->has('estado_notificacion') ? 1 : 0;
 
-        CarSiaOperacionConfig::updateOrCreate(
-            [
+        try {
+            // Dejamos que MySQL asigne el ID automáticamente
+            CarSiaOperacionConfig::create([
                 'numero_bloque'          => $request->numero_bloque,
-                'id_car_sia_operaciones' => null // Null significa que aplica al bloque general
-            ],
-            [
-                'id_car_sia_config'   => $request->id_car_sia_config,
-                'estado_notificacion' => $estado
-            ]
-        );
+                'id_car_sia_operaciones' => null,
+                'id_car_sia_config'      => $request->id_car_sia_config,
+                'estado_notificacion'    => $estado
+            ]);
 
-        return back()->with('success', "Configuración general aplicada exitosamente al lote API-" . str_pad($request->numero_bloque, 4, '0', STR_PAD_LEFT) . ".");
+            return back()->with('success', "Configuración general agregada exitosamente al lote API-" . str_pad($request->numero_bloque, 4, '0', STR_PAD_LEFT) . ".");
+
+        } catch (\Exception $e) {
+            return back()->with('error', "Error al guardar en BD: " . $e->getMessage());
+        }
     }
 
     /**
      * 2. CONFIGURACIÓN SELECTIVA
-     * Aplica la regla a un grupo de operaciones filtradas por el buscador del Index
      */
     public function configuracionSelectiva(Request $request)
     {
@@ -916,7 +953,6 @@ class OperacionController extends Controller
 
         $estado = $request->has('estado_notificacion') ? 1 : 0;
 
-        // Recreamos la consulta base del Index
         $query = CarSiaOperacion::where('numero_bloque', $request->numero_bloque);
 
         if ($request->filled('buscar')) {
@@ -930,30 +966,37 @@ class OperacionController extends Controller
             });
         }
 
-        // Extraemos solo los IDs para hacer la inserción/actualización
-        $operacionesIds = $query->pluck('id');
-
-        if ($operacionesIds->isEmpty()) {
-            return back()->with('error', "No hay operaciones que coincidan con la búsqueda actual para aplicar la configuración.");
+        if (!$query->exists()) {
+            return back()->with('error', "No hay operaciones que coincidan con la búsqueda actual.");
         }
 
-        foreach ($operacionesIds as $opId) {
-            CarSiaOperacionConfig::updateOrCreate(
-                ['id_car_sia_operaciones' => $opId],
-                [
-                    'numero_bloque'       => $request->numero_bloque,
-                    'id_car_sia_config'   => $request->id_car_sia_config,
-                    'estado_notificacion' => $estado
-                ]
-            );
-        }
+        DB::beginTransaction();
+        try {
+            $contador = 0;
 
-        return back()->with('success', "Configuración selectiva aplicada a " . $operacionesIds->count() . " operaciones filtradas.");
+            $query->select('id')->chunk(500, function ($operaciones) use ($request, $estado, &$contador) {
+                foreach ($operaciones as $op) {
+                    CarSiaOperacionConfig::create([
+                        'numero_bloque'          => $request->numero_bloque,
+                        'id_car_sia_operaciones' => $op->id,
+                        'id_car_sia_config'      => $request->id_car_sia_config,
+                        'estado_notificacion'    => $estado
+                    ]);
+                    $contador++;
+                }
+            });
+
+            DB::commit();
+            return back()->with('success', "Nueva configuración agregada a {$contador} operaciones filtradas.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', "Error al procesar la configuración: " . $e->getMessage());
+        }
     }
 
     /**
      * 3. CONFIGURACIÓN INDIVIDUAL
-     * Aplica la regla a una sola operación específica (Vista Show)
      */
     public function configuracionIndividual(Request $request)
     {
@@ -965,22 +1008,24 @@ class OperacionController extends Controller
         $estado = $request->has('estado_notificacion') ? 1 : 0;
         $operacion = CarSiaOperacion::findOrFail($request->id_operacion);
 
-        CarSiaOperacionConfig::updateOrCreate(
-            ['id_car_sia_operaciones' => $operacion->id],
-            [
-                'numero_bloque'       => $operacion->numero_bloque,
-                'id_car_sia_config'   => $request->id_car_sia_config,
-                'estado_notificacion' => $estado
-            ]
-        );
+        try {
+            CarSiaOperacionConfig::create([
+                'numero_bloque'          => $operacion->numero_bloque,
+                'id_car_sia_operaciones' => $operacion->id,
+                'id_car_sia_config'      => $request->id_car_sia_config,
+                'estado_notificacion'    => $estado
+            ]);
 
-        return back()->with('success', "Configuración actualizada como excepción para el radicado {$operacion->numero_radicado}.");
+            return back()->with('success', "Nueva configuración agregada como excepción para el radicado {$operacion->numero_radicado}.");
+
+        } catch (\Exception $e) {
+            return back()->with('error', "Error al guardar en BD: " . $e->getMessage());
+        }
     }
 
     // =========================================================================
     // FIN PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
     // =========================================================================
-
 
 
 

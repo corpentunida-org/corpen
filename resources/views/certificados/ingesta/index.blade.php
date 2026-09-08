@@ -979,7 +979,7 @@
                                style="background: #10b981; border: none; border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; transition: background 0.2s;"
                                onmouseover="this.style.background='#059669';"
                                onmouseout="this.style.background='#10b981';">
-                                Ir a Operaciones <i class="fas fa-arrow-right ms-2"></i>
+                                Ir a Gestión y Emisión de Certificados <i class="fas fa-arrow-right ms-2"></i>
                             </a>
                         </div>
                     @endif

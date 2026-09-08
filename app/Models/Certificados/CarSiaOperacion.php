@@ -5,9 +5,13 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 // Importaciones de modelos relacionados
 use App\Models\Maestras\MaeTerceros;
+use App\Models\Certificados\CarSiaBloque;
 use App\Models\Certificados\CarSiaOperacionAlerta;
 use App\Models\Certificados\CarSiaOperacionConfig;
 use App\Models\Certificados\CarSiaEstadoOperacion;
@@ -27,18 +31,23 @@ class CarSiaOperacion extends Model
     // 2. Campos asignables masivamente
     protected $fillable = [
         'numero_radicado',
-        'numero_bloque',   // INT
+        'numero_bloque',
         'id_tercero',
     ];
 
+    // 3. Casteo de variables (Optimización de tipos)
+    protected $casts = [
+        'numero_bloque' => 'integer',
+    ];
+
     // ---------------------------------------------------
-    // 3. RELACIONES (El corazón del sistema)
+    // 4. RELACIONES (El corazón del sistema)
     // ---------------------------------------------------
 
     /**
      * Tercero asociado a la operación.
      */
-    public function tercero()
+    public function tercero(): BelongsTo
     {
         // Se especifica que la llave foránea es 'id_tercero' y la llave local en MaeTerceros es 'cod_ter'
         return $this->belongsTo(MaeTerceros::class, 'id_tercero', 'cod_ter');
@@ -48,17 +57,17 @@ class CarSiaOperacion extends Model
     // RELACIONES INDIVIDUALES (Operación específica)
     // ==========================================
 
-    public function estados()
+    public function estados(): HasMany
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'id_car_sia_operaciones');
     }
 
-    public function tipos()
+    public function tipos(): HasMany
     {
         return $this->hasMany(CarSiaTipoOperacion::class, 'id_car_sia_operaciones');
     }
 
-    public function alertas()
+    public function alertas(): HasMany
     {
         return $this->hasMany(CarSiaOperacionAlerta::class, 'id_car_sia_operaciones');
     }
@@ -67,19 +76,19 @@ class CarSiaOperacion extends Model
     // RELACIONES MASIVAS (A nivel de Lote/Bloque)
     // ==========================================
 
-    public function estadosBloque()
+    public function estadosBloque(): HasMany
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'numero_bloque', 'numero_bloque')
                     ->whereNull('id_car_sia_operaciones');
     }
 
-    public function tiposBloque()
+    public function tiposBloque(): HasMany
     {
         return $this->hasMany(CarSiaTipoOperacion::class, 'numero_bloque', 'numero_bloque')
                     ->whereNull('id_car_sia_operaciones');
     }
 
-    public function alertasBloque()
+    public function alertasBloque(): HasMany
     {
         return $this->hasMany(CarSiaOperacionAlerta::class, 'numero_bloque', 'numero_bloque')
                     ->whereNull('id_car_sia_operaciones');
@@ -89,24 +98,34 @@ class CarSiaOperacion extends Model
     // OTRAS RELACIONES (Configuraciones y Detalle)
     // ==========================================
 
-    public function configuraciones()
+    /**
+     * Historial de configuraciones asignadas (Histórico completo)
+     */
+    public function configuraciones(): HasMany
     {
         return $this->hasMany(CarSiaOperacionConfig::class, 'id_car_sia_operaciones');
     }
 
     /**
+     * Relación con la configuración actual/activa asignada a esta operación.
+     */
+    public function configuracion(): HasOne
+    {
+        return $this->hasOne(CarSiaOperacionConfig::class, 'id_car_sia_operaciones', 'id');
+    }
+
+    /**
      * Detalle de las líneas asociadas a esta operación.
      */
-    public function lineas()
+    public function lineas(): HasMany
     {
-        // Esto asume que la llave primaria de esta tabla (car_sia_operaciones) es 'id'.
         return $this->hasMany(CarSiaOperacionLinea::class, 'id_car_sia_operaciones');
     }
+
     /**
      * Relación: Esta operación pertenece a un bloque específico.
-     * Enlazamos la columna local 'numero_bloque' con la llave foránea 'numero_bloque' del modelo CarSiaBloque.
      */
-    public function bloque()
+    public function bloque(): BelongsTo
     {
         return $this->belongsTo(CarSiaBloque::class, 'numero_bloque', 'numero_bloque');
     }
