@@ -155,100 +155,123 @@
                 <!-- ======================================================================= -->
                 <!-- CAJA PRINCIPAL: MATRIZ DE TRAZABILIDAD (AUDITORÍA)                      -->
                 <!-- ======================================================================= -->
-                <div class="card card-custom shadow-sm border-0 mt-4 h-100" style="max-height: 500px; display: flex; flex-direction: column;">
+                <div class="card card-custom p-3 shadow-sm d-flex flex-column" style="flex: 1; min-height: 0;">
 
-                    <!-- ------------------------------------------------------------------- -->
-                    <!-- 1. CABECERA: Título de la tarjeta                                   -->
-                    <!-- ------------------------------------------------------------------- -->
-                    <div class="card-header bg-white pt-4 pb-3 border-bottom px-4">
-                        <h6 class="text-uppercase fw-bold text-muted mb-0 fs-8">
-                            <i class="fas fa-shield-alt me-2 text-primary"></i>
-                            Matriz de Trazabilidad
-                        </h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
+                            <i class="fas fa-shield-alt text-muted"></i> Matriz de Trazabilidad
+                        </h5>
                     </div>
 
-                    <!-- ------------------------------------------------------------------- -->
-                    <!-- 2. CUERPO: Zona donde hacemos scroll y mostramos los datos          -->
-                    <!-- ------------------------------------------------------------------- -->
-                    <div class="card-body p-4 pt-3" style="overflow-y: auto;">
+                    <p class="text-muted mb-3" style="font-size:.8rem;">Registro de eventos y trazabilidad del sistema.</p>
 
+                    <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2">
                         @if(isset($logsAuditoria) && $logsAuditoria->count() > 0)
-
-                            <!-- CONTENEDOR GENERAL DE LA LÍNEA DE TIEMPO -->
-                            <div class="position-relative">
-
-                                <!-- El palito vertical de fondo (la línea que une los puntos) -->
-                                <div class="position-absolute h-100 border-start border-2 border-secondary border-opacity-25" style="left: 11px; top: 0;"></div>
-
-                                <!-- EMPIEZA EL BUCLE: Dibujamos cada evento uno por uno -->
+                            <div class="position-relative ms-2" style="border-left: 2px solid var(--c-border, #dee2e6);">
                                 @foreach($logsAuditoria as $log)
+                                    <div class="position-relative mb-3 ps-3 pt-1">
+                                        {{-- Punto del Timeline --}}
+                                        <span class="position-absolute bg-primary rounded-circle border border-2 border-white shadow-sm" style="width: 12px; height: 12px; left: -7px; top: 8px;"></span>
 
-                                    <!-- BLOQUE DE UN SOLO EVENTO (ITEM) -->
-                                    <div class="mb-4 position-relative ps-4 ms-2">
-
-                                        <!-- La bolita azul que se pone sobre la línea vertical -->
-                                        <span class="position-absolute bg-white border border-2 border-primary rounded-circle" style="width: 14px; height: 14px; left: -15px; top: 0.25rem;"></span>
-
-                                        <!-- Fila que separa el contenido (Izquierda) de la IP (Derecha) -->
-                                        <div class="d-flex justify-content-between align-items-start">
-
-                                            <!-- COLUMNA IZQUIERDA: Textos principales -->
-                                            <div>
-                                                <!-- Nombre del evento -->
-                                                <h6 class="fw-bold text-dark fs-7 mb-1">
-                                                    {{ $log->tituloEvento }}
-                                                </h6>
-
-                                                <!-- Fecha y Origen -->
-                                                <div class="text-muted fs-8 d-flex flex-wrap gap-2 align-items-center">
-                                                    <span><i class="far fa-clock me-1"></i> {{ $log->fechaEvento }} </span>
-                                                    <span>| <i class="fas fa-desktop me-1"></i> {{ $log->origenEvento }} </span>
-                                                </div>
-
-                                                <!-- Quién lo hizo (Usuario y Cargo) -->
-                                                <div class="text-muted fs-8 mt-1">
-                                                    <i class="fas fa-user-shield me-1 opacity-50"></i>
-                                                    <strong class="text-dark">{{ $log->nombreUsuario }}</strong>
-                                                    <span class="fst-italic opacity-75">({{ $log->cargoUsuario }})</span>
-                                                </div>
+                                        {{-- Tarjeta del Log --}}
+                                        <div class="p-2 rounded bg-light border border-light shadow-sm">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <span class="fw-bold text-dark" style="font-size: .75rem; line-height: 1.2;">
+                                                    {{ $log->tituloEvento ?? 'Evento de Sistema' }}
+                                                </span>
+                                                <span class="text-muted" style="font-size: .65rem; white-space: nowrap;">
+                                                    {{ $log->fechaEvento ?? '—' }}
+                                                </span>
                                             </div>
 
-                                            <!-- COLUMNA DERECHA: Etiqueta con la IP -->
-                                            <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25 fs-8" title="IP de origen">
-                                                <i class="fas fa-network-wired me-1"></i> {{ $log->ipDelUsuario }}
-                                            </span>
+                                            <div class="text-muted mb-2 d-flex justify-content-between align-items-center" style="font-size: .7rem;">
+                                                <div>
+                                                    <i class="fas fa-user-circle me-1 opacity-50"></i>
+                                                    <span class="fw-medium text-dark">{{ $log->nombreUsuario ?? 'Sistema Automático' }}</span>
+                                                    @if(!empty($log->cargoUsuario))
+                                                        <span class="fst-italic opacity-75">({{ $log->cargoUsuario }})</span>
+                                                    @endif
+                                                </div>
+                                                @if(!empty($log->ipDelUsuario))
+                                                    <span class="text-muted" style="font-size: .6rem; font-family: monospace;" title="IP de origen">
+                                                        {{ $log->ipDelUsuario }}
+                                                    </span>
+                                                @endif
+                                            </div>
+
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge bg-white text-secondary border shadow-none" style="font-size: .6rem; padding: .2rem .4rem;">
+                                                    <i class="fas fa-desktop me-1"></i> {{ $log->origenEvento ?? 'Sistema' }}
+                                                </span>
+
+                                                @if($log->hayDetalles && isset($log->detalles_procesados) && count($log->detalles_procesados) > 0)
+                                                    <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium d-flex align-items-center gap-1" style="font-size: .65rem;" onclick="document.getElementById('detalles-trazabilidad-{{ $loop->index }}').classList.toggle('d-none')">
+                                                        <i class="fas fa-search-plus"></i> Detalles
+                                                    </button>
+                                                @endif
+                                            </div>
+
+                                            {{-- Contenedor de Detalles Oculto (ARREGLADO: Decodificador JSON y Filtro de Nulos) --}}
+                                            @if($log->hayDetalles && isset($log->detalles_procesados) && count($log->detalles_procesados) > 0)
+                                                <div id="detalles-trazabilidad-{{ $loop->index }}" class="d-none mt-2 pt-2 border-top border-light">
+                                                    <div class="p-2 bg-white rounded border border-secondary border-opacity-10 text-wrap text-break" style="font-size: 0.65rem;">
+                                                        @foreach($log->detalles_procesados as $llave => $valor)
+                                                            @php
+                                                                // 1. Detectar y decodificar si el valor viene como un string JSON
+                                                                $esJson = is_string($valor) && is_array(json_decode($valor, true)) && json_last_error() === JSON_ERROR_NONE;
+                                                                $datosParseados = $esJson ? json_decode($valor, true) : $valor;
+
+                                                                // 2. Filtrar nulos, vacíos (y ceros en métricas para no hacer bulto)
+                                                                if (is_array($datosParseados) || is_object($datosParseados)) {
+                                                                    $datosParseados = collect($datosParseados)->filter(function($v, $k) use ($llave) {
+                                                                        if (strtolower($llave) === 'metricas' && $v === 0) return false;
+                                                                        return !is_null($v) && $v !== '';
+                                                                    })->toArray();
+                                                                }
+                                                            @endphp
+
+                                                            {{-- 3. Imprimir solo si sobrevivió algo al filtro --}}
+                                                            @if((is_array($datosParseados) && count($datosParseados) > 0) || (!is_array($datosParseados) && $datosParseados !== '' && $datosParseados !== null))
+                                                                <div class="mb-2 border-bottom border-light pb-1">
+                                                                    <strong class="text-primary opacity-75 text-uppercase d-block mb-1" style="font-size: 0.55rem; letter-spacing: 0.5px;">
+                                                                        {{ str_replace('_', ' ', $llave) }}
+                                                                    </strong>
+
+                                                                    @if(is_array($datosParseados))
+                                                                        {{-- Formato limpio con etiquetas si es un array decodificado --}}
+                                                                        <div class="d-flex flex-wrap gap-1">
+                                                                            @foreach($datosParseados as $subKey => $subVal)
+                                                                                <span class="badge bg-light text-dark border border-secondary border-opacity-25" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                    <span class="text-muted">{{ str_replace('_', ' ', ucfirst($subKey)) }}:</span>
+                                                                                    <span class="fw-bold">{{ is_array($subVal) ? json_encode($subVal, JSON_UNESCAPED_UNICODE) : $subVal }}</span>
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @else
+                                                                        {{-- Formato texto plano si es una descripción normal --}}
+                                                                        <span class="text-dark fw-medium" style="font-size: 0.65rem;">
+                                                                            {{ $datosParseados }}
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            {{-- Fin Detalles --}}
 
                                         </div>
-
-                                        <!-- CAJA INFERIOR GRIS: Detalles extra (Solo si existen) -->
-                                        @if($log->hayDetalles)
-                                            <div class="mt-2 bg-light p-2 rounded-3 fs-8 font-monospace text-muted" style="border-left: 3px solid #cbd5e1;">
-                                                @foreach($log->detalles_procesados as $llave => $valor)
-                                                    <div>
-                                                        <strong class="text-dark">{{ $llave }}:</strong> {{ $valor }}
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @endif
-
                                     </div>
-                                    <!-- FIN DEL BLOQUE DEL EVENTO -->
-
                                 @endforeach
-                                <!-- TERMINA EL BUCLE -->
-
                             </div>
-
                         @else
-                            <!-- ------------------------------------------------------------------- -->
-                            <!-- PANTALLA VACÍA: Se muestra si no hay historial                      -->
-                            <!-- ------------------------------------------------------------------- -->
-                            <div class="text-center py-4 text-muted bg-light rounded-4 border-dashed">
-                                <i class="fas fa-clipboard-list fs-2 text-secondary mb-2 opacity-25"></i>
-                                <p class="mb-0 fs-8 fw-semibold">No hay registros de auditoría.</p>
+                            <div class="text-center py-4 d-flex flex-column align-items-center justify-content-center h-100">
+                                <i class="fas fa-clipboard-list fs-2 mb-3 text-secondary opacity-25"></i>
+                                <h6 class="fw-bold text-dark mb-1" style="font-size: .9rem;">Sin Movimientos</h6>
+                                <p class="text-muted mb-0" style="font-size: .75rem; max-width: 200px;">No hay registros de auditoría.</p>
                             </div>
                         @endif
-
                     </div>
                 </div>
                 <!-- ======================================================================= -->

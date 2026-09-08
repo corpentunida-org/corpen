@@ -30,10 +30,13 @@ use App\Models\User;
 use App\Models\Certificados\CarSiaOrigenEvento;
 use App\Models\Certificados\CarSiaEventoAuditoria;
 use App\Models\Certificados\CarSiaOperacionAlertaLog;
+use App\Traits\LogAuditoriaTrait;
 
 
 class OperacionController extends Controller
 {
+    use LogAuditoriaTrait;
+
     /**
      * 1. GESTIÓN MATRIZ: Listar el motor de operaciones aislado por LOTES
      */
@@ -166,7 +169,7 @@ class OperacionController extends Controller
                 'configuracionesBase',
                 'operacionesConfiguradas',
                 'configuracionesMasivas',
-                'alertasBloqueActivo', 
+                'alertasBloqueActivo',
                 'tiposBloqueActivo'
             ));
 
@@ -385,18 +388,13 @@ class OperacionController extends Controller
 
                 // Registro en Log de Auditoría
                 $estado = CarSiaEstado::find($request->id_car_sia_estados);
-                CarSiaOperacionLog::create([
-                    'numero_bloque' => $operacion->numero_bloque,
-                    'id_car_sia_origenes_evento' => 1,
-                    'id_car_sia_eventos_auditoria' => 1, // Ej: 1 = Cambio de Estado
-                    'id_user' => Auth::id(),
-                    'ip' => $request->ip(),
-                    'detalles_ejecucion' => [
-                        'accion' => 'Transición de estado individual',
-                        'nuevo_estado' => $estado ? $estado->nombre : 'Desconocido',
-                        'operacion_id' => $operacion->id
-                    ],
-                ]);
+                $this->registrarLogAuditoria(
+                    $operacion->numero_bloque, 1, 1,
+                    'Transición de estado individual', 'Operación', 'Cambio de estado manual para la operación.',
+                    ['id_operacion' => $operacion->id],
+                    [],
+                    ['estado_asignado' => $estado ? $estado->nombre : 'Desconocido']
+                );
             });
 
             return redirect()->back()->with('success', 'Estado de la operación actualizado correctamente.');
@@ -433,18 +431,13 @@ class OperacionController extends Controller
 
                 // Registro en Log de Auditoría
                 $tipo = CarSiaTipo::find($request->id_car_sia_tipos);
-                CarSiaOperacionLog::create([
-                    'numero_bloque' => $operacion->numero_bloque,
-                    'id_car_sia_origenes_evento' => 1,
-                    'id_car_sia_eventos_auditoria' => 2, // Ej: 2 = Generación de Certificado
-                    'id_user' => Auth::id(),
-                    'ip' => $request->ip(),
-                    'detalles_ejecucion' => [
-                        'accion' => 'Generación de certificado individual y nuevo hash',
-                        'tipo_certificado' => $tipo ? $tipo->nombre : 'Desconocido',
-                        'operacion_id' => $operacion->id
-                    ],
-                ]);
+                $this->registrarLogAuditoria(
+                    $operacion->numero_bloque, 1, 2,
+                    'Generación de certificado individual y nuevo hash', 'Operación', 'Se generó un nuevo hash de certificado.',
+                    ['id_operacion' => $operacion->id],
+                    [],
+                    ['tipo_asignado' => $tipo ? $tipo->nombre : 'Desconocido']
+                );
             });
 
             return redirect()->back()->with('success', 'Tipo asignado y nuevo certificado generado con éxito (Nuevo Hash de Auditoría).');
@@ -478,18 +471,15 @@ class OperacionController extends Controller
 
             // Registro en Log de Auditoría
             $tipoAlerta = CarSiaTipoAlerta::find($request->id_car_sia_tipos_alerta);
-            CarSiaOperacionLog::create([
-                'numero_bloque' => $request->numero_bloque,
-                'id_car_sia_origenes_evento' => 1,
-                'id_car_sia_eventos_auditoria' => 3, // Ej: 3 = Programación Alerta
-                'id_user' => Auth::id(),
-                'ip' => $request->ip(),
-                'detalles_ejecucion' => [
-                    'accion' => 'Alerta programada para el lote completo',
-                    'tipo_alerta' => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
+            $this->registrarLogAuditoria(
+                $request->numero_bloque, 1, 16,
+                'Alerta programada lote completo', 'Bloque', 'Configuración de alerta masiva.',
+                [], [],
+                [
+                    'alerta_asignada'  => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
                     'fecha_programada' => $request->fecha_programada
-                ],
-            ]);
+                ]
+            );
         });
 
         return back()->with('success', 'Alerta general programada para el lote.');
@@ -522,19 +512,15 @@ class OperacionController extends Controller
 
                 // Registro en Log de Auditoría
                 $tipoAlerta = CarSiaTipoAlerta::find($request->id_car_sia_tipos_alerta);
-                CarSiaOperacionLog::create([
-                    'numero_bloque' => $operacion->numero_bloque,
-                    'id_car_sia_origenes_evento' => 1,
-                    'id_car_sia_eventos_auditoria' => 3, // Ej: 3 = Programación Alerta
-                    'id_user' => Auth::id(),
-                    'ip' => $request->ip(),
-                    'detalles_ejecucion' => [
-                        'accion' => 'Alerta programada individualmente',
-                        'tipo_alerta' => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
-                        'fecha_programada' => $request->fecha_programada,
-                        'operacion_id' => $operacion->id
-                    ],
-                ]);
+                $this->registrarLogAuditoria(
+                    $operacion->numero_bloque, 1, 17,
+                    'Alerta programada individual', 'Operación', 'Configuración de alerta individual.',
+                    ['id_operacion' => $operacion->id], [],
+                    [
+                        'alerta_asignada'  => $tipoAlerta ? $tipoAlerta->nombre : 'Desconocida',
+                        'fecha_programada' => $request->fecha_programada
+                    ]
+                );
             });
 
             return redirect()->back()->with('success', 'Alerta programada exitosamente.');
@@ -569,6 +555,14 @@ class OperacionController extends Controller
                     [
                         'estado_notificacion' => $request->estado_notificacion,
                     ]
+                );
+
+                $this->registrarLogAuditoria(
+                    $operacion->numero_bloque, 1, 7,
+                    'Cambio de Notificación', 'Operación', 'Se ' . ($request->estado_notificacion ? 'activó' : 'desactivó') . ' la alerta de notificación.',
+                    ['id_operacion' => $operacion->id],
+                    [],
+                    ['estado_asignado' => $request->estado_notificacion ? 'Activada' : 'Desactivada']
                 );
             });
 
@@ -675,7 +669,7 @@ class OperacionController extends Controller
 
                         $diasMora = 0;
                         if ($factura->fecha_venci) {
-                            $fechaVencimiento = \Carbon\Carbon::parse($factura->fecha_venci);
+                            $fechaVencimiento = Carbon::parse($factura->fecha_venci);
                             $diferencia = $ahora->diffInDays($fechaVencimiento, false);
                             $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
                         }
@@ -729,18 +723,13 @@ class OperacionController extends Controller
 
             // Registro en Log de Auditoría Masiva
             $tipo = CarSiaTipo::find($id_car_sia_tipos);
-            CarSiaOperacionLog::create([
-                'numero_bloque' => $bloque,
-                'id_car_sia_origenes_evento' => 1,
-                'id_car_sia_eventos_auditoria' => 2, // 2 = Generación de Certificado
-                'id_user' => $id_user,
-                'ip' => $request->ip(),
-                'detalles_ejecucion' => [
-                    'accion' => 'Generación masiva de certificados y nuevos hashes',
-                    'tipo_certificado_global' => $tipo ? $tipo->nombre : 'Desconocido',
-                    'total_operaciones_afectadas' => $totalOperacionesProcesadas
-                ],
-            ]);
+            $this->registrarLogAuditoria(
+                $bloque, 1, 2,
+                'Generación masiva de certificados', 'Bloque', 'Creación en lote de nuevos hashes y asignación de tipología.',
+                [],
+                ['registros_afectados' => $totalOperacionesProcesadas],
+                ['tipo_asignado' => $tipo ? $tipo->nombre : 'Desconocido']
+            );
 
             DB::commit();
 
@@ -873,19 +862,13 @@ class OperacionController extends Controller
                 }
 
                 // Registro en Log de Auditoría por Edición Manual
-                CarSiaOperacionLog::create([
-                    'numero_bloque' => $operacion->numero_bloque,
-                    'id_car_sia_origenes_evento' => 1,
-                    'id_car_sia_eventos_auditoria' => 4, // Ej: 4 = Edición manual (Hoja de cálculo)
-                    'id_user' => Auth::id(),
-                    'ip' => $request->ip(),
-                    'detalles_ejecucion' => [
-                        'accion' => 'Modificación manual de parámetros en hoja de cálculo',
-                        'nuevo_hash_generado' => $auditoria['hash'],
-                        'cantidad_lineas_modificadas' => count($request->lineas),
-                        'operacion_id' => $operacion->id
-                    ],
-                ]);
+                $this->registrarLogAuditoria(
+                    $operacion->numero_bloque, 1, 4, // 4 = Edición manual (Hoja de cálculo)
+                    'Modificación manual en hoja de cálculo', 'Operación', 'Edición manual de parámetros y generación de nueva revisión.',
+                    ['id_operacion' => $operacion->id],
+                    ['registros_afectados' => count($request->lineas)],
+                    ['hash_generado' => $auditoria['hash']]
+                );
             });
 
             return redirect()->back()->with('success', 'Cambios guardados. Se ha generado una nueva revisión (Nuevo Hash) conservando la versión anterior.');
@@ -915,27 +898,53 @@ class OperacionController extends Controller
 
     /**
      * 1. CONFIGURACIÓN MASIVA
+     * Aplica MÚLTIPLES reglas a TODO el lote.
      */
     public function configuracionMasiva(Request $request)
     {
         $request->validate([
-            'numero_bloque'     => 'required|integer',
-            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+            'numero_bloque'       => 'required|integer',
+            'id_car_sia_config'   => 'required|array|min:1',
+            'id_car_sia_config.*' => 'exists:car_sia_config,id',
+            'justificacion'       => 'nullable|string|max:1000',
+            'vigente_hasta'       => 'nullable|date'
         ]);
 
         $estado = $request->has('estado_notificacion') ? 1 : 0;
+        $idUser = Auth::id(); // Capturamos el usuario actual
+        $registros = [];
+        $ahora = now();
 
-        try {
-            // Dejamos que MySQL asigne el ID automáticamente
-            CarSiaOperacionConfig::create([
+        foreach ($request->id_car_sia_config as $idConfig) {
+            $registros[] = [
                 'numero_bloque'          => $request->numero_bloque,
                 'id_car_sia_operaciones' => null,
-                'id_car_sia_config'      => $request->id_car_sia_config,
-                'estado_notificacion'    => $estado
-            ]);
+                'id_car_sia_config'      => $idConfig,
+                'estado_notificacion'    => $estado,
+                'id_user'                => $idUser,                      // NUEVO
+                'justificacion'          => $request->justificacion,      // NUEVO
+                'vigente_hasta'          => $request->vigente_hasta,      // NUEVO
+                'estado_activo'          => 1,                            // NUEVO (Default Activo)
+                'created_at'             => $ahora,
+                'updated_at'             => $ahora
+            ];
+        }
 
-            return back()->with('success', "Configuración general agregada exitosamente al lote API-" . str_pad($request->numero_bloque, 4, '0', STR_PAD_LEFT) . ".");
+        try {
+            // Inserción masiva optimizada
+            CarSiaOperacionConfig::insert($registros);
 
+            // LOG
+            $this->registrarLogAuditoria(
+                $request->numero_bloque, 1, 14, // 14 asumiendo que es ID de Configuraciones
+                'Configuración Masiva de Lote', 'Configuración', 'Se asignaron reglas a todo el bloque.',
+                [],
+                ['registros_afectados' => count($registros)],
+                [],
+                ['observaciones' => $request->justificacion]
+            );
+
+            return back()->with('success', count($registros) . " regla(s) general(es) agregada(s) exitosamente al lote API-" . str_pad($request->numero_bloque, 4, '0', STR_PAD_LEFT) . ".");
         } catch (\Exception $e) {
             return back()->with('error', "Error al guardar en BD: " . $e->getMessage());
         }
@@ -943,16 +952,20 @@ class OperacionController extends Controller
 
     /**
      * 2. CONFIGURACIÓN SELECTIVA
+     * Aplica MÚLTIPLES reglas SOLO a los resultados del buscador.
      */
     public function configuracionSelectiva(Request $request)
     {
         $request->validate([
-            'numero_bloque'     => 'required|integer',
-            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+            'numero_bloque'       => 'required|integer',
+            'id_car_sia_config'   => 'required|array|min:1',
+            'id_car_sia_config.*' => 'exists:car_sia_config,id',
+            'justificacion'       => 'nullable|string|max:1000',
+            'vigente_hasta'       => 'nullable|date'
         ]);
 
         $estado = $request->has('estado_notificacion') ? 1 : 0;
-
+        $idUser = Auth::id(); // Capturamos el usuario actual
         $query = CarSiaOperacion::where('numero_bloque', $request->numero_bloque);
 
         if ($request->filled('buscar')) {
@@ -972,61 +985,127 @@ class OperacionController extends Controller
 
         DB::beginTransaction();
         try {
-            $contador = 0;
+            $contadorOps = 0;
+            $totalReglasAsignadas = 0;
+            $ahora = now();
 
-            $query->select('id')->chunk(500, function ($operaciones) use ($request, $estado, &$contador) {
+            $query->select('id')->chunk(500, function ($operaciones) use ($request, $estado, $ahora, $idUser, &$contadorOps, &$totalReglasAsignadas) {
+                $registrosBatch = [];
+
                 foreach ($operaciones as $op) {
-                    CarSiaOperacionConfig::create([
-                        'numero_bloque'          => $request->numero_bloque,
-                        'id_car_sia_operaciones' => $op->id,
-                        'id_car_sia_config'      => $request->id_car_sia_config,
-                        'estado_notificacion'    => $estado
-                    ]);
-                    $contador++;
+                    $contadorOps++;
+                    foreach ($request->id_car_sia_config as $idConfig) {
+                        $registrosBatch[] = [
+                            'numero_bloque'          => $request->numero_bloque,
+                            'id_car_sia_operaciones' => $op->id,
+                            'id_car_sia_config'      => $idConfig,
+                            'estado_notificacion'    => $estado,
+                            'id_user'                => $idUser,                 // NUEVO
+                            'justificacion'          => $request->justificacion, // NUEVO
+                            'vigente_hasta'          => $request->vigente_hasta, // NUEVO
+                            'estado_activo'          => 1,                       // NUEVO
+                            'created_at'             => $ahora,
+                            'updated_at'             => $ahora
+                        ];
+                        $totalReglasAsignadas++;
+                    }
                 }
+
+                // Inserta el bloque de 500 operaciones
+                CarSiaOperacionConfig::insert($registrosBatch);
             });
 
+            $this->registrarLogAuditoria(
+                $request->numero_bloque, 1, 15,
+                'Configuración Selectiva (Filtro)', 'Operaciones Múltiples', 'Asignación de reglas a un grupo de operaciones filtradas en el buscador.',
+                [],
+                ['registros_afectados' => $contadorOps, 'registros_procesados' => $totalReglasAsignadas],
+                [],
+                ['observaciones' => $request->justificacion]
+            );
+
             DB::commit();
-            return back()->with('success', "Nueva configuración agregada a {$contador} operaciones filtradas.");
+            return back()->with('success', "Se asignaron {$totalReglasAsignadas} reglas selectivas distribuidas en {$contadorOps} operaciones filtradas.");
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', "Error al procesar la configuración: " . $e->getMessage());
+            return back()->with('error', "Error al procesar la configuración selectiva: " . $e->getMessage());
         }
     }
 
     /**
      * 3. CONFIGURACIÓN INDIVIDUAL
+     * Aplica MÚLTIPLES reglas como EXCEPCIÓN a un solo radicado.
      */
     public function configuracionIndividual(Request $request)
     {
         $request->validate([
-            'id_operacion'      => 'required|exists:car_sia_operaciones,id',
-            'id_car_sia_config' => 'required|exists:car_sia_config,id',
+            'id_operacion'        => 'required|exists:car_sia_operaciones,id',
+            'id_car_sia_config'   => 'required|array|min:1',
+            'id_car_sia_config.*' => 'exists:car_sia_config,id',
+            'justificacion'       => 'nullable|string|max:1000',
+            'vigente_hasta'       => 'nullable|date'
         ]);
 
         $estado = $request->has('estado_notificacion') ? 1 : 0;
+        $idUser = Auth::id(); // Capturamos el usuario actual
         $operacion = CarSiaOperacion::findOrFail($request->id_operacion);
 
-        try {
-            CarSiaOperacionConfig::create([
+        $registros = [];
+        $ahora = now();
+
+        foreach ($request->id_car_sia_config as $idConfig) {
+            $registros[] = [
                 'numero_bloque'          => $operacion->numero_bloque,
                 'id_car_sia_operaciones' => $operacion->id,
-                'id_car_sia_config'      => $request->id_car_sia_config,
-                'estado_notificacion'    => $estado
-            ]);
+                'id_car_sia_config'      => $idConfig,
+                'estado_notificacion'    => $estado,
+                'id_user'                => $idUser,
+                'justificacion'          => $request->justificacion,
+                'vigente_hasta'          => $request->vigente_hasta,
+                'estado_activo'          => 1,
+                'created_at'             => $ahora,
+                'updated_at'             => $ahora
+            ];
+        }
 
-            return back()->with('success', "Nueva configuración agregada como excepción para el radicado {$operacion->numero_radicado}.");
+        try {
+            CarSiaOperacionConfig::insert($registros);
 
+            $this->registrarLogAuditoria(
+                $operacion->numero_bloque, 1, 15,
+                'Configuración de Excepción', 'Operación', 'Se agregó una regla de excepción a un radicado específico.',
+                ['id_operacion' => $operacion->id, 'numero_radicado' => $operacion->numero_radicado],
+                ['registros_afectados' => count($registros)],
+                [],
+                ['observaciones' => $request->justificacion]
+            );
+
+            return back()->with('success', count($registros) . " regla(s) de excepción agregada(s) para el radicado {$operacion->numero_radicado}.");
         } catch (\Exception $e) {
             return back()->with('error', "Error al guardar en BD: " . $e->getMessage());
         }
     }
 
+    public function toggleEstado($id)
+    {
+        $registro = CarSiaOperacionConfig::findOrFail($id);
+        $registro->estado_activo = !$registro->estado_activo; // Invierte el estado
+        $registro->save();
+
+        $this->registrarLogAuditoria(
+            $registro->numero_bloque, 1, 7,
+            'Cambio de Estado de Regla', 'Configuración', 'Se ' . ($registro->estado_activo ? 'activó' : 'inactivó') . ' una regla de configuración.',
+            ['id_operacion' => $registro->id_car_sia_operaciones],
+            [],
+            ['estado_asignado' => $registro->estado_activo ? 'Activa' : 'Inactiva']
+        );
+
+        return back()->with('success', 'Estado actualizado correctamente.');
+    }
+
     // =========================================================================
     // FIN PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
     // =========================================================================
-
-
 
 }
