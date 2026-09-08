@@ -29,11 +29,16 @@ use App\Models\Creditos\LineaCredito;
 //MAESTRA DE TERCEROS
 use App\Models\Maestras\MaeTerceros;
 
+use App\Traits\LogAuditoriaTrait;
+
 //INGESTA
 use App\Imports\Certificados\IngestaExcelImport;
 
 class IngestaController extends Controller
 {
+
+    use LogAuditoriaTrait;
+    
     /**
      * =========================================================================
      * 1. LEE LOTES CRUDOS Y APLICA FILTROS POR BLOQUE ESPECÍFICO
@@ -166,7 +171,7 @@ class IngestaController extends Controller
 
     /**
      * =========================================================================
-     * 2. CARGAR EXCEL (PROCESAMIENTO DIRECTO EN PRIMER PLANO POR BLOQUES)
+     * 2. CARGAR EXCEL (PROCESAMIENTO DIRECTO EN PRIMER PLANO POR BLOQUES) LOG✔️
      * =========================================================================
      */
     public function cargarExcel(Request $request)
@@ -232,19 +237,14 @@ class IngestaController extends Controller
             }
 
             // --- INICIO DE INSERCIÓN DEL LOG ---
-            CarSiaOperacionLog::create([
-                'numero_bloque'                 => $nuevoBloque,
-                'id_car_sia_operaciones_lineas' => null, // Deja null si el log es de todo el bloque, o pon el ID si aplica
-                'id_car_sia_origenes_evento'    => 1, // Ajusta al ID real que corresponda a "Web" o "Carga" en tu BD
-                'id_car_sia_eventos_auditoria'  => 1, // Ajusta al ID real que corresponda a "Ingesta de Excel"
-                'id_user'                       => Auth::id(),
-                'ip'                            => $request->ip(),
-                'detalles_ejecucion'            => [
-                    'mensaje'           => 'Carga masiva de Excel ejecutada exitosamente.',
-                    'nombre_archivo'    => $request->file('archivo_excel')->getClientOriginalName(),
-                    'total_filas_leidas'=> $totalFilas
-                ],
-            ]);
+            $this->registrarLogAuditoria(
+                $nuevoBloque, 1, 1, 
+                'Carga masiva de Excel', 'Bloque', 'Carga masiva de Excel ejecutada exitosamente.',
+                [], // identificadores
+                ['registros_procesados' => $totalFilas], // metricas
+                [], // parametros
+                ['nombre_archivo' => $request->file('archivo_excel')->getClientOriginalName()] // contexto
+            );
             // --- FIN DE INSERCIÓN DEL LOG ---
 
             return redirect()->route('certificados.ingesta.index', ['bloque' => $nuevoBloque])
@@ -268,20 +268,15 @@ class IngestaController extends Controller
                 ? $request->file('archivo_excel')->getClientOriginalName()
                 : 'Archivo no identificado';
 
-            CarSiaOperacionLog::create([
-                'numero_bloque'                 => $nuevoBloque ?? null,
-                'id_car_sia_operaciones_lineas' => null,
-                'id_car_sia_origenes_evento'    => 1,
-                'id_car_sia_eventos_auditoria'  => 13, // Si tienes un ID específico para errores, ponlo aquí
-                'id_user'                       => Auth::id(),
-                'ip'                            => $request->ip(),
-                'detalles_ejecucion'            => [
-                    'mensaje'           => 'Error procesando Excel.',
-                    'error_tecnico'     => $e->getMessage(), // <-- Te ayudará mucho para depurar
-                    'nombre_archivo'    => $nombreArchivo,
-                    'total_filas_leidas'=> 0
-                ],
-            ]);
+            $this->registrarLogAuditoria(
+                $nuevoBloque ?? null, 1, 13, 
+                'Error procesando Excel', 'Bloque', 'Fallo técnico durante la lectura del archivo Excel.',
+                [], [], [],
+                [
+                    'nombre_archivo' => $nombreArchivo,
+                    'error_tecnico'  => $e->getMessage()
+                ]
+            );
             // --- FIN LOG DE ERROR ---
 
             \Illuminate\Support\Facades\Log::error('CERTIFICADOS Ingesta - Error procesando Excel: ' . $e->getMessage());
@@ -480,22 +475,19 @@ class IngestaController extends Controller
 
                 // 9. LOG DE AUDITORÍA
                 try {
-                    CarSiaOperacionLog::create([
-                        'numero_bloque'                 => $bloqueOrigen,
-                        'id_car_sia_operaciones_lineas' => null,
-                        'id_car_sia_origenes_evento'    => 1,
-                        'id_car_sia_eventos_auditoria'  => 2,
-                        'id_user'                       => Auth::check() ? Auth::id() : null,
-                        'ip'                            => $request->ip() ?? '127.0.0.1',
-                        'detalles_ejecucion'            => [
-                            'accion'              => 'Generacion Automatica Operacion Lote',
-                            'bloque_origen'       => $bloqueOrigen,
-                            'clientes_procesados' => $clientesProcesados,
-                            'registros_ignorados' => $registrosIgnorados,
-                            'estado_asignado'     => $idEstadoReal,
-                            'tipo_asignado'       => $idTipoEvento
+                    $this->registrarLogAuditoria(
+                        $bloqueOrigen, 1, 2,
+                        'Generación Automática Lote', 'Bloque', 'Procesamiento e inyección de datos desde la API hacia la matriz operativa.',
+                        [], // identificadores
+                        [
+                            'registros_procesados' => $clientesProcesados,
+                            'registros_ignorados'  => $registrosIgnorados,
+                        ],
+                        [
+                            'estado_asignado' => $idEstadoReal,
+                            'tipo_asignado'   => $idTipoEvento
                         ]
-                    ]);
+                    );
                 } catch (\Exception $exLog) {
                     Log::warning("Fallo log de auditoría: " . $exLog->getMessage());
                 }
@@ -580,36 +572,35 @@ class IngestaController extends Controller
 
     /**
      * =========================================================================
-     * 4. EXCLUIR REGISTRO INDIVIDUAL
+     * 4. EXCLUIR REGISTRO INDIVIDUAL LOG✔️
      * =========================================================================
      */
     public function anularRegistro($id)
     {
         try {
-            // 1. Buscamos el registro crudo por su ID único
+            // 1. Buscamos el registro
             $registro = CarSiaApi::findOrFail($id);
 
-            // 2. Le cambiamos el estado a anulado
-            $registro->anular = 1;
-            $registro->save();
+            // 2. Transacción SQL para asegurar que ambas acciones se cumplan o ninguna
+            DB::transaction(function () use ($registro) {
+                // Actualizamos el estado
+                $registro->anular = 1;
+                $registro->save();
 
-            // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
-            CarSiaOperacionLog::create([
-                'numero_bloque'                => $registro->numero_bloque,
-                'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
-                'id_car_sia_eventos_auditoria' => 6, // Ej: 6 = Anulación de Registro
-                'id_user'                      => Auth::id(), // Captura el ID del usuario en sesión
-                'ip'                           => request()->ip(), // Captura la IP de la solicitud
-                'detalles_ejecucion'           => [
-                    'accion'     => 'Anulación Individual',
-                    'id_interno' => $registro->id,
-                    'factura'    => $registro->id_factura,
-                    'tercero'    => $registro->tercero,
-                    'valor'      => $registro->valor
-                ]
-            ]);
+                // Registramos la auditoría estandarizada
+                $this->registrarLogAuditoria(
+                    $registro->numero_bloque, 1, 6,
+                    'Anulación Individual API', 'Registro API', 'Factura excluida individualmente del bloque en etapa de ingesta.',
+                    [
+                        'id_registro_api'   => $registro->id,
+                        'id_factura'        => $registro->id_factura,
+                        'documento_tercero' => $registro->tercero
+                    ],
+                    ['valor_financiero' => $registro->valor]
+                );
+            });
 
-            // 4. Borramos el caché de este bloque
+            // 3. Borramos el caché de este bloque (fuera de la transacción por ser Redis/File)
             Cache::forget("kpis_ingesta_staging_bloque_{$registro->numero_bloque}");
 
             return back()->with('success', "La factura #{$registro->id_factura} fue excluida del bloque.");
@@ -646,18 +637,13 @@ class IngestaController extends Controller
                             ->update(['estado' => 'ANULADO']);
 
                 // 3. REGISTRAR LOG DE AUDITORÍA (Minimalista)
-                CarSiaOperacionLog::create([
-                    'numero_bloque'                => $numero_bloque,
-                    'id_car_sia_origenes_evento'   => 1, // Ej: 1 = Portal Web
-                    'id_car_sia_eventos_auditoria' => 5, // Ej: 4 = Anulación Masiva (Lote)
-                    'id_user'                      => $idUsuario,
-                    'ip'                           => $ipActual,
-                    'detalles_ejecucion'           => [
-                        'accion'              => 'Anulación de Lote Completo',
-                        'registros_afectados' => $afectadosStaging,
-                        'estado_final'        => 'ANULADO'
-                    ]
-                ]);
+                $this->registrarLogAuditoria(
+                    $numero_bloque, 1, 5,
+                    'Anulación de Lote Completo', 'Bloque', 'Cancelación masiva de todos los registros pendientes del bloque.',
+                    [],
+                    ['registros_afectados' => $afectadosStaging],
+                    ['estado_asignado' => 'ANULADO']
+                );
             });
 
             // 4. Borramos el caché del bloque para que los KPIs se actualicen inmediatamente

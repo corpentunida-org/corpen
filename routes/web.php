@@ -1434,7 +1434,7 @@ Route::middleware(['auth'])
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
 
         // --- RUTAS ESTÁTICAS (Sin {id} - Deben ir antes) ---
-        
+
         // Programar alerta a nivel de Lote/Bloque
         Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
 
@@ -1460,6 +1460,9 @@ Route::middleware(['auth'])
         Route::post('operaciones/{id}/asignar-tipo', [OperacionController::class, 'asignarTipo'])->name('operaciones.asignar_tipo');
         Route::post('operaciones/{id}/programar-alerta', [OperacionController::class, 'programarAlerta'])->name('operaciones.programar_alerta');
         Route::post('operaciones/{id}/toggle-notificacion', [OperacionController::class, 'toggleNotificacion'])->name('operaciones.toggle_notificacion');
+
+        // --- Toggle para activar/inactivar configuración operativa ---
+        Route::patch('operaciones/config/{id}/toggle', [OperacionController::class, 'toggleEstado'])->name('operaciones.config.toggle');
 
         // Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
@@ -1500,7 +1503,13 @@ Route::middleware(['auth'])
 
         // Acciones de Configuración Core (JSONB y Reglas)
         Route::post('configuracion/store', [ConfiguracionController::class, 'storeConfig'])->name('config.store');
+
+        /* // RUTAS PARA ALTERNAR ESTADOS (Toggles) */
+        /* // 1. Alterna el estado de una Acción de Vencimiento (Catálogo) */
         Route::put('configuracion/accion/{id}/toggle', [ConfiguracionController::class, 'toggleAccionVencimiento'])->name('config.toggle_accion');
+
+        // 2. Alterna el estado activo de una Configuración Core/Regla JSON
+        Route::put('configuracion/estado/{id}/toggle', [ConfiguracionController::class, 'toggleEstadoConfig'])->name('config.toggle_estado');
 
         // Gestión de Catálogos
         Route::post('catalogos/store-accion', [ConfiguracionController::class, 'storeAccionVencimiento'])->name('catalogos.store_accion');

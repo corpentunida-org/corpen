@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache; 
+use Illuminate\Support\Facades\Cache;
 
 // Importación de Modelos de Configuración y Catálogos Base
 use App\Models\Certificados\CarSiaConfig;
@@ -82,31 +82,48 @@ class ConfiguracionController extends Controller
     {
         $request->validate([
             'id_car_sia_acciones_vencimiento' => 'required|exists:car_sia_acciones_vencimiento,id',
-            'parametros'                      => 'nullable|json',
-            'frecuencia_recordatorio_dias'    => 'nullable|integer|min:1'
-        ], [
-            'parametros.json' => 'El campo de parámetros debe ser un JSON válido. Revisa las comillas y comas.'
+            'frecuencia_recordatorio_dias'    => 'nullable|integer|min:0',
+            'estado_activo'                   => 'nullable', // Agregamos validación opcional
+
+            // Validación de los campos que irán dentro del JSON
+            'mora_dias_max'            => 'required|integer|min:0',
+            'dias_gracia'              => 'required|integer|min:0',
+            'clasificacion_mora'       => 'required|string|max:50',
+            'observacion_fase'         => 'nullable|string|max:255'
         ]);
 
         try {
-            $parametrosArray = $request->parametros ? json_decode($request->parametros, true) : null;
+            // Construimos el arreglo con los booleanos (Checkbox envía 'on' si está marcado, nada si no)
+            $parametrosArray = [
+                'mora_dias_max'            => (int) $request->mora_dias_max,
+                'dias_gracia'              => (int) $request->dias_gracia,
+                'requiere_accion'          => $request->has('requiere_accion'),
+                'clasificacion_mora'       => $request->clasificacion_mora,
+                'incluir_historico_3_anos' => $request->has('incluir_historico_3_anos'),
+                'notificacion_gerencia'    => $request->has('notificacion_gerencia'),
+                'bloqueo_automatico'       => $request->has('bloqueo_automatico'),
+                'observacion_fase'         => $request->observacion_fase ?? ''
+            ];
 
-            DB::transaction(function () use ($request, $parametrosArray) {
+            // Definimos el estado activo. Si en tu formulario tienes un checkbox name="estado_activo"
+            // usamos has(). Si no existe el checkbox en tu HTML aún, puedes pasar simplemente true.
+            $estadoActivo = $request->has('estado_activo');
+
+            DB::transaction(function () use ($request, $parametrosArray, $estadoActivo) {
                 CarSiaConfig::create([
                     'id_car_sia_acciones_vencimiento' => $request->id_car_sia_acciones_vencimiento,
                     'parametros'                      => $parametrosArray,
                     'frecuencia_recordatorio_dias'    => $request->frecuencia_recordatorio_dias,
+                    'estado_activo'                   => $estadoActivo, // Pasamos el campo a la BD
                 ]);
             });
 
-            // Limpiamos el caché para que la vista refleje el nuevo dato inmediatamente
             Cache::forget('sia_configuraciones');
-
-            return redirect()->back()->with('success', 'Configuración guardada exitosamente.');
+            return redirect()->back()->with('success', 'Regla matemática y configuración guardada exitosamente.');
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS Config - Error al guardar configuración JSONB: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'No se pudo guardar la configuración.');
+            Log::error('CERTIFICADOS Config - Error al guardar configuración JSONB paramétrica: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo guardar la configuración paramétrica.');
         }
     }
 
@@ -131,7 +148,30 @@ class ConfiguracionController extends Controller
             return redirect()->back()->with('error', 'Error al modificar el estado de la regla.');
         }
     }
+    /**
+     * 3.1. HABILITA/INHABILITA CONFIGURACIÓN CORE: Alterna el estado activo de una regla completa
+     */
+    public function toggleEstadoConfig(Request $request, int $id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                // Buscamos la configuración específica
+                $config = CarSiaConfig::findOrFail($id);
+                // Invertimos su estado actual (si es true pasa a false, y viceversa)
+                $config->estado_activo = !$config->estado_activo;
+                $config->save();
+            });
 
+            // Limpiamos el caché para que el cambio se refleje de inmediato en la tabla
+            Cache::forget('sia_configuraciones');
+
+            return redirect()->back()->with('success', 'El estado de la configuración (regla) ha sido actualizado.');
+        } catch (\Exception $e) {
+            Log::error("CERTIFICADOS Config - Error al cambiar estado de la configuración {$id}: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Ocurrió un error al intentar modificar el estado de la regla.');
+        }
+    }
+    
     /**
      * 4. GESTIONA CATÁLOGOS: Crea una nueva Acción de Vencimiento
      */
