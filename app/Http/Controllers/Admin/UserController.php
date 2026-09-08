@@ -233,8 +233,8 @@ class UserController extends Controller
 
     public function consumirEndpoint($nid)
     {
-        $url = env('API_PRODUCCION') . "/api/Pastors"; // URL del endpoint
-        $token = env('TOKEN_ADMIN');
+        $url = config('services.api_produccion.url') . "/api/Pastors"; // URL del endpoint
+        $token = config('services.api_produccion.token');
 
         // Realizar la solicitud GET
         $response = Http::withToken($token)

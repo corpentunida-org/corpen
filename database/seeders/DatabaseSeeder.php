@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
         GeoColombiaSeeder::class,
         SgrhPermissionsSeeder::class,
+        ExequialTercerosPermissionsSeeder::class,
+        ExequialRetirosPermissionsSeeder::class,
     ]);
     }
 }

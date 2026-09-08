@@ -8,5 +8,8 @@
         @candirect('exequial.prestarServicio.index')
         <li class="nxl-item"><a class="nxl-link" href="{{ route('exequial.prestarServicio.index')}}" >Prestar Servicio</a></li>
         @endcandirect
+        @candirect('exequial.retiros.index')
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('exequial.retiros.index')}}" >Retirados</a></li>
+        @endcandirect
     </ul>
 </li>
