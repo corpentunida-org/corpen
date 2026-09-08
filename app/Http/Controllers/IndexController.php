@@ -34,6 +34,27 @@ class IndexController extends Controller
         }
 
     /**
+     * Pantalla offline del PWA (vendor/laravelpwa) — antes vivía como closure en routes/web.php,
+     * lo que impedía usar `route:cache` (Laravel no puede serializar closures).
+     */
+    public function offline()
+    {
+        return view('vendor.laravelpwa.offline');
+    }
+
+    /**
+     * Layout base sin contenido — antes era un closure en routes/web.php idéntico a este
+     * (mismo bug). layouts/base.blade.php es en realidad la plantilla del componente
+     * <x-base-layout>, que recibe su contenido vía $slot; renderizada directo con view() sin
+     * pasar por el componente, $slot nunca se define y PHP la trata como error fatal bajo el
+     * kernel HTTP real (aunque en consola solo se veía como warning, por eso pasó desapercibido).
+     */
+    public function base()
+    {
+        return view('layouts.base', ['slot' => '']);
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()

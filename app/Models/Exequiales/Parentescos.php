@@ -12,6 +12,6 @@ class Parentescos extends Model
 
     public function beneficiarios()
     {
-        return $this->hasMany(ComaeExRelPar::class, 'parentesco', 'codPar');
+        return $this->hasMany(ComaeExRelPar::class, 'cod_par', 'code');
     }
 }

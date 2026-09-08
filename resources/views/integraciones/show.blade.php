@@ -13,7 +13,7 @@
                 </div>
                 <div>
                     <h2 class="fs-4 fw-bold text-dark mb-1">API Pastors</h2>
-                    <span class="text-muted fs-13">{{ env('API_PRODUCCION') }}/api/Pastors</span>
+                    <span class="text-muted fs-13">{{ config('services.api_produccion.url') }}/api/Pastors</span>
                 </div>
             </div>
             <a href="{{ route('integraciones.index') }}" class="btn btn-light rounded-pill px-4">

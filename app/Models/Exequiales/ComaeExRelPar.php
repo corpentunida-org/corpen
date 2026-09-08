@@ -25,11 +25,11 @@ class ComaeExRelPar extends Model
 
     public function asociado()
     {
-        return $this->belongsTo(ComaeExCli::class, 'cedulaAsociado', 'cedula');
+        return $this->belongsTo(ComaeExCli::class, 'cod_cli', 'cod_cli');
     }
 
     public function parentescoo()
     {
-        return $this->belongsTo(Parentescos::class,'parentesco', 'codPar');
+        return $this->belongsTo(Parentescos::class, 'cod_par', 'code');
     }
 }

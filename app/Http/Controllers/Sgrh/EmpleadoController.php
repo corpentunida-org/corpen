@@ -16,6 +16,7 @@ use App\Models\Sgrh\Arl;
 use App\Models\Sgrh\Empleado;
 use App\Models\Sgrh\Eps;
 use App\Models\Sgrh\FondoPension;
+use App\Services\Sgrh\VacacionSaldoCalculador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -222,7 +223,7 @@ class EmpleadoController extends Controller
      */
     public function edit(Empleado $empleado)
     {
-        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato', 'contratos.modificaciones', 'dependientes', 'estudios');
+        $empleado->load('tercero', 'cargo.area', 'contratos.tipoContrato', 'contratos.modificaciones', 'dependientes', 'estudios', 'vacacionSolicitudes');
 
         return view('sgrh.empleado.edit', [
             'empleado' => $empleado,
@@ -234,6 +235,7 @@ class EmpleadoController extends Controller
             'nivelesFormacion' => EstudioController::NIVELES_FORMACION,
             'tiposFormacion' => EstudioController::TIPOS_FORMACION,
             'desactualizado' => $this->fechaDesactualizada($empleado->tercero?->fec_act),
+            'saldoVacaciones' => app(VacacionSaldoCalculador::class)->saldoActual($empleado),
         ]);
     }
 

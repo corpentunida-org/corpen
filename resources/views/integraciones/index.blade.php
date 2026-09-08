@@ -99,7 +99,7 @@
                     <tbody class="border-top-0">
                         <tr class="border-bottom">
                             <td class="ps-3 fw-bold text-dark">API Pastors (Producción)</td>
-                            <td class="text-muted fs-13">{{ env('API_PRODUCCION') }}/api/Pastors</td>
+                            <td class="text-muted fs-13">{{ config('services.api_produccion.url') }}/api/Pastors</td>
                             <td>
                                 @if($estadoPastors == 'Conectado')
                                     <span class="badge bg-soft-success text-success rounded-pill px-3 py-2 fw-medium">

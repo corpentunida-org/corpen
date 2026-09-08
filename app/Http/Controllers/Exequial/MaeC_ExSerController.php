@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Exequial\StoreComentarioRequest;
+use App\Http\Requests\Exequial\StorePrestarServicioRequest;
+use App\Http\Requests\Exequial\UpdatePrestarServicioRequest;
+use App\Services\Exequial\ExequialApiException;
+use App\Services\Exequial\ExequialApiService;
 use Illuminate\Http\Request;
 use App\Models\Exequiales\ExMonitoria;
 use App\Models\Exequiales\Parentescos;
 use App\Models\Exequiales\ExServicioComentarios;
 use App\Models\Exequiales\ComaeExCli;
-use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Http\Controllers\AuditoriaController;
@@ -19,6 +23,10 @@ use Illuminate\Support\Facades\DB;
 
 class MaeC_ExSerController extends Controller
 {
+    public function __construct(private ExequialApiService $api)
+    {
+    }
+
     private function auditoria($accion, $area)
     {
         $auditoriaController = app(AuditoriaController::class);
@@ -54,42 +62,38 @@ class MaeC_ExSerController extends Controller
         return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel'));
     }
 
-    public function store(Request $request)
+    public function store(StorePrestarServicioRequest $request)
     {
         //$this->authorize('create', auth()->user());
-        $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        if ($request->pastor === 'true') {
-            $codPar = null;
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => '*/*',
-            ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-                'documentId' => $request->cedulaTitular,
-                'dateInit' => $request->dateInit ? $request->dateInit : ' ',
-                'codePlan' => $request->codePlan ? $request->codePlan : '01',
-                'discount' => $request->discount,
-                'observation' => 'PASTOR FALLECIDO' . $request->observation,
-                'stade' => false,
-            ]);
-            ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
-            $request->parentesco = 'TITULAR';
-        } else {
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => '*/*',
-            ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-                'name' => $request->nameBeneficiary,
-                'codeParentesco' => $request->parentesco,
-                'type' => 'I',
-                'dateEntry' => $request->dateInit ? $request->dateInit : ' ',
-                'documentBeneficiaryId' => $request->cedulaFallecido,
-                'dateBirthDate' => $request->fecNacFallecido,
-            ]);
-            ComaeExRelPar::where('cod_cli', $request->cedula)->update([
-                'estado' => false,
-                'tipo' => 'I',
-            ]);
+        try {
+            if ($request->pastor === 'true') {
+                $response = $this->api->patch('/api/Exequiales/Tercero', [
+                    'documentId' => $request->cedulaTitular,
+                    'dateInit' => $request->dateInit ? $request->dateInit : ' ',
+                    'codePlan' => $request->codePlan ? $request->codePlan : '01',
+                    'discount' => $request->discount,
+                    'observation' => 'PASTOR FALLECIDO' . $request->observation,
+                    'stade' => false,
+                ]);
+                ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
+                $request->parentesco = 'TITULAR';
+            } else {
+                $response = $this->api->put('/api/Exequiales/Beneficiary', [
+                    'name' => $request->nameBeneficiary,
+                    'codeParentesco' => $request->parentesco,
+                    'type' => 'I',
+                    'dateEntry' => $request->dateInit ? $request->dateInit : ' ',
+                    'documentBeneficiaryId' => $request->cedulaFallecido,
+                    'dateBirthDate' => $request->fecNacFallecido,
+                ]);
+                ComaeExRelPar::where('cedula', $request->cedulaFallecido)->update([
+                    'estado' => false,
+                    'tipo' => 'I',
+                ]);
+            }
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
 
         if ($response->successful()) {
@@ -125,11 +129,6 @@ class MaeC_ExSerController extends Controller
         $filtromes = ExMonitoria::whereMonth('fechaFallecimiento', $mes)->get();
         return view('exequial.prestarServicio.index', ['registros' => $filtromes]);
     }
-
-    /* public function exportData()
-    {
-        return Excel::download(new DataExport, 'data.xlsx');
-    } */
 
     public function generarpdf()
     {
@@ -176,7 +175,7 @@ class MaeC_ExSerController extends Controller
         //     'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),]);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdatePrestarServicioRequest $request, $id)
     {
         $updated = ExMonitoria::where('id', $id)->update([
             'horaFallecimiento' => $request->horaFallecimiento,
@@ -200,22 +199,23 @@ class MaeC_ExSerController extends Controller
 
     public function destroy($id)
     {
-        $token = env('TOKEN_ADMIN');
+        $registro = ExMonitoria::findOrFail($id);
         $fechaActual = now()->toDateString();
-        $nombreFallecido = ExMonitoria::find($id)->value('nombreFallecido');
-        $parentesco = ExMonitoria::find($id)->value('parentesco');
-        $cedulaFallecido = ExMonitoria::find($id)->value('cedulaFallecido');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-            'name' => $nombreFallecido,
-            'codeParentesco' => $parentesco,
-            'type' => 'A',
-            'dateEntry' => $fechaActual,
-            'documentBeneficiaryId' => $cedulaFallecido,
-            'dateBirthDate' => $fechaActual,
-        ]);
+        $nombreFallecido = $registro->nombreFallecido;
+        $parentesco = $registro->parentesco;
+        $cedulaFallecido = $registro->cedulaFallecido;
+        try {
+            $response = $this->api->put('/api/Exequiales/Beneficiary', [
+                'name' => $nombreFallecido,
+                'codeParentesco' => $parentesco,
+                'type' => 'A',
+                'dateEntry' => $fechaActual,
+                'documentBeneficiaryId' => $cedulaFallecido,
+                'dateBirthDate' => $fechaActual,
+            ]);
+        } catch (ExequialApiException $e) {
+            return response()->json(['error' => $e->getMessage()], 503);
+        }
         if ($response->successful()) {
             return response()->json([
                 'status' => $response->status(),
@@ -231,7 +231,7 @@ class MaeC_ExSerController extends Controller
         }
     }
 
-    public function addComment(Request $request, $id)
+    public function addComment(StoreComentarioRequest $request, $id)
     {
         $comment = ExServicioComentarios::create([
             'id_exser' => $id,
@@ -263,11 +263,26 @@ class MaeC_ExSerController extends Controller
         ];
         $numtotalbeneficiarios = DB::table('EXE_ExRelPar')->where('tipo', 'A')->count();
         $numtotaltitulares = DB::table('EXE_ExCli')->where('estado', '1')->count();
-        $total = DB::table('Auditoria')->where('area', 'EXEQUIALES')->count();
-        $add = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'add beneficiario%')->count();
-        $update = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'update beneficiario%')->count();
-        $delete = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'delete beneficiario%')->count();
-        $presser = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'prestar servicio%')->count();
+
+        // La BD está en RDS, cada round-trip cuesta ~150ms de latencia de red — antes esto eran
+        // 5 consultas separadas contra la misma tabla Auditoria (solo cambiaba el filtro de
+        // 'accion'), es decir ~750ms solo en esta sección. Se combinan en una sola consulta con
+        // agregación condicional.
+        $auditoriaCounts = DB::table('Auditoria')
+            ->where('area', 'EXEQUIALES')
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN accion LIKE 'add beneficiario%' THEN 1 ELSE 0 END) as total_add,
+                SUM(CASE WHEN accion LIKE 'update beneficiario%' THEN 1 ELSE 0 END) as total_update,
+                SUM(CASE WHEN accion LIKE 'delete beneficiario%' THEN 1 ELSE 0 END) as total_delete,
+                SUM(CASE WHEN accion LIKE 'prestar servicio%' THEN 1 ELSE 0 END) as total_presser
+            ")
+            ->first();
+        $total = $auditoriaCounts->total;
+        $add = (int) $auditoriaCounts->total_add;
+        $update = (int) $auditoriaCounts->total_update;
+        $delete = (int) $auditoriaCounts->total_delete;
+        $presser = (int) $auditoriaCounts->total_presser;
         $kpis = [
             [
                 'label' => 'Agregar beneficiario',
@@ -297,6 +312,4 @@ class MaeC_ExSerController extends Controller
 
         return view('exequial.prestarServicio.dashboard', compact('arraydata', 'totalservicios', 'arraydatamunicipios', 'kpis', 'numtotalbeneficiarios', 'numtotaltitulares'));
     }
-
-    
 }

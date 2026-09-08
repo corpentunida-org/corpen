@@ -13,6 +13,6 @@ class ExServicioComentarios extends Model
 
     public function prestarServicio()
     {
-        return $this->belongsTo(ExMonitoria::class, 'monitoria_id');
+        return $this->belongsTo(ExMonitoria::class, 'id_exser', 'id');
     }
 }

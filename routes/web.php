@@ -20,6 +20,7 @@ use App\Http\Controllers\Cartera\ReadExelController;
 use App\Http\Controllers\Recaudo\RecImputacionContableController;
 
 use App\Http\Controllers\Exequial\ComaeTerController;
+use App\Http\Controllers\Exequial\RetiroTitularController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Exequial\ComaeExRelParController;
 use App\Http\Controllers\Exequial\ParentescosController;
@@ -76,6 +77,12 @@ use App\Http\Controllers\Sgrh\ContratoController as SgrhContratoController;
 use App\Http\Controllers\Sgrh\TipoContratoController as SgrhTipoContratoController;
 use App\Http\Controllers\Sgrh\DependienteController as SgrhDependienteController;
 use App\Http\Controllers\Sgrh\EstudioController as SgrhEstudioController;
+use App\Http\Controllers\Sgrh\VacacionPoliticaController as SgrhVacacionPoliticaController;
+use App\Http\Controllers\Sgrh\VacacionSaldoController as SgrhVacacionSaldoController;
+use App\Http\Controllers\Sgrh\VacacionColectivaController as SgrhVacacionColectivaController;
+use App\Http\Controllers\Sgrh\VacacionSolicitudController as SgrhVacacionSolicitudController;
+use App\Http\Controllers\Sgrh\VacacionCalendarioController as SgrhVacacionCalendarioController;
+use App\Http\Controllers\Sgrh\VacacionFestivoController as SgrhVacacionFestivoController;
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -183,13 +190,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
 
-Route::get('/offline', function () {
-    return view('vendor.laravelpwa.offline');
-});
+Route::get('/offline', [IndexController::class, 'offline']);
 
-Route::get('/base', function () {
-    return view('layouts.base');
-});
+Route::get('/base', [IndexController::class, 'base']);
 
 //ADMIN
 Route::resource('users', UserController::class)
@@ -212,25 +215,69 @@ Route::resource('permisos', PermissionsController::class)
 
 //RUTAS DE EXEQUIALES
 Route::prefix('exequiales')->group(function () {
-    Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
+    Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])
+        ->name('asociados.generarpdf')
+        ->middleware(['auth', 'can:exequial.asociados.index']);
     Route::resource('asociados', ComaeExCliController::class)
         ->names('exequial.asociados')
         ->middleware(['auth', 'can:exequial.asociados.index']);
     Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])
-        ->middleware('auth')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index'])
         ->name('prestarServicio.generarpdf');
-    Route::get('prestarServicio/dashboard', [MaeC_ExSerController::class, 'dashboard'])->name('exequial.prestarServicio.dashboard');
-    Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])->name('prestarServicio.generate.excel');
+    Route::get('prestarServicio/dashboard', [MaeC_ExSerController::class, 'dashboard'])
+        ->name('exequial.prestarServicio.dashboard')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
+    Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])
+        ->name('prestarServicio.generate.excel')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
     Route::resource('prestarServicio', MaeC_ExSerController::class)
         ->names('exequial.prestarServicio')
         ->middleware(['auth', 'can:exequial.prestarServicio.index']);
-    Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
-    Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
-    Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
-    Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
-    Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
-    Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
-    Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])->name('prestarServicio.comentario.store');
+    Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])
+        ->name('prestarServicio.repIndividual')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
+    // ->only(...): ComaeExRelParController nunca tuvo index()/show() (los beneficiarios se
+    // gestionan en contexto del titular, vía asociados/show — no hay listado propio ni vista
+    // "beneficiarios/index.blade.php"). Registrar el resource completo hacía que
+    // GET /beneficiarios devolviera 500 ("Call to undefined method ...::index()").
+    Route::resource('beneficiarios', ComaeExRelParController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware(['auth', 'can:exequial.beneficiarios.index'])
+        ->names('exequial.beneficiarios');
+    // ->only(['show']): ComaeTerController solo fue construido como un lookup JSON puntual por
+    // documento (show($id)) — nunca existieron index/create/store/edit/update/destroy ni vistas
+    // en resources/views/exequial/terceros (la carpeta ni existe). Igual que arriba, el resource
+    // completo dejaba GET /terceros en 500.
+    Route::resource('terceros', ComaeTerController::class)
+        ->only(['show'])
+        ->middleware(['auth', 'can:exequial.terceros.index'])
+        ->names('exequial.terceros');
+    Route::get('/parentescosall', [ParentescosController::class, 'index'])
+        ->name('exequial.parentescosall')
+        ->middleware('auth');
+    Route::get('/plansall', [PlanController::class, 'index'])
+        ->name('exequial.plansall')
+        ->middleware('auth');
+    Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])
+        ->name('prestarServicio.comentario.store')
+        ->middleware(['auth', 'can:exequial.prestarServicio.update']);
+
+    // Control de retiros de titulares
+    Route::post('asociados/{cedula}/retiro', [RetiroTitularController::class, 'store'])
+        ->middleware(['auth', 'can:exequial.retiros.store'])
+        ->name('exequial.retiros.store');
+    Route::get('retiros', [RetiroTitularController::class, 'index'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.index');
+    Route::get('retiros/excel', [RetiroTitularController::class, 'exportarExcel'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.excel');
+    Route::get('retiros/pdf', [RetiroTitularController::class, 'exportarPdf'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.pdf');
+    Route::patch('retiros/{retiro}/reportar', [RetiroTitularController::class, 'marcarReportado'])
+        ->middleware(['auth', 'can:exequial.retiros.reportar'])
+        ->name('exequial.retiros.reportar');
 });
 
 //RUTAS SEGUROS
@@ -251,7 +298,7 @@ Route::prefix('seguros')->group(function () {
     Route::post('/planes/{plan}/duplicar', [SegPlanController::class, 'duplicarPlan'])->name('seguros.planes.duplicar');
     Route::post('/seguros/condiciones/store', [SegCondicionesController::class, 'store'])->name('seguros.condiciones.store');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-    Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
+    Route::get('/poliza/create/upload', [SegPolizaController::class, 'viewUpload'])->name('seguros.poliza.viewupload');
     Route::post('poliza/nuevo-convenio/upload', [SegPolizaController::class, 'masivamentenuevoconvenio'])->name('seguros.poliza.nuevo-convenio');
     Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
     Route::get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
@@ -375,10 +422,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         Route::post('subir-excel', [ExcelSyncController::class, 'subirExcel'])
             ->name('sincronizar.subir');
         // RUTA DE ESCAPE: Si recargan la página (F5) o expira el flujo, redirige al index con un mensaje amable
-        Route::get('subir-excel', function() {
-            return redirect()->route('contabilidad.sincronizar.index')
-                ->withErrors('La página de previsualización expiró o fue recargada. Por favor, selecciona y sube el archivo de nuevo.');
-        });
+        Route::get('subir-excel', [ExcelSyncController::class, 'expirado']);
 
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
         Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])->name('sincronizar.confirmar');
@@ -474,9 +518,10 @@ Route::get('/inventario', [UserController::class, 'inventario'])
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
 
-Route::get('validar/asociado', function () {
-    return view('auth.validarAsociado');
-})->name('validar.asociado.form');
+// Antes duplicaba exactamente lo que ya hace UserController::validarAsociadoCreate() (usado
+// arriba en user/validation/asociado) — apunta a ese mismo método en vez de repetir el closure,
+// que además impedía usar `route:cache` (Laravel no puede serializar closures).
+Route::get('validar/asociado', [UserController::class, 'validarAsociadoCreate'])->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
 //RESERVAS
@@ -1659,6 +1704,86 @@ Route::prefix('sgrh')
             Route::delete('contrato-modificaciones/{modificacion}', [SgrhContratoController::class, 'destroyModificacion'])->name('contrato.modificacion.destroy');
         });
         Route::resource('tipos-contrato', SgrhTipoContratoController::class)->except('show')->names('tipo-contrato')->parameters(['tipos-contrato' => 'tipo_contrato']);
+
+        // Vacaciones: permisos por acción, mismo criterio que sgrh.contrato.*. El vínculo
+        // usuario logueado -> Empleado se resuelve por correo (ver Empleado::getUserAttribute())
+        // dentro de cada controller, no hace falta pasarlo por ruta.
+        Route::middleware('can:sgrh.vacacion.politica.index')->group(function () {
+            Route::get('vacaciones/politicas', [SgrhVacacionPoliticaController::class, 'index'])->name('vacacion.politica.index');
+        });
+        Route::middleware('can:sgrh.vacacion.politica.store')->group(function () {
+            Route::post('vacaciones/politicas', [SgrhVacacionPoliticaController::class, 'store'])->name('vacacion.politica.store');
+        });
+
+        Route::middleware('can:sgrh.vacacion.saldo.index')->group(function () {
+            Route::get('vacaciones/saldos', [SgrhVacacionSaldoController::class, 'index'])->name('vacacion.saldo.index');
+            Route::get('vacaciones/saldos/{empleado}', [SgrhVacacionSaldoController::class, 'show'])->name('vacacion.saldo.show');
+        });
+        Route::middleware('can:sgrh.vacacion.ajuste.store')->group(function () {
+            Route::post('vacaciones/saldos/{empleado}/ajustes', [SgrhVacacionSaldoController::class, 'storeAjuste'])->name('vacacion.ajuste.store');
+        });
+
+        Route::middleware('can:sgrh.vacacion.colectiva.index')->group(function () {
+            Route::get('vacaciones/colectivas', [SgrhVacacionColectivaController::class, 'index'])->name('vacacion.colectiva.index');
+        });
+        Route::middleware('can:sgrh.vacacion.colectiva.store')->group(function () {
+            Route::get('vacaciones/colectivas/create', [SgrhVacacionColectivaController::class, 'create'])->name('vacacion.colectiva.create');
+            Route::post('vacaciones/colectivas', [SgrhVacacionColectivaController::class, 'store'])->name('vacacion.colectiva.store');
+        });
+        Route::middleware('can:sgrh.vacacion.colectiva.destroy')->group(function () {
+            Route::delete('vacaciones/colectivas/{colectiva}', [SgrhVacacionColectivaController::class, 'destroy'])->name('vacacion.colectiva.destroy');
+        });
+
+        // 'create' debe registrarse ANTES que la ruta dinámica {solicitud} de más abajo: Laravel
+        // resuelve las rutas GET en el orden en que se definen, así que si {solicitud} quedara
+        // primero, "create" haría match ahí (Route Model Binding intentando buscar una
+        // VacacionSolicitud con id "create") y fallaría con 404 en vez de abrir el formulario.
+        Route::middleware('can:sgrh.vacacion.solicitud.store')->group(function () {
+            Route::get('vacaciones/solicitudes/create', [SgrhVacacionSolicitudController::class, 'create'])->name('vacacion.solicitud.create');
+            Route::post('vacaciones/solicitudes', [SgrhVacacionSolicitudController::class, 'store'])->name('vacacion.solicitud.store');
+        });
+        // Solicitud.index cubre tanto "mis solicitudes" (colaborador) como "aprobaciones" (jefe/
+        // director/RRHH) — el propio resolver filtra qué ve cada quien, es el mismo permiso
+        // base para cualquiera con acceso a Vacaciones. Mismo motivo de orden que arriba:
+        // "mias"/"aprobaciones" van antes que la ruta dinámica {solicitud}.
+        Route::middleware('can:sgrh.vacacion.solicitud.index')->group(function () {
+            Route::get('vacaciones/solicitudes/mias', [SgrhVacacionSolicitudController::class, 'mis'])->name('vacacion.solicitud.mis');
+            Route::get('vacaciones/solicitudes/aprobaciones', [SgrhVacacionSolicitudController::class, 'aprobaciones'])->name('vacacion.solicitud.aprobaciones');
+            Route::get('vacaciones/solicitudes/{solicitud}', [SgrhVacacionSolicitudController::class, 'show'])->name('vacacion.solicitud.show');
+            Route::put('vacaciones/solicitudes/{solicitud}/cancelar', [SgrhVacacionSolicitudController::class, 'cancelar'])->name('vacacion.solicitud.cancelar');
+        });
+        Route::middleware('can:sgrh.vacacion.solicitud.resolver')->group(function () {
+            Route::put('vacaciones/solicitudes/{solicitud}/aprobar', [SgrhVacacionSolicitudController::class, 'aprobar'])->name('vacacion.solicitud.aprobar');
+            Route::put('vacaciones/solicitudes/{solicitud}/rechazar', [SgrhVacacionSolicitudController::class, 'rechazar'])->name('vacacion.solicitud.rechazar');
+        });
+        Route::middleware('can:sgrh.vacacion.solicitud.destroy')->group(function () {
+            Route::delete('vacaciones/solicitudes/{solicitud}', [SgrhVacacionSolicitudController::class, 'destroy'])->name('vacacion.solicitud.destroy');
+        });
+
+        Route::middleware('can:sgrh.vacacion.calendario.index')->group(function () {
+            Route::get('vacaciones/calendario', [SgrhVacacionCalendarioController::class, 'index'])->name('vacacion.calendario.index');
+            Route::get('vacaciones/calendario/eventos', [SgrhVacacionCalendarioController::class, 'eventos'])->name('vacacion.calendario.eventos');
+        });
+
+        Route::middleware('can:sgrh.vacacion.alertas.index')->group(function () {
+            Route::get('vacaciones/alertas', [SgrhVacacionSolicitudController::class, 'alertas'])->name('vacacion.alertas.index');
+        });
+
+        // Festivos colombianos: se calculan solos por año (FestivoColombiaCalculador); esto
+        // solo administra las excepciones puntuales que RRHH agregue o excluya.
+        // 'fechas' (JSON, para pintar los calendarios de selección) no exige el permiso de
+        // gestión de festivos — solo el 'auth' general del grupo padre: cualquier usuario del
+        // módulo puede consultar qué días son festivos, no es información sensible.
+        Route::get('vacaciones/festivos/fechas', [SgrhVacacionFestivoController::class, 'fechas'])->name('vacacion.festivo.fechas');
+        Route::middleware('can:sgrh.vacacion.festivo.index')->group(function () {
+            Route::get('vacaciones/festivos', [SgrhVacacionFestivoController::class, 'index'])->name('vacacion.festivo.index');
+        });
+        Route::middleware('can:sgrh.vacacion.festivo.store')->group(function () {
+            Route::post('vacaciones/festivos', [SgrhVacacionFestivoController::class, 'store'])->name('vacacion.festivo.store');
+        });
+        Route::middleware('can:sgrh.vacacion.festivo.destroy')->group(function () {
+            Route::delete('vacaciones/festivos/{festivo}', [SgrhVacacionFestivoController::class, 'destroy'])->name('vacacion.festivo.destroy');
+        });
     });
 // FIN MÓDULO SGRH
 

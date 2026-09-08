@@ -18,9 +18,20 @@ class ExcelSyncController extends Controller
         return view('contabilidad.extractos.sincronizar');
     }
 
-    public function descargarExcel() 
+    public function descargarExcel()
     {
         return Excel::download(new TransaccionesExport, 'Data_Transacciones.xlsx');
+    }
+
+    /**
+     * Ruta de escape del flujo de sincronización: si recargan la página (F5) o expira el flujo
+     * de previsualización, redirige al index con un mensaje amable. Antes vivía como closure en
+     * routes/web.php, lo que impedía usar `route:cache` (Laravel no puede serializar closures).
+     */
+    public function expirado()
+    {
+        return redirect()->route('contabilidad.sincronizar.index')
+            ->withErrors('La página de previsualización expiró o fue recargada. Por favor, selecciona y sube el archivo de nuevo.');
     }
 
     /**

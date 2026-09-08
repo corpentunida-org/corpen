@@ -18,11 +18,11 @@ class PanelIntegracionController extends Controller
         $logs = LogIntegracion::latest()->take(10)->get();
 
         // Verificación rápida del estado actual de la API
-        $urlPastors = env('API_PRODUCCION') . "/api/Pastors";
+        $urlPastors = config('services.api_produccion.url') . "/api/Pastors";
         $estadoPastors = 'Desconocido';
 
         try {
-            $response = Http::withToken(env('TOKEN_ADMIN'))->get($urlPastors);
+            $response = Http::withToken(config('services.api_produccion.token'))->get($urlPastors);
             $estadoPastors = $response->successful() ? 'Conectado' : 'Fallo / No Autorizado';
         } catch (\Exception $e) {
             $estadoPastors = 'Inaccesible (Servidor Caído)';
@@ -47,8 +47,8 @@ class PanelIntegracionController extends Controller
         // 1. Recibimos el documento del formulario (si viene vacío, usamos uno por defecto de prueba)
         $documento = $request->input('documento', '1077091759');
 
-        $url = env('API_PRODUCCION') . "/api/Pastors";
-        $token = env('TOKEN_ADMIN');
+        $url = config('services.api_produccion.url') . "/api/Pastors";
+        $token = config('services.api_produccion.token');
 
         // Iniciamos el cronómetro
         $inicio = microtime(true);

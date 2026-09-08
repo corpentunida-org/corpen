@@ -14,7 +14,7 @@ class ExMonitoria extends Model
     protected $fillable = ['fechaRegistro', 'horaFallecimiento', 'cedulaTitular', 'nombreTitular', 'cedulaFallecido', 'nombreFallecido', 'fechaFallecimiento', 'lugarFallecimiento', 'parentesco', 'traslado', 'contacto', 'telefonoContacto', 'Contacto2', 'telefonoContacto2', 'municipio'];
     public function asociado()
     {
-        return $this->belongsTo(ComaeExCli::class, 'cedulaTitular', 'cedula');
+        return $this->belongsTo(ComaeExCli::class, 'cedulaTitular', 'cod_cli');
     }
     public function beneficiario()
     {
@@ -22,7 +22,7 @@ class ExMonitoria extends Model
     }
     public function parentescoo()
     {
-        return $this->belongsTo(Parentescos::class, 'parentesco', 'codPar');
+        return $this->belongsTo(Parentescos::class, 'parentesco', 'code');
     }
 
     public function comments()
