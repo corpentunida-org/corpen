@@ -39,14 +39,19 @@ class UserController extends Controller
         $acciones = $count = auditoria::where('usuario', $user->name)->count();
         $fecha = auditoria::where('usuario', $user->name)->orderBy('fechaRegistro', 'desc')->first();
 
-        $permisosUsuario = collect(); // Colección para almacenar los permisos del usuario
-
-        //dd($user->actions);
+        // Permisos por rol: se combinan dos fuentes porque conviven dos esquemas de asignación.
+        // El legado (columna permissions.role_id, un permiso "pertenece" a un solo rol) es el
+        // único que consultaba este método antes. Los permisos asignados desde la Matriz de
+        // Permisos (admin.roles.matriz) usan el pivote role_has_permissions en cambio, así que
+        // un rol nuevo (ej. los de sgrh.vacacion.*) nunca aparecía aquí aunque sí estuviera
+        // asignado al rol — Permisos::where('role_id', ...) nunca los encontraba. Se mezclan
+        // ambas fuentes (sin duplicar) para no perder los permisos legado existentes.
+        $permisosPorRol = collect();
         foreach ($user->actions as $action) {
             $role = $action->role;
             if ($role) {
-                $permisos = Permisos::where('role_id', $role->id)->get();
-                $permisosUsuario = $permisosUsuario->merge($permisos);
+                $permisosLegado = Permisos::where('role_id', $role->id)->get();
+                $permisosPorRol->put($role->id, $permisosLegado->merge($role->permissions)->unique('id'));
             }
         }
 
@@ -61,7 +66,7 @@ class UserController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados', 'usuarios'));
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
     }
 
     /**
