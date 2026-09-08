@@ -20,6 +20,7 @@ use App\Http\Controllers\Cartera\ReadExelController;
 use App\Http\Controllers\Recaudo\RecImputacionContableController;
 
 use App\Http\Controllers\Exequial\ComaeTerController;
+use App\Http\Controllers\Exequial\RetiroTitularController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Exequial\ComaeExRelParController;
 use App\Http\Controllers\Exequial\ParentescosController;
@@ -189,13 +190,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
 
-Route::get('/offline', function () {
-    return view('vendor.laravelpwa.offline');
-});
+Route::get('/offline', [IndexController::class, 'offline']);
 
-Route::get('/base', function () {
-    return view('layouts.base');
-});
+Route::get('/base', [IndexController::class, 'base']);
 
 //ADMIN
 Route::resource('users', UserController::class)
@@ -218,25 +215,69 @@ Route::resource('permisos', PermissionsController::class)
 
 //RUTAS DE EXEQUIALES
 Route::prefix('exequiales')->group(function () {
-    Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
+    Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])
+        ->name('asociados.generarpdf')
+        ->middleware(['auth', 'can:exequial.asociados.index']);
     Route::resource('asociados', ComaeExCliController::class)
         ->names('exequial.asociados')
         ->middleware(['auth', 'can:exequial.asociados.index']);
     Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])
-        ->middleware('auth')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index'])
         ->name('prestarServicio.generarpdf');
-    Route::get('prestarServicio/dashboard', [MaeC_ExSerController::class, 'dashboard'])->name('exequial.prestarServicio.dashboard');
-    Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])->name('prestarServicio.generate.excel');
+    Route::get('prestarServicio/dashboard', [MaeC_ExSerController::class, 'dashboard'])
+        ->name('exequial.prestarServicio.dashboard')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
+    Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])
+        ->name('prestarServicio.generate.excel')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
     Route::resource('prestarServicio', MaeC_ExSerController::class)
         ->names('exequial.prestarServicio')
         ->middleware(['auth', 'can:exequial.prestarServicio.index']);
-    Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
-    Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
-    Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
-    Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
-    Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
-    Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
-    Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])->name('prestarServicio.comentario.store');
+    Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])
+        ->name('prestarServicio.repIndividual')
+        ->middleware(['auth', 'can:exequial.prestarServicio.index']);
+    // ->only(...): ComaeExRelParController nunca tuvo index()/show() (los beneficiarios se
+    // gestionan en contexto del titular, vía asociados/show — no hay listado propio ni vista
+    // "beneficiarios/index.blade.php"). Registrar el resource completo hacía que
+    // GET /beneficiarios devolviera 500 ("Call to undefined method ...::index()").
+    Route::resource('beneficiarios', ComaeExRelParController::class)
+        ->only(['create', 'store', 'edit', 'update', 'destroy'])
+        ->middleware(['auth', 'can:exequial.beneficiarios.index'])
+        ->names('exequial.beneficiarios');
+    // ->only(['show']): ComaeTerController solo fue construido como un lookup JSON puntual por
+    // documento (show($id)) — nunca existieron index/create/store/edit/update/destroy ni vistas
+    // en resources/views/exequial/terceros (la carpeta ni existe). Igual que arriba, el resource
+    // completo dejaba GET /terceros en 500.
+    Route::resource('terceros', ComaeTerController::class)
+        ->only(['show'])
+        ->middleware(['auth', 'can:exequial.terceros.index'])
+        ->names('exequial.terceros');
+    Route::get('/parentescosall', [ParentescosController::class, 'index'])
+        ->name('exequial.parentescosall')
+        ->middleware('auth');
+    Route::get('/plansall', [PlanController::class, 'index'])
+        ->name('exequial.plansall')
+        ->middleware('auth');
+    Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])
+        ->name('prestarServicio.comentario.store')
+        ->middleware(['auth', 'can:exequial.prestarServicio.update']);
+
+    // Control de retiros de titulares
+    Route::post('asociados/{cedula}/retiro', [RetiroTitularController::class, 'store'])
+        ->middleware(['auth', 'can:exequial.retiros.store'])
+        ->name('exequial.retiros.store');
+    Route::get('retiros', [RetiroTitularController::class, 'index'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.index');
+    Route::get('retiros/excel', [RetiroTitularController::class, 'exportarExcel'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.excel');
+    Route::get('retiros/pdf', [RetiroTitularController::class, 'exportarPdf'])
+        ->middleware(['auth', 'can:exequial.retiros.index'])
+        ->name('exequial.retiros.pdf');
+    Route::patch('retiros/{retiro}/reportar', [RetiroTitularController::class, 'marcarReportado'])
+        ->middleware(['auth', 'can:exequial.retiros.reportar'])
+        ->name('exequial.retiros.reportar');
 });
 
 //RUTAS SEGUROS
@@ -257,7 +298,7 @@ Route::prefix('seguros')->group(function () {
     Route::post('/planes/{plan}/duplicar', [SegPlanController::class, 'duplicarPlan'])->name('seguros.planes.duplicar');
     Route::post('/seguros/condiciones/store', [SegCondicionesController::class, 'store'])->name('seguros.condiciones.store');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-    Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
+    Route::get('/poliza/create/upload', [SegPolizaController::class, 'viewUpload'])->name('seguros.poliza.viewupload');
     Route::post('poliza/nuevo-convenio/upload', [SegPolizaController::class, 'masivamentenuevoconvenio'])->name('seguros.poliza.nuevo-convenio');
     Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
     Route::get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
@@ -381,10 +422,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         Route::post('subir-excel', [ExcelSyncController::class, 'subirExcel'])
             ->name('sincronizar.subir');
         // RUTA DE ESCAPE: Si recargan la página (F5) o expira el flujo, redirige al index con un mensaje amable
-        Route::get('subir-excel', function() {
-            return redirect()->route('contabilidad.sincronizar.index')
-                ->withErrors('La página de previsualización expiró o fue recargada. Por favor, selecciona y sube el archivo de nuevo.');
-        });
+        Route::get('subir-excel', [ExcelSyncController::class, 'expirado']);
 
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
         Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])->name('sincronizar.confirmar');
@@ -480,9 +518,10 @@ Route::get('/inventario', [UserController::class, 'inventario'])
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
 
-Route::get('validar/asociado', function () {
-    return view('auth.validarAsociado');
-})->name('validar.asociado.form');
+// Antes duplicaba exactamente lo que ya hace UserController::validarAsociadoCreate() (usado
+// arriba en user/validation/asociado) — apunta a ese mismo método en vez de repetir el closure,
+// que además impedía usar `route:cache` (Laravel no puede serializar closures).
+Route::get('validar/asociado', [UserController::class, 'validarAsociadoCreate'])->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
 //RESERVAS

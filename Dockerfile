@@ -55,6 +55,7 @@ RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build
 
 RUN php artisan view:cache
+RUN php artisan route:cache
 
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod 755 /var/www/html
@@ -62,5 +63,10 @@ RUN chmod -R 755 /var/www/html/storage
 
 COPY docker/default.conf /etc/apache2/sites-enabled/000-default.conf
 
-CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+# config:cache va aquí (al arrancar el contenedor) y NO como RUN durante el build: .env está en
+# .dockerignore y las credenciales reales (BD, tokens, etc.) se inyectan recién en runtime vía
+# env_file en docker-compose.yml. Si config:cache corriera en el build, cachearía la config con
+# esos valores en null -- la imagen quedaría rota aunque el .env real esté presente al arrancar,
+# porque config:cache le dice a Laravel que ya no vuelva a leer el entorno.
+CMD php artisan config:cache && exec apache2ctl -D FOREGROUND
 

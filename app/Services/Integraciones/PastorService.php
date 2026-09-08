@@ -16,8 +16,8 @@ class PastorService
      */
     public function obtenerPastor($nid): object
     {
-        $url = env('API_PRODUCCION') . "/api/Pastors";
-        $token = env('TOKEN_ADMIN');
+        $url = config('services.api_produccion.url') . "/api/Pastors";
+        $token = config('services.api_produccion.token');
 
         // 1. Realizamos la solicitud GET
         $response = Http::withToken($token)->get($url, [

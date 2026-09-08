@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+    | API externa de producción (Exequiales y otros módulos legados). Se centraliza aquí en vez
+    | de usar env() directo en los controladores porque env() fuera de config/*.php devuelve
+    | null si algún día se ejecuta `php artisan config:cache` — un caso muy fácil de olvidar en
+    | despliegues futuros y que dejaría sin autenticación (silenciosamente) todas las llamadas
+    | a esta API.
+    */
+    'api_produccion' => [
+        'url' => env('API_PRODUCCION'),
+        'token' => env('TOKEN_ADMIN'),
+    ],
+
 ];

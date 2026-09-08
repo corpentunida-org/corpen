@@ -184,6 +184,15 @@ class SegPolizaController extends Controller
     }
 
 
+    /**
+     * Formulario de carga masiva de pólizas — antes vivía como closure en routes/web.php, lo
+     * que impedía usar `route:cache` (Laravel no puede serializar closures).
+     */
+    public function viewUpload()
+    {
+        return view('seguros.polizas.upload');
+    }
+
     public function uploadCreate(Request $request)
     {
         $request->validate([

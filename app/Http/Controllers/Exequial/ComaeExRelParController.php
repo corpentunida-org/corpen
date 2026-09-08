@@ -5,13 +5,20 @@ namespace App\Http\Controllers\Exequial;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Exequial\StoreBeneficiarioRequest;
+use App\Http\Requests\Exequial\UpdateBeneficiarioRequest;
 use App\Models\Exequiales\ComaeExRelPar;
+use App\Services\Exequial\ExequialApiException;
+use App\Services\Exequial\ExequialApiService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
 
 class ComaeExRelParController extends Controller
 {
+    public function __construct(private ExequialApiService $api)
+    {
+    }
+
     private function auditoria($accion, $area)
     {
         $auditoriaController = app(AuditoriaController::class);
@@ -51,22 +58,22 @@ class ComaeExRelParController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBeneficiarioRequest $request)
     {
         $fechaActual = Carbon::now();
-        $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ])->post(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-            'documentBeneficiaryId' => $request->documentid,
-            'codePastor' => $request->cedulaAsociado,
-            'name' => $request->apellidos . ' ' . $request->nombres,
-            'dateBirthDate' => $request->fechaNacimiento ?? Carbon::now(),
-            'dateEntry' => $fechaActual,
-            'codeParentesco' => $request->codePar,
-            'type' => 'A',
-        ]);
+        try {
+            $response = $this->api->post('/api/Exequiales/Beneficiary', [
+                'documentBeneficiaryId' => $request->documentid,
+                'codePastor' => $request->cedulaAsociado,
+                'name' => $request->apellidos . ' ' . $request->nombres,
+                'dateBirthDate' => $request->fechaNacimiento ?? Carbon::now(),
+                'dateEntry' => $fechaActual,
+                'codeParentesco' => $request->codePar,
+                'type' => 'A',
+            ]);
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
         if ($response->successful()) {
             ComaeExRelPar::create([
                 'cedula' => $request->documentid,
@@ -87,37 +94,36 @@ class ComaeExRelParController extends Controller
         }
     }
 
-    public function update(Request $request)
+    public function update(UpdateBeneficiarioRequest $request)
     {
         //$this->authorize('update', auth()->user());
-        $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-            'name' => $request->names,
-            'codeParentesco' => $request->parentesco,
-            'type' => 'A',
-            'dateEntry' => $fechaActual,
-            'documentBeneficiaryId' => $request->cedula,
-            'dateBirthDate' => $request->fechaNacimiento,
-        ]);
-        ComaeExRelPar::where('cedula', $request->cedula)->update([
-            'nombre' => strtoupper($request->names),
-            'cod_par' => $request->parentesco,
-            'fec_nac' => $request->fechaNacimiento,
-        ]);
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
+        try {
+            $response = $this->api->put('/api/Exequiales/Beneficiary', [
+                'name' => $request->names,
+                'codeParentesco' => $request->parentesco,
+                'type' => 'A',
+                'dateEntry' => $fechaActual,
+                'documentBeneficiaryId' => $request->cedula,
+                'dateBirthDate' => $request->fechaNacimiento,
+            ]);
+        } catch (ExequialApiException $e) {
+            return redirect()->to($url)->with('msjerror', $e->getMessage());
+        }
         if ($response->successful()) {
+            ComaeExRelPar::where('cedula', $request->cedula)->update([
+                'nombre' => strtoupper($request->names),
+                'cod_par' => $request->parentesco,
+                'fec_nac' => $request->fechaNacimiento,
+            ]);
             $accion = 'update beneficiario ' . $request->cedula;
             $this->auditoria($accion, 'EXEQUIALES');
-            //return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
             return redirect()->to($url)->with('success', 'Beneficiario actualizado exitosamente');
         } else {
             return redirect()
                 ->to($url)
-                ->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
+                ->with('msjerror', 'No se pudo actualizar el titular: ' . json_encode($response->json()));
         }
     }
 
@@ -125,25 +131,23 @@ class ComaeExRelParController extends Controller
     {
         //$this->authorize('delete', auth()->user());
         $id = $request->id;
-        $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Accept' => '*/*',
-            'Authorization' => 'Bearer ' . $token,
-        ])->delete(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id);
-        ComaeExRelPar::where('cedula', $request->cedula)->update([
-            'estado' => false,
-        ]);
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
+        try {
+            $response = $this->api->delete('/api/Exequiales/Beneficiary?idUser=' . $id);
+        } catch (ExequialApiException $e) {
+            return redirect()->to($url)->with('msjerror', $e->getMessage());
+        }
         if ($response->successful()) {
+            ComaeExRelPar::where('cedula', $request->cedula)->update([
+                'estado' => false,
+            ]);
             $accion = 'delete beneficiario ' . $request->beneid;
             $this->auditoria($accion, 'EXEQUIALES');
-            //return $response->status();
             return redirect()->to($url)->with('success', 'Beneficiario eliminado exitosamente');
         } else {
-            //return response()->json(['error' => $response->json()], $response->status());
             return redirect()
                 ->to($url)
-                ->with('msjerror', 'No se pudo eliminar el titular ' . $response->json());
+                ->with('msjerror', 'No se pudo eliminar el titular: ' . json_encode($response->json()));
         }
     }
 }

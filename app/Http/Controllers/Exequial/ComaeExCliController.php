@@ -3,23 +3,26 @@
 namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Exequial\StoreAsociadoRequest;
+use App\Http\Requests\Exequial\UpdateAsociadoRequest;
+use App\Services\Exequial\ExequialApiException;
+use App\Services\Exequial\ExequialApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\AuditoriaController;
 use App\Models\Exequiales\ComaeExRelPar;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\ComaeTer;
+use App\Models\Exequiales\TitularRetiro;
 use App\Models\Maestras\MaeTerceros;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class ComaeExCliController extends Controller
 {
-    /* public function __construct()
+    public function __construct(private ExequialApiService $api)
     {
-        $this->middleware(['auth']);
-    } */
+    }
 
     private function auditoria($accion, $area)
     {
@@ -27,29 +30,59 @@ class ComaeExCliController extends Controller
         $auditoriaController->create($accion, $area);
     }
 
-    public function index()
+    /**
+     * Listado de titulares. Es un JOIN 100% local (EXE_ExCli + MaeTerceros, que
+     * cubre ~99% de los nombres vía cod_ter = cod_cli) — a propósito NO llama a
+     * la API externa para navegar/buscar/paginar, para no repetir el problema de
+     * N+1 llamadas HTTP que se corrigió hoy mismo en el dashboard de "Prestar
+     * Servicio" (antes esta pantalla ni siquiera tenía listado, solo un buscador
+     * por cédula exacta).
+     */
+    public function index(Request $request)
     {
-        $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/District');
-        if ($response->status() === 401) {
-            session()->flash('warning', 'Debe cambiar el token de la API para poder usar la aplicación.');
-            return view('exequial.asociados.index');
-        }
-        return view('exequial.asociados.index');
+        $busqueda = trim((string) $request->input('buscar', ''));
+        $estadoFiltro = $request->input('estado');
+
+        $titulares = DB::table('EXE_ExCli as e')
+            ->leftJoin('MaeTerceros as t', 't.cod_ter', '=', 'e.cod_cli')
+            ->select(
+                'e.cod_cli',
+                'e.estado',
+                'e.fec_ing',
+                DB::raw("TRIM(CONCAT_WS(' ', t.nom1, t.nom2, t.apl1, t.apl2)) as nombre")
+            )
+            ->when($busqueda !== '', function ($q) use ($busqueda) {
+                $q->where(function ($sub) use ($busqueda) {
+                    $sub->where('e.cod_cli', 'like', "%{$busqueda}%")
+                        ->orWhere('t.nom1', 'like', "%{$busqueda}%")
+                        ->orWhere('t.nom2', 'like', "%{$busqueda}%")
+                        ->orWhere('t.apl1', 'like', "%{$busqueda}%")
+                        ->orWhere('t.apl2', 'like', "%{$busqueda}%");
+                });
+            })
+            ->when($estadoFiltro === 'activo', fn ($q) => $q->where('e.estado', true))
+            ->when($estadoFiltro === 'inactivo', fn ($q) => $q->where('e.estado', false))
+            ->orderBy('e.cod_cli')
+            ->paginate(20)
+            ->withQueryString();
+
+        // Para distinguir en pantalla "Retirado" de "Inactivo" (fallecido u otra
+        // razón legada) sin hacer un query por fila: un solo IN() con las
+        // cédulas de la página actual.
+        $cedulasEnPagina = collect($titulares->items())->pluck('cod_cli');
+        $retirados = TitularRetiro::whereIn('cod_cli', $cedulasEnPagina)->pluck('cod_cli')->flip();
+
+        return view('exequial.asociados.index', compact('titulares', 'retirados', 'busqueda', 'estadoFiltro'));
     }
 
     //Datos solo del titular
     public function titularShow($id)
     {
-        //API
-        $token = env('TOKEN_ADMIN');
-        $titular = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
+        try {
+            $titular = $this->api->get('/api/Exequiales/Tercero', ['documentId' => $id]);
+        } catch (ExequialApiException $e) {
+            return redirect()->route('exequial.asociados.index')->with('warning', $e->getMessage());
+        }
 
         if ($titular->successful()) {
             return $titular->json();
@@ -70,22 +103,15 @@ class ComaeExCliController extends Controller
 
     public function show(Request $request, $id)
     {
-        //API
-        $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
         $maeter = MaeTerceros::where('cod_ter', $id)->exists();
 
-        $titular = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
-
-        $beneficiarios = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
-            'documentId' => $id,
-        ]);
+        try {
+            $titular = $this->api->get('/api/Exequiales/Tercero', ['documentId' => $id]);
+            $beneficiarios = $this->api->get('/api/Exequiales', ['documentId' => $id]);
+        } catch (ExequialApiException $e) {
+            return redirect()->route('exequial.asociados.index')->with('warning', $e->getMessage());
+        }
 
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();
@@ -112,7 +138,7 @@ class ComaeExCliController extends Controller
         if ($asociado) {
             return '1';
         } else {
-            $tercero = ComaeTer::where('cod-ter', $id)->first();
+            $tercero = ComaeTer::where('cod_ter', $id)->first();
             if ($tercero) {
                 return '2';
             } else {
@@ -129,101 +155,99 @@ class ComaeExCliController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreAsociadoRequest $request)
     {
         //$this->authorize('create', auth()->user());
-        $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ])->post(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $request->documentId,
-            'obsevations' => $request->observaciones,
-            'dateStart' => $fechaActual,
-            'descuento' => $request->discount,
-            'codePlan' => $request->plan,
-            'codeCenterCost' => 'C1010',
-        ]);
-        ComaeExCli::create([
-            'cod_cli' => $request->documentId,
-            'cod_plan' => $request->plan,
-            'fec_ing' => $fechaActual,
-            'cod_cco' => 'C1010',
-            'estado' => true,
-            'fec_ini' => $fechaActual,
-            'por_descto' => $request->discount,
-        ]);
+        try {
+            $response = $this->api->post('/api/Exequiales/Tercero', [
+                'documentId' => $request->documentId,
+                'obsevations' => $request->observaciones,
+                'dateStart' => $fechaActual,
+                'descuento' => $request->discount,
+                'codePlan' => $request->plan,
+                'codeCenterCost' => 'C1010',
+            ]);
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
         if ($response->successful()) {
+            ComaeExCli::create([
+                'cod_cli' => $request->documentId,
+                'cod_plan' => $request->plan,
+                'fec_ing' => $fechaActual,
+                'cod_cco' => 'C1010',
+                'estado' => true,
+                'fec_ini' => $fechaActual,
+                'por_descto' => $request->discount,
+            ]);
             $accion = 'add titular ' . $request->documentId;
             $this->auditoria($accion, 'EXEQUIALES');
-            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
+            // Antes usaba $request->cedulaAsociado, un campo que este formulario nunca envía
+            // (ver resources/views/exequial/asociados/create.blade.php) — la redirección
+            // terminaba en "...?id=" sin valor. El dato real que identifica al titular recién
+            // creado es documentId.
+            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentId;
             return redirect()->to($url)->with('success', 'Titular agregado exitosamente');
         } else {
             $jsonResponse = $response->json();
-            $message = $jsonResponse['message'];
+            $message = $jsonResponse['message'] ?? 'Error desconocido al comunicarse con la API de Exequiales.';
             return redirect()->back()->with('error', $message);
         }
     }
 
-    public function update(Request $request)
+    public function update(UpdateAsociadoRequest $request)
     {
         //$this->authorize('update', auth()->user());
-        $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json',
-        ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $request->documentid,
-            'dateInit' => $request->dateInit,
-            'codePlan' => $request->codePlan,
-            'discount' => $request->discount,
-            'observation' => $request->observation,
-            'stade' => true,
-        ]);
-        ComaeExCli::where('cod_cli', $request->documentid)->update([
-            'cod_plan' => $request->codePlan,
-            'por_descto' => $request->discount,
-            'benef' => $request->observation,
-            'estado' => true,
-        ]);
-
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
+        try {
+            $response = $this->api->patch('/api/Exequiales/Tercero', [
+                'documentId' => $request->documentid,
+                'dateInit' => $request->dateInit,
+                'codePlan' => $request->codePlan,
+                'discount' => $request->discount,
+                'observation' => $request->observation,
+                'stade' => true,
+            ]);
+        } catch (ExequialApiException $e) {
+            return redirect()->to($url)->with('msjerror', $e->getMessage());
+        }
+
         if ($response->successful()) {
+            ComaeExCli::where('cod_cli', $request->documentid)->update([
+                'cod_plan' => $request->codePlan,
+                'por_descto' => $request->discount,
+                'benef' => $request->observation,
+                'estado' => true,
+            ]);
             $accion = 'update titular ' . $request->documentid;
             $this->auditoria($accion, 'EXEQUIALES');
-            //return $data; //antigua vista
-            //plantilla
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
-            //return response()->json(['error' => $response->json()], $response->status());
+            $jsonResponse = $response->json();
+            $message = $jsonResponse['message'] ?? 'Error desconocido al comunicarse con la API de Exequiales.';
             return redirect()
                 ->to($url)
-                ->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
+                ->with('msjerror', 'No se pudo actualizar el titular: ' . $message);
         }
     }
 
     public function generarpdf($id, $active)
     {
-        $token = env('TOKEN_ADMIN');
+        try {
+            $titular = $this->api->get('/api/Exequiales/Tercero', ['documentId' => $id]);
+            $beneficiarios = $this->api->get('/api/Exequiales', ['documentId' => $id]);
+        } catch (ExequialApiException $e) {
+            return redirect()->route('exequial.asociados.index')->with('warning', $e->getMessage());
+        }
 
-        $titular = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
-        $beneficiarios = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
-            'documentId' => $id,
-        ]);
-        $personalTitular = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Pastors', [
-            'documentId' => $id,
-        ]);
+        try {
+            $personalTitular = $this->api->get('/api/Pastors', ['documentId' => $id]);
+        } catch (ExequialApiException $e) {
+            $personalTitular = null;
+        }
 
-        if ($personalTitular->failed() || $personalTitular->status() == 500 || empty($personalTitular->json())) {
+        if (!$personalTitular || $personalTitular->failed() || $personalTitular->status() == 500 || empty($personalTitular->json())) {
             $tercero = MaeTerceros::where('cod_ter', $id)->select('cod_dist', 'fec_nac', 'congrega', 'tel', 'email')->first();
             $personalTitular = [
                 'district' => $tercero && $tercero->cod_dist ? substr($tercero->cod_dist, -2) : '',
