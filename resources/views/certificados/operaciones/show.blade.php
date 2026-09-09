@@ -436,7 +436,10 @@
                             <div class="tab-pane fade" id="parametros" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-cog me-2"></i> Configuración General</h6>
-                                    <button type="button" class="btn bg-pastel-secondary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity">
+                                    <button type="button"
+                                            class="btn bg-pastel-secondary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalCrearConfiguracion"> <!-- Cambia esto por el ID exacto de tu modal -->
                                         <i class="fas fa-cog me-2 opacity-75"></i> Parámetros
                                     </button>
                                 </div>
