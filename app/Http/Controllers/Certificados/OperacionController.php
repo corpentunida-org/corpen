@@ -193,6 +193,8 @@ class OperacionController extends Controller
                 'lineas.lineaSia',
                 'lineas.estadoOperacion',
                 'lineas.factura'
+                // Ya no es estrictamente necesario cargar 'configuracion' aquí
+                // porque lo haremos con una consulta más precisa abajo.
             ])->findOrFail($id);
 
             $lineasUnicas = $operacion->lineas->unique('id_factura');
@@ -313,8 +315,6 @@ class OperacionController extends Controller
                 ->get()
                 ->map(function ($registro) use ($operacion) {
                     $registro->es_lote = is_null($registro->id_car_sia_operaciones);
-
-                    // Eliminado el "clone" ya que first() puede devolver null
                     $lineaAsociada = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos)->first();
 
                     $registro->nombre_user = 'Usuario / Sistema';
@@ -322,13 +322,11 @@ class OperacionController extends Controller
 
                     if ($lineaAsociada && $lineaAsociada->usuario) {
                         $registro->nombre_user = $lineaAsociada->usuario->name;
-
                         if ($lineaAsociada->usuario->cargoRelation) {
                             $registro->cargo_user = ' / ' . $lineaAsociada->usuario->cargoRelation->nombre_cargo;
                         }
                     }
 
-                    // Eliminado el "clone" (where() ya devuelve una nueva instancia de Collection)
                     $lineasParaEsteTipo = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos);
 
                     $versionesDeEsteTipo = collect($lineasParaEsteTipo)->groupBy('hash_certificado')->map(function($grupo) {
@@ -355,8 +353,28 @@ class OperacionController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+            // 2. CONSULTAR Y EVALUAR CONFIGURACIONES (NIVEL OPERACIÓN Y NIVEL BLOQUE)
+            $configuraciones = CarSiaOperacionConfig::with(['configuracionBase', 'usuario'])
+                ->where('id_car_sia_operaciones', $operacion->id)
+                ->orWhere(function($query) use ($operacion) {
+                    $query->where('numero_bloque', $operacion->numero_bloque)
+                          ->whereNull('id_car_sia_operaciones');
+                })
+                ->get();
+
+            $operacionesConfiguradas = collect();
+
+            if ($configuraciones->isNotEmpty()) {
+                // Inyectamos la relación dinámicamente para que la vista la encuentre
+                $operacion->setRelation('configuracion', $configuraciones);
+
+                // Agregamos la operación a la colección que iterará el @foreach
+                $operacionesConfiguradas->push($operacion);
+            }
+
+            // 3. ENVIAR LA VARIABLE $operacionesConfiguradas AL COMPACT
             return view('certificados.operaciones.show', compact(
-                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData'
+                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas'
             ));
 
         } catch (\Exception $e) {
@@ -1205,5 +1223,5 @@ class OperacionController extends Controller
             return redirect()->back()->with('error', 'Ocurrió un error al actualizar los datos del cliente.');
         }
     }
-    
+
 }

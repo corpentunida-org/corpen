@@ -53,36 +53,15 @@
             </div>
 
             <!-- ========================================== -->
-            <!-- 2. BOTONES DE ACCIÓN MINIMALISTAS          -->
+            <!-- 2. BOTONES DE ACCIÓN (INFORME CLIENTE)     -->
             <!-- ========================================== -->
             <div class="d-flex flex-wrap align-items-center gap-2">
-
-                <!-- NUEVO BOTÓN INICIAL (Visual) -->
-                <button type="button" class="btn bg-pastel-secondary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity">
-                    <i class="fas fa-cog me-2 opacity-75"></i> Parámetros
-                </button>
-
-                <!-- Acciones Secundarias (Fondos Pastel) -->
-                <button type="button" class="btn bg-pastel-warning shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTransicionar">
-                    <i class="fas fa-exchange-alt me-2 opacity-75"></i> Estado
-                </button>
-
-                <button type="button" class="btn bg-pastel-info shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalAlerta">
-                    <i class="fas fa-bell me-2 opacity-75"></i> Alerta
-                </button>
-
-                <button type="button" class="btn bg-pastel-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTipo">
-                    <i class="fas fa-file-pdf me-2 opacity-75"></i> Certificado
-                </button>
-
-                <!-- Acción Principal (Fondo Sólido Destacado) -->
                 <a href="{{ route('certificados.operaciones.informe_cliente', $operacion->id) }}"
                     target="_blank"
-                    class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold text-white d-flex align-items-center ms-md-2 hover-opacity"
+                    class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold text-white d-flex align-items-center hover-opacity"
                     onclick="bloquearBotonUI(this, 'Generando...')">
                     <i class="fas fa-chart-line me-2"></i> Informe Cliente
                 </a>
-
             </div>
         </div>
 
@@ -238,7 +217,7 @@
 
 
                 {{-- CAJA PRINCIPAL: MATRIZ DE TRAZABILIDAD (AUDITORÍA)--}}
-                <div class="card card-custom p-3 shadow-sm d-flex flex-column" style="flex: 1; min-height: 0;">
+                <div class="card card-custom p-3 shadow-sm d-flex flex-column mt-4" style="flex: 1; min-height: 0;">
                     <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                         <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
                             <i class="fas fa-shield-alt text-muted"></i> Matriz de Trazabilidad
@@ -378,7 +357,7 @@
                     <div class="card-header bg-white pt-3 pb-0 border-bottom px-4" style="border-radius: 20px 20px 0 0;">
                         <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto" id="operacionTabs" role="tablist" style="scrollbar-width: none;">
 
-                            <!-- Parámetros (NUEVO VISUAL) -->
+                            <!-- Parámetros -->
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link d-flex align-items-center" id="parametros-tab" data-bs-toggle="tab" data-bs-target="#parametros" type="button" role="tab">
                                     <span class="bg-pastel-secondary text-dark rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
@@ -408,7 +387,7 @@
                                 </button>
                             </li>
 
-                            <!-- Historial -->
+                            <!-- Historial / Estado -->
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link d-flex align-items-center" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
                                     <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
@@ -453,16 +432,195 @@
 
                     <div class="card-body p-4">
                         <div class="tab-content" id="operacionTabsContent">
-                            {{-- TAB 0: PARÁMETROS (VISUAL) --}}
+                            {{-- TAB 0: PARÁMETROS --}}
                             <div class="tab-pane fade" id="parametros" role="tabpanel">
-                                <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed mt-2">
-                                    <i class="fas fa-cogs fs-1 text-secondary mb-3 opacity-25"></i>
-                                    <h6 class="fw-bold text-dark">Configuración y Parámetros</h6>
-                                    <p class="mb-0 fs-7">Módulo en construcción. Aquí podrás gestionar los parámetros y reglas de negocio específicas para esta operación.</p>
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-cog me-2"></i> Configuración General</h6>
+                                    <button type="button" class="btn bg-pastel-secondary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity">
+                                        <i class="fas fa-cog me-2 opacity-75"></i> Parámetros
+                                    </button>
                                 </div>
+
+                                @if(isset($operacionesConfiguradas) && $operacionesConfiguradas->count() > 0)
+                                    <div class="table-responsive border rounded-3 shadow-sm mb-3">
+                                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.75rem;">
+                                            <thead class="bg-light text-muted text-uppercase" style="font-size: 0.65rem;">
+                                                <tr>
+                                                    <th class="text-center py-2 border-bottom" style="width: 5%;">Det.</th>
+                                                    <th class="py-2 border-bottom" style="width: 15%;">Radicado</th>
+                                                    <th class="py-2 border-bottom" style="width: 20%;">Cliente</th>
+                                                    <th class="py-2 border-bottom" style="width: 20%;">Acción Vencimiento</th>
+                                                    <th class="text-center py-2 border-bottom" style="width: 10%;">Frec.</th>
+                                                    <th class="text-center py-2 border-bottom" style="width: 10%;">Est. Acción</th>
+                                                    <th class="text-center py-2 border-bottom" style="width: 5%;">Notif.</th>
+                                                    <th class="text-center pe-3 py-2 border-bottom" style="width: 15%;">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {{-- ========================================== --}}
+                                                {{-- CONFIGURACIONES INDIVIDUALES (EXCEPCIÓN)   --}}
+                                                {{-- ========================================== --}}
+                                                @foreach($operacionesConfiguradas as $op)
+                                                    @php
+                                                        // Convertimos a colección para soportar múltiples excepciones por radicado
+                                                        $configs = $op->configuracion instanceof \Illuminate\Support\Collection
+                                                            ? $op->configuracion
+                                                            : collect([$op->configuracion])->filter();
+                                                    @endphp
+
+                                                    @foreach($configs as $conf)
+                                                        @php
+                                                            $hayConfiguradas = true;
+                                                            $configBaseOp = $conf->configuracionBase;
+                                                            $accionVencOp = $configBaseOp?->accionVencimiento;
+                                                            $parametrosOp = $configBaseOp?->parametros;
+
+                                                            // Accedemos al tercero directamente desde $op (la operación)
+                                                            $nombreCliente = trim(($op->tercero?->nom_ter ?? 'Sin Tercero') . ' ' . ($op->tercero?->apl1 ?? ''));
+                                                        @endphp
+
+                                                        <tr style="background-color: #fff; cursor: pointer; border-bottom: 1px solid #f1f3f5; transition: background-color 0.2s;" class="parent-row {{ !$conf->estado_activo ? 'opacity-75 bg-light' : '' }}" onclick="toggleParametros('det-op-{{ $conf->id }}', this)" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='#fff'">
+                                                            <td class="text-center text-info py-2"><i class="fas fa-chevron-circle-down opacity-50 icon-toggle"></i></td>
+                                                            <td class="font-monospace fw-bold py-2">{{ $op->numero_radicado ?? 'N/A' }}</td>
+                                                            <td class="text-truncate py-2" title="{{ $nombreCliente }}" style="max-width: 150px;">{{ $nombreCliente }}</td>
+                                                            <td class="fw-bold text-dark text-truncate py-2" title="{{ $accionVencOp?->nombre ?? 'N/A' }}" style="max-width: 220px;">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
+                                                            <td class="text-center py-2">
+                                                                @if($configBaseOp?->frecuencia_recordatorio_dias) <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} d</span>
+                                                                @else <span class="text-muted">—</span> @endif
+                                                            </td>
+                                                            <td class="text-center py-2">
+                                                                @if(isset($accionVencOp?->estado))
+                                                                    <span class="badge {{ $accionVencOp->estado ? 'bg-white text-success border border-success' : 'bg-white text-danger border border-danger' }} px-2 py-1">
+                                                                        {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="text-muted">—</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="text-center py-2">
+                                                                @if($conf->estado_notificacion) <span class="text-success"><i class="fas fa-bell"></i></span>
+                                                                @else <span class="text-muted"><i class="fas fa-bell-slash"></i></span> @endif
+                                                            </td>
+                                                            <td class="text-center pe-3 py-2">
+                                                                @if(method_exists($conf, 'trashed') && $conf->trashed()) <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
+                                                                @elseif(!$conf->estado_activo) <span class="badge bg-secondary text-white" style="font-size: 0.60rem;">INACTIVA</span>
+                                                                @else <span class="badge bg-info text-white" style="font-size: 0.60rem;">EXCEPCIÓN</span> @endif
+                                                            </td>
+                                                        </tr>
+
+                                                        <tr id="det-op-{{ $conf->id }}" style="display: none; background-color: #f4f6f8; box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.1);">
+                                                            <td colspan="8" class="p-0 border-0">
+                                                                @php
+                                                                    $pOp = is_array($parametrosOp) ? $parametrosOp : (json_decode($parametrosOp, true) ?? []);
+                                                                    $claseMoraOp = strtolower($pOp['clasificacion_mora'] ?? 'desconocido');
+                                                                    $colorBadgeOp = match($claseMoraOp) {
+                                                                        'bueno' => 'bg-pastel-success text-success border-success',
+                                                                        'regular' => 'bg-pastel-info text-info border-info',
+                                                                        'atencion_especial' => 'bg-pastel-warning text-dark border-warning',
+                                                                        'restringido' => 'bg-pastel-danger text-danger border-danger',
+                                                                        'irregular' => 'bg-dark text-white border-dark',
+                                                                        default => 'bg-light text-secondary border-secondary'
+                                                                    };
+                                                                @endphp
+
+                                                                <div class="py-2 py-md-3 pe-2 pe-md-4 ps-0 ps-md-1">
+                                                                    <div class="ms-2 ms-md-5 bg-white rounded-3 shadow-sm border border-start-0 position-relative w-100" style="border-left: 4px solid #0dcaf0 !important;">
+                                                                        <div class="position-absolute text-info d-none d-md-block" style="left: -20px; top: -15px;"><i class="fas fa-level-up-alt fa-rotate-90 fs-5 opacity-25"></i></div>
+
+                                                                        <div class="p-3 w-100">
+                                                                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 pb-2 border-bottom gap-2">
+                                                                                <span class="fw-bold text-info" style="font-size: 0.75rem;"><i class="fas fa-code-branch me-1"></i> Parámetros de Excepción (Rad: {{ $op->numero_radicado }})</span>
+                                                                                <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBaseOp?->id ?? 'N/A' }} | ID Asignación: {{ $conf->id }}</span>
+                                                                            </div>
+
+                                                                            <div class="row g-3 align-items-start m-0 w-100">
+                                                                                {{-- COLUMNA 1: CLASIFICACIÓN --}}
+                                                                                <div class="col-12 col-md-3 position-relative p-0 pe-md-3">
+                                                                                    <div class="d-none d-md-block position-absolute end-0 top-0 h-100 border-end"></div>
+                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Clasificación</span>
+                                                                                    <span class="badge {{ $colorBadgeOp }} border border-opacity-25 px-2 py-1 mb-2 text-wrap"><i class="fas fa-tag me-1"></i> {{ strtoupper(str_replace('_', ' ', $claseMoraOp)) }}</span>
+                                                                                    <div class="d-flex flex-column gap-1" style="font-size: 0.75rem;">
+                                                                                        <span class="text-dark"><i class="fas fa-calendar-times text-secondary me-1"></i> Max Mora: <strong>{{ $pOp['mora_dias_max'] ?? '0' }}</strong> d</span>
+                                                                                        <span class="text-dark"><i class="fas fa-hand-holding-heart text-secondary me-1"></i> Gracia: <strong>{{ $pOp['dias_gracia'] ?? '0' }}</strong> d</span>
+                                                                                    </div>
+                                                                                </div>
+
+                                                                                {{-- COLUMNA 2: ACTIVADORES --}}
+                                                                                <div class="col-12 col-md-5 p-0 ps-md-3 mt-3 mt-md-0 position-relative pe-md-3">
+                                                                                    <div class="d-none d-md-block position-absolute end-0 top-0 h-100 border-end"></div>
+                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Activadores</span>
+                                                                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                                                                        @if(!empty($pOp['requiere_accion'])) <span class="badge bg-light text-dark border"><i class="fas fa-exclamation-circle text-warning me-1"></i> Acción Restrictiva</span> @endif
+                                                                                        @if(!empty($pOp['bloqueo_automatico'])) <span class="badge bg-pastel-danger border border-danger border-opacity-25"><i class="fas fa-ban me-1"></i> Bloqueo Cupo</span> @endif
+                                                                                        @if(!empty($pOp['notificacion_gerencia'])) <span class="badge bg-pastel-primary border border-primary border-opacity-25"><i class="fas fa-user-tie me-1"></i> Notifica Gcia.</span> @endif
+                                                                                        @if(!empty($pOp['incluir_historico_3_anos'])) <span class="badge bg-light text-secondary border"><i class="fas fa-history me-1"></i> Histórico 3A</span> @endif
+                                                                                        @if(empty($pOp['requiere_accion']) && empty($pOp['bloqueo_automatico']) && empty($pOp['notificacion_gerencia'])) <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-check text-success me-1"></i> Sin restricciones</span> @endif
+                                                                                    </div>
+                                                                                    @if(!empty($pOp['observacion_fase']))
+                                                                                        <div class="bg-light rounded p-2 text-muted fst-italic border mt-2 text-wrap text-break w-100" style="font-size: 0.7rem; word-wrap: break-word;">
+                                                                                            <i class="fas fa-info-circle text-info me-1"></i> {{ $pOp['observacion_fase'] }}
+                                                                                        </div>
+                                                                                    @endif
+                                                                                </div>
+
+                                                                                {{-- COLUMNA 3: DETALLES Y ESTADO --}}
+                                                                                <div class="col-12 col-md-4 p-0 ps-md-3 mt-3 mt-md-0">
+                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Auditoría y Excepción</span>
+                                                                                    <div class="d-flex flex-column gap-1 mb-2" style="font-size: 0.75rem;">
+                                                                                        <span class="text-dark"><i class="fas fa-user-circle text-info me-1"></i> <strong>Responsable:</strong> {{ $conf->usuario->name ?? 'N/A' }}</span>
+
+                                                                                        @php
+                                                                                            $vencidoOp = $conf->vigente_hasta && \Carbon\Carbon::parse($conf->vigente_hasta)->isPast();
+                                                                                        @endphp
+
+                                                                                        <span class="text-dark"><i class="fas fa-calendar-check text-info me-1"></i> <strong>Vigente Hasta:</strong>
+                                                                                            @if($conf->vigente_hasta)
+                                                                                                <span class="{{ $vencidoOp ? 'text-danger fw-bold' : '' }}">{{ \Carbon\Carbon::parse($conf->vigente_hasta)->format('d/m/Y') }}</span>
+                                                                                            @else
+                                                                                                <span class="text-muted fst-italic">Indefinido</span>
+                                                                                            @endif
+                                                                                        </span>
+
+                                                                                        @if($conf->justificacion)
+                                                                                            <span class="text-dark mt-1 d-block lh-sm"><i class="fas fa-comment-dots text-info me-1"></i> <strong>Justificación:</strong> <br><span class="text-muted fst-italic">{{ $conf->justificacion }}</span></span>
+                                                                                        @endif
+                                                                                    </div>
+
+                                                                                    {{-- SWITCH PARA CAMBIAR ESTADO --}}
+                                                                                    <div class="mt-2 pt-2 border-top">
+                                                                                        <form action="{{ route('certificados.operaciones.config.toggle', $conf->id) }}" method="POST" onclick="event.stopPropagation();">
+                                                                                            @csrf
+                                                                                            @method('PATCH')
+                                                                                            <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0">
+                                                                                                <input class="form-check-input m-0" type="checkbox" role="switch" id="switchOp{{ $conf->id }}" onchange="this.form.submit()" {{ $conf->estado_activo ? 'checked' : '' }} style="cursor: pointer;">
+                                                                                                <label class="form-check-label mb-0 {{ $conf->estado_activo ? 'text-success fw-bold' : 'text-danger fw-bold' }}" for="switchOp{{ $conf->id }}" style="font-size: 0.75rem; cursor: pointer;">
+                                                                                                    {{ $conf->estado_activo ? 'Excepción Activa' : 'Excepción Inactiva' }}
+                                                                                                </label>
+                                                                                            </div>
+                                                                                        </form>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                @else
+                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed mt-2">
+                                        <i class="fas fa-cogs fs-1 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-bold text-dark">Configuración Estándar</h6>
+                                        <p class="mb-0 fs-7">No hay parámetros excepcionales configurados para esta operación.</p>
+                                    </div>
+                                @endif
                             </div>
 
-                            {{-- TAB 1: LÍNEAS (Estilo Hoja de Cálculo Compacta) --}}
+                            {{-- TAB 1: LÍNEAS --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
 
                                 @if($lineasAgrupadas->count() > 0)
@@ -574,7 +732,10 @@
                             <div class="tab-pane fade" id="alertas" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-clock me-2"></i> Registro de Alertas</h6>
-                                    <button type="button" class="btn btn-sm btn-outline-info rounded-pill fw-bold" data-bs-toggle="modal" data-bs-target="#modalAlerta"><i class="fas fa-plus me-1"></i> Nueva Alerta</button>
+                                    <!-- Botón reubicado -->
+                                    <button type="button" class="btn bg-pastel-info shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalAlerta">
+                                        <i class="fas fa-bell me-2 opacity-75"></i> Nueva Alerta
+                                    </button>
                                 </div>
                                 @if($historialAlertas->count() > 0)
                                     <div class="row g-3">
@@ -617,11 +778,18 @@
                                 @endif
                             </div>
 
-                            {{-- TAB 3: HISTORIAL ETL --}}
+                            {{-- TAB 3: HISTORIAL ETL / ESTADO --}}
                             <div class="tab-pane fade" id="historial" role="tabpanel">
                                 <div class="row g-4">
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold text-muted mb-4 fs-8 text-uppercase"><i class="fas fa-exchange-alt me-2"></i> Transiciones de Estado</h6>
+                                        <div class="d-flex justify-content-between align-items-center mb-4">
+                                            <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-exchange-alt me-2"></i> Transiciones de Estado</h6>
+                                            <!-- Botón reubicado -->
+                                            <button type="button" class="btn bg-pastel-warning shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTransicionar">
+                                                <i class="fas fa-exchange-alt me-2 opacity-75"></i> Cambiar Estado
+                                            </button>
+                                        </div>
+
                                         @if($historialEstados->count() > 0)
                                             <div class="border-start border-2 border-primary border-opacity-25 ms-3 ps-4 position-relative">
                                                 @foreach($historialEstados as $historialEstado)
@@ -660,7 +828,6 @@
                                                         </div>
                                                         <div class="text-muted fs-8 mt-1 d-flex flex-wrap gap-2">
                                                             <span><i class="far fa-clock me-1"></i> {{ $historialTipo->created_at ? $historialTipo->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
-                                                            <!-- SE APLICA VARIABLES DEL CONTROLADOR EN EL HISTORIAL TAMBIÉN -->
                                                             <span>| <i class="fas fa-user-edit text-muted opacity-50 ms-1 me-1"></i> {{ $historialTipo->nombre_user ?? 'Sistema' }}{{ $historialTipo->cargo_user ?? '' }}</span>
                                                         </div>
                                                     </div>
@@ -673,8 +840,15 @@
                                 </div>
                             </div>
 
-                            {{-- TAB 4: CERTIFICADOS (Estilo Hoja de Cálculo Compacta) --}}
+                            {{-- TAB 4: CERTIFICADOS --}}
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-file-pdf me-2"></i> Gestión de Certificados</h6>
+                                    <!-- Botón reubicado -->
+                                    <button type="button" class="btn bg-pastel-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTipo">
+                                        <i class="fas fa-file-pdf me-2 opacity-75"></i> Generar Certificado
+                                    </button>
+                                </div>
                                 @if($operacion->lineas && $operacion->lineas->count() > 0)
 
                                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
@@ -1233,6 +1407,30 @@
                         document.getElementById('btnCancelCertificado').classList.add('d-none');
                         document.getElementById('loadingCertificado').classList.remove('d-none');
                     }
+                });
+            });
+
+            // =========================================================================
+            // LÓGICA DE MEMORIA DE PESTAÑAS (Para volver a la última pestaña abierta)
+            // =========================================================================
+            const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            // Usamos un ID único combinando con el de la operación para evitar cruces
+            const sessionKey = 'activeTab_Operacion_{{ $operacion->id }}';
+            const activeTabId = sessionStorage.getItem(sessionKey);
+
+            if (activeTabId) {
+                const targetTab = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
+                if (targetTab) {
+                    // Usando la forma nativa de Bootstrap para cambiar la pestaña activa en JS
+                    targetTab.click();
+                }
+            }
+
+            // Escuchar cambios para guardar en sesión
+            tabButtons.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    const targetId = event.target.getAttribute('data-bs-target');
+                    sessionStorage.setItem(sessionKey, targetId);
                 });
             });
         });
