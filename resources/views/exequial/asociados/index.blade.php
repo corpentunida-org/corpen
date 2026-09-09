@@ -72,58 +72,56 @@
                                             @endif
                                         </td>
                                         <td class="text-end">
-                                            <div class="dropdown">
-                                                <button class="btn btn-sm btn-light-brand" type="button"
-                                                    data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    <li>
-                                                        <a class="dropdown-item" href="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}?id={{ $t->cod_cli }}">
-                                                            <i class="feather feather-eye me-2"></i> Ver titular
-                                                        </a>
-                                                    </li>
-                                                    @candirect('exequial.beneficiarios.index')
+                                            <div class="d-flex gap-2 justify-content-end align-items-center">
+                                                @candirect('exequial.retiros.store')
+                                                    @if ($t->estado)
+                                                        <button type="button" class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal" data-bs-target="#modalRetiro"
+                                                            data-cedula="{{ $t->cod_cli }}"
+                                                            data-nombre="{{ $t->nombre ?: $t->cod_cli }}">
+                                                            <i class="bi bi-person-dash me-1"></i> Retirar
+                                                        </button>
+                                                    @endif
+                                                @endcandirect
+                                                @candirect('exequial.retiros.reafiliar')
+                                                    @if (!$t->estado && $retirados->has($t->cod_cli))
+                                                        <button type="button" class="btn btn-sm btn-success"
+                                                            data-bs-toggle="modal" data-bs-target="#modalReafiliar"
+                                                            data-cedula="{{ $t->cod_cli }}"
+                                                            data-nombre="{{ $t->nombre ?: $t->cod_cli }}">
+                                                            <i class="bi bi-person-check me-1"></i> Reintegro
+                                                        </button>
+                                                    @endif
+                                                @endcandirect
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-light-brand" type="button"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <i class="bi bi-three-dots-vertical"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu dropdown-menu-end">
                                                         <li>
-                                                            <a class="dropdown-item" href="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}?id={{ $t->cod_cli }}#beneficiarios">
-                                                                <i class="bi bi-people me-2"></i> Beneficiarios
+                                                            <a class="dropdown-item" href="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}?id={{ $t->cod_cli }}">
+                                                                <i class="feather feather-eye me-2"></i> Ver titular
                                                             </a>
                                                         </li>
-                                                    @endcandirect
-                                                    @candirect('exequial.asociados.update')
-                                                        @if ($t->estado)
+                                                        @candirect('exequial.beneficiarios.index')
                                                             <li>
-                                                                <a class="dropdown-item" href="{{ route('exequial.asociados.edit', $t->cod_cli) }}">
-                                                                    <i class="feather feather-edit-2 me-2"></i> Editar titular
+                                                                <a class="dropdown-item" href="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}?id={{ $t->cod_cli }}#beneficiarios">
+                                                                    <i class="bi bi-people me-2"></i> Beneficiarios
                                                                 </a>
                                                             </li>
-                                                        @endif
-                                                    @endcandirect
-                                                    @candirect('exequial.retiros.store')
-                                                        @if ($t->estado)
-                                                            <li>
-                                                                <a class="dropdown-item text-danger" href="javascript:void(0);"
-                                                                    data-bs-toggle="modal" data-bs-target="#modalRetiro"
-                                                                    data-cedula="{{ $t->cod_cli }}"
-                                                                    data-nombre="{{ $t->nombre ?: $t->cod_cli }}">
-                                                                    <i class="bi bi-person-dash me-2"></i> Retirar titular
-                                                                </a>
-                                                            </li>
-                                                        @endif
-                                                    @endcandirect
-                                                    @candirect('exequial.retiros.reafiliar')
-                                                        @if (!$t->estado && $retirados->has($t->cod_cli))
-                                                            <li>
-                                                                <a class="dropdown-item text-success" href="javascript:void(0);"
-                                                                    data-bs-toggle="modal" data-bs-target="#modalReafiliar"
-                                                                    data-cedula="{{ $t->cod_cli }}"
-                                                                    data-nombre="{{ $t->nombre ?: $t->cod_cli }}">
-                                                                    <i class="bi bi-person-check me-2"></i> Reafiliar titular
-                                                                </a>
-                                                            </li>
-                                                        @endif
-                                                    @endcandirect
-                                                </ul>
+                                                        @endcandirect
+                                                        @candirect('exequial.asociados.update')
+                                                            @if ($t->estado)
+                                                                <li>
+                                                                    <a class="dropdown-item" href="{{ route('exequial.asociados.edit', $t->cod_cli) }}">
+                                                                        <i class="feather feather-edit-2 me-2"></i> Editar titular
+                                                                    </a>
+                                                                </li>
+                                                            @endif
+                                                        @endcandirect
+                                                    </ul>
+                                                </div>
                                             </div>
                                         </td>
                                     </tr>
@@ -203,22 +201,22 @@
                     <form method="POST" id="formReafiliar" action="">
                         @csrf
                         <div class="modal-header">
-                            <h5 class="modal-title">Reafiliar titular</h5>
+                            <h5 class="modal-title">Reintegro de titular</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <p class="mb-3">
-                                Vas a reafiliar a <strong id="reafiliarNombre"></strong> (cédula <span id="reafiliarCedula"></span>).
+                                Vas a reintegrar a <strong id="reafiliarNombre"></strong> (cédula <span id="reafiliarCedula"></span>).
                                 Esto también notifica a la API externa y reactiva al titular.
                             </p>
                             <div class="col-12">
-                                <label class="form-label fw-bold text-dark small text-uppercase">Observación de reafiliación</label>
+                                <label class="form-label fw-bold text-dark small text-uppercase">Observación del reintegro</label>
                                 <textarea name="observacion_reafiliacion" class="form-control" rows="3" required></textarea>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Confirmar reafiliación</button>
+                            <button type="submit" class="btn btn-success">Confirmar reintegro</button>
                         </div>
                     </form>
                 </div>

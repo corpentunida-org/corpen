@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class ComaeExCli extends Model
 {
     use HasFactory;
-    protected $table = 'EXE_ExCli'; 
+    protected $table = 'EXE_ExCli';
+    protected $primaryKey = 'cod_cli';
+    public $incrementing = false;
     public $timestamps = true;
 
     protected $fillable = [
