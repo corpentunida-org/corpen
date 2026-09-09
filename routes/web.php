@@ -185,6 +185,7 @@ use App\Http\Controllers\Asociado\MaeAsociadoController;
 
 //INTEGRACIONES
 use App\Http\Controllers\Integraciones\PanelIntegracionController;
+use App\Http\Controllers\Admin\CorpentunidaCrmConfigController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
@@ -266,6 +267,9 @@ Route::prefix('exequiales')->group(function () {
     Route::post('asociados/{cedula}/retiro', [RetiroTitularController::class, 'store'])
         ->middleware(['auth', 'can:exequial.retiros.store'])
         ->name('exequial.retiros.store');
+    Route::post('asociados/{cedula}/reafiliar', [RetiroTitularController::class, 'reafiliar'])
+        ->middleware(['auth', 'can:exequial.retiros.reafiliar'])
+        ->name('exequial.retiros.reafiliar');
     Route::get('retiros', [RetiroTitularController::class, 'index'])
         ->middleware(['auth', 'can:exequial.retiros.index'])
         ->name('exequial.retiros.index');
@@ -1459,6 +1463,15 @@ Route::middleware(['auth'])
 
         // Ejecuta la prueba de conexión a Pastors, mide tiempo y guarda el log
         Route::post('/test/pastors', [PanelIntegracionController::class, 'testPastors'])->name('test.pastors');
+
+        // Configuración de credenciales del CRM Corpentunida (guarda un client_secret,
+        // así que a diferencia del resto de este grupo exige permiso explícito además de auth).
+        Route::get('/corpentunida-crm', [CorpentunidaCrmConfigController::class, 'edit'])
+            ->middleware('candirect:admin.integraciones.corpentunida.index')
+            ->name('corpentunida-crm.edit');
+        Route::post('/corpentunida-crm', [CorpentunidaCrmConfigController::class, 'update'])
+            ->middleware('candirect:admin.integraciones.corpentunida.index')
+            ->name('corpentunida-crm.update');
 
     });
 // FIN MÓDULO INTEGRACIONES

@@ -47,4 +47,15 @@ return [
         'token' => env('TOKEN_ADMIN'),
     ],
 
+    /*
+    | API "Corpentunida CRM" — sistema distinto al de arriba (siasoft). Usa OAuth2
+    | client_credentials: un token JWT que vence a las 4 horas y se debe renovar,
+    | en vez de un token estático fijo como el de api_produccion.
+    */
+    'corpentunida_crm' => [
+        'url' => env('CORPENTUNIDA_CRM_URL'),
+        'client_id' => env('CORPENTUNIDA_CRM_CLIENT_ID'),
+        'client_secret' => env('CORPENTUNIDA_CRM_CLIENT_SECRET'),
+    ],
+
 ];

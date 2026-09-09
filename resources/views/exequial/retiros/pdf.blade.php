@@ -57,7 +57,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="6" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME DE RETIRADOS</th>
+                <th colspan="7" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME DE RETIRADOS</th>
             </tr>
         </thead>
         <tbody>
@@ -67,6 +67,7 @@
                 <th>Fecha Afiliación</th>
                 <th>Fecha Retiro</th>
                 <th>Observaciones</th>
+                <th>Estado</th>
                 <th>Reportado</th>
             </tr>
             @foreach ($retiros as $r)
@@ -76,6 +77,7 @@
                     <td>{{ optional($r->fecha_afiliacion)->format('d/m/Y') }}</td>
                     <td>{{ $r->fecha_retiro->format('d/m/Y') }}</td>
                     <td>{{ $r->observaciones }}</td>
+                    <td>{{ $r->fecha_reafiliacion ? 'Reafiliado ' . $r->fecha_reafiliacion->format('d/m/Y') : 'Vigente' }}</td>
                     <td>{{ $r->reportado_aliado ? 'Sí' : 'No' }}</td>
                 </tr>
             @endforeach

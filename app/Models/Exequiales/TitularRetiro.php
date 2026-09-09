@@ -18,6 +18,9 @@ class TitularRetiro extends Model
         'fecha_afiliacion',
         'fecha_retiro',
         'observaciones',
+        'fecha_reafiliacion',
+        'observacion_reafiliacion',
+        'reafiliado_por',
         'reportado_aliado',
         'reportado_en',
         'reportado_por',
@@ -27,9 +30,16 @@ class TitularRetiro extends Model
     protected $casts = [
         'fecha_afiliacion' => 'date',
         'fecha_retiro' => 'date',
+        'fecha_reafiliacion' => 'date',
         'reportado_aliado' => 'boolean',
         'reportado_en' => 'datetime',
     ];
+
+    /** 'fecha_reafiliacion' nula = este retiro sigue vigente hoy. */
+    public function scopeVigentes($query)
+    {
+        return $query->whereNull('fecha_reafiliacion');
+    }
 
     public function titular()
     {
@@ -44,5 +54,10 @@ class TitularRetiro extends Model
     public function reportadoPor()
     {
         return $this->belongsTo(User::class, 'reportado_por');
+    }
+
+    public function reafiliadoPor()
+    {
+        return $this->belongsTo(User::class, 'reafiliado_por');
     }
 }

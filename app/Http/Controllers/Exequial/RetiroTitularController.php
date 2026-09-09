@@ -4,20 +4,24 @@ namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Exequial\StoreReafiliacionRequest;
 use App\Http\Requests\Exequial\StoreRetiroRequest;
 use App\Imports\ExcelExport;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\TitularRetiro;
 use App\Services\Exequial\ExequialApiException;
 use App\Services\Exequial\ExequialApiService;
+use App\Services\Integraciones\CorpentunidaCrmService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
 class RetiroTitularController extends Controller
 {
-    public function __construct(private ExequialApiService $api)
-    {
+    public function __construct(
+        private ExequialApiService $api,
+        private CorpentunidaCrmService $crm,
+    ) {
     }
 
     private function auditoria($accion, $area)
@@ -101,7 +105,78 @@ class RetiroTitularController extends Controller
 
         $this->auditoria('retiro de titular ' . $cedula, 'EXEQUIALES');
 
+        // "Mejor esfuerzo": si el CRM Corpentunida no está disponible o mal
+        // configurado, el retiro en siasoft y local ya quedó hecho — no se
+        // deshace por esto, solo se avisa para que se sincronice manualmente.
+        if (!$this->crm->actualizarEstadoTercero($cedula, false)) {
+            session()->flash('warning', 'El titular se retiró correctamente, pero no se pudo sincronizar el estado con el CRM Corpentunida. Actualízalo allí manualmente.');
+        }
+
         return redirect()->route('exequial.asociados.index')->with('success', 'Titular retirado exitosamente.');
+    }
+
+    /**
+     * Reafiliación: revierte un retiro. Mismo criterio que store() — se llama
+     * primero a la API externa (PATCH stade=true, igual que
+     * ComaeExCliController::update()) y solo si responde bien se toca la BD
+     * local. La trazabilidad NO se pierde: se completan fecha_reafiliacion /
+     * observacion_reafiliacion / reafiliado_por sobre el mismo registro de
+     * retiro (scopeVigentes) en vez de borrarlo, así el historial completo del
+     * ciclo retiro→reafiliación queda en una sola fila.
+     */
+    public function reafiliar(StoreReafiliacionRequest $request, $cedula)
+    {
+        $titularLocal = ComaeExCli::where('cod_cli', $cedula)->first();
+        if (!$titularLocal) {
+            return redirect()->back()->with('error', 'El titular no existe localmente.');
+        }
+        if ($titularLocal->estado) {
+            return redirect()->back()->with('error', 'Este titular ya está activo.');
+        }
+
+        $retiroVigente = TitularRetiro::where('cod_cli', $cedula)->vigentes()->latest('fecha_retiro')->first();
+        if (!$retiroVigente) {
+            return redirect()->back()->with('error', 'Este titular no tiene un retiro registrado para reafiliar.');
+        }
+
+        try {
+            $titular = $this->api->get('/api/Exequiales/Tercero', ['documentId' => $cedula]);
+            if (!$titular->successful()) {
+                return redirect()->back()->with('error', 'No se encontró el titular en la API externa.');
+            }
+            $datos = $titular->json();
+
+            $response = $this->api->patch('/api/Exequiales/Tercero', [
+                'documentId' => $cedula,
+                'dateInit' => $datos['dateInit'] ?? ' ',
+                'codePlan' => $datos['codePlan'] ?? '01',
+                'discount' => $datos['discount'] ?? 0,
+                'observation' => 'REAFILIACION: ' . $request->observacion_reafiliacion,
+                'stade' => true,
+            ]);
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+
+        if (!$response->successful()) {
+            return redirect()->back()->with('error', 'No se pudo reafiliar el titular en el sistema externo.');
+        }
+
+        $titularLocal->update(['estado' => true]);
+
+        $retiroVigente->update([
+            'fecha_reafiliacion' => now()->toDateString(),
+            'observacion_reafiliacion' => $request->observacion_reafiliacion,
+            'reafiliado_por' => auth()->id(),
+        ]);
+
+        $this->auditoria('reafiliación de titular ' . $cedula, 'EXEQUIALES');
+
+        if (!$this->crm->actualizarEstadoTercero($cedula, true)) {
+            session()->flash('warning', 'El titular se reafilió correctamente, pero no se pudo sincronizar el estado con el CRM Corpentunida. Actualízalo allí manualmente.');
+        }
+
+        return redirect()->route('exequial.asociados.index')->with('success', 'Titular reafiliado exitosamente.');
     }
 
     public function marcarReportado(TitularRetiro $retiro)
@@ -127,10 +202,11 @@ class RetiroTitularController extends Controller
             optional($r->fecha_afiliacion)->format('Y-m-d'),
             $r->fecha_retiro->format('Y-m-d'),
             $r->observaciones,
+            $r->fecha_reafiliacion ? 'Reafiliado ' . $r->fecha_reafiliacion->format('Y-m-d') : 'Vigente',
             $r->reportado_aliado ? 'Sí' : 'No',
         ])->toArray();
 
-        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Observaciones', 'Reportado'];
+        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Observaciones', 'Estado', 'Reportado'];
         $name = 'Retirados_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new ExcelExport($data, $headings), $name);

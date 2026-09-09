@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         SgrhPermissionsSeeder::class,
         ExequialTercerosPermissionsSeeder::class,
         ExequialRetirosPermissionsSeeder::class,
+        AdminIntegracionesPermissionsSeeder::class,
     ]);
     }
 }
