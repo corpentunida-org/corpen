@@ -24,6 +24,7 @@ class CarSiaOperacionLog extends Model
     // - detalles_ejecucion: Detalles adicionales o respuesta técnica de la ejecución en formato JSON.
     protected $fillable = [
         'numero_bloque',
+        'id_car_sia_operaciones',
         'id_car_sia_operaciones_lineas',
         'id_car_sia_origenes_evento',
         'id_car_sia_eventos_auditoria',
@@ -38,6 +39,14 @@ class CarSiaOperacionLog extends Model
     ];
 
     // 4. Relaciones
+
+    /**
+     * Identificador de la operación principal asociada al log.
+     */
+    public function operacion()
+    {
+        return $this->belongsTo(CarSiaOperacion::class, 'id_car_sia_operaciones');
+    }
 
     /**
      * Identificador de la operación de la línea principal asociada al log.

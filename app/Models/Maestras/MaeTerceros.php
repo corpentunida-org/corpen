@@ -139,7 +139,7 @@ class MaeTerceros extends Model
         // ----------------------
         // DOMICILIO
         // ----------------------
-        'dir',
+        'dir', 
         'dir1',
         'dir2', // DIRECCIONES
         'dir_comer', // DIRECCIÓN COMERCIAL
