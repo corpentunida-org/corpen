@@ -276,6 +276,15 @@
                     console.log($(this).serialize());
                 }
             });
+
+            // Permite llegar directo a la pestaña "Beneficiarios" desde otras pantallas
+            // (ej. el listado de titulares) agregando #beneficiarios a la URL.
+            if (window.location.hash === '#beneficiarios') {
+                var tabBeneficiarios = document.querySelector('[data-bs-target="#securityTab"]');
+                if (tabBeneficiarios) {
+                    new bootstrap.Tab(tabBeneficiarios).show();
+                }
+            }
         });
     </script>
 </x-base-layout>

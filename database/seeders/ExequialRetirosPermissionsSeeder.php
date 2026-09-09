@@ -17,6 +17,7 @@ class ExequialRetirosPermissionsSeeder extends Seeder
             'exequial.retiros.store',
             'exequial.retiros.index',
             'exequial.retiros.reportar',
+            'exequial.retiros.reafiliar',
         ];
 
         foreach ($permisos as $permiso) {
