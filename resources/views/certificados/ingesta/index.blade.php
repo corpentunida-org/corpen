@@ -1496,32 +1496,145 @@
                                                         </span>
                                                     </div>
 
-                                                    <div class="text-muted mb-2" style="font-size: .7rem;">
-                                                        <i class="fas fa-user-circle me-1 opacity-50"></i>
-                                                        <span class="fw-medium text-dark">{{ $log->usuario->name ?? 'Sistema Automático' }}</span>
+                                                    <div class="text-muted mb-2 d-flex justify-content-between align-items-center" style="font-size: .7rem;">
+                                                        <div>
+                                                            <i class="fas fa-user-circle me-1 opacity-50"></i>
+                                                            <span class="fw-medium text-dark">{{ $log->usuario->name ?? 'Sistema Automático' }}</span>
+                                                        </div>
+                                                        @if($log->ip)
+                                                            <span class="text-muted" style="font-size: .6rem; font-family: monospace;" title="IP de origen">
+                                                                {{ $log->ip }}
+                                                            </span>
+                                                        @endif
                                                     </div>
 
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div class="d-flex gap-2 align-items-center">
-                                                            <span class="badge bg-white text-secondary border shadow-none" style="font-size: .6rem; padding: .2rem .4rem;">
-                                                                <i class="fas fa-sitemap me-1"></i> {{ $log->origenEvento->nombre ?? 'API' }}
-                                                            </span>
-                                                            @if($log->ip)
-                                                                <span class="text-muted" style="font-size: .6rem; font-family: monospace;">
-                                                                    {{ $log->ip }}
-                                                                </span>
-                                                            @endif
-                                                        </div>
+                                                    @php
+                                                        // Decodificar JSON de forma segura
+                                                        $datos = is_array($log->detalles_ejecucion) ? $log->detalles_ejecucion : (json_decode($log->detalles_ejecucion, true) ?? []);
 
-                                                        @if(!empty($log->detalles_ejecucion))
-                                                            <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium" style="font-size: .65rem;" onclick="document.getElementById('jsonViewer-{{ $log->id }}').classList.toggle('d-none')">
-                                                                <i class="fas fa-code me-1"></i>Payload
+                                                        // Detectar si usa la nueva estructura estandarizada
+                                                        $esNuevoFormato = isset($datos['identificadores']) || isset($datos['metricas']);
+
+                                                        // Filtrar valores nulos o cadenas vacías para no mostrar basura visual
+                                                        $filtro = fn($v) => !is_null($v) && $v !== '';
+
+                                                        $identificadores = array_filter($datos['identificadores'] ?? [], $filtro);
+                                                        $metricas = array_filter($datos['metricas'] ?? [], fn($v) => !is_null($v) && $v !== '' && $v !== 0); // Ocultar ceros en métricas para más limpieza
+                                                        $parametros = array_filter($datos['parametros'] ?? [], $filtro);
+                                                        $contexto = array_filter($datos['contexto'] ?? [], $filtro);
+
+                                                        $hayDetallesNuevos = count($identificadores) + count($metricas) + count($parametros) + count($contexto) > 0;
+                                                    @endphp
+
+                                                    {{-- Mostrar la descripción directamente para contexto rápido sin hacer clics --}}
+                                                    @if(isset($datos['descripcion']))
+                                                        <p class="text-muted mb-2 fst-italic border-start border-2 border-primary ps-2" style="font-size: .65rem; line-height: 1.2;">
+                                                            {{ $datos['descripcion'] }}
+                                                        </p>
+                                                    @endif
+
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="badge bg-white text-secondary border shadow-none" style="font-size: .6rem; padding: .2rem .4rem;">
+                                                            <i class="fas fa-sitemap me-1"></i> {{ $log->origenEvento->nombre ?? 'API' }}
+                                                        </span>
+
+                                                        @if(($esNuevoFormato && $hayDetallesNuevos) || (!$esNuevoFormato && count($datos) > 0))
+                                                            <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium d-flex align-items-center gap-1" style="font-size: .65rem;" onclick="document.getElementById('detalles-log-{{ $log->id }}').classList.toggle('d-none')">
+                                                                <i class="fas fa-search-plus"></i> Detalles
                                                             </button>
                                                         @endif
                                                     </div>
 
-                                                    @if(!empty($log->detalles_ejecucion))
-                                                        <pre id="jsonViewer-{{ $log->id }}" class="d-none text-start p-2 mt-2 bg-dark text-light rounded mb-0 custom-scrollbar" style="font-size: .6rem; max-height: 150px; overflow-y: auto; white-space: pre-wrap;">{{ json_encode($log->detalles_ejecucion, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+                                                    {{-- Contenedor de Detalles Oculto (Interfaz Minimalista, NO JSON) --}}
+                                                    @if(($esNuevoFormato && $hayDetallesNuevos) || (!$esNuevoFormato && count($datos) > 0))
+                                                        <div id="detalles-log-{{ $log->id }}" class="d-none mt-2 pt-2 border-top border-light">
+
+                                                            @if($esNuevoFormato)
+                                                                {{-- NUEVO FORMATO ESTANDARIZADO --}}
+
+                                                                {{-- Identificadores --}}
+                                                                @if(count($identificadores) > 0)
+                                                                    <div class="mb-1">
+                                                                        <span class="d-block text-muted text-uppercase mb-1" style="font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px;">Identificadores</span>
+                                                                        <div class="d-flex flex-wrap gap-1">
+                                                                            @foreach($identificadores as $key => $val)
+                                                                                <span class="badge bg-white text-dark border border-secondary border-opacity-25" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                    <span class="text-muted">{{ str_replace('_', ' ', ucfirst($key)) }}:</span> <span class="font-monospace fw-bold">{{ $val }}</span>
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
+
+                                                                {{-- Métricas --}}
+                                                                @if(count($metricas) > 0)
+                                                                    <div class="mb-1 mt-2">
+                                                                        <span class="d-block text-muted text-uppercase mb-1" style="font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px;">Volumen y Métricas</span>
+                                                                        <div class="d-flex flex-wrap gap-1">
+                                                                            @foreach($metricas as $key => $val)
+                                                                                @php $esValor = str_contains($key, 'valor'); @endphp
+                                                                                <span class="badge bg-white text-primary border border-primary" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                    {{ str_replace('_', ' ', ucfirst($key)) }}: <span class="fw-bold">{{ $esValor ? '$' . number_format((float)$val, 2) : $val }}</span>
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
+
+                                                                {{-- Parámetros --}}
+                                                                @if(count($parametros) > 0)
+                                                                    <div class="mb-1 mt-2">
+                                                                        <span class="d-block text-muted text-uppercase mb-1" style="font-size: 0.55rem; font-weight: 700; letter-spacing: 0.5px;">Parámetros Asignados</span>
+                                                                        <div class="d-flex flex-wrap gap-1">
+                                                                            @foreach($parametros as $key => $val)
+                                                                                @php
+                                                                                    $displayVal = $val;
+
+                                                                                    // Si el valor es numérico, intentamos buscar su nombre real
+                                                                                    if (is_numeric($val)) {
+                                                                                        if ($key === 'tipo_asignado' || $key === 'tipo_certificado_global') {
+                                                                                            $displayVal = collect($tipos ?? [])->firstWhere('id', $val)->nombre ?? $val;
+                                                                                        } elseif ($key === 'estado_asignado') {
+                                                                                            $displayVal = collect($estados ?? [])->firstWhere('id', $val)->nombre ?? $val;
+                                                                                        } elseif ($key === 'alerta_asignada') {
+                                                                                            $displayVal = collect($tiposAlerta ?? [])->firstWhere('id', $val)->nombre ?? $val;
+                                                                                        }
+                                                                                    }
+                                                                                @endphp
+                                                                                <span class="badge bg-light text-dark border border-info border-opacity-50" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                    <span class="text-info opacity-75 me-1"><i class="fas fa-tag"></i></span> {{ str_replace('_', ' ', ucfirst($key)) }}: <span class="fw-bold">{{ $displayVal }}</span>
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    </div>
+                                                                @endif
+
+                                                                {{-- Contexto / Errores --}}
+                                                                @if(count($contexto) > 0)
+                                                                    <div class="mt-2 p-2 bg-white rounded border border-warning border-opacity-50 text-wrap text-break" style="font-size: 0.65rem;">
+                                                                        @foreach($contexto as $key => $val)
+                                                                            @php $esError = str_contains($key, 'error'); @endphp
+                                                                            <div class="mb-1 {{ $esError ? 'text-danger fw-bold' : 'text-muted' }}">
+                                                                                <span class="text-uppercase" style="font-size: 0.55rem;">{{ str_replace('_', ' ', $key) }}:</span>
+                                                                                <span class="fst-italic">{{ $val }}</span>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                @endif
+
+                                                            @else
+                                                                {{-- FORMATO ANTIGUO (Retrocompatibilidad plana) --}}
+                                                                <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                    @foreach($datos as $key => $val)
+                                                                        @if(!is_array($val) && !is_object($val) && $val !== '' && $val !== null)
+                                                                            <span class="badge bg-white text-dark border border-secondary border-opacity-25" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                <span class="text-muted">{{ str_replace('_', ' ', ucfirst($key)) }}:</span> <span class="fw-bold">{{ $val }}</span>
+                                                                            </span>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                        </div>
                                                     @endif
                                                 </div>
                                             </div>

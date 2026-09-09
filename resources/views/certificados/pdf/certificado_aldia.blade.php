@@ -181,9 +181,6 @@
     </div>
 
     <div class="footer">
-        Para más información, puede comunicarse al teléfono: 3177772324 o al correo electrónico recaudo@corpentunida.org.co.<br>
-        NIT. 860.509.451-5 | Asociación Gremial de Ministros de la Iglesia Pentecostal Unida de Colombia<br>
-        Tv 29 38 22 La Soledad / Bogotá / Colombia | www.corpentunida.org.co / www.librerialuzyverdad.co | PBX 60 1 208 71 71
     </div>
 
 </body>
