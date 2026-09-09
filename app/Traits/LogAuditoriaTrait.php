@@ -27,7 +27,7 @@ trait LogAuditoriaTrait
             'accion'           => $accion,
             'entidad_afectada' => $entidadAfectada,
             'descripcion'      => $descripcion,
-            
+
             'identificadores'  => array_merge([
                 'id_operacion'      => null,
                 'id_registro_api'   => null,
@@ -35,14 +35,14 @@ trait LogAuditoriaTrait
                 'documento_tercero' => null,
                 'numero_radicado'   => null,
             ], $identificadores),
-            
+
             'metricas'         => array_merge([
                 'registros_procesados' => 0,
                 'registros_ignorados'  => 0,
                 'registros_afectados'  => 0,
                 'valor_financiero'     => null,
             ], $metricas),
-            
+
             'parametros'       => array_merge([
                 'estado_asignado'  => null,
                 'tipo_asignado'    => null,
@@ -50,7 +50,7 @@ trait LogAuditoriaTrait
                 'fecha_programada' => null,
                 'hash_generado'    => null,
             ], $parametros),
-            
+
             'contexto'         => array_merge([
                 'nombre_archivo' => null,
                 'error_tecnico'  => null,
@@ -60,7 +60,8 @@ trait LogAuditoriaTrait
 
         return CarSiaOperacionLog::create([
             'numero_bloque'                 => $numeroBloque,
-            'id_car_sia_operaciones_lineas' => $identificadores['id_linea_operacion'] ?? null, 
+            'id_car_sia_operaciones'        => $identificadores['id_operacion'] ?? null,
+            'id_car_sia_operaciones_lineas' => $identificadores['id_linea_operacion'] ?? null,
             'id_car_sia_origenes_evento'    => $idOrigenEvento,
             'id_car_sia_eventos_auditoria'  => $idEventoAuditoria,
             'id_user'                       => Auth::check() ? Auth::id() : null,
