@@ -94,9 +94,9 @@
                                                     @endif
                                                 @endcandirect
                                                 <div class="dropdown">
-                                                    <button class="btn btn-sm btn-light-brand" type="button"
+                                                    <button class="btn btn-success" type="button"
                                                         data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="bi bi-three-dots-vertical"></i>
+                                                        <i class="bi bi-three-dots-vertical me-1"></i> Opciones
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end">
                                                         <li>
