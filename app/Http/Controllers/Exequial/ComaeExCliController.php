@@ -37,42 +37,53 @@ class ComaeExCliController extends Controller
      * N+1 llamadas HTTP que se corrigió hoy mismo en el dashboard de "Prestar
      * Servicio" (antes esta pantalla ni siquiera tenía listado, solo un buscador
      * por cédula exacta).
+     *
+     * No corre ningún query mientras no se aplique una búsqueda o un filtro de
+     * estado: con 6.672 titulares, mostrar "los primeros 20 por cédula" al
+     * entrar no aporta nada útil y da sensación de aplicación lenta al cargar
+     * de una tabla completa sin que el usuario haya pedido nada todavía.
      */
     public function index(Request $request)
     {
         $busqueda = trim((string) $request->input('buscar', ''));
         $estadoFiltro = $request->input('estado');
+        $sePresentoFiltro = $busqueda !== '' || in_array($estadoFiltro, ['activo', 'inactivo'], true);
 
-        $titulares = DB::table('EXE_ExCli as e')
-            ->leftJoin('MaeTerceros as t', 't.cod_ter', '=', 'e.cod_cli')
-            ->select(
-                'e.cod_cli',
-                'e.estado',
-                'e.fec_ing',
-                DB::raw("TRIM(CONCAT_WS(' ', t.nom1, t.nom2, t.apl1, t.apl2)) as nombre")
-            )
-            ->when($busqueda !== '', function ($q) use ($busqueda) {
-                $q->where(function ($sub) use ($busqueda) {
-                    $sub->where('e.cod_cli', 'like', "%{$busqueda}%")
-                        ->orWhere('t.nom1', 'like', "%{$busqueda}%")
-                        ->orWhere('t.nom2', 'like', "%{$busqueda}%")
-                        ->orWhere('t.apl1', 'like', "%{$busqueda}%")
-                        ->orWhere('t.apl2', 'like', "%{$busqueda}%");
-                });
-            })
-            ->when($estadoFiltro === 'activo', fn ($q) => $q->where('e.estado', true))
-            ->when($estadoFiltro === 'inactivo', fn ($q) => $q->where('e.estado', false))
-            ->orderBy('e.cod_cli')
-            ->paginate(20)
-            ->withQueryString();
+        $titulares = null;
+        $retirados = collect();
 
-        // Para distinguir en pantalla "Retirado" de "Inactivo" (fallecido u otra
-        // razón legada) sin hacer un query por fila: un solo IN() con las
-        // cédulas de la página actual.
-        $cedulasEnPagina = collect($titulares->items())->pluck('cod_cli');
-        $retirados = TitularRetiro::whereIn('cod_cli', $cedulasEnPagina)->pluck('cod_cli')->flip();
+        if ($sePresentoFiltro) {
+            $titulares = DB::table('EXE_ExCli as e')
+                ->leftJoin('MaeTerceros as t', 't.cod_ter', '=', 'e.cod_cli')
+                ->select(
+                    'e.cod_cli',
+                    'e.estado',
+                    'e.fec_ing',
+                    DB::raw("TRIM(CONCAT_WS(' ', t.nom1, t.nom2, t.apl1, t.apl2)) as nombre")
+                )
+                ->when($busqueda !== '', function ($q) use ($busqueda) {
+                    $q->where(function ($sub) use ($busqueda) {
+                        $sub->where('e.cod_cli', 'like', "%{$busqueda}%")
+                            ->orWhere('t.nom1', 'like', "%{$busqueda}%")
+                            ->orWhere('t.nom2', 'like', "%{$busqueda}%")
+                            ->orWhere('t.apl1', 'like', "%{$busqueda}%")
+                            ->orWhere('t.apl2', 'like', "%{$busqueda}%");
+                    });
+                })
+                ->when($estadoFiltro === 'activo', fn ($q) => $q->where('e.estado', true))
+                ->when($estadoFiltro === 'inactivo', fn ($q) => $q->where('e.estado', false))
+                ->orderBy('e.cod_cli')
+                ->paginate(20)
+                ->withQueryString();
 
-        return view('exequial.asociados.index', compact('titulares', 'retirados', 'busqueda', 'estadoFiltro'));
+            // Para distinguir en pantalla "Retirado" de "Inactivo" (fallecido u
+            // otra razón legada) sin hacer un query por fila: un solo IN() con
+            // las cédulas de la página actual.
+            $cedulasEnPagina = collect($titulares->items())->pluck('cod_cli');
+            $retirados = TitularRetiro::whereIn('cod_cli', $cedulasEnPagina)->vigentes()->pluck('cod_cli')->flip();
+        }
+
+        return view('exequial.asociados.index', compact('titulares', 'retirados', 'busqueda', 'estadoFiltro', 'sePresentoFiltro'));
     }
 
     //Datos solo del titular

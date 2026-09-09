@@ -26,6 +26,11 @@
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('integraciones.show.pastors') }}">API Pastors</a>
                 </li>
+                @candirect('admin.integraciones.corpentunida.index')
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('integraciones.corpentunida-crm.edit') }}">CRM Corpentunida</a>
+                </li>
+                @endcandirect
             </ul>
         </li>
         @endcandirect

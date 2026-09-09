@@ -61,6 +61,7 @@
                                 <th>Fecha afiliación</th>
                                 <th>Fecha retiro</th>
                                 <th>Observaciones</th>
+                                <th class="text-center">Estado</th>
                                 <th class="text-center">Reportado</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
@@ -73,6 +74,14 @@
                                     <td class="text-muted small">{{ optional($r->fecha_afiliacion)->format('d/m/Y') ?? '—' }}</td>
                                     <td class="text-muted small">{{ $r->fecha_retiro->format('d/m/Y') }}</td>
                                     <td class="text-muted small">{{ $r->observaciones }}</td>
+                                    <td class="text-center">
+                                        @if ($r->fecha_reafiliacion)
+                                            <span class="badge bg-soft-primary text-primary" data-bs-toggle="tooltip"
+                                                title="{{ $r->observacion_reafiliacion }}">Reafiliado {{ $r->fecha_reafiliacion->format('d/m/Y') }}</span>
+                                        @else
+                                            <span class="badge bg-soft-warning text-warning">Vigente</span>
+                                        @endif
+                                    </td>
                                     <td class="text-center">
                                         @if ($r->reportado_aliado)
                                             <span class="badge bg-soft-success text-success" data-bs-toggle="tooltip"
@@ -98,7 +107,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">No hay retiros para los filtros seleccionados.</td>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay retiros para los filtros seleccionados.</td>
                                 </tr>
                             @endforelse
                         </tbody>
