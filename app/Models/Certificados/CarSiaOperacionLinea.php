@@ -34,6 +34,8 @@ class CarSiaOperacionLinea extends Model
         'id_user',
         'id_car_sia_tipos',
         'hash_certificado',
+        // --- CAMPO JSON ---
+        'metadata',
     ];
 
     // 3. Conversión de tipos de datos (Casting)
@@ -42,6 +44,7 @@ class CarSiaOperacionLinea extends Model
         'fecha_ultimo_recordatorio' => 'datetime',
         'procesado_en'              => 'datetime',
         'dias_mora_automaticos'     => 'integer',
+        'metadata'                  => 'array', // Convierte automáticamente el JSON a Array de PHP
     ];
 
     // ---------------------------------------------------

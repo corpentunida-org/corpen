@@ -1522,6 +1522,9 @@ Route::middleware(['auth'])
         // --- Toggle para activar/inactivar configuración operativa ---
         Route::patch('operaciones/config/{id}/toggle', [OperacionController::class, 'toggleEstado'])->name('operaciones.config.toggle');
 
+        // --- Actualizar parámetros lógicos (JSON), justificación y estado ---
+        Route::put('operaciones/config/{id}/update-parametros', [OperacionController::class, 'updateParametrosJson'])->name('operaciones.config.update_parametros');
+
         // Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 

@@ -31,7 +31,9 @@ use App\Models\Certificados\CarSiaOrigenEvento;
 use App\Models\Certificados\CarSiaEventoAuditoria;
 use App\Models\Certificados\CarSiaOperacionAlertaLog;
 use App\Traits\LogAuditoriaTrait;
-
+use App\Models\Maestras\MaeDistritos;
+use App\Models\Maestras\MaeTipo;
+use App\Models\Maestras\MaeCongregacion;
 
 class OperacionController extends Controller
 {
@@ -43,7 +45,7 @@ class OperacionController extends Controller
     public function index(Request $request)
     {
         try {
-            // SOLUCIÓN INTEGRADA: Consulta directa a la tabla de bloques excluyendo los anulados
+            // Caché de bloques excluyendo los anulados
             $bloquesDisponibles = Cache::remember('sia_bloques_disponibles', 5, function () {
                 return DB::table('car_sia_bloques')
                     ->where('estado', '!=', 'ANULADO')
@@ -54,72 +56,68 @@ class OperacionController extends Controller
             $bloqueActivo = $request->input('bloque', $bloquesDisponibles->first()?->numero_bloque);
 
             $kpi = ['total' => 0, 'procesados' => 0, 'pendientes' => 0];
-
             $historialBloque = collect();
             $operacionesConfiguradas = collect();
-            $configuracionesMasivas = collect(); // <--- NUEVA COLECCIÓN PARA LAS MASIVAS
+            $configuracionesMasivas = collect();
+            $alertasBloqueActivo = collect();
+            $tiposBloqueActivo = collect();
 
             if ($bloqueActivo) {
+                // OPTIMIZACIÓN KPI 1: Conteo total directo
                 $kpi['total'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
 
-                $kpi['procesados'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)
-                    ->whereExists(function ($query) {
-                        $query->select(DB::raw(1))
-                              ->from('car_sia_estados_operacion as eo')
-                              ->join('car_sia_estados as e', 'eo.id_car_sia_estados', '=', 'e.id')
-                              ->whereColumn('eo.id_car_sia_operaciones', 'car_sia_operaciones.id')
-                              ->where(function($q) {
-                                  $q->where('e.nombre', 'LIKE', '%Procesado%')
-                                    ->orWhere('e.nombre', 'LIKE', '%Aprobado%')
-                                    ->orWhere('e.nombre', 'LIKE', '%Completado%');
-                              });
-                    })->count();
+                // OPTIMIZACIÓN KPI 2: Query Builder directo con Distinct (Evita escaneo repetitivo de Eloquent)
+                $kpi['procesados'] = DB::table('car_sia_operaciones as op')
+                    ->join('car_sia_estados_operacion as eo', 'op.id', '=', 'eo.id_car_sia_operaciones')
+                    ->join('car_sia_estados as e', 'eo.id_car_sia_estados', '=', 'e.id')
+                    ->where('op.numero_bloque', $bloqueActivo)
+                    ->where(function($q) {
+                        $q->where('e.nombre', 'LIKE', '%Procesado%')
+                          ->orWhere('e.nombre', 'LIKE', '%Aprobado%')
+                          ->orWhere('e.nombre', 'LIKE', '%Completado%');
+                    })
+                    ->distinct('op.id')
+                    ->count('op.id');
 
                 $kpi['pendientes'] = $kpi['total'] - $kpi['procesados'];
 
+                // Historial del Lote
                 $historialBloque = CarSiaOperacionLog::with(['usuario', 'eventoAuditoria'])
                     ->where('numero_bloque', $bloqueActivo)
                     ->orderBy('created_at', 'desc')
                     ->take(8)
                     ->get();
 
-                // 1. EXTRAER CONFIGURACIONES INDIVIDUALES
-                $operacionesConfiguradas = CarSiaOperacion::with([
-                        'tercero',
-                        'configuracion.configuracionBase.accionVencimiento'
-                    ])
+                // Paginaciones de las tablas superiores (Lotes, Excepciones, Alertas, Tipos)
+                $operacionesConfiguradas = CarSiaOperacion::with(['tercero', 'configuracion.configuracionBase.accionVencimiento'])
                     ->where('numero_bloque', $bloqueActivo)
                     ->whereHas('configuracion')
                     ->orderBy('created_at', 'desc')
-                    ->get();
+                    ->paginate(5, ['*'], 'page_configs')->withQueryString();
 
-                // 2. EXTRAER CONFIGURACIONES MASIVAS (El que le faltaba el id_car_sia_operaciones)
                 $configuracionesMasivas = CarSiaOperacionConfig::with('configuracionBase.accionVencimiento')
                     ->where('numero_bloque', $bloqueActivo)
-                    ->whereNull('id_car_sia_operaciones') // Es masivo, no tiene operacion específica
+                    ->whereNull('id_car_sia_operaciones')
                     ->orderBy('created_at', 'desc')
-                    ->get();
+                    ->paginate(5, ['*'], 'page_masivas')->withQueryString();
 
-                // 3. EXTRAER ALERTAS DEL BLOQUE (Masivas e Individuales)
                 $alertasBloqueActivo = \App\Models\Certificados\CarSiaOperacionAlerta::with(['tipoAlerta', 'operacion', 'usuario'])
                     ->where('numero_bloque', $bloqueActivo)
                     ->orderBy('created_at', 'desc')
-                    ->get();
+                    ->paginate(5, ['*'], 'page_alertas')->withQueryString();
 
-                // 4. EXTRAER TIPOLOGÍAS/TIPOS DEL BLOQUE (Masivas e Individuales)
                 $tiposBloqueActivo = \App\Models\Certificados\CarSiaTipoOperacion::with(['tipo', 'operacion', 'usuario'])
                     ->where('numero_bloque', $bloqueActivo)
                     ->orderBy('created_at', 'desc')
-                    ->get();
+                    ->paginate(5, ['*'], 'page_tipos')->withQueryString();
             }
 
+            // OPTIMIZACIÓN PRINCIPAL: Se removieron 'lineas.factura' y 'configuracion...' para evitar colapso de memoria
             $query = CarSiaOperacion::with([
                 'tercero',
-                'lineas.factura',
                 'estados.estado', 'estadosBloque.estado',
                 'tipos.tipo', 'tiposBloque.tipo',
-                'alertas.tipoAlerta', 'alertasBloque.tipoAlerta',
-                'configuracion.configuracionBase.accionVencimiento'
+                'alertas.tipoAlerta', 'alertasBloque.tipoAlerta'
             ]);
 
             if ($bloqueActivo) {
@@ -143,34 +141,27 @@ class OperacionController extends Controller
                 });
             }
 
+            // Paginación rápida de la tabla inferior
             $operaciones = $query->orderBy('created_at', 'desc')->paginate(5)->withQueryString();
 
             $aniosDisponibles = Cache::remember('sia_anios_disponibles', 3600, function () {
-                return CarSiaOperacion::whereNotNull('created_at')
+                return DB::table('car_sia_operaciones')
+                    ->whereNotNull('created_at')
                     ->selectRaw('YEAR(created_at) as anio')
                     ->groupBy('anio')
                     ->orderBy('anio', 'desc')
                     ->pluck('anio');
             });
 
+            // Catálogos para modales
             $tiposAlerta = CarSiaTipoAlerta::all();
             $tipos = CarSiaTipo::all();
             $configuracionesBase = CarSiaConfig::with('accionVencimiento')->get();
 
             return view('certificados.operaciones.index', compact(
-                'operaciones',
-                'aniosDisponibles',
-                'bloquesDisponibles',
-                'bloqueActivo',
-                'kpi',
-                'tiposAlerta',
-                'tipos',
-                'historialBloque',
-                'configuracionesBase',
-                'operacionesConfiguradas',
-                'configuracionesMasivas',
-                'alertasBloqueActivo',
-                'tiposBloqueActivo'
+                'operaciones', 'aniosDisponibles', 'bloquesDisponibles', 'bloqueActivo',
+                'kpi', 'tiposAlerta', 'tipos', 'historialBloque', 'configuracionesBase',
+                'operacionesConfiguradas', 'configuracionesMasivas', 'alertasBloqueActivo', 'tiposBloqueActivo'
             ));
 
         } catch (\Exception $e) {
@@ -214,7 +205,7 @@ class OperacionController extends Controller
                 $totalLinea = $facturas->sum('valor');
                 $facturasOrdenadas = $facturas->sortBy('cuota')->map(function($factura) {
                     if ($factura->fecha_venci) {
-                        $fechaV = \Carbon\Carbon::parse($factura->fecha_venci);
+                        $fechaV = Carbon::parse($factura->fecha_venci);
                         $factura->diasMoraCalculados = now()->diffInDays($fechaV, false);
                         $factura->fechaVFormateada = $fechaV->format('d/m/Y');
                     } else {
@@ -233,6 +224,7 @@ class OperacionController extends Controller
             $estados = CarSiaEstado::all();
             $tipos = CarSiaTipo::all();
             $tiposAlerta = CarSiaTipoAlerta::all();
+            $tiposCertificados = $tipos;
 
             // --- LÓGICA DE BLADE TRASLADADA (Tab 3: Auditoría y Detalle Formateado) ---
             $logsAuditoria = CarSiaOperacionLog::with(['origenEvento', 'eventoAuditoria', 'usuario', 'usuario.cargoRelation'])
@@ -372,9 +364,25 @@ class OperacionController extends Controller
                 $operacionesConfiguradas->push($operacion);
             }
 
-            // 3. ENVIAR LA VARIABLE $operacionesConfiguradas AL COMPACT
+            // ==============================================================================
+            // CONSULTAMOS LAS REGLAS BASE ACTIVAS PARA EL MODAL DE CREAR
+            // ==============================================================================
+            $configuracionesBase = CarSiaConfig::with('accionVencimiento')
+                                    ->where('estado_activo', 1)
+                                    ->get();
+
+
+            // ==============================================================================
+            // NUEVO: CONSULTAMOS LAS MAESTRAS PARA EL MODAL DE ACTUALIZAR TERCERO
+            // ==============================================================================
+            $distritos = MaeDistritos::orderBy('COD_DIST', 'asc')->get();
+            $maeTipos = MaeTipo::all();
+            $congregaciones = MaeCongregacion::orderBy('codigo', 'asc')->get();
+
+            // 3. ENVIAR LAS VARIABLES AL COMPACT
             return view('certificados.operaciones.show', compact(
-                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas'
+                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
+                'distritos', 'maeTipos', 'congregaciones','tiposCertificados'
             ));
 
         } catch (\Exception $e) {
@@ -980,16 +988,26 @@ class OperacionController extends Controller
             $registros = [];
             $ahora = now();
 
+            // Traemos los JSON base una sola vez
+            $configuracionesBase = CarSiaConfig::whereIn('id', $request->id_car_sia_config)
+                                        ->get()
+                                        ->keyBy('id');
+
             foreach ($request->id_car_sia_config as $idConfig) {
+                // Capturamos el JSON de esta configuración base en específico
+                $parametrosBase = $configuracionesBase->has($idConfig) ? $configuracionesBase[$idConfig]->parametros : [];
+                $parametrosJson = is_array($parametrosBase) ? json_encode($parametrosBase) : $parametrosBase;
+
                 $registros[] = [
                     'numero_bloque'          => $request->numero_bloque,
                     'id_car_sia_operaciones' => null,
                     'id_car_sia_config'      => $idConfig,
+                    'parametros'             => $parametrosJson,  // <-- AQUÍ SE GUARDA LA "FOTOGRAFÍA" JSON
                     'estado_notificacion'    => $estado,
-                    'id_user'                => $idUser,                      // NUEVO
-                    'justificacion'          => $request->justificacion,      // NUEVO
-                    'vigente_hasta'          => $request->vigente_hasta,      // NUEVO
-                    'estado_activo'          => 1,                            // NUEVO (Default Activo)
+                    'id_user'                => $idUser,
+                    'justificacion'          => $request->justificacion,
+                    'vigente_hasta'          => $request->vigente_hasta,
+                    'estado_activo'          => 1,
                     'created_at'             => $ahora,
                     'updated_at'             => $ahora
                 ];
@@ -1014,7 +1032,6 @@ class OperacionController extends Controller
                 return back()->with('error', "Error al guardar en BD: " . $e->getMessage());
             }
         }
-
         /**
          * 2. CONFIGURACIÓN SELECTIVA - INDEX
          * Aplica MÚLTIPLES reglas SOLO a los resultados del buscador.
@@ -1048,27 +1065,38 @@ class OperacionController extends Controller
                 return back()->with('error', "No hay operaciones que coincidan con la búsqueda actual.");
             }
 
+            //Traemos los JSON base una sola vez
+            $configuracionesBase = CarSiaConfig::whereIn('id', $request->id_car_sia_config)
+                                        ->get()
+                                        ->keyBy('id');
+
             DB::beginTransaction();
             try {
                 $contadorOps = 0;
                 $totalReglasAsignadas = 0;
                 $ahora = now();
 
-                $query->select('id')->chunk(500, function ($operaciones) use ($request, $estado, $ahora, $idUser, &$contadorOps, &$totalReglasAsignadas) {
+                $query->select('id')->chunk(500, function ($operaciones) use ($request, $estado, $ahora, $idUser, $configuracionesBase, &$contadorOps, &$totalReglasAsignadas) {
                     $registrosBatch = [];
 
                     foreach ($operaciones as $op) {
                         $contadorOps++;
                         foreach ($request->id_car_sia_config as $idConfig) {
+
+                            // Capturamos el JSON de esta configuración base en específico
+                            $parametrosBase = $configuracionesBase->has($idConfig) ? $configuracionesBase[$idConfig]->parametros : [];
+                            $parametrosJson = is_array($parametrosBase) ? json_encode($parametrosBase) : $parametrosBase;
+
                             $registrosBatch[] = [
                                 'numero_bloque'          => $request->numero_bloque,
                                 'id_car_sia_operaciones' => $op->id,
                                 'id_car_sia_config'      => $idConfig,
+                                'parametros'             => $parametrosJson,  // <-- AQUÍ SE GUARDA LA "FOTOGRAFÍA" JSON
                                 'estado_notificacion'    => $estado,
-                                'id_user'                => $idUser,                 // NUEVO
-                                'justificacion'          => $request->justificacion, // NUEVO
-                                'vigente_hasta'          => $request->vigente_hasta, // NUEVO
-                                'estado_activo'          => 1,                       // NUEVO
+                                'id_user'                => $idUser,
+                                'justificacion'          => $request->justificacion,
+                                'vigente_hasta'          => $request->vigente_hasta,
+                                'estado_activo'          => 1,
                                 'created_at'             => $ahora,
                                 'updated_at'             => $ahora
                             ];
@@ -1097,6 +1125,22 @@ class OperacionController extends Controller
                 return back()->with('error', "Error al procesar la configuración selectiva: " . $e->getMessage());
             }
         }
+        public function toggleEstado($id)
+        {
+            $registro = CarSiaOperacionConfig::findOrFail($id);
+            $registro->estado_activo = !$registro->estado_activo; // Invierte el estado
+            $registro->save();
+
+            $this->registrarLogAuditoria(
+                $registro->numero_bloque, 1, 7,
+                'Cambio de Estado de Regla', 'Configuración', 'Se ' . ($registro->estado_activo ? 'activó' : 'inactivó') . ' una regla de configuración.',
+                ['id_operacion' => $registro->id_car_sia_operaciones],
+                [],
+                ['estado_asignado' => $registro->estado_activo ? 'Activa' : 'Inactiva']
+            );
+
+            return back()->with('success', 'Estado actualizado correctamente.');
+        }
 
         /**
          * 3. CONFIGURACIÓN INDIVIDUAL - SHOW
@@ -1119,11 +1163,21 @@ class OperacionController extends Controller
             $registros = [];
             $ahora = now();
 
+            // Traemos los JSON base una sola vez
+            $configuracionesBase = CarSiaConfig::whereIn('id', $request->id_car_sia_config)
+                                        ->get()
+                                        ->keyBy('id');
+
             foreach ($request->id_car_sia_config as $idConfig) {
+                // Capturamos el JSON de esta configuración base en específico
+                $parametrosBase = $configuracionesBase->has($idConfig) ? $configuracionesBase[$idConfig]->parametros : [];
+                $parametrosJson = is_array($parametrosBase) ? json_encode($parametrosBase) : $parametrosBase;
+
                 $registros[] = [
                     'numero_bloque'          => $operacion->numero_bloque,
                     'id_car_sia_operaciones' => $operacion->id,
                     'id_car_sia_config'      => $idConfig,
+                    'parametros'             => $parametrosJson,  // <-- AQUÍ SE GUARDA LA "FOTOGRAFÍA" JSON
                     'estado_notificacion'    => $estado,
                     'id_user'                => $idUser,
                     'justificacion'          => $request->justificacion,
@@ -1152,22 +1206,49 @@ class OperacionController extends Controller
             }
         }
 
-        public function toggleEstado($id)
+        /**
+         * 4. ACTUALIZAR PARÁMETROS JSON, JUSTIFICACIÓN Y ESTADO DE UNA REGLA ASIGNADA
+         */
+        public function updateParametrosJson(Request $request, $id)
         {
-            $registro = CarSiaOperacionConfig::findOrFail($id);
-            $registro->estado_activo = !$registro->estado_activo; // Invierte el estado
-            $registro->save();
+            $request->validate([
+                'parametros'          => 'required|array',
+                'justificacion'       => 'nullable|string', // <-- ESTO FALTABA
+                'vigente_hasta'       => 'nullable|date',
+                'estado_notificacion' => 'required|boolean',
+                'estado_activo'       => 'required|boolean',
+            ]);
 
-            $this->registrarLogAuditoria(
-                $registro->numero_bloque, 1, 7,
-                'Cambio de Estado de Regla', 'Configuración', 'Se ' . ($registro->estado_activo ? 'activó' : 'inactivó') . ' una regla de configuración.',
-                ['id_operacion' => $registro->id_car_sia_operaciones],
-                [],
-                ['estado_asignado' => $registro->estado_activo ? 'Activa' : 'Inactiva']
-            );
+            try {
+                $config = CarSiaOperacionConfig::findOrFail($id);
 
-            return back()->with('success', 'Estado actualizado correctamente.');
+                // Guardar parámetros. Laravel convierte el array a JSON automáticamente por el $casts
+                $config->parametros = $request->parametros;
+                $config->justificacion = $request->justificacion; // <-- ESTO FALTABA
+                $config->vigente_hasta = $request->vigente_hasta;
+                $config->estado_notificacion = $request->estado_notificacion;
+                $config->estado_activo = $request->estado_activo;
+
+                // Actualizamos el usuario que hizo la última modificación lógica
+                $config->id_user = Auth::id();
+                $config->save();
+
+                // Registrar auditoría del cambio lógico
+                $this->registrarLogAuditoria(
+                    $config->numero_bloque, 1, 15, // Asumiendo ID de evento de configuración
+                    'Actualización de Lógica JSON', 'Configuración', 'Se editaron los parámetros lógicos de una regla previamente asignada.',
+                    ['id_operacion' => $config->id_car_sia_operaciones, 'id_config' => $config->id],
+                    [],
+                    [],
+                    ['parametros_nuevos' => json_encode($request->parametros), 'justificacion' => $request->justificacion]
+                );
+
+                return back()->with('success', 'Parámetros lógicos actualizados correctamente.');
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al actualizar los parámetros: ' . $e->getMessage());
+            }
         }
+
 
     // =========================================================================
     // FIN PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
@@ -1179,14 +1260,17 @@ class OperacionController extends Controller
     public function actualizarTercero(Request $request, $id)
     {
         $request->validate([
-            'nom1'  => 'required|string|max:50',
-            'nom2'  => 'nullable|string|max:50',
-            'apl1'  => 'required|string|max:50',
-            'apl2'  => 'nullable|string|max:50',
-            'tel'   => 'nullable|string|max:20',
-            'tel1'  => 'nullable|string|max:20',
-            'dir'   => 'nullable|string|max:150',
-            'email' => 'nullable|email|max:100',
+            'nom1'     => 'required|string|max:50',
+            'nom2'     => 'nullable|string|max:50',
+            'apl1'     => 'required|string|max:50',
+            'apl2'     => 'nullable|string|max:50',
+            'tel'      => 'nullable|string|max:20',
+            'tel1'     => 'nullable|string|max:20',
+            'dir'      => 'nullable|string|max:150',
+            'email'    => 'nullable|email|max:100',
+            'cod_dist' => 'nullable|string|max:50',
+            'tip_prv'  => 'nullable|string|max:50',
+            'congrega' => 'nullable|string|max:50',
         ]);
 
         try {
@@ -1197,29 +1281,35 @@ class OperacionController extends Controller
                 return redirect()->back()->with('error', 'No se encontró el tercero en las maestras.');
             }
 
-            // Concatenar el nombre completo y limpiar espacios dobles por si hay campos vacíos
-            $nombreCompleto = "{$request->nom1} {$request->nom2} {$request->apl1} {$request->apl2}";
+            // Prevención de errores en PHP 8.1+ al aplicar trim() o strtoupper() a valores nulos usando "?? ''"
+            $nom1 = mb_strtoupper(trim($request->nom1), 'UTF-8');
+            $nom2 = mb_strtoupper(trim($request->nom2 ?? ''), 'UTF-8');
+            $apl1 = mb_strtoupper(trim($request->apl1), 'UTF-8');
+            $apl2 = mb_strtoupper(trim($request->apl2 ?? ''), 'UTF-8');
+
+            $nombreCompleto = "{$nom1} {$nom2} {$apl1} {$apl2}";
             $nombreConcatenado = trim(preg_replace('/\s+/', ' ', $nombreCompleto));
 
             $tercero->update([
-                'nom1'    => trim($request->nom1),
-                'nom2'    => trim($request->nom2),
-                'apl1'    => trim($request->apl1),
-                'apl2'    => trim($request->apl2),
-                'nom_ter' => $nombreConcatenado,
-                'tel'     => trim($request->tel),
-                'tel1'    => trim($request->tel1),
-                'dir'     => trim($request->dir),
-                'email'   => trim($request->email),
+                'nom1'     => $nom1,
+                'nom2'     => $nom2,
+                'apl1'     => $apl1,
+                'apl2'     => $apl2,
+                'nom_ter'  => $nombreConcatenado,
+                // Si el campo viene vacío desde el select o el input, forzamos un null real en BD
+                'tel'      => $request->filled('tel') ? trim($request->tel) : null,
+                'tel1'     => $request->filled('tel1') ? trim($request->tel1) : null,
+                'dir'      => $request->filled('dir') ? trim($request->dir) : null,
+                'email'    => $request->filled('email') ? trim($request->email) : null,
+                'cod_dist' => $request->filled('cod_dist') ? trim($request->cod_dist) : null,
+                'tip_prv'  => $request->filled('tip_prv') ? trim($request->tip_prv) : null,
+                'congrega' => $request->filled('congrega') ? trim($request->congrega) : null,
             ]);
-
-            // (Opcional) Registrar en la auditoría si manejas trazabilidad de maestras
-            // $this->registrarLogAuditoria( ... );
 
             return redirect()->back()->with('success', 'Datos del cliente actualizados y concatenados correctamente.');
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error("Error actualizando tercero desde operaciones: " . $e->getMessage());
+            Log::error("Error actualizando tercero desde operaciones: " . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al actualizar los datos del cliente.');
         }
     }

@@ -19,6 +19,7 @@ class CarSiaOperacionConfig extends Model
         'numero_bloque',
         'id_car_sia_operaciones',
         'id_car_sia_config',
+        'parametros',
         'estado_notificacion',
         'id_user',
         'justificacion',
@@ -28,6 +29,7 @@ class CarSiaOperacionConfig extends Model
 
     // 3. Conversión de tipos de datos (Casting)
     protected $casts = [
+        'parametros'          => 'array',   
         'estado_notificacion' => 'boolean',
         'estado_activo'       => 'boolean',
         'vigente_hasta'       => 'datetime',
