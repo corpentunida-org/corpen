@@ -188,6 +188,16 @@ class OperacionController extends Controller
                 // porque lo haremos con una consulta más precisa abajo.
             ])->findOrFail($id);
 
+            // ==============================================================================
+            // CONSULTA PARA LA PÍLDORA DESPLEGABLE (Historial Sutil del Cliente)
+            // ==============================================================================
+            $operacionesDelTercero = CarSiaOperacion::where('id_tercero', $operacion->id_tercero)
+                ->select('id', 'numero_radicado', 'numero_bloque', 'id_tercero')
+                ->orderBy('created_at', 'desc')
+                ->take(8) // Limitamos a 8 para mantener el dropdown sutil y rápido
+                ->get();
+            // ==============================================================================
+
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
             $registrosCrudos = CarSiaApi::with('lineaSia')
@@ -379,10 +389,10 @@ class OperacionController extends Controller
             $maeTipos = MaeTipo::all();
             $congregaciones = MaeCongregacion::orderBy('codigo', 'asc')->get();
 
-            // 3. ENVIAR LAS VARIABLES AL COMPACT
+            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $operacionesDelTercero)
             return view('certificados.operaciones.show', compact(
                 'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
-                'distritos', 'maeTipos', 'congregaciones','tiposCertificados'
+                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero'
             ));
 
         } catch (\Exception $e) {
@@ -605,241 +615,439 @@ class OperacionController extends Controller
     // PROCESAMIENTO MASIVO, INDIVIDUAL Y MOTOR DE HASH
     // =========================================================================
 
-    /**
-     * 8. HELPER: Obtener Tipo Dinámico y Generar Hash (UNIFICACIÓN)
-     */
-    private function obtenerDatosAuditoria($operacionId, $numeroBloque, $timestamp = null)
-    {
-        $timestamp = $timestamp ?? now()->timestamp;
+        /**
+         * 8. HELPER: Obtener Tipo Dinámico y Generar Hash (UNIFICACIÓN)
+         *
+         * Determina el tipo de certificado que aplica a una operación (individual o global)
+         * y genera una firma única (hash) que servirá como identificador de versión
+         * para la auditoría y trazabilidad de los documentos generados.
+         *
+         * @param int $operacionId ID de la operación actual.
+         * @param string|int $numeroBloque Lote o bloque de ejecución.
+         * @param int|null $timestamp Marca de tiempo (opcional, por defecto now()).
+         * @return array Arreglo con el id_tipo resuelto, el hash generado y el usuario responsable.
+         */
+        private function obtenerDatosAuditoria($operacionId, $numeroBloque, $timestamp = null)
+        {
+            $timestamp = $timestamp ?? now()->timestamp;
 
-        // Prioridad 1: Tipo específico de la operación
-        $tipoOperacion = CarSiaTipoOperacion::where('id_car_sia_operaciones', $operacionId)
-            ->latest()
-            ->first();
-
-        // Prioridad 2: Tipo global del bloque (si no tiene individual)
-        if (!$tipoOperacion) {
-            $tipoOperacion = CarSiaTipoOperacion::where('numero_bloque', $numeroBloque)
-                ->whereNull('id_car_sia_operaciones')
+            // Prioridad 1: Buscar si la operación tiene un tipo asignado específicamente a ella.
+            $tipoOperacion = CarSiaTipoOperacion::where('id_car_sia_operaciones', $operacionId)
                 ->latest()
                 ->first();
-        }
 
-        $id_tipo = $tipoOperacion ? $tipoOperacion->id_car_sia_tipos : 'N/A';
-        $hash = "API-{$numeroBloque}-TIPO-{$id_tipo}-OP-{$operacionId}-TS-{$timestamp}";
-
-        return [
-            'id_tipo' => $id_tipo !== 'N/A' ? $id_tipo : null,
-            'hash'    => $hash,
-            'user_id' => Auth::id()
-        ];
-    }
-
-    /**
-     * 9. GENERACIÓN MASIVA (Soporta múltiples tipos dentro del mismo lote)
-     */
-    public function generarMasivo(Request $request)
-    {
-        $bloque = $request->input('bloque') ?? $request->input('numero_bloque');
-        $id_car_sia_tipos = $request->input('id_car_sia_tipos');
-
-        if (!$bloque) {
-            return back()->with('error', 'Debe seleccionar un lote (bloque) válido para procesar.');
-        }
-
-        if (!$id_car_sia_tipos) {
-            return back()->with('error', 'Debe seleccionar un tipo de certificado.');
-        }
-
-        try {
-            DB::beginTransaction();
-
-            $ahora = now();
-            $timestamp = $ahora->timestamp;
-            $id_user = Auth::id();
-            $totalOperacionesProcesadas = 0;
-
-            // 1. Registrar el evento de TIPO a nivel Lote (id_car_sia_operaciones = null)
-            CarSiaTipoOperacion::create([
-                'id_car_sia_operaciones' => null,
-                'numero_bloque'          => $bloque,
-                'id_car_sia_tipos'       => $id_car_sia_tipos,
-                'id_user'                => $id_user,
-            ]);
-
-            $id_tipo_global = $id_car_sia_tipos;
-
-            CarSiaOperacion::where('numero_bloque', $bloque)
-                ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $id_tipo_global, $bloque, &$totalOperacionesProcesadas) {
-
-                    $tercerosIds = $operacionesChunk->pluck('id_tercero')->toArray();
-                    $operacionesIds = $operacionesChunk->pluck('id')->toArray();
-                    $operacionesMap = $operacionesChunk->keyBy('id_tercero');
-
-                    // Pre-cargamos los tipos individuales de este chunk para no consultar 1 a 1 en el bucle
-                    $tiposIndividuales = CarSiaTipoOperacion::whereIn('id_car_sia_operaciones', $operacionesIds)
-                        ->orderBy('created_at', 'desc')
-                        ->get()
-                        ->groupBy('id_car_sia_operaciones');
-
-                    $facturasChunk = CarSiaApi::where('numero_bloque', $bloque)
-                        ->whereIn('tercero', $tercerosIds)
-                        ->get();
-
-                    $lineasAInsertar = [];
-
-                    foreach ($facturasChunk as $factura) {
-                        $operacion = $operacionesMap[$factura->tercero] ?? null;
-
-                        if (!$operacion) continue;
-
-                        $diasMora = 0;
-                        if ($factura->fecha_venci) {
-                            $fechaVencimiento = Carbon::parse($factura->fecha_venci);
-                            $diferencia = $ahora->diffInDays($fechaVencimiento, false);
-                            $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
-                        }
-
-                        $calificacion = match(true) {
-                            $diasMora > 60 => 'Irregular',
-                            $diasMora > 30 => 'Regular',
-                            default => 'Bueno'
-                        };
-
-                        $id_tipo_final = isset($tiposIndividuales[$operacion->id])
-                            ? $tiposIndividuales[$operacion->id]->first()->id_car_sia_tipos
-                            : $id_tipo_global;
-
-                        $hash_certificado = "API-{$bloque}-TIPO-{$id_tipo_final}-OP-{$operacion->id}-TS-{$timestamp}";
-
-                        $lineasAInsertar[] = [
-                            'id_car_sia_operaciones' => $operacion->id,
-                            'id_factura'             => $factura->id,
-                            'id_car_sia_lineas'      => $factura->cuenta,
-                            'numero_bloque'          => $bloque,
-                            'observacion'            => "El asociado presenta una calificación $calificacion debido a un registro de $diasMora días de mora.",
-                            'calificacion'           => $calificacion,
-                            'fecha_venci'            => $factura->fecha_venci,
-                            'id_car_sia_estados'     => 3,
-                            'dias_mora_automaticos'  => $diasMora,
-                            'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
-                            'id_user'                => $id_user,
-                            'id_car_sia_tipos'       => $id_tipo_final !== 'N/A' ? $id_tipo_final : null,
-                            'hash_certificado'       => $hash_certificado,
-                        ];
-                    }
-
-                    if (!empty($lineasAInsertar)) {
-                        collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
-                            CarSiaOperacionLinea::upsert(
-                                $batch->toArray(),
-                                // Agregar hash_certificado a las llaves únicas para que inserte versiones nuevas
-                                ['id_car_sia_operaciones', 'id_factura', 'hash_certificado'],
-                                [
-                                    'id_car_sia_lineas', 'numero_bloque', 'observacion', 'calificacion',
-                                    'fecha_venci', 'id_car_sia_estados', 'dias_mora_automaticos', 'procesado_en',
-                                    'id_user', 'id_car_sia_tipos'
-                                ]
-                            );
-                        });
-                    }
-
-                    $totalOperacionesProcesadas += $operacionesChunk->count();
-                });
-
-            // Registro en Log de Auditoría Masiva
-            $tipo = CarSiaTipo::find($id_car_sia_tipos);
-            $this->registrarLogAuditoria(
-                $bloque, 1, 3,
-                'Generación masiva de certificados', 'Bloque', 'Creación en lote de nuevos hashes y asignación de tipología.',
-                [],
-                ['registros_afectados' => $totalOperacionesProcesadas],
-                ['tipo_asignado' => $tipo ? $tipo->nombre : 'Desconocido']
-            );
-
-            DB::commit();
-
-            return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente y asignado al tipo seleccionado ($totalOperacionesProcesadas operaciones).");
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Illuminate\Support\Facades\Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
-            return back()->with('error', 'Ocurrió un error en la base de datos: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * 10. VISOR INDIVIDUAL (Solo lectura para el iframe)
-     */
-    public function generarIndividual(Request $request, $id)
-    {
-        try {
-            $operacion = CarSiaOperacion::with('tercero')->findOrFail($id);
-
-            // 1. Obtener el hash solicitado por la URL, o en su defecto, el último generado
-            $hashFiltro = $request->query('hash');
-
-            if (!$hashFiltro) {
-                $hashFiltro = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                    ->where('numero_bloque', $operacion->numero_bloque)
-                    ->orderBy('created_at', 'desc')
-                    ->value('hash_certificado');
+            // Prioridad 2: Fallback. Si no tiene tipo individual, hereda el tipo global asignado al bloque.
+            if (!$tipoOperacion) {
+                $tipoOperacion = CarSiaTipoOperacion::where('numero_bloque', $numeroBloque)
+                    ->whereNull('id_car_sia_operaciones')
+                    ->latest()
+                    ->first();
             }
 
-            // 2. Buscar las líneas estrictamente asociadas a ese hash
-            $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                ->where('numero_bloque', $operacion->numero_bloque)
-                ->where('hash_certificado', $hashFiltro)
-                ->get();
+            // Resolución del tipo y construcción de la firma única (Hash)
+            $id_tipo = $tipoOperacion ? $tipoOperacion->id_car_sia_tipos : 'N/A';
+            $hash = "API-{$numeroBloque}-TIPO-{$id_tipo}-OP-{$operacionId}-TS-{$timestamp}";
 
-            if ($lineas->isEmpty()) {
-                // Si no hay líneas, puedes retornar un PDF en blanco o un mensaje de error
-                abort(404, 'No hay datos procesados para generar este certificado.');
-            }
-
-            // 3. Generar el PDF SIN hacer registros en BD ni llamar a procesarLineasOperacion
-            $pdf = Pdf::loadView('certificados.pdf.certificado_aldia', compact('operacion', 'lineas'));
-            return $pdf->stream("Certificado_{$operacion->numero_radicado}.pdf");
-
-        } catch (\Exception $e) {
-            Log::error("Error al renderizar certificado: " . $e->getMessage());
-            return back()->with('error', 'Ocurrió un error al mostrar el certificado.');
+            return [
+                'id_tipo' => $id_tipo !== 'N/A' ? $id_tipo : null,
+                'hash'    => $hash,
+                'user_id' => Auth::id()
+            ];
         }
-    }
-
-
-    // =========================================================================
-    // INICIO PROCESAMIENTO INDIVIDUAL Y ACTUALIZACION
-    // =========================================================================
 
         /**
-         * 11. MOTOR DE REGLAS INTERNO (Para procesamiento 1 a 1) - SHOW
+         * 9. GENERACIÓN MASIVA
+         *
+         * Procesa lotes completos de facturas aplicando reglas de calificación por mora
+         * DINÁMICAS (vía JSON), optimizado para grandes volúmenes mediante "chunks",
+         * pre-carga de relaciones en memoria e inserciones masivas (upsert).
+         *
+         * @param Request $request
+         * @return \Illuminate\Http\RedirectResponse
+         */
+        public function generarMasivo(Request $request)
+        {
+            $bloque = $request->input('bloque') ?? $request->input('numero_bloque');
+            $id_car_sia_tipos = $request->input('id_car_sia_tipos');
+
+            // Validaciones de entrada temprana (Early Returns)
+            if (!$bloque) {
+                return back()->with('error', 'Debe seleccionar un lote (bloque) válido para procesar.');
+            }
+
+            if (!$id_car_sia_tipos) {
+                return back()->with('error', 'Debe seleccionar un tipo de certificado.');
+            }
+
+            try {
+                // Iniciar transacción: Si algo falla, ningún registro masivo queda a medias.
+                DB::beginTransaction();
+
+                $ahora = now();
+                $timestamp = $ahora->timestamp;
+                $id_user = Auth::id();
+                $totalOperacionesProcesadas = 0;
+
+                // 1. Registrar evento global: Define de qué tipo será este bloque masivo.
+                CarSiaTipoOperacion::create([
+                    'id_car_sia_operaciones' => null,
+                    'numero_bloque'          => $bloque,
+                    'id_car_sia_tipos'       => $id_car_sia_tipos,
+                    'id_user'                => $id_user,
+                ]);
+
+                $id_tipo_global = $id_car_sia_tipos;
+
+                // 2. Procesamiento por lotes (Chunks) de 500 para no saturar la memoria RAM.
+                CarSiaOperacion::where('numero_bloque', $bloque)
+                    ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $id_tipo_global, $bloque, &$totalOperacionesProcesadas) {
+
+                        // Extracción masiva de IDs para hacer menos consultas a la base de datos
+                        $tercerosIds = $operacionesChunk->pluck('id_tercero')->toArray();
+                        $operacionesIds = $operacionesChunk->pluck('id')->toArray();
+                        $operacionesMap = $operacionesChunk->keyBy('id_tercero');
+
+                        // 3A. Pre-carga en memoria (Eager Loading manual) de los tipos individuales
+                        $tiposIndividuales = CarSiaTipoOperacion::whereIn('id_car_sia_operaciones', $operacionesIds)
+                            ->orderBy('created_at', 'desc')
+                            ->get()
+                            ->groupBy('id_car_sia_operaciones');
+
+                        // 3B. ¡NUEVO! Pre-carga masiva en memoria de las CONFIGURACIONES (JSON)
+                        // Extraemos todas las reglas activas de las operaciones de este bloque de una sola vez
+                        $configuracionesMasivas = \Illuminate\Support\Facades\DB::table('car_sia_operaciones_config')
+                            ->whereIn('id_car_sia_operaciones', $operacionesIds)
+                            ->where('estado_activo', 1)
+                            ->where(function($query) {
+                                $query->whereNull('vigente_hasta')
+                                      ->orWhere('vigente_hasta', '>=', now());
+                            })
+                            ->get()
+                            ->groupBy('id_car_sia_operaciones'); // Agrupamos por ID de operación
+
+                        // Extraer todas las facturas de este chunk de terceros
+                        $facturasChunk = CarSiaApi::where('numero_bloque', $bloque)
+                            ->whereIn('tercero', $tercerosIds)
+                            ->get();
+
+                        $lineasAInsertar = [];
+
+                        // 4. Bucle principal de evaluación de reglas de negocio
+                        foreach ($facturasChunk as $factura) {
+                            $operacion = $operacionesMap[$factura->tercero] ?? null;
+
+                            if (!$operacion) continue;
+
+                            // Cálculo de mora
+                            $diasMora = 0;
+                            if ($factura->fecha_venci) {
+                                $fechaVencimiento = Carbon::parse($factura->fecha_venci);
+                                $diferencia = $ahora->diffInDays($fechaVencimiento, false);
+                                $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
+                            }
+
+                            // -----------------------------------------------------------------
+                            // 5. MOTOR DINÁMICO (Masivo)
+                            // -----------------------------------------------------------------
+                            $configsOperacion = $configuracionesMasivas->get($operacion->id, collect());
+                            $reglas = [];
+
+                            // Desglosamos el JSON de las configuraciones exclusivas de esta operación
+                            foreach ($configsOperacion as $config) {
+                                $parametros = is_string($config->parametros) ? json_decode($config->parametros, true) : $config->parametros;
+                                
+                                if (is_array($parametros)) {
+                                    $parametros['_json_original'] = is_string($config->parametros) 
+                                        ? $config->parametros 
+                                        : json_encode($config->parametros, JSON_UNESCAPED_UNICODE);
+                                        
+                                    $reglas[] = $parametros;
+                                }
+                            }
+
+                            // Ordenamos las reglas de menor a mayor exigencia
+                            usort($reglas, function($a, $b) {
+                                return ($a['mora_dias_max'] ?? 0) <=> ($b['mora_dias_max'] ?? 0);
+                            });
+
+                            $calificacion = 'Indefinido';
+                            $observacion = '';
+                            $metadataRegla = null;
+
+                            if (count($reglas) > 0) {
+                                $reglaAplicada = null;
+
+                                foreach ($reglas as $regla) {
+                                    $maxMora = (int)($regla['mora_dias_max'] ?? 0);
+                                    if ($diasMora <= $maxMora) {
+                                        $reglaAplicada = $regla;
+                                        break; 
+                                    }
+                                }
+
+                                if (!$reglaAplicada) {
+                                    $reglaAplicada = end($reglas);
+                                }
+
+                                $calificacionJSON = $reglaAplicada['clasificacion_mora'] ?? 'Indefinido';
+                                $calificacion = ucfirst(strtolower($calificacionJSON)); 
+                                $observacion = $reglaAplicada['observacion_fase'] ?? 'Sin observación configurada.';
+                                $metadataRegla = $reglaAplicada['_json_original']; // Exacto de la BD
+
+                            } else {
+                                // Fallback para operaciones sin reglas en el lote
+                                $calificacion = match(true) {
+                                    $diasMora > 60 => 'Irregular',
+                                    $diasMora > 30 => 'Regular',
+                                    default => 'Bueno'
+                                };
+                                $observacion = "Calificación estándar generada por el sistema debido a $diasMora días de mora (Sin reglas activas).";
+                                
+                                $metadataRegla = json_encode([
+                                    "dias_gracia" => 0,
+                                    "mora_dias_max" => 0,
+                                    "requiere_accion" => false,
+                                    "observacion_fase" => $observacion,
+                                    "bloqueo_automatico" => false,
+                                    "clasificacion_mora" => strtolower($calificacion),
+                                    "notificacion_gerencia" => false,
+                                    "incluir_historico_3_anos" => false
+                                ], JSON_UNESCAPED_UNICODE);
+                            }
+                            // -----------------------------------------------------------------
+
+                            // Determinar el tipo final (Individual tiene preferencia sobre el Global)
+                            $id_tipo_final = isset($tiposIndividuales[$operacion->id])
+                                ? $tiposIndividuales[$operacion->id]->first()->id_car_sia_tipos
+                                : $id_tipo_global;
+
+                            // Generar hash para esta línea específica
+                            $hash_certificado = "API-{$bloque}-TIPO-{$id_tipo_final}-OP-{$operacion->id}-TS-{$timestamp}";
+
+                            // Preparar arreglo para inserción masiva
+                            $lineasAInsertar[] = [
+                                'id_car_sia_operaciones' => $operacion->id,
+                                'id_factura'             => $factura->id,
+                                'id_car_sia_lineas'      => $factura->cuenta,
+                                'numero_bloque'          => $bloque,
+                                'observacion'            => $observacion,       // <--- AHORA VIENE DEL JSON
+                                'calificacion'           => $calificacion,      // <--- AHORA VIENE DEL JSON
+                                'metadata'               => $metadataRegla,     // <--- AHORA GUARDA EL JSON EXACTO
+                                'fecha_venci'            => $factura->fecha_venci,
+                                'id_car_sia_estados'     => 3,
+                                'dias_mora_automaticos'  => $diasMora,
+                                'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
+                                'id_user'                => $id_user,
+                                'id_car_sia_tipos'       => $id_tipo_final !== 'N/A' ? $id_tipo_final : null,
+                                'hash_certificado'       => $hash_certificado,
+                            ];
+                        }
+
+                        // 6. Inserción Masiva (Upsert) en sub-lotes de 1000
+                        if (!empty($lineasAInsertar)) {
+                            collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
+                                CarSiaOperacionLinea::upsert(
+                                    $batch->toArray(),
+                                    // Llaves únicas: Si coinciden, actualiza. Si no (ej: nuevo hash), inserta.
+                                    ['id_car_sia_operaciones', 'id_factura', 'hash_certificado'],
+                                    // Columnas que se actualizarán si hay coincidencia (AGREGAR METADATA AQUÍ)
+                                    [
+                                        'id_car_sia_lineas', 'numero_bloque', 'observacion', 'calificacion', 'metadata',
+                                        'fecha_venci', 'id_car_sia_estados', 'dias_mora_automaticos', 'procesado_en',
+                                        'id_user', 'id_car_sia_tipos'
+                                    ]
+                                );
+                            });
+                        }
+
+                        $totalOperacionesProcesadas += $operacionesChunk->count();
+                    });
+
+                // 7. Registro en Log de Auditoría (Fuera del bucle chunk para hacerlo 1 sola vez)
+                $tipo = \App\Models\Certificados\CarSiaTipo::find($id_car_sia_tipos);
+                $this->registrarLogAuditoria(
+                    $bloque, 1, 3,
+                    'Generación masiva de certificados', 'Bloque', 'Creación en lote de nuevos hashes aplicando reglas dinámicas JSON.',
+                    [],
+                    ['registros_afectados' => $totalOperacionesProcesadas],
+                    ['tipo_asignado' => $tipo ? $tipo->nombre : 'Desconocido']
+                );
+
+                DB::commit();
+
+                return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente aplicando matriz de reglas dinámicas ($totalOperacionesProcesadas operaciones).");
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Illuminate\Support\Facades\Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
+                return back()->with('error', 'Ocurrió un error en la base de datos: ' . $e->getMessage());
+            }
+        }
+
+        /**
+         * 10. VISOR INDIVIDUAL (Modo Lectura)
+         *
+         * Controlador diseñado para cargar el PDF en un iframe.
+         * Es "idempotente": NO altera la base de datos, solo consulta y renderiza
+         * basándose en un hash específico para garantizar integridad documental.
+         *
+         * @param Request $request
+         * @param int $id ID de la operación
+         * @return \Illuminate\Http\Response
+         */
+        public function generarIndividual(Request $request, $id)
+        {
+            try {
+                $operacion = CarSiaOperacion::with('tercero')->findOrFail($id);
+
+                // 1. Obtener el hash solicitado (histórico) o hacer fallback al más reciente
+                $hashFiltro = $request->query('hash');
+
+                if (!$hashFiltro) {
+                    $hashFiltro = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                        ->where('numero_bloque', $operacion->numero_bloque)
+                        ->orderBy('created_at', 'desc')
+                        ->value('hash_certificado');
+                }
+
+                // 2. Extraer exactamente las líneas asociadas a esa versión (Hash)
+                $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                    ->where('numero_bloque', $operacion->numero_bloque)
+                    ->where('hash_certificado', $hashFiltro)
+                    ->get();
+
+                if ($lineas->isEmpty()) {
+                    abort(404, 'No hay datos procesados para generar este certificado.');
+                }
+
+                // 3. Renderizar vista a PDF (utilizando barryvdh/laravel-dompdf o similar)
+                $pdf = Pdf::loadView('certificados.pdf.certificado_aldia', compact('operacion', 'lineas'));
+                return $pdf->stream("Certificado_{$operacion->numero_radicado}.pdf");
+
+            } catch (\Exception $e) {
+                Log::error("Error al renderizar certificado: " . $e->getMessage());
+                return back()->with('error', 'Ocurrió un error al mostrar el certificado.');
+            }
+        }
+
+
+        // =========================================================================
+        // INICIO PROCESAMIENTO INDIVIDUAL Y ACTUALIZACION
+        // =========================================================================
+
+        /**
+         * 11. MOTOR DE REGLAS INTERNO (Para procesamiento 1 a 1)
+         *
+         * Extrae parámetros de calificación desde la tabla car_sia_operaciones_config
+         * leyendo el campo JSON para procesar las líneas dinámicamente y hereda
+         * la configuración EXACTA en el campo metadata.
+         *
+         * @param CarSiaOperacion $operacion Modelo de la operación a procesar.
+         * @return void
          */
         private function procesarLineasOperacion($operacion)
         {
+            // 1. Filtro optimizado sobre car_sia_api
             $facturas = CarSiaApi::where('numero_bloque', $operacion->numero_bloque)
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
 
+            // Obtenemos los metadatos para la firma de versión
             $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
 
-            foreach ($facturas as $factura) {
-                $diasMora = 0;
+            // 2. EXTRAER Y PREPARAR REGLAS DINÁMICAS DESDE EL JSON
+            $configuraciones = \Illuminate\Support\Facades\DB::table('car_sia_operaciones_config')
+                ->where('id_car_sia_operaciones', $operacion->id)
+                ->where('estado_activo', 1)
+                ->where(function($query) {
+                    $query->whereNull('vigente_hasta')
+                          ->orWhere('vigente_hasta', '>=', now());
+                })
+                ->get();
 
+            $reglas = [];
+            foreach ($configuraciones as $config) {
+                $parametros = is_string($config->parametros) ? json_decode($config->parametros, true) : $config->parametros;
+                
+                if (is_array($parametros)) {
+                    // Guardamos el string original intacto para no alterar la estructura JSON
+                    $parametros['_json_original'] = is_string($config->parametros) 
+                        ? $config->parametros 
+                        : json_encode($config->parametros, JSON_UNESCAPED_UNICODE);
+                        
+                    $reglas[] = $parametros;
+                }
+            }
+
+            // Ordenamos las reglas de menor a mayor exigencia (por mora_dias_max)
+            usort($reglas, function($a, $b) {
+                return ($a['mora_dias_max'] ?? 0) <=> ($b['mora_dias_max'] ?? 0);
+            });
+
+
+            // 3. PROCESAMIENTO DE FACTURAS
+            foreach ($facturas as $factura) {
+                
+                $diasMora = 0;
                 if ($factura->fecha_venci) {
                     $fechaVencimiento = Carbon::parse($factura->fecha_venci);
                     $diferencia = now()->diffInDays($fechaVencimiento, false);
                     $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
                 }
 
-                $calificacion = match(true) {
-                    $diasMora > 60 => 'Irregular',
-                    $diasMora > 30 => 'Regular',
-                    default => 'Bueno'
-                };
+                // 4. EVALUACIÓN CON EL MOTOR DE REGLAS DINÁMICO (JSON)
+                $calificacion = 'Indefinido';
+                $observacion = '';
+                $metadataRegla = null;
 
-                $observacion = "El asociado presenta una calificación $calificacion debido a un registro de $diasMora días de mora.";
+                if (count($reglas) > 0) {
+                    $reglaAplicada = null;
 
+                    foreach ($reglas as $regla) {
+                        $maxMora = (int)($regla['mora_dias_max'] ?? 0);
+                        if ($diasMora <= $maxMora) {
+                            $reglaAplicada = $regla;
+                            break; 
+                        }
+                    }
+
+                    if (!$reglaAplicada) {
+                        $reglaAplicada = end($reglas);
+                    }
+
+                    // Asignación de Calificación
+                    $calificacionJSON = $reglaAplicada['clasificacion_mora'] ?? 'Indefinido';
+                    $calificacion = ucfirst(strtolower($calificacionJSON)); 
+                    
+                    // Asignación de Observación: Toma exclusivamente el texto del JSON
+                    $observacion = $reglaAplicada['observacion_fase'] ?? 'Sin observación configurada.';
+
+                    // METADATA EXACTA: Pasamos el JSON tal cual vino de la base de datos
+                    $metadataRegla = $reglaAplicada['_json_original'];
+
+                } else {
+                    // Fallback en caso de que no haya reglas asignadas
+                    $calificacion = match(true) {
+                        $diasMora > 60 => 'Irregular',
+                        $diasMora > 30 => 'Regular',
+                        default => 'Bueno'
+                    };
+                    $observacion = "Calificación estándar generada por el sistema debido a $diasMora días de mora (Sin reglas activas).";
+                    
+                    // Genera un JSON manteniendo estrictamente TU estructura requerida
+                    $metadataRegla = json_encode([
+                        "dias_gracia" => 0,
+                        "mora_dias_max" => 0,
+                        "requiere_accion" => false,
+                        "observacion_fase" => $observacion,
+                        "bloqueo_automatico" => false,
+                        "clasificacion_mora" => strtolower($calificacion),
+                        "notificacion_gerencia" => false,
+                        "incluir_historico_3_anos" => false
+                    ], JSON_UNESCAPED_UNICODE);
+                }
+
+                // Guardar / Actualizar versión de la línea
                 CarSiaOperacionLinea::updateOrCreate(
                     [
                         'id_car_sia_operaciones' => $operacion->id,
@@ -849,8 +1057,9 @@ class OperacionController extends Controller
                     ],
                     [
                         'id_car_sia_lineas'      => $factura->cuenta,
-                        'observacion'            => $observacion,
+                        'observacion'            => $observacion,      // <- Texto normal extraído del JSON
                         'calificacion'           => $calificacion,
+                        'metadata'               => $metadataRegla,    // <- Estructura JSON exacta requerida
                         'fecha_venci'            => $factura->fecha_venci,
                         'id_car_sia_estados'     => 3,
                         'dias_mora_automaticos'  => $diasMora,
@@ -863,21 +1072,72 @@ class OperacionController extends Controller
         }
 
         /**
-         * 12. ACTUALIZAR LÍNEAS DESDE VISTA HOJA DE CÁLCULO - SHOW
+         * 11.5 PROCESAR INDIVIDUALMENTE (El "Jefe" del motor interno)
+         *
+         * Recibe la petición del modal, registra el tipo de certificado seleccionado,
+         * y ejecuta el motor interno para procesar y guardar las líneas.
+         *
+         * @param Request $request
+         * @param int $id
+         * @return \Illuminate\Http\RedirectResponse
+         */
+        public function procesarIndividual(Request $request, $id)
+        {
+            $request->validate([
+                'tipo_certificado_id' => 'required' // <--- Debe coincidir con el name del HTML
+            ]);
+
+            try {
+                DB::beginTransaction();
+
+                $operacion = CarSiaOperacion::findOrFail($id);
+                $tipoId = $request->input('tipo_certificado_id'); // <--- Recibimos el ID
+
+                // 1. Registramos el tipo (Lo que antes hacía asignar_tipo)
+                \App\Models\Certificados\CarSiaTipoOperacion::create([
+                    'id_car_sia_operaciones' => $operacion->id,
+                    'numero_bloque'          => $operacion->numero_bloque,
+                    'id_car_sia_tipos'       => $tipoId,
+                    'id_user'                => Auth::id(),
+                ]);
+
+                // 2. Ejecutamos tu motor interno
+                $this->procesarLineasOperacion($operacion);
+
+                DB::commit();
+
+                return back()->with('success', 'Certificado procesado y generado exitosamente.');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return back()->with('error', 'Ocurrió un error: ' . $e->getMessage());
+            }
+        }
+
+
+        /**
+         * 12. ACTUALIZAR LÍNEAS DESDE VISTA HOJA DE CÁLCULO
+         *
+         * Recibe ediciones manuales del usuario. Aplica el patrón de "Inmutabilidad Parcial":
+         * En lugar de sobrescribir el registro original, replica la línea (nueva versión)
+         * asignándole el nuevo hash, manteniendo intacta la historia previa.
+         *
+         * @param Request $request
+         * @param int $id ID de la operación
+         * @return \Illuminate\Http\RedirectResponse
          */
         public function actualizarLineas(Request $request, $id)
         {
+            // Validaciones estrictas de los arrays que provienen del frontend
             $request->validate([
                 'lineas'                               => 'required|array',
                 'lineas.*.calificacion'                => 'required|string',
-                // Se asegura de que el estado exista realmente en la maestra
                 'lineas.*.id_car_sia_estados'          => 'nullable|exists:car_sia_estados,id',
                 'lineas.*.dias_mora_automaticos'       => 'required|numeric',
                 'lineas.*.fecha_venci'                 => 'nullable|date',
                 'lineas.*.fecha_ultimo_recordatorio'   => 'nullable|date',
                 'lineas.*.procesado_en'                => 'nullable|date',
                 'lineas.*.observacion'                 => 'nullable|string',
-                // Validar contra la tabla de tipos si es posible
                 'tipo_certificado_id'                  => 'nullable|exists:car_sia_tipos,id'
             ]);
 
@@ -886,25 +1146,28 @@ class OperacionController extends Controller
                     $operacion = CarSiaOperacion::findOrFail($id);
                     $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
 
-                    // OPTIMIZACIÓN: Cargar todas las líneas a modificar en una sola consulta
+                    // OPTIMIZACIÓN DE MEMORIA:
+                    // En lugar de hacer una consulta SQL por cada línea editada, traemos todas
+                    // de una vez y las mapeamos por su ID ('keyBy') para acceso directo O(1).
                     $lineasIds = array_keys($request->lineas);
                     $lineasOriginales = CarSiaOperacionLinea::whereIn('id', $lineasIds)
                         ->where('id_car_sia_operaciones', $operacion->id)
                         ->where('numero_bloque', $operacion->numero_bloque)
                         ->get()
-                        ->keyBy('id'); // Indexar la colección por su ID para acceso rápido
+                        ->keyBy('id');
 
-                    // Validar que se encontraron todas las líneas solicitadas
+                    // Mecanismo de seguridad: previene manipulación de IDs desde el frontend
                     if ($lineasOriginales->count() !== count($lineasIds)) {
                         throw new \Exception("Una o más líneas no pertenecen a la operación actual o no existen.");
                     }
 
                     foreach ($request->lineas as $lineaId => $data) {
-                        // Se obtiene de la colección en memoria, no de la BD
                         $lineaOriginal = $lineasOriginales[$lineaId];
 
+                        // PATRÓN DE VERSIONADO: Replicamos la entidad para no perder el histórico.
                         $nuevaLinea = $lineaOriginal->replicate();
 
+                        // Asignación de datos: Si el frontend envía null/vacío, se conserva el valor original
                         $nuevaLinea->calificacion              = $data['calificacion'];
                         $nuevaLinea->id_car_sia_estados        = $data['id_car_sia_estados'] ?? $lineaOriginal->id_car_sia_estados;
                         $nuevaLinea->dias_mora_automaticos     = $data['dias_mora_automaticos'];
@@ -918,17 +1181,20 @@ class OperacionController extends Controller
                             $nuevaLinea->id_car_sia_tipos = $request->tipo_certificado_id;
                         }
 
+                        // Firma de la nueva versión manual
                         $nuevaLinea->id_user = $auditoria['user_id'];
                         $nuevaLinea->hash_certificado = $auditoria['hash'];
 
                         $nuevaLinea->save();
 
-                        // NOTA: Si necesitas desactivar la línea original para evitar sumas duplicadas,
-                        // deberías hacerlo aquí, por ejemplo:
+                        // TODO (Mejora futura): Manejo del estado "Activo"
+                        // Si estás calculando totales posteriormente, múltiples versiones de la misma línea
+                        // duplicarán los saldos. Considera agregar una bandera booleana:
                         // $lineaOriginal->update(['es_version_activa' => false]);
+                        // $nuevaLinea->es_version_activa = true;
                     }
 
-                    // El registro de auditoría masivo permanece igual
+                    // Registro de la acción en la bitácora de auditoría
                     $this->registrarLogAuditoria(
                         $operacion->numero_bloque, 1, 18,
                         'Modificación manual en hoja de cálculo', 'Operacion', 'Edición manual de parámetros y generación de nueva revisión.',
@@ -941,7 +1207,7 @@ class OperacionController extends Controller
                 return redirect()->back()->with('success', 'Cambios guardados. Se ha generado una nueva revisión.');
 
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error("Error actualizando líneas: " . $e->getMessage());
+                Log::error("Error actualizando líneas: " . $e->getMessage());
                 return redirect()->back()->with('error', 'Ocurrió un error al intentar guardar los cambios.');
             }
         }

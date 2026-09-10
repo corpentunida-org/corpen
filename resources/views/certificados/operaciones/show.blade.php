@@ -126,9 +126,56 @@
 
                         @if($operacion->tercero)
                             <div class="bg-light rounded-4 p-3 mb-3">
-                                <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
-                                <div class="text-muted fs-8 mt-1">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                <!-- Contenedor Flex para alinear texto a la izq y botón a la der -->
+                                <div class="d-flex justify-content-between align-items-start">
+                                    
+                                    <!-- Datos del cliente -->
+                                    <div>
+                                        <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
+                                        <div class="text-muted fs-8 mt-1">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                    </div>
+
+                                    <!-- NUEVO: Píldora Desplegable Sutil -->
+                                    <div class="dropdown ms-2">
+                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center" 
+                                                type="button" 
+                                                data-bs-toggle="dropdown" 
+                                                aria-expanded="false"
+                                                title="Ver historial de operaciones">
+                                            <i class="fas fa-history me-1 text-muted"></i> 
+                                            <span class="ms-1">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
+                                        </button>
+                                        
+                                        <!-- Menú flotante compacto -->
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="width: 260px; max-height: 250px; overflow-y: auto;">
+                                            <li><h6 class="dropdown-header text-muted fs-8 text-uppercase fw-bold ls-1 mb-1">Historial Reciente</h6></li>
+                                            
+                                            @if(isset($operacionesDelTercero) && $operacionesDelTercero->count() > 0)
+                                                @foreach($operacionesDelTercero as $opTercero)
+                                                    @php $esActual = $opTercero->id == $operacion->id; @endphp
+                                                    <li>
+                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1" 
+                                                        href="{{ route('certificados.operaciones.show', $opTercero->id) }}"
+                                                            <span class="text-truncate" style="max-width: 150px;">
+                                                                <i class="fas {{ $esActual ? 'fa-dot-circle' : 'fa-circle' }} fs-9 me-2 {{ $esActual ? 'text-primary' : 'text-muted opacity-25' }}"></i>
+                                                                Rad: {{ $opTercero->numero_radicado }}
+                                                            </span>
+                                                            <span class="badge {{ $esActual ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill border" style="font-size: 0.65rem;">
+                                                                API-{{ str_pad($opTercero->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                            </span>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            @else
+                                                <li><span class="dropdown-item text-muted fs-8 py-2">Sin operaciones previas</span></li>
+                                            @endif
+                                        </ul>
+                                    </div>
+                                    <!-- FIN Píldora -->
+
+                                </div>
                             </div>
+                            
                             <div class="d-flex justify-content-between mb-2 fs-7">
                                 <span class="text-muted"><i class="fas fa-phone-alt me-2 opacity-50"></i>Teléfono:</span>
                                 <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
@@ -1547,7 +1594,7 @@
     <div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <!-- Formulario para generar el Certificado -->
-            <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.asignar_tipo', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+            <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.procesar_individual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
                     <h5 class="fw-bold mb-0"><i class="fas fa-file-pdf text-danger me-2"></i> Generar Certificado</h5>
