@@ -53,6 +53,19 @@ class ComaeExCliController extends Controller
         $retirados = collect();
 
         if ($sePresentoFiltro) {
+            // Búsqueda por nombre vía FULLTEXT (índice ft_mae_terceros_nombres, ya usado por
+            // EmpleadoController::buscarTercero() con el mismo patrón) en vez de LIKE '%...%' por
+            // columna: un LIKE por columna nunca hace match con un nombre completo como "miguel
+            // angel torres" porque ninguna columna individual (nom1/nom2/apl1/apl2) contiene la
+            // cadena completa, y además el comodín inicial no puede usar índice. Cada palabra se
+            // busca como prefijo obligatorio ("+palabra*"), así que las palabras pueden estar en
+            // cualquiera de las columnas del FULLTEXT y en cualquier orden.
+            $terminoBooleano = collect(preg_split('/\s+/', $busqueda))
+                ->filter()
+                ->map(fn($palabra) => '+' . preg_replace('/[+\-><()~*"@]/', '', $palabra) . '*')
+                ->filter(fn($palabra) => $palabra !== '+*')
+                ->implode(' ');
+
             $titulares = DB::table('EXE_ExCli as e')
                 ->leftJoin('MaeTerceros as t', 't.cod_ter', '=', 'e.cod_cli')
                 ->select(
@@ -61,13 +74,15 @@ class ComaeExCliController extends Controller
                     'e.fec_ing',
                     DB::raw("TRIM(CONCAT_WS(' ', t.nom1, t.nom2, t.apl1, t.apl2)) as nombre")
                 )
-                ->when($busqueda !== '', function ($q) use ($busqueda) {
-                    $q->where(function ($sub) use ($busqueda) {
-                        $sub->where('e.cod_cli', 'like', "%{$busqueda}%")
-                            ->orWhere('t.nom1', 'like', "%{$busqueda}%")
-                            ->orWhere('t.nom2', 'like', "%{$busqueda}%")
-                            ->orWhere('t.apl1', 'like', "%{$busqueda}%")
-                            ->orWhere('t.apl2', 'like', "%{$busqueda}%");
+                ->when($busqueda !== '', function ($q) use ($busqueda, $terminoBooleano) {
+                    $q->where(function ($sub) use ($busqueda, $terminoBooleano) {
+                        $sub->where('e.cod_cli', 'like', "%{$busqueda}%");
+                        if ($terminoBooleano !== '') {
+                            $sub->orWhereRaw(
+                                'MATCH(t.nom1, t.nom2, t.apl1, t.apl2, t.nom_ter) AGAINST(? IN BOOLEAN MODE)',
+                                [$terminoBooleano]
+                            );
+                        }
                     });
                 })
                 ->when($estadoFiltro === 'activo', fn ($q) => $q->where('e.estado', true))

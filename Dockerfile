@@ -68,5 +68,16 @@ COPY docker/default.conf /etc/apache2/sites-enabled/000-default.conf
 # env_file en docker-compose.yml. Si config:cache corriera en el build, cachearía la config con
 # esos valores en null -- la imagen quedaría rota aunque el .env real esté presente al arrancar,
 # porque config:cache le dice a Laravel que ya no vuelva a leer el entorno.
-CMD php artisan config:cache && exec apache2ctl -D FOREGROUND
+#
+# El chown/chmod también va aquí (no solo en el build, líneas 60-62) porque docker-compose.yml
+# monta el repo completo del host sobre /var/www/html (".:/var/www/html"): ese bind mount tapa
+# el dueño que se fijó durante el build, y el dueño real en runtime termina siendo el del
+# checkout en el host (root o el usuario de deploy), no www-data. Sin esto, Apache (que corre
+# como www-data) no puede escribir vistas compiladas nuevas en storage/framework/views ni nada
+# en bootstrap/cache. El CMD corre como root, así que puede corregir el dueño del bind mount
+# en cada arranque del contenedor sin depender de que el host ya lo tenga bien.
+CMD chown -R www-data:www-data storage bootstrap/cache \
+  && chmod -R 775 storage bootstrap/cache \
+  && php artisan config:cache \
+  && exec apache2ctl -D FOREGROUND
 
