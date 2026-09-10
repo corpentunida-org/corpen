@@ -139,7 +139,7 @@ class MaeTerceros extends Model
         // ----------------------
         // DOMICILIO
         // ----------------------
-        'dir', 
+        'dir',
         'dir1',
         'dir2', // DIRECCIONES
         'dir_comer', // DIRECCIÓN COMERCIAL
@@ -327,12 +327,17 @@ class MaeTerceros extends Model
 
     public function getCongregaAttribute($value)
     {
-        return trim($value); // Quita espacios en blanco como "01   " -> "01"
+        return $value ? trim($value) : null;
     }
 
     public function getCodDistAttribute($value)
     {
-        return trim($value);
+        return $value ? trim($value) : null;
+    }
+
+    public function getTipPrvAttribute($value)
+    {
+        return $value ? trim($value) : null;
     }
     /**
      * Relación con los Comprobantes de Pago de Cartera

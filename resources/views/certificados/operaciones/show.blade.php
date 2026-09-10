@@ -1,24 +1,36 @@
 <x-base-layout>
+    <!-- ========================================== -->
+    <!-- ESTILOS LOCALES PERSONALIZADOS             -->
+    <!-- ========================================== -->
     <style>
+        /* Colores pastel personalizados para badges y fondos */
         .bg-pastel-primary { background-color: #e7f0ff !important; color: #0052cc !important; border: none; }
         .bg-pastel-info { background-color: #e0f7fa !important; color: #00838f !important; border: none; }
         .bg-pastel-warning { background-color: #fff9c4 !important; color: #f57f17 !important; border: none; }
         .bg-pastel-success { background-color: #e8f5e9 !important; color: #2e7d32 !important; border: none; }
         .bg-pastel-secondary { background-color: #f1f5f9 !important; color: #475569 !important; border: none; }
         .bg-pastel-danger { background-color: #fee2e2 !important; color: #ef4444 !important; border: none; }
+
+        /* Utilidades de tarjetas y tabs */
         .card-custom { border-radius: 20px; background: #ffffff; border: 1px solid #f0f0f0; }
         .nav-tabs-custom .nav-link { border: none; color: #616161; font-weight: 600; padding: 1rem 1.5rem; border-bottom: 3px solid transparent; transition: all 0.3s; }
         .nav-tabs-custom .nav-link.active { color: #0052cc; background: transparent; border-bottom: 3px solid #0052cc; }
+
+        /* Tipografía y bordes auxiliares */
         .fs-7 { font-size: 0.9rem; }
         .fs-8 { font-size: 0.8rem; }
         .border-dashed { border-style: dashed !important; border-width: 2px !important; }
         .hover-opacity:hover { opacity: 0.8; transition: opacity 0.2s; }
+
+        /* Acordeones y Tablas */
         .accordion-custom .accordion-button:not(.collapsed) { background-color: #f8fafc; color: #0f172a; box-shadow: none; }
         .accordion-custom .accordion-button:focus { box-shadow: none; border-color: rgba(0,0,0,0.1); }
         .accordion-custom .accordion-button::after { background-size: 1.25rem; transition: all 0.3s ease; }
         .accordion-custom .accordion-item { border: 1px solid #e2e8f0; transition: all 0.3s ease; }
         .accordion-custom .accordion-item:hover { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border-color: #cbd5e1; }
         .table-inner th { font-weight: 600; color: #64748b; font-size: 0.75rem; background-color: #f8fafc; text-transform: uppercase; letter-spacing: 0.5px;}
+
+        /* Editor tipo Spreadsheet (Certificados) */
         .cuota-badge { width: 38px; height: 38px; font-size: 1rem; background: linear-gradient(135deg, #4a90e2, #0052cc); color: white; box-shadow: 0 4px 6px rgba(0, 82, 204, 0.2); }
         .table-spreadsheet { border-collapse: collapse; }
         .table-spreadsheet th { font-size: 0.75rem; text-transform: uppercase; color: #64748b; border: 1px solid #e2e8f0; padding: 1rem 0.75rem; background-color: #f8fafc; }
@@ -26,17 +38,20 @@
         .input-spreadsheet { width: 100%; border: none; padding: 0.85rem 0.75rem; background: transparent; outline: none; font-size: 0.85rem; color: #0f172a; transition: all 0.2s; }
         .input-spreadsheet:focus { background-color: #f0fdf4; box-shadow: inset 0 0 0 2px #22c55e; }
         select.input-spreadsheet { cursor: pointer; appearance: auto; -webkit-appearance: auto; padding-right: 2rem; }
+
+        /* Animaciones para barras de progreso */
         .progress-minimalist { height: 6px; width: 100%; background-color: #fee2e2; border-radius: 4px; overflow: hidden; position: relative; }
         .progress-minimalist::before { content: ''; position: absolute; top: 0; left: -50%; width: 50%; height: 100%; background-color: #ef4444; animation: progress-slide 1.5s infinite ease-in-out; border-radius: 4px; }
         @keyframes progress-slide { 0% { left: -50%; width: 30%; } 50% { width: 60%; } 100% { left: 100%; width: 30%; } }
     </style>
 
     <div class="app-container py-4">
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
 
-            <!-- ========================================== -->
-            <!-- 1. TÍTULO Y NAVEGACIÓN                     -->
-            <!-- ========================================== -->
+        <!-- ========================================== -->
+        <!-- ENCABEZADO DE LA VISTA                     -->
+        <!-- ========================================== -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
+            <!-- Título y Botón Volver -->
             <div>
                 <a href="{{ route('certificados.operaciones.index') }}" class="text-decoration-none text-muted d-inline-flex align-items-center fw-semibold hover-opacity mb-2" style="font-size: 0.85rem;">
                     <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm border" style="width: 28px; height: 28px;">
@@ -52,9 +67,7 @@
                 </h1>
             </div>
 
-            <!-- ========================================== -->
-            <!-- 2. BOTONES DE ACCIÓN (INFORME CLIENTE)     -->
-            <!-- ========================================== -->
+            <!-- Botones de Acción Globales -->
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <a href="{{ route('certificados.operaciones.informe_cliente', $operacion->id) }}"
                     target="_blank"
@@ -65,6 +78,9 @@
             </div>
         </div>
 
+        <!-- ========================================== -->
+        <!-- ALERTAS DE SESIÓN (Éxito / Error)          -->
+        <!-- ========================================== -->
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 mb-4" role="alert">
                 <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
@@ -78,10 +94,17 @@
             </div>
         @endif
 
+        <!-- ========================================== -->
+        <!-- CONTENEDOR PRINCIPAL (GRID)                -->
+        <!-- ========================================== -->
         <div class="row g-4">
+
+            <!-- ---------------------------------------------------- -->
+            <!-- COLUMNA IZQUIERDA (Info Básica, Técnica y Trazabilidad) -->
+            <!-- ---------------------------------------------------- -->
             <div class="col-xl-4 col-lg-5">
 
-                {{-- MENU  Info Pastor--}}
+                {{-- TARJETA: INFORMACIÓN DEL CLIENTE (Tercero Maestras) --}}
                 <div class="card card-custom shadow-sm mb-4 border-0">
                     <div class="card-body p-4">
                         <div class="d-flex align-items-center justify-content-between mb-4">
@@ -103,9 +126,56 @@
 
                         @if($operacion->tercero)
                             <div class="bg-light rounded-4 p-3 mb-3">
-                                <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
-                                <div class="text-muted fs-8 mt-1">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                <!-- Contenedor Flex para alinear texto a la izq y botón a la der -->
+                                <div class="d-flex justify-content-between align-items-start">
+                                    
+                                    <!-- Datos del cliente -->
+                                    <div>
+                                        <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
+                                        <div class="text-muted fs-8 mt-1">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                    </div>
+
+                                    <!-- NUEVO: Píldora Desplegable Sutil -->
+                                    <div class="dropdown ms-2">
+                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center" 
+                                                type="button" 
+                                                data-bs-toggle="dropdown" 
+                                                aria-expanded="false"
+                                                title="Ver historial de operaciones">
+                                            <i class="fas fa-history me-1 text-muted"></i> 
+                                            <span class="ms-1">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
+                                        </button>
+                                        
+                                        <!-- Menú flotante compacto -->
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="width: 260px; max-height: 250px; overflow-y: auto;">
+                                            <li><h6 class="dropdown-header text-muted fs-8 text-uppercase fw-bold ls-1 mb-1">Historial Reciente</h6></li>
+                                            
+                                            @if(isset($operacionesDelTercero) && $operacionesDelTercero->count() > 0)
+                                                @foreach($operacionesDelTercero as $opTercero)
+                                                    @php $esActual = $opTercero->id == $operacion->id; @endphp
+                                                    <li>
+                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1" 
+                                                        href="{{ route('certificados.operaciones.show', $opTercero->id) }}"
+                                                            <span class="text-truncate" style="max-width: 150px;">
+                                                                <i class="fas {{ $esActual ? 'fa-dot-circle' : 'fa-circle' }} fs-9 me-2 {{ $esActual ? 'text-primary' : 'text-muted opacity-25' }}"></i>
+                                                                Rad: {{ $opTercero->numero_radicado }}
+                                                            </span>
+                                                            <span class="badge {{ $esActual ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill border" style="font-size: 0.65rem;">
+                                                                API-{{ str_pad($opTercero->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                            </span>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            @else
+                                                <li><span class="dropdown-item text-muted fs-8 py-2">Sin operaciones previas</span></li>
+                                            @endif
+                                        </ul>
+                                    </div>
+                                    <!-- FIN Píldora -->
+
+                                </div>
                             </div>
+                            
                             <div class="d-flex justify-content-between mb-2 fs-7">
                                 <span class="text-muted"><i class="fas fa-phone-alt me-2 opacity-50"></i>Teléfono:</span>
                                 <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
@@ -128,7 +198,7 @@
                     </div>
                 </div>
 
-                {{-- Modal para Editar Tercero --}}
+                {{-- MODAL: EDITAR DATOS DEL TERCERO --}}
                 @if($operacion->tercero)
                 <div class="modal fade" id="modalEditarTercero" tabindex="-1" aria-labelledby="modalEditarTerceroLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -144,26 +214,27 @@
                                 @method('PUT')
                                 <div class="modal-body p-4">
                                     <div class="alert alert-info bg-pastel-info border-0 fs-7 mb-4">
-                                        <i class="fas fa-info-circle me-2"></i> El "Nombre Completo" se autogenerará al guardar uniendo los nombres y apellidos.
+                                        <i class="fas fa-info-circle me-2"></i> El "Nombre Completo" se autogenerará al guardar uniendo los nombres y apellidos en MAYÚSCULAS.
                                     </div>
 
                                     <div class="row g-3">
                                         <div class="col-md-6">
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Primer Nombre</label>
-                                            <input type="text" class="form-control" name="nom1" value="{{ $operacion->tercero->nom1 }}" required>
+                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="nom1" value="{{ $operacion->tercero->nom1 }}" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Segundo Nombre</label>
-                                            <input type="text" class="form-control" name="nom2" value="{{ $operacion->tercero->nom2 }}">
+                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="nom2" value="{{ $operacion->tercero->nom2 }}">
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Primer Apellido</label>
-                                            <input type="text" class="form-control" name="apl1" value="{{ $operacion->tercero->apl1 }}" required>
+                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="apl1" value="{{ $operacion->tercero->apl1 }}" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Segundo Apellido</label>
-                                            <input type="text" class="form-control" name="apl2" value="{{ $operacion->tercero->apl2 }}">
+                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="apl2" value="{{ $operacion->tercero->apl2 }}">
                                         </div>
+
                                         <div class="col-md-6">
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Teléfono Principal (tel)</label>
                                             <input type="text" class="form-control" name="tel" value="{{ $operacion->tercero->tel }}">
@@ -180,6 +251,98 @@
                                             <label class="form-label text-muted fs-8 fw-bold text-uppercase">Dirección</label>
                                             <input type="text" class="form-control" name="dir" value="{{ $operacion->tercero->dir }}">
                                         </div>
+
+                                        @php
+                                            // 1. Buscar nombre del Distrito
+                                            $idDist = trim((string)($operacion->tercero->cod_dist ?? ''));
+                                            $nomDist = '';
+                                            foreach($distritos as $d) {
+                                                if (trim((string)($d->COD_DIST ?? $d->cod_dist ?? '')) === $idDist) {
+                                                    $nomDist = $d->NOM_DIST ?? $d->nom_dist ?? $d->DETALLE ?? $d->COMPUEST ?? 'Sin nombre';
+                                                    break;
+                                                }
+                                            }
+
+                                            // 2. Buscar nombre del Tipo
+                                            $idTipo = trim((string)($operacion->tercero->tip_prv ?? ''));
+                                            $nomTipo = '';
+                                            foreach($maeTipos as $t) {
+                                                if (trim((string)($t->id ?? $t->tip_prv ?? '')) === $idTipo) {
+                                                    $nomTipo = $t->nombre ?? $t->descripcion ?? $t->tipo ?? 'Sin descripción';
+                                                    break;
+                                                }
+                                            }
+
+                                            // 3. Buscar nombre de la Congregación
+                                            $idCong = trim((string)($operacion->tercero->congrega ?? ''));
+                                            $nomCong = '';
+                                            foreach($congregaciones as $c) {
+                                                if (trim((string)($c->codigo ?? $c->congrega ?? '')) === $idCong) {
+                                                    $nomCong = $c->nombre ?? $c->descripcion ?? $c->iglesia ?? 'Sin descripción';
+                                                    break;
+                                                }
+                                            }
+                                        @endphp
+
+                                        <!-- RESUMEN DE DATOS ACTUALES Y BOTÓN ACTUALIZAR -->
+                                        <div class="alert alert-info py-2 px-3 mb-3 fs-7 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>Distrito:</strong> {{ $idDist !== '' ? ($nomDist !== '' ? "$idDist - $nomDist" : $idDist) : 'Sin asignación' }} <span class="mx-2">|</span>
+                                                <strong>Tipo:</strong> {{ $idTipo !== '' ? ($nomTipo !== '' ? "$idTipo - $nomTipo" : $idTipo) : 'Sin asignación' }} <span class="mx-2">|</span>
+                                                <strong>Congregación:</strong> {{ $idCong !== '' ? ($nomCong !== '' ? "$idCong - $nomCong" : $idCong) : 'Sin asignación' }}
+                                            </div>
+                                            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#camposActualizar" aria-expanded="false" aria-controls="camposActualizar">
+                                                Actualizar
+                                            </button>
+                                        </div>
+
+                                        <!-- CONTENEDOR DESPLEGABLE CON LOS SELECTS -->
+                                        <div class="collapse" id="camposActualizar">
+                                            <div class="row">
+                                                <!-- 1. DISTRITO -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Distrito</label>
+                                                    <select class="form-select select2-buscador" name="cod_dist" id="select_cod_dist">
+                                                        <option value="">Seleccione o busque...</option>
+                                                        @foreach($distritos as $distritoItem)
+                                                            @php $valDistrito = trim($distritoItem->COD_DIST ?? $distritoItem->cod_dist ?? ''); @endphp
+                                                            <option value="{{ $valDistrito }}" {{ $idDist === (string)$valDistrito ? 'selected' : '' }}>
+                                                                {{ $valDistrito }} - {{ $distritoItem->NOM_DIST ?? $distritoItem->nom_dist ?? $distritoItem->DETALLE ?? $distritoItem->COMPUEST ?? 'Sin nombre' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <!-- 2. TIPO DE CLIENTE -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Tipo</label>
+                                                    <select class="form-select select2-buscador" name="tip_prv" id="select_tip_prv">
+                                                        <option value="">Seleccione o busque...</option>
+                                                        @foreach($maeTipos as $tipoItem)
+                                                            @php $valTipo = trim($tipoItem->id ?? $tipoItem->tip_prv ?? ''); @endphp
+                                                            <option value="{{ $valTipo }}" {{ $idTipo === (string)$valTipo ? 'selected' : '' }}>
+                                                                {{ $tipoItem->nombre ?? $tipoItem->descripcion ?? $tipoItem->tipo ?? 'Sin descripción' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <!-- 3. CONGREGACIÓN -->
+                                                <div class="col-md-4">
+                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Congregación</label>
+                                                    <select class="form-select select2-buscador" name="congrega" id="select_congrega">
+                                                        <option value="">Seleccione o busque...</option>
+                                                        @foreach($congregaciones as $congregaItem)
+                                                            @php $valCongrega = trim($congregaItem->codigo ?? $congregaItem->congrega ?? ''); @endphp
+                                                            <option value="{{ $valCongrega }}" {{ $idCong === (string)$valCongrega ? 'selected' : '' }}>
+                                                                {{ $valCongrega }} - {{ $congregaItem->nombre ?? $congregaItem->descripcion ?? $congregaItem->iglesia ?? 'Sin descripción' }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                                 <div class="modal-footer bg-light border-top-0">
@@ -194,7 +357,7 @@
                 </div>
                 @endif
 
-                {{-- MENU  Info Técnica (ETL)--}}
+                {{-- TARJETA: INFORMACIÓN TÉCNICA Y ETL --}}
                 <div class="card card-custom shadow-sm border-0">
                     <div class="card-body p-4">
                         <h6 class="text-uppercase fw-bold text-muted mb-3 fs-8"><i class="fas fa-microchip me-2"></i> Info Técnica (ETL)</h6>
@@ -215,8 +378,7 @@
                     </div>
                 </div>
 
-
-                {{-- CAJA PRINCIPAL: MATRIZ DE TRAZABILIDAD (AUDITORÍA)--}}
+                {{-- TARJETA: MATRIZ DE TRAZABILIDAD (TIMELINE DE AUDITORÍA) --}}
                 <div class="card card-custom p-3 shadow-sm d-flex flex-column mt-4" style="flex: 1; min-height: 0;">
                     <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                         <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
@@ -231,7 +393,7 @@
                             <div class="position-relative ms-2" style="border-left: 2px solid var(--c-border, #dee2e6);">
                                 @foreach($logsAuditoria as $log)
 
-                                    {{-- REGLA DE PRIORIZACIÓN: Es del bloque general (nulo) o es de mi operación --}}
+                                    {{-- REGLA DE PRIORIZACIÓN: Es del bloque general (nulo) o es de mi operación directa --}}
                                     @if(is_null($log->id_car_sia_operaciones) || $log->id_car_sia_operaciones == $operacion->id)
 
                                         <div class="position-relative mb-3 ps-3 pt-1">
@@ -270,7 +432,7 @@
                                                             <i class="fas fa-desktop me-1"></i> {{ $log->origenEvento ?? 'Sistema' }}
                                                         </span>
 
-                                                        {{-- DIFERENCIACIÓN VISUAL POR ORIGEN DEL LOG --}}
+                                                        {{-- DIFERENCIACIÓN VISUAL POR ORIGEN DEL LOG (Lote vs Individual) --}}
                                                         @if(is_null($log->id_car_sia_operaciones))
                                                             <span class="badge bg-light text-primary border border-primary border-opacity-25 shadow-none ms-1" style="font-size: .6rem; padding: .2rem .4rem;" title="Evento a nivel de Lote/Bloque">
                                                                 <i class="fas fa-layer-group me-1"></i> Lote General
@@ -282,6 +444,7 @@
                                                         @endif
                                                     </div>
 
+                                                    {{-- Botón para ver detalles (JSON payload, métricas, etc.) --}}
                                                     @if($log->hayDetalles && isset($log->detalles_procesados) && count($log->detalles_procesados) > 0)
                                                         <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium d-flex align-items-center gap-1" style="font-size: .65rem;" onclick="document.getElementById('detalles-trazabilidad-{{ $loop->index }}').classList.toggle('d-none')">
                                                             <i class="fas fa-search-plus"></i> Detalles
@@ -298,6 +461,7 @@
                                                                     $esJson = is_string($valor) && is_array(json_decode($valor, true)) && json_last_error() === JSON_ERROR_NONE;
                                                                     $datosParseados = $esJson ? json_decode($valor, true) : $valor;
 
+                                                                    // Limpiamos nulos o métricas vacías
                                                                     if (is_array($datosParseados) || is_object($datosParseados)) {
                                                                         $datosParseados = collect($datosParseados)->filter(function($v, $k) use ($llave) {
                                                                             if (strtolower($llave) === 'metricas' && $v === 0) return false;
@@ -352,8 +516,13 @@
 
             </div>
 
+            <!-- ---------------------------------------------------- -->
+            <!-- COLUMNA DERECHA (Sistema de Pestañas / Navegación)   -->
+            <!-- ---------------------------------------------------- -->
             <div class="col-xl-8 col-lg-7">
                 <div class="card card-custom shadow-sm border-0 h-100">
+
+                    {{-- CABECERA: TABS DE NAVEGACIÓN --}}
                     <div class="card-header bg-white pt-3 pb-0 border-bottom px-4" style="border-radius: 20px 20px 0 0;">
                         <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto" id="operacionTabs" role="tablist" style="scrollbar-width: none;">
 
@@ -430,200 +599,304 @@
                         </ul>
                     </div>
 
+                    {{-- CUERPO DE TABS --}}
                     <div class="card-body p-4">
                         <div class="tab-content" id="operacionTabsContent">
-                            {{-- TAB 0: PARÁMETROS --}}
+
+                            {{-- ======================================================= --}}
+                            {{-- TAB 0: PARÁMETROS (Configuraciones de excepción)        --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="parametros" role="tabpanel">
+
+                                {{-- ENCABEZADO Y BOTÓN --}}
                                 <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-cog me-2"></i> Configuración General</h6>
-                                    <button type="button"
-                                            class="btn bg-pastel-secondary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalCrearConfiguracion"> <!-- Cambia esto por el ID exacto de tu modal -->
-                                        <i class="fas fa-cog me-2 opacity-75"></i> Parámetros
+                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase">
+                                        <i class="fas fa-cog me-2"></i> Configuración General
+                                    </h6>
+                                    <button type="button" class="btn bg-pastel-primary text-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity border border-primary border-opacity-25" onclick="$('#modalCrearConfiguracion').modal('show');">
+                                        <i class="fas fa-plus-circle me-2 opacity-75"></i> Nuevos Parámetros
                                     </button>
                                 </div>
 
                                 @if(isset($operacionesConfiguradas) && $operacionesConfiguradas->count() > 0)
-                                    <div class="table-responsive border rounded-3 shadow-sm mb-3">
-                                        <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.75rem;">
-                                            <thead class="bg-light text-muted text-uppercase" style="font-size: 0.65rem;">
-                                                <tr>
-                                                    <th class="text-center py-2 border-bottom" style="width: 5%;">Det.</th>
-                                                    <th class="py-2 border-bottom" style="width: 15%;">Radicado</th>
-                                                    <th class="py-2 border-bottom" style="width: 20%;">Cliente</th>
-                                                    <th class="py-2 border-bottom" style="width: 20%;">Acción Vencimiento</th>
-                                                    <th class="text-center py-2 border-bottom" style="width: 10%;">Frec.</th>
-                                                    <th class="text-center py-2 border-bottom" style="width: 10%;">Est. Acción</th>
-                                                    <th class="text-center py-2 border-bottom" style="width: 5%;">Notif.</th>
-                                                    <th class="text-center pe-3 py-2 border-bottom" style="width: 15%;">Estado</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {{-- ========================================== --}}
-                                                {{-- CONFIGURACIONES INDIVIDUALES (EXCEPCIÓN)   --}}
-                                                {{-- ========================================== --}}
-                                                @foreach($operacionesConfiguradas as $op)
-                                                    @php
-                                                        // Convertimos a colección para soportar múltiples excepciones por radicado
-                                                        $configs = $op->configuracion instanceof \Illuminate\Support\Collection
-                                                            ? $op->configuracion
-                                                            : collect([$op->configuracion])->filter();
-                                                    @endphp
 
-                                                    @foreach($configs as $conf)
+                                    {{-- CONTENEDOR TABLA ULTRA PRO --}}
+                                    <div class="bg-white border rounded-3 shadow-sm overflow-hidden mb-3">
+
+                                        {{-- TOOLBAR PEQUEÑO --}}
+                                        <div class="bg-light px-3 py-2 border-bottom text-muted small d-flex justify-content-between align-items-center">
+                                            <span><i class="fas fa-hand-pointer text-primary me-1"></i> Haz clic en la fila para ver detalles, trazabilidad y editar la lógica</span>
+                                            <span class="badge bg-primary text-white shadow-sm px-2 py-1" style="font-size: 0.7rem;">
+                                                {{ collect($operacionesConfiguradas)->sum(fn($op) => collect($op->configuracion)->count()) }} Registros
+                                            </span>
+                                        </div>
+
+                                        <div class="table-responsive custom-scrollbar" style="max-height: 500px; overflow-y: auto;">
+                                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.75rem;">
+                                                <thead class="table-light text-uppercase text-muted sticky-top shadow-sm" style="font-size: 0.65rem;">
+                                                    <tr>
+                                                        <th class="text-center py-2 border-bottom" style="width: 5%;"></th>
+                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Alcance</th>
+                                                        <th class="py-2 border-bottom" style="width: 15%;">Radicado</th>
+                                                        <th class="py-2 border-bottom" style="width: 15%;">Cliente</th>
+                                                        <th class="py-2 border-bottom" style="width: 20%;">Acción Vencimiento</th>
+                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Frec.</th>
+                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Est. Acción</th>
+                                                        <th class="text-center py-2 border-bottom" style="width: 5%;">Notif.</th>
+                                                        <th class="text-center pe-3 py-2 border-bottom" style="width: 10%;">Estado</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {{-- ITERACIÓN DE CONFIGURACIONES --}}
+                                                    @foreach($operacionesConfiguradas as $op)
                                                         @php
-                                                            $hayConfiguradas = true;
-                                                            $configBaseOp = $conf->configuracionBase;
-                                                            $accionVencOp = $configBaseOp?->accionVencimiento;
-                                                            $parametrosOp = $configBaseOp?->parametros;
-
-                                                            // Accedemos al tercero directamente desde $op (la operación)
-                                                            $nombreCliente = trim(($op->tercero?->nom_ter ?? 'Sin Tercero') . ' ' . ($op->tercero?->apl1 ?? ''));
+                                                            $configs = $op->configuracion instanceof \Illuminate\Support\Collection
+                                                                ? $op->configuracion
+                                                                : collect([$op->configuracion])->filter();
                                                         @endphp
 
-                                                        <tr style="background-color: #fff; cursor: pointer; border-bottom: 1px solid #f1f3f5; transition: background-color 0.2s;" class="parent-row {{ !$conf->estado_activo ? 'opacity-75 bg-light' : '' }}" onclick="toggleParametros('det-op-{{ $conf->id }}', this)" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='#fff'">
-                                                            <td class="text-center text-info py-2"><i class="fas fa-chevron-circle-down opacity-50 icon-toggle"></i></td>
-                                                            <td class="font-monospace fw-bold py-2">{{ $op->numero_radicado ?? 'N/A' }}</td>
-                                                            <td class="text-truncate py-2" title="{{ $nombreCliente }}" style="max-width: 150px;">{{ $nombreCliente }}</td>
-                                                            <td class="fw-bold text-dark text-truncate py-2" title="{{ $accionVencOp?->nombre ?? 'N/A' }}" style="max-width: 220px;">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
-                                                            <td class="text-center py-2">
-                                                                @if($configBaseOp?->frecuencia_recordatorio_dias) <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} d</span>
-                                                                @else <span class="text-muted">—</span> @endif
-                                                            </td>
-                                                            <td class="text-center py-2">
-                                                                @if(isset($accionVencOp?->estado))
-                                                                    <span class="badge {{ $accionVencOp->estado ? 'bg-white text-success border border-success' : 'bg-white text-danger border border-danger' }} px-2 py-1">
-                                                                        {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                        @foreach($configs as $conf)
+                                                            @php
+                                                                // Diferenciación Visual LOTE vs EXCEPCIÓN
+                                                                $esLote = is_null($conf->id_car_sia_operaciones);
+                                                                $tipoAlcance = $esLote ? 'LOTE' : 'EXCEPCIÓN';
+                                                                $badgeAlcance = $esLote ? 'bg-pastel-primary text-primary border-primary' : 'bg-pastel-success text-success border-success';
+                                                                $iconoAlcance = $esLote ? 'fa-layer-group' : 'fa-user-tag';
+
+                                                                $configBaseOp = $conf->configuracionBase;
+                                                                $accionVencOp = $configBaseOp?->accionVencimiento;
+                                                                $nombreCliente = trim(($op->tercero?->nom_ter ?? 'Sin Tercero') . ' ' . ($op->tercero?->apl1 ?? ''));
+
+                                                                // Parámetros JSON (Editables)
+                                                                $pOp = is_array($conf->parametros) ? $conf->parametros : (json_decode($conf->parametros, true) ?? []);
+                                                                $claseMoraOp = strtolower($pOp['clasificacion_mora'] ?? 'desconocido');
+                                                            @endphp
+
+                                                            {{-- FILA PRINCIPAL (VISIBLE) --}}
+                                                            <tr style="background-color: #fff; cursor: {{ $esLote ? 'not-allowed' : 'pointer' }}; border-bottom: 1px solid #f1f3f5; transition: background-color 0.2s;"
+                                                                class="parent-row {{ !$conf->estado_activo ? 'opacity-75 bg-light' : '' }}"
+
+                                                                {{-- Validamos si NO es lote para habilitar el clic y el hover --}}
+                                                                @if(!$esLote)
+                                                                    onclick="toggleParametros('det-op-{{ $conf->id }}', this)"
+                                                                    onmouseover="this.style.backgroundColor='#f8f9fa'"
+                                                                    onmouseout="this.style.backgroundColor='#fff'"
+                                                                @endif>
+
+                                                                <td class="text-center py-2">
+                                                                    @if($esLote)
+                                                                        <i class="fas fa-lock text-muted opacity-25" title="La configuración en LOTE no es editable desde aquí"></i>
+                                                                    @else
+                                                                        <i class="fas fa-chevron-circle-down text-info opacity-50 icon-toggle"></i>
+                                                                    @endif
+                                                                </td>
+
+                                                                {{-- COLUMNA: ALCANCE VISUAL --}}
+                                                                <td class="text-center py-2">
+                                                                    <span class="badge {{ $badgeAlcance }} border border-opacity-25 px-2 py-1" style="font-size: 0.65rem;">
+                                                                        <i class="fas {{ $iconoAlcance }} me-1"></i> {{ $tipoAlcance }}
                                                                     </span>
-                                                                @else
-                                                                    <span class="text-muted">—</span>
-                                                                @endif
-                                                            </td>
-                                                            <td class="text-center py-2">
-                                                                @if($conf->estado_notificacion) <span class="text-success"><i class="fas fa-bell"></i></span>
-                                                                @else <span class="text-muted"><i class="fas fa-bell-slash"></i></span> @endif
-                                                            </td>
-                                                            <td class="text-center pe-3 py-2">
-                                                                @if(method_exists($conf, 'trashed') && $conf->trashed()) <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
-                                                                @elseif(!$conf->estado_activo) <span class="badge bg-secondary text-white" style="font-size: 0.60rem;">INACTIVA</span>
-                                                                @else <span class="badge bg-info text-white" style="font-size: 0.60rem;">EXCEPCIÓN</span> @endif
-                                                            </td>
-                                                        </tr>
+                                                                </td>
 
-                                                        <tr id="det-op-{{ $conf->id }}" style="display: none; background-color: #f4f6f8; box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.1);">
-                                                            <td colspan="8" class="p-0 border-0">
-                                                                @php
-                                                                    $pOp = is_array($parametrosOp) ? $parametrosOp : (json_decode($parametrosOp, true) ?? []);
-                                                                    $claseMoraOp = strtolower($pOp['clasificacion_mora'] ?? 'desconocido');
-                                                                    $colorBadgeOp = match($claseMoraOp) {
-                                                                        'bueno' => 'bg-pastel-success text-success border-success',
-                                                                        'regular' => 'bg-pastel-info text-info border-info',
-                                                                        'atencion_especial' => 'bg-pastel-warning text-dark border-warning',
-                                                                        'restringido' => 'bg-pastel-danger text-danger border-danger',
-                                                                        'irregular' => 'bg-dark text-white border-dark',
-                                                                        default => 'bg-light text-secondary border-secondary'
-                                                                    };
-                                                                @endphp
+                                                                <td class="font-monospace fw-bold text-dark py-2">
+                                                                    {{ $esLote ? 'API-'.str_pad($conf->numero_bloque, 4, '0', STR_PAD_LEFT) : ($op->numero_radicado ?? 'N/A') }}
+                                                                </td>
 
-                                                                <div class="py-2 py-md-3 pe-2 pe-md-4 ps-0 ps-md-1">
-                                                                    <div class="ms-2 ms-md-5 bg-white rounded-3 shadow-sm border border-start-0 position-relative w-100" style="border-left: 4px solid #0dcaf0 !important;">
-                                                                        <div class="position-absolute text-info d-none d-md-block" style="left: -20px; top: -15px;"><i class="fas fa-level-up-alt fa-rotate-90 fs-5 opacity-25"></i></div>
+                                                                <td class="text-truncate py-2 text-secondary" title="{{ $nombreCliente }}" style="max-width: 120px;">{{ $nombreCliente }}</td>
 
-                                                                        <div class="p-3 w-100">
-                                                                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 pb-2 border-bottom gap-2">
-                                                                                <span class="fw-bold text-info" style="font-size: 0.75rem;"><i class="fas fa-code-branch me-1"></i> Parámetros de Excepción (Rad: {{ $op->numero_radicado }})</span>
-                                                                                <span class="text-muted" style="font-size: 0.65rem;">ID Config: {{ $configBaseOp?->id ?? 'N/A' }} | ID Asignación: {{ $conf->id }}</span>
-                                                                            </div>
+                                                                <td class="fw-bold text-dark text-truncate py-2" title="{{ $accionVencOp?->nombre ?? 'N/A' }}" style="max-width: 180px;">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
 
-                                                                            <div class="row g-3 align-items-start m-0 w-100">
-                                                                                {{-- COLUMNA 1: CLASIFICACIÓN --}}
-                                                                                <div class="col-12 col-md-3 position-relative p-0 pe-md-3">
-                                                                                    <div class="d-none d-md-block position-absolute end-0 top-0 h-100 border-end"></div>
-                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Clasificación</span>
-                                                                                    <span class="badge {{ $colorBadgeOp }} border border-opacity-25 px-2 py-1 mb-2 text-wrap"><i class="fas fa-tag me-1"></i> {{ strtoupper(str_replace('_', ' ', $claseMoraOp)) }}</span>
-                                                                                    <div class="d-flex flex-column gap-1" style="font-size: 0.75rem;">
-                                                                                        <span class="text-dark"><i class="fas fa-calendar-times text-secondary me-1"></i> Max Mora: <strong>{{ $pOp['mora_dias_max'] ?? '0' }}</strong> d</span>
-                                                                                        <span class="text-dark"><i class="fas fa-hand-holding-heart text-secondary me-1"></i> Gracia: <strong>{{ $pOp['dias_gracia'] ?? '0' }}</strong> d</span>
-                                                                                    </div>
+                                                                <td class="text-center py-2">
+                                                                    @if($configBaseOp?->frecuencia_recordatorio_dias) <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} d</span>
+                                                                    @else <span class="text-muted">—</span> @endif
+                                                                </td>
+
+                                                                <td class="text-center py-2">
+                                                                    @if(isset($accionVencOp?->estado))
+                                                                        <span class="badge {{ $accionVencOp->estado ? 'bg-white text-success border border-success' : 'bg-white text-danger border border-danger' }} px-2 py-1">
+                                                                            {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-muted">—</span>
+                                                                    @endif
+                                                                </td>
+
+                                                                <td class="text-center py-2">
+                                                                    @if($conf->estado_notificacion) <span class="text-success"><i class="fas fa-bell"></i></span>
+                                                                    @else <span class="text-muted"><i class="fas fa-bell-slash"></i></span> @endif
+                                                                </td>
+
+                                                                {{-- ========================================================================= --}}
+                                                                {{-- (BOTÓN INTERACTIVO)                                  --}}
+                                                                {{-- ========================================================================= --}}
+                                                                <td class="text-center pe-3 py-2" onclick="event.stopPropagation();">
+                                                                    @if(method_exists($conf, 'trashed') && $conf->trashed())
+                                                                        <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
+                                                                    @else
+                                                                        <form action="{{ route('certificados.operaciones.config.toggle', $conf->id) }}" method="POST" class="m-0 p-0 d-inline">
+                                                                            @csrf
+                                                                            @method('PATCH')
+                                                                            <button type="submit"
+                                                                                    class="badge border-0 {{ $conf->estado_activo ? 'bg-success' : 'bg-secondary' }} text-white shadow-sm"
+                                                                                    style="cursor: pointer; padding: 0.4em 0.6em; font-size: 0.60rem; transition: all 0.2s;"
+                                                                                    title="Clic para cambiar a {{ $conf->estado_activo ? 'INACTIVO' : 'ACTIVO' }}">
+                                                                                {{ $conf->estado_activo ? 'ACTIVA' : 'INACTIVA' }}
+                                                                            </button>
+                                                                        </form>
+                                                                    @endif
+                                                                </td>
+                                                            </tr>
+
+                                                            {{-- Evitamos renderizar el formulario si es LOTE --}}
+                                                            @if(!$esLote)
+                                                                {{-- FILA DESPLEGABLE (FORMULARIO EDICIÓN JSON Y TRAZABILIDAD) --}}
+                                                                <tr id="det-op-{{ $conf->id }}" style="display: none; background-color: #f4f6f8; box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.1);">
+                                                                    <td colspan="9" class="p-0 border-0">
+                                                                        <div class="py-3 px-3" onclick="event.stopPropagation();">
+
+                                                                            <form action="{{ route('certificados.operaciones.config.update_parametros', $conf->id) }}" method="POST" class="bg-white rounded-3 shadow-sm border border-start-0 w-100 p-3 position-relative" style="border-left: 4px solid {{ $esLote ? '#0d6efd' : '#0dcaf0' }} !important;">
+                                                                                @csrf
+                                                                                @method('PUT')
+
+                                                                                <div class="position-absolute text-{{ $esLote ? 'primary' : 'info' }} d-none d-md-block" style="left: -15px; top: -12px;">
+                                                                                    <i class="fas fa-level-up-alt fa-rotate-90 fs-5 opacity-50"></i>
                                                                                 </div>
 
-                                                                                {{-- COLUMNA 2: ACTIVADORES --}}
-                                                                                <div class="col-12 col-md-5 p-0 ps-md-3 mt-3 mt-md-0 position-relative pe-md-3">
-                                                                                    <div class="d-none d-md-block position-absolute end-0 top-0 h-100 border-end"></div>
-                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Activadores</span>
-                                                                                    <div class="d-flex flex-wrap gap-2 mb-2">
-                                                                                        @if(!empty($pOp['requiere_accion'])) <span class="badge bg-light text-dark border"><i class="fas fa-exclamation-circle text-warning me-1"></i> Acción Restrictiva</span> @endif
-                                                                                        @if(!empty($pOp['bloqueo_automatico'])) <span class="badge bg-pastel-danger border border-danger border-opacity-25"><i class="fas fa-ban me-1"></i> Bloqueo Cupo</span> @endif
-                                                                                        @if(!empty($pOp['notificacion_gerencia'])) <span class="badge bg-pastel-primary border border-primary border-opacity-25"><i class="fas fa-user-tie me-1"></i> Notifica Gcia.</span> @endif
-                                                                                        @if(!empty($pOp['incluir_historico_3_anos'])) <span class="badge bg-light text-secondary border"><i class="fas fa-history me-1"></i> Histórico 3A</span> @endif
-                                                                                        @if(empty($pOp['requiere_accion']) && empty($pOp['bloqueo_automatico']) && empty($pOp['notificacion_gerencia'])) <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-check text-success me-1"></i> Sin restricciones</span> @endif
-                                                                                    </div>
-                                                                                    @if(!empty($pOp['observacion_fase']))
-                                                                                        <div class="bg-light rounded p-2 text-muted fst-italic border mt-2 text-wrap text-break w-100" style="font-size: 0.7rem; word-wrap: break-word;">
-                                                                                            <i class="fas fa-info-circle text-info me-1"></i> {{ $pOp['observacion_fase'] }}
+                                                                                {{-- METADATOS Y TRAZABILIDAD COMPLETA (Todos los campos de la BD) --}}
+                                                                                <div class="bg-light border rounded-3 p-2 mb-3 d-flex flex-wrap gap-3 align-items-center text-muted" style="font-size: 0.65rem;">
+                                                                                    <span><i class="fas fa-fingerprint text-secondary me-1"></i><strong>ID Reg:</strong> {{ $conf->id }}</span>
+                                                                                    <span><i class="fas fa-cubes text-secondary me-1"></i><strong>Bloque:</strong> {{ $conf->numero_bloque }}</span>
+                                                                                    <span><i class="fas fa-file-invoice text-secondary me-1"></i><strong>ID Op:</strong> {{ $conf->id_car_sia_operaciones ?? 'N/A' }}</span>
+                                                                                    <span><i class="fas fa-cog text-secondary me-1"></i><strong>ID Config:</strong> {{ $conf->id_car_sia_config }}</span>
+                                                                                    <span><i class="fas fa-user-circle text-secondary me-1"></i><strong>Usuario Mod:</strong> {{ $conf->id_user }} ({{ $conf->usuario->name ?? 'Sistema' }})</span>
+                                                                                    <span><i class="fas fa-calendar-plus text-secondary me-1"></i><strong>Creado:</strong> {{ $conf->created_at ? $conf->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                                                                                    <span><i class="fas fa-sync-alt text-secondary me-1"></i><strong>Modificado:</strong> {{ $conf->updated_at ? $conf->updated_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                                                                                </div>
+
+                                                                                <div class="row g-3">
+                                                                                    {{-- COLUMNA 1: EDICIÓN DE PARÁMETROS JSON (Clasificación) --}}
+                                                                                    <div class="col-md-4 border-end position-relative pe-md-3">
+                                                                                        <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-sliders-h me-1"></i> Lógica (Clasificación)</span>
+
+                                                                                        <div class="mb-2">
+                                                                                            <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Clasificación de Mora</label>
+                                                                                            <select name="parametros[clasificacion_mora]" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                                                                                                <option value="bueno" {{ $claseMoraOp == 'bueno' ? 'selected' : '' }}>BUENO</option>
+                                                                                                <option value="regular" {{ $claseMoraOp == 'regular' ? 'selected' : '' }}>REGULAR</option>
+                                                                                                <option value="atencion_especial" {{ $claseMoraOp == 'atencion_especial' ? 'selected' : '' }}>ATENCIÓN ESPECIAL</option>
+                                                                                                <option value="restringido" {{ $claseMoraOp == 'restringido' ? 'selected' : '' }}>RESTRINGIDO</option>
+                                                                                                <option value="irregular" {{ $claseMoraOp == 'irregular' ? 'selected' : '' }}>IRREGULAR</option>
+                                                                                            </select>
                                                                                         </div>
-                                                                                    @endif
-                                                                                </div>
 
-                                                                                {{-- COLUMNA 3: DETALLES Y ESTADO --}}
-                                                                                <div class="col-12 col-md-4 p-0 ps-md-3 mt-3 mt-md-0">
-                                                                                    <span class="d-block text-muted mb-1" style="font-size: 0.60rem; text-transform: uppercase;">Auditoría y Excepción</span>
-                                                                                    <div class="d-flex flex-column gap-1 mb-2" style="font-size: 0.75rem;">
-                                                                                        <span class="text-dark"><i class="fas fa-user-circle text-info me-1"></i> <strong>Responsable:</strong> {{ $conf->usuario->name ?? 'N/A' }}</span>
-
-                                                                                        @php
-                                                                                            $vencidoOp = $conf->vigente_hasta && \Carbon\Carbon::parse($conf->vigente_hasta)->isPast();
-                                                                                        @endphp
-
-                                                                                        <span class="text-dark"><i class="fas fa-calendar-check text-info me-1"></i> <strong>Vigente Hasta:</strong>
-                                                                                            @if($conf->vigente_hasta)
-                                                                                                <span class="{{ $vencidoOp ? 'text-danger fw-bold' : '' }}">{{ \Carbon\Carbon::parse($conf->vigente_hasta)->format('d/m/Y') }}</span>
-                                                                                            @else
-                                                                                                <span class="text-muted fst-italic">Indefinido</span>
-                                                                                            @endif
-                                                                                        </span>
-
-                                                                                        @if($conf->justificacion)
-                                                                                            <span class="text-dark mt-1 d-block lh-sm"><i class="fas fa-comment-dots text-info me-1"></i> <strong>Justificación:</strong> <br><span class="text-muted fst-italic">{{ $conf->justificacion }}</span></span>
-                                                                                        @endif
-                                                                                    </div>
-
-                                                                                    {{-- SWITCH PARA CAMBIAR ESTADO --}}
-                                                                                    <div class="mt-2 pt-2 border-top">
-                                                                                        <form action="{{ route('certificados.operaciones.config.toggle', $conf->id) }}" method="POST" onclick="event.stopPropagation();">
-                                                                                            @csrf
-                                                                                            @method('PATCH')
-                                                                                            <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0">
-                                                                                                <input class="form-check-input m-0" type="checkbox" role="switch" id="switchOp{{ $conf->id }}" onchange="this.form.submit()" {{ $conf->estado_activo ? 'checked' : '' }} style="cursor: pointer;">
-                                                                                                <label class="form-check-label mb-0 {{ $conf->estado_activo ? 'text-success fw-bold' : 'text-danger fw-bold' }}" for="switchOp{{ $conf->id }}" style="font-size: 0.75rem; cursor: pointer;">
-                                                                                                    {{ $conf->estado_activo ? 'Excepción Activa' : 'Excepción Inactiva' }}
-                                                                                                </label>
+                                                                                        <div class="row g-2 mb-2">
+                                                                                            <div class="col-6">
+                                                                                                <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Max Mora (Días)</label>
+                                                                                                <input type="number" class="form-control form-control-sm" name="parametros[mora_dias_max]" value="{{ $pOp['mora_dias_max'] ?? 0 }}" style="font-size: 0.75rem;">
                                                                                             </div>
-                                                                                        </form>
+                                                                                            <div class="col-6">
+                                                                                                <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Días de Gracia</label>
+                                                                                                <input type="number" class="form-control form-control-sm" name="parametros[dias_gracia]" value="{{ $pOp['dias_gracia'] ?? 0 }}" style="font-size: 0.75rem;">
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {{-- Campo justificacion nativo de la tabla --}}
+                                                                                        <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Observación / Justificación</label>
+                                                                                        <textarea name="justificacion" class="form-control form-control-sm" rows="2" style="font-size: 0.75rem;">{{ $conf->justificacion }}</textarea>
+                                                                                    </div>
+
+                                                                                    {{-- COLUMNA 2: EDICIÓN DE PARÁMETROS JSON (Activadores) --}}
+                                                                                    <div class="col-md-4 border-end position-relative pe-md-3">
+                                                                                        <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-bolt me-1"></i> Activadores Lógicos</span>
+
+                                                                                        <div class="d-flex flex-column gap-2 mt-2">
+                                                                                            <div class="form-check form-switch m-0">
+                                                                                                <input type="hidden" name="parametros[requiere_accion]" value="0">
+                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[requiere_accion]" value="1" {{ !empty($pOp['requiere_accion']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Requiere Acción Restrictiva</label>
+                                                                                            </div>
+                                                                                            <div class="form-check form-switch m-0">
+                                                                                                <input type="hidden" name="parametros[bloqueo_automatico]" value="0">
+                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[bloqueo_automatico]" value="1" {{ !empty($pOp['bloqueo_automatico']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Bloqueo Automático Cupo</label>
+                                                                                            </div>
+                                                                                            <div class="form-check form-switch m-0">
+                                                                                                <input type="hidden" name="parametros[notificacion_gerencia]" value="0">
+                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[notificacion_gerencia]" value="1" {{ !empty($pOp['notificacion_gerencia']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Notificación a Gerencia</label>
+                                                                                            </div>
+                                                                                            <div class="form-check form-switch m-0">
+                                                                                                <input type="hidden" name="parametros[incluir_historico_3_anos]" value="0">
+                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[incluir_historico_3_anos]" value="1" {{ !empty($pOp['incluir_historico_3_anos']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Evaluación Histórica (3 Años)</label>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {{-- COLUMNA 3: ESTADO NATIVO Y GUARDADO --}}
+                                                                                    <div class="col-md-4 ps-md-3 d-flex flex-column justify-content-between">
+                                                                                        <div>
+                                                                                            <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-shield-alt me-1"></i> Estado de la Regla</span>
+
+                                                                                            <div class="mb-2">
+                                                                                                <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Vigente Hasta</label>
+                                                                                                <input type="date" class="form-control form-control-sm" name="vigente_hasta" value="{{ $conf->vigente_hasta ? \Carbon\Carbon::parse($conf->vigente_hasta)->format('Y-m-d') : '' }}" style="font-size: 0.75rem;">
+                                                                                            </div>
+
+                                                                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                                                                <div class="form-check form-switch m-0">
+                                                                                                    <input type="hidden" name="estado_notificacion" value="0">
+                                                                                                    <input class="form-check-input shadow-sm" type="checkbox" name="estado_notificacion" value="1" {{ $conf->estado_notificacion ? 'checked' : '' }}>
+                                                                                                    <label class="form-check-label text-dark" style="font-size: 0.75rem;"><i class="fas fa-bell text-warning"></i> Alertas Notificación</label>
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            <div class="d-flex align-items-center gap-2">
+                                                                                                <div class="form-check form-switch m-0">
+                                                                                                    <input type="hidden" name="estado_activo" value="0">
+                                                                                                    <input class="form-check-input shadow-sm" type="checkbox" name="estado_activo" value="1" {{ $conf->estado_activo ? 'checked' : '' }}>
+                                                                                                    <label class="form-check-label {{ $conf->estado_activo ? 'text-success' : 'text-danger' }} fw-bold" style="font-size: 0.75rem;">{{ $conf->estado_activo ? 'Regla Activa' : 'Regla Inactiva' }}</label>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        <div class="mt-3">
+                                                                                            <button type="submit" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                                                                                                <i class="fas fa-save me-1"></i> Guardar Cambios
+                                                                                            </button>
+                                                                                        </div>
                                                                                     </div>
                                                                                 </div>
-                                                                            </div>
+                                                                            </form>
                                                                         </div>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
+
+                                                        @endforeach
                                                     @endforeach
-                                                @endforeach
-                                            </tbody>
-                                        </table>
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
+
                                 @else
-                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed mt-2">
+                                    {{-- ESTADO VACÍO REDISEÑADO --}}
+                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed mt-2 shadow-sm">
                                         <i class="fas fa-cogs fs-1 text-secondary mb-3 opacity-25"></i>
                                         <h6 class="fw-bold text-dark">Configuración Estándar</h6>
                                         <p class="mb-0 fs-7">No hay parámetros excepcionales configurados para esta operación.</p>
+                                        <button type="button" class="btn btn-sm btn-outline-primary mt-3 rounded-pill fw-bold px-4" onclick="$('#modalCrearConfiguracion').modal('show');">
+                                            <i class="fas fa-plus me-1"></i> Crear Excepción
+                                        </button>
                                     </div>
                                 @endif
+
                             </div>
 
-                            {{-- TAB 1: LÍNEAS --}}
+                            {{-- ======================================================= --}}
+                            {{-- TAB 1: LÍNEAS (Facturas/Registros de ERP)               --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
 
                                 @if($lineasAgrupadas->count() > 0)
@@ -642,7 +915,7 @@
                                             <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem;">
 
                                                 @foreach($lineasAgrupadas as $nombreLinea => $datosLinea)
-                                                    {{-- Fila Agrupadora (Usa un botón 100% ancho para asegurar el clic) --}}
+                                                    {{-- Fila Agrupadora tipo Accordion --}}
                                                     <thead class="bg-light">
                                                         <tr>
                                                             <th colspan="8" class="p-0 border-bottom-0">
@@ -673,10 +946,10 @@
                                                         </tr>
                                                     </thead>
 
-                                                    {{-- Cuerpo Colapsable (Todas arrancan cerradas con 'collapse' puro) --}}
+                                                    {{-- Cuerpo Colapsable con los datos de las facturas --}}
                                                     <tbody id="collapseLinea-{{ $loop->index }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
 
-                                                        {{-- Cabeceras de las Columnas (Se ocultan junto con los datos) --}}
+                                                        {{-- Cabeceras de las Columnas --}}
                                                         <tr class="bg-white text-muted text-uppercase" style="font-size: 0.65rem;">
                                                             <th class="px-3 py-2 border-bottom text-secondary" style="width: 12%;">N° Factura</th>
                                                             <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Cuota</th>
@@ -688,26 +961,22 @@
                                                             <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 15%;">Estado</th>
                                                         </tr>
 
-                                                        {{-- Filas de Datos --}}
+                                                        {{-- Filas de Datos (Facturas individuales) --}}
                                                         @foreach($datosLinea['facturas'] as $factura)
                                                             <tr>
                                                                 <td class="px-3 py-1 fw-bold text-dark" style="font-family: monospace;">{{ $factura->id_factura ?? 'N/A' }}</td>
                                                                 <td class="px-2 py-1 text-center text-muted">{{ $factura->cuota ?? '-' }}</td>
                                                                 <td class="px-2 py-1 text-muted">{{ $factura->pagare ?? 'S/N' }}</td>
-
                                                                 <td class="px-2 py-1 text-center">
                                                                     @if($factura->fecha_venci) {{ $factura->fechaVFormateada }}
                                                                     @else <span class="text-muted opacity-50">-</span> @endif
                                                                 </td>
-
                                                                 <td class="px-2 py-1 text-center">
                                                                     @if($factura->diasMoraCalculados < 0) <span class="text-danger fw-bold">{{ abs(intval($factura->diasMoraCalculados)) }}</span>
                                                                     @else <span class="text-muted">0</span> @endif
                                                                 </td>
-
                                                                 <td class="px-3 py-1 text-end text-muted">${{ number_format((float)$factura->valor_inicial, 2) }}</td>
                                                                 <td class="px-3 py-1 text-end fw-bold" style="color: #047857;">${{ number_format((float)$factura->valor, 2) }}</td>
-
                                                                 <td class="px-2 py-1 text-center">
                                                                     @if($factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> PROCESADO</span>
                                                                     @elseif($factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.7rem;"><i class="fas fa-ban me-1"></i> ANULADO</span>
@@ -731,11 +1000,12 @@
                                 @endif
                             </div>
 
-                            {{-- TAB 2: ALERTAS --}}
+                            {{-- ======================================================= --}}
+                            {{-- TAB 2: ALERTAS                                          --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="alertas" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-clock me-2"></i> Registro de Alertas</h6>
-                                    <!-- Botón reubicado -->
                                     <button type="button" class="btn bg-pastel-info shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalAlerta">
                                         <i class="fas fa-bell me-2 opacity-75"></i> Nueva Alerta
                                     </button>
@@ -781,13 +1051,14 @@
                                 @endif
                             </div>
 
-                            {{-- TAB 3: HISTORIAL ETL / ESTADO --}}
+                            {{-- ======================================================= --}}
+                            {{-- TAB 3: HISTORIAL ETL / ESTADO                           --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="historial" role="tabpanel">
                                 <div class="row g-4">
                                     <div class="col-md-6">
                                         <div class="d-flex justify-content-between align-items-center mb-4">
                                             <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-exchange-alt me-2"></i> Transiciones de Estado</h6>
-                                            <!-- Botón reubicado -->
                                             <button type="button" class="btn bg-pastel-warning shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTransicionar">
                                                 <i class="fas fa-exchange-alt me-2 opacity-75"></i> Cambiar Estado
                                             </button>
@@ -843,11 +1114,12 @@
                                 </div>
                             </div>
 
-                            {{-- TAB 4: CERTIFICADOS --}}
+                            {{-- ======================================================= --}}
+                            {{-- TAB 4: CERTIFICADOS (Generador PDF y Tabla tipo Excel)  --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-file-pdf me-2"></i> Gestión de Certificados</h6>
-                                    <!-- Botón reubicado -->
                                     <button type="button" class="btn bg-pastel-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTipo">
                                         <i class="fas fa-file-pdf me-2 opacity-75"></i> Generar Certificado
                                     </button>
@@ -903,12 +1175,12 @@
                                                         </tr>
                                                     </thead>
 
-                                                    {{-- Cuerpo del Certificado (Controles, PDF y Editor) --}}
+                                                    {{-- Cuerpo del Certificado (Controles, PDF y Editor en linea) --}}
                                                     <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
                                                         <tr>
                                                             <td class="p-3 bg-white">
 
-                                                                {{-- Controles --}}
+                                                                {{-- Controles (Botones alternar PDF/Editor y Versiones) --}}
                                                                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom border-dashed">
                                                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase mb-2 mb-md-0"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
 
@@ -930,12 +1202,12 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {{-- VISOR PDF --}}
+                                                                {{-- VISOR PDF (Iframe al controlador Laravel) --}}
                                                                 <div id="pdfViewerContainer_{{ $certId }}" class="border rounded-2 overflow-hidden shadow-sm bg-light" style="height: 650px;">
                                                                     <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null, 'hash' => $hashActual]) }}" width="100%" height="100%" frameborder="0" style="background-color: #f8fafc;"></iframe>
                                                                 </div>
 
-                                                                {{-- EDITOR DE DATOS (Estilo Excel Integrado Avanzado) --}}
+                                                                {{-- EDITOR DE DATOS (Estilo Excel Integrado Avanzado para guardar en base de datos) --}}
                                                                 <div id="dataEditorContainer_{{ $certId }}" class="d-none">
                                                                     <form id="formEditor_{{ $certId }}" action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
                                                                         @csrf @method('PUT')
@@ -959,7 +1231,7 @@
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Estado ERP</th>
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center border-end" style="width: 7%;">Cuenta</th>
 
-                                                                                        {{-- SECCIÓN EDITABLE --}}
+                                                                                        {{-- SECCIÓN EDITABLE (Inputs form elements) --}}
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Calificación</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 10%;"><i class="fas fa-pen me-1"></i> Estado Línea</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 6%;"><i class="fas fa-pen me-1"></i> Mora</th>
@@ -1053,7 +1325,7 @@
                                     </div>
 
                                     {{-- ========================================== --}}
-                                    {{-- BLOQUE DE MODALES (Fuera de la tabla principal para evitar errores de renderizado) --}}
+                                    {{-- BLOQUE DE MODALES PARA CADA TIPO DE CERTIFICADO --}}
                                     {{-- ========================================== --}}
                                     @foreach($historialTipos as $registro)
                                         @php
@@ -1063,7 +1335,7 @@
                                             $lineasEditor = $registro->lineasEditor;
                                         @endphp
 
-                                        {{-- Modal de Historial de Versiones --}}
+                                        {{-- Modal de Historial de Versiones del Certificado --}}
                                         @if($versionesDeEsteTipo->count() > 1)
                                             <div class="modal fade" id="modalVersiones_{{ $certId }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1110,12 +1382,17 @@
                                                                 </table>
                                                             </div>
                                                         </div>
+                                                        <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                                                            <button type="button" class="btn btn-sm btn-light border rounded-1 px-4 shadow-sm" data-bs-target="#modalVersiones_{{ $certId }}" data-bs-toggle="modal" data-bs-dismiss="modal">
+                                                                <i class="fas fa-arrow-left me-1"></i> Volver a Versiones
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         @endif
 
-                                        {{-- Modales de Detalle por Hash --}}
+                                        {{-- Modal de Detalle de los datos guardados en el Hash específico --}}
                                         @foreach($versionesDeEsteTipo as $version)
                                             <div class="modal fade" id="modalRegistros_{{ $version->hash_certificado }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -1164,7 +1441,7 @@
                                             </div>
                                         @endforeach
 
-                                        {{-- Modal Guardar Edición --}}
+                                        {{-- Modal Confirmación de Guardar Edición de Líneas --}}
                                         @if($lineasEditor->count() > 0)
                                             <div class="modal fade" id="modalConfirmSave_{{ $certId }}" tabindex="-1" aria-hidden="true">
                                                 <div class="modal-dialog modal-dialog-centered">
@@ -1182,7 +1459,7 @@
                                                         </div>
                                                         <div class="modal-footer border-0 px-4 pb-4 pt-0">
                                                             <button type="button" class="btn btn-sm btn-light rounded-1 px-3" data-bs-dismiss="modal">Cancelar</button>
-                                                            {{-- BOTÓN REPARADO UTILIZANDO JS CENTRAL --}}
+                                                            {{-- Llamado JS para submit global --}}
                                                             <button type="button" class="btn btn-sm btn-success rounded-1 px-4 fw-bold shadow-sm" onclick="enviarFormularioRemoto('formEditor_{{ $certId }}', this)">
                                                                 Confirmar y Guardar
                                                             </button>
@@ -1203,9 +1480,9 @@
                                 @endif
                             </div>
 
-                            <!-- ======================================================================= -->
-                            <!-- TAB 5: GRÁFICOS E INDICADORES                                           -->
-                            <!-- ======================================================================= -->
+                            {{-- ======================================================= --}}
+                            {{-- TAB 5: GRÁFICOS E INDICADORES                           --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="graficos" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-chart-line me-2"></i> Resumen Visual de la Operación</h6>
@@ -1253,9 +1530,9 @@
                                 </div>
                             </div>
 
-                            <!-- ======================================================================= -->
-                            <!-- TAB 6: OPERARIOS Y RENDIMIENTO                                          -->
-                            <!-- ======================================================================= -->
+                            {{-- ======================================================= --}}
+                            {{-- TAB 6: OPERARIOS Y RENDIMIENTO                          --}}
+                            {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="operarios" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-users me-2"></i> Índice de Intervención por Usuario</h6>
@@ -1303,6 +1580,7 @@
                                     </div>
                                 @endif
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -1310,36 +1588,170 @@
         </div>
     </div>
 
-    {{-- MODALES GLOBALES --}}
+    <!-- ========================================== -->
+    <!-- MODALES GLOBALES (Tipo Certificado)        -->
+    <!-- ========================================== -->
     <div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.asignar_tipo', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+            <!-- Formulario para generar el Certificado -->
+            <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.procesar_individual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
-                <div class="modal-header border-0 pb-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-file-pdf text-danger me-2"></i> Generar Certificado</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-file-pdf text-danger me-2"></i> Generar Certificado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
                 <div class="modal-body p-4">
+                    {{-- Envío del número de bloque oculto como referencia --}}
                     <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}">
-                    <div class="mb-3 mt-2">
-                        <label for="id_car_sia_tipos" class="form-label fw-semibold text-muted">Seleccionar evento</label>
-                        <select name="id_car_sia_tipos" id="id_car_sia_tipos" class="form-select form-select-lg bg-light border-0" required>
-                            <option value="">Seleccione una opción...</option>
-                            @isset($tipos) @foreach($tipos as $tipo) <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option> @endforeach @endisset
+
+                    {{-- Selección de Tipo de Certificado (Solución a estructura cortada) --}}
+                    <div class="mb-3">
+                        <label for="tipo_certificado_id" class="form-label text-muted fw-bold fs-8 text-uppercase">Tipo de Certificado a Generar</label>
+                        <select name="tipo_certificado_id" id="tipo_certificado_id" class="form-select" required>
+                            <option value="">Seleccione un tipo...</option>
+                            @if(isset($tiposCertificados))
+                                @foreach($tiposCertificados as $tipoCert)
+                                    <option value="{{ $tipoCert->id }}">{{ $tipoCert->nombre }}</option>
+                                @endforeach
+                            @endif
                         </select>
-                    </div>
-                    <div id="loadingCertificado" class="d-none mt-4">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-muted fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-cogs me-1"></i> Ensamblando PDF y Hash...</span>
-                            <span class="text-danger fw-bold" style="font-size: 0.75rem;">Por favor espera</span>
+                        <div class="form-text mt-2 fs-8 text-muted">
+                            <i class="fas fa-info-circle text-primary"></i> Al generar un certificado, se evaluará la data del cliente procesada por el ETL en la base de datos.
                         </div>
-                        <div class="progress-minimalist"></div>
                     </div>
                 </div>
+
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" id="btnCancelCertificado" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" id="btnSubmitCertificado" class="btn btn-danger rounded-pill px-4 fw-bold text-white shadow-sm">Generar y Asignar</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger fw-bold shadow-sm" onclick="bloquearBotonUI(this, 'Generando...')">
+                        <i class="fas fa-check me-2"></i> Generar
+                    </button>
                 </div>
             </form>
         </div>
     </div>
+
+    {{-- ======================================================= --}}
+    {{-- MODAL: ASIGNAR NUEVA EXCEPCIÓN / CONFIGURACIÓN          --}}
+    {{-- ======================================================= --}}
+    <div class="modal fade" id="modalCrearConfiguracion" tabindex="-1" aria-labelledby="modalCrearConfiguracionLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+                {{-- HEADER DEL MODAL --}}
+                <div class="modal-header bg-pastel-primary border-bottom-0 pb-3 pt-4 px-4">
+                    <h5 class="modal-title fw-bold text-primary" id="modalCrearConfiguracionLabel">
+                        <i class="fas fa-tasks me-2"></i> Asignar Reglas de Excepción
+                    </h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                {{-- FORMULARIO --}}
+                <form action="{{ route('certificados.operaciones.config.individual') }}" method="POST">
+                    @csrf
+
+                    {{-- LLAVES FORÁNEAS OCULTAS --}}
+                    <input type="hidden" name="id_operacion" value="{{ $operacion->id }}">
+
+                    <div class="modal-body bg-light p-4">
+
+                        {{-- ALERTA DE CONTEXTO --}}
+                        <div class="alert bg-white border-info border-start border-4 shadow-sm py-2 px-3 mb-4 text-muted" style="font-size: 0.8rem;">
+                            <i class="fas fa-info-circle text-info me-2"></i> Estás asignando reglas excepcionales al radicado <strong>{{ $operacion->numero_radicado }}</strong>.
+                        </div>
+
+                        <div class="row g-4">
+
+                            {{-- COLUMNA IZQUIERDA: Notificaciones, Vigencia y Justificación --}}
+                            <div class="col-md-5">
+
+                                {{-- Switch de Notificaciones --}}
+                                <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded-3 border shadow-sm mb-3">
+                                    <div><span class="fw-bold d-block text-dark" style="font-size: 0.85rem;"><i class="fas fa-bell text-warning me-1"></i> Notificaciones</span></div>
+                                    <div class="form-check form-switch fs-5 m-0 p-0 d-flex align-items-center gap-2">
+                                        <input type="hidden" name="estado_notificacion" value="0">
+                                        <input class="form-check-input m-0 shadow-sm" type="checkbox" role="switch" name="estado_notificacion" value="1" checked style="cursor: pointer; width: 2.2em; height: 1.1em;">
+                                    </div>
+                                </div>
+
+                                {{-- Vigencia y Justificación --}}
+                                <div class="p-3 bg-white border rounded-3 shadow-sm">
+                                    <label class="form-label fw-bold text-dark" style="font-size: 0.85rem;"><i class="fas fa-calendar-alt text-primary me-1"></i> Vigente Hasta <span class="text-muted fw-normal">(Opcional)</span></label>
+                                    <input type="date" class="form-control form-control-sm mb-3" name="vigente_hasta" min="{{ date('Y-m-d') }}">
+
+                                    <label class="form-label fw-bold text-dark" style="font-size: 0.85rem;"><i class="fas fa-comment-dots text-primary me-1"></i> Justificación <span class="text-danger fw-normal">*</span></label>
+                                    <textarea class="form-control form-control-sm" name="justificacion" rows="3" required placeholder="Motivo por el cual se asignan estas reglas al cliente..."></textarea>
+                                    <div class="form-text mt-1" style="font-size: 0.65rem;">Auditor: {{ auth()->user()->name ?? 'N/A' }}</div>
+                                </div>
+
+                            </div>
+
+                            {{-- COLUMNA DERECHA: Selección Múltiple de Configuraciones --}}
+                            <div class="col-md-7">
+                                <label class="form-label fw-bold text-dark mb-3"><i class="fas fa-list-check text-muted me-1"></i> Selecciona las reglas a aplicar (Múltiple):</label>
+
+                                <div class="list-group custom-scrollbar shadow-sm bg-white" style="max-height: 400px; overflow-y: auto; border-radius: 12px; border: 1px solid #dee2e6;">
+                                    @if(isset($configuracionesBase) && $configuracionesBase->count() > 0)
+                                        @foreach($configuracionesBase as $cfg)
+                                            @php
+                                                // Corrección del JSON aplicada aquí también
+                                                $p = is_array($cfg->parametros) ? $cfg->parametros : (json_decode($cfg->parametros, true) ?? []);
+                                                $claseMora = strtolower($p['clasificacion_mora'] ?? 'n/a');
+                                                $diasMax = $p['mora_dias_max'] ?? '0';
+
+                                                $badgeColor = match($claseMora) {
+                                                    'bueno' => 'bg-pastel-success text-success border-success',
+                                                    'regular' => 'bg-pastel-info text-info border-info',
+                                                    'atencion_especial' => 'bg-pastel-warning text-dark border-warning',
+                                                    'restringido' => 'bg-pastel-danger text-danger border-danger',
+                                                    'irregular' => 'bg-dark text-white border-dark',
+                                                    default => 'bg-light text-secondary border-secondary'
+                                                };
+                                            @endphp
+                                            <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0 border-bottom" style="cursor: pointer;">
+                                                {{-- OJO AQUÍ: id_car_sia_config[] es un arreglo ahora --}}
+                                                <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="id_car_sia_config[]" value="{{ $cfg->id }}" style="font-size: 1.3rem;">
+                                                <div class="flex-grow-1">
+                                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                                        <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ $cfg->accionVencimiento->nombre ?? 'Sin Acción Definida' }}</span>
+                                                        <span class="badge bg-light text-dark border"><i class="fas fa-clock text-muted"></i> {{ $cfg->frecuencia_recordatorio_dias ?? 0 }} d</span>
+                                                    </div>
+                                                    <div class="d-flex gap-2 mt-1">
+                                                        <span class="badge {{ $badgeColor }} border border-opacity-25" style="font-size: 0.7rem;">
+                                                            {{ strtoupper(str_replace('_', ' ', $claseMora)) }}
+                                                        </span>
+                                                        <span class="badge bg-white text-secondary border" style="font-size: 0.7rem;">
+                                                            Mora Max: {{ $diasMax }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    @else
+                                        <div class="text-center py-5 bg-white border-0">
+                                            <i class="fas fa-folder-open fs-2 text-muted opacity-25 mb-2"></i>
+                                            <p class="text-muted m-0 fw-bold">No hay configuraciones base activas</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {{-- FOOTER Y BOTONES --}}
+                    <div class="modal-footer border-top-0 bg-white px-4 pb-4 pt-3 d-flex justify-content-between">
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm border" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="fas fa-save me-2"></i> Guardar Asignaciones
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </di
 
     <div class="modal fade" id="modalTransicionar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -1385,6 +1797,66 @@
             </form>
         </div>
     </div>
+
+
+
+    @push('scripts')
+    <script>
+        $(document).ready(function() {
+            const $modal = $('#modalEditarTercero');
+            const $selects = $('.select2-buscador');
+
+            // 1. Inicialización de Select2 dentro del modal
+            $selects.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Seleccione o busque...',
+                allowClear: true,
+                dropdownParent: $modal
+            });
+
+            // Función para asignar valor de forma segura e insensible a espacios
+            function setSelect2Flexible($element, targetValue) {
+                if (!targetValue || targetValue.trim() === '') {
+                    // Si la variable en JS viene vacía, intentamos rescatar la opción que Blade marcó como 'selected'
+                    let bladeSelected = $element.find('option[selected]').val();
+                    if (bladeSelected) {
+                        $element.val(bladeSelected).trigger('change.select2');
+                    }
+                    return;
+                }
+
+                let cleanTarget = $.trim(targetValue);
+                let matchingOption = null;
+
+                // Buscamos cuál <option> coincide limpiando espacios en ambos lados
+                $element.find('option').each(function() {
+                    if ($.trim($(this).val()) === cleanTarget) {
+                        matchingOption = $(this).val();
+                        return false; // Romper loop
+                    }
+                });
+
+                if (matchingOption !== null) {
+                    $element.val(matchingOption).trigger('change.select2');
+                } else {
+                    console.warn("Select2: No se encontró opción coincidente para el valor:", cleanTarget);
+                }
+            }
+
+            // 2. Evento al abrir el modal
+            $modal.on('shown.bs.modal', function () {
+                let distVal = "{{ trim($operacion->tercero->cod_dist ?? '') }}";
+                let tipoVal = "{{ trim($operacion->tercero->tip_prv ?? '') }}";
+                let congVal = "{{ trim($operacion->tercero->congrega ?? '') }}";
+
+                setSelect2Flexible($('#select_cod_dist'), distVal);
+                setSelect2Flexible($('#select_tip_prv'), tipoVal);
+                setSelect2Flexible($('#select_congrega'), congVal);
+            });
+        });
+    </script>
+    @endpush
 
     <script>
         // 1. BLOQUEO GLOBAL DE FORMULARIOS: Impide por completo cualquier doble POST en toda la vista
@@ -1563,4 +2035,39 @@
             }
         });
     </script>
+
+    <!-- ========================================== -->
+    <!-- SCRIPTS PARA INTERACTIVIDAD DE LA TABLA    -->
+    <!-- ========================================== -->
+    <script>
+        function toggleParametros(targetId, element) {
+            // Obtenemos el <tr> que contiene el formulario oculto
+            var targetRow = document.getElementById(targetId);
+
+            // Obtenemos el ícono de la fila que acabamos de hacer clic
+            var icon = element.querySelector('.icon-toggle');
+
+            // Verificamos el estado actual para alternarlo
+            if (targetRow.style.display === 'none' || targetRow.style.display === '') {
+                // Es MUY importante usar 'table-row' y no 'block' para que no se rompa la tabla
+                targetRow.style.display = 'table-row';
+
+                // Cambiar ícono a flecha arriba
+                if (icon) {
+                    icon.classList.remove('fa-chevron-circle-down');
+                    icon.classList.add('fa-chevron-circle-up');
+                }
+            } else {
+                // Ocultar la fila
+                targetRow.style.display = 'none';
+
+                // Cambiar ícono a flecha abajo
+                if (icon) {
+                    icon.classList.remove('fa-chevron-circle-up');
+                    icon.classList.add('fa-chevron-circle-down');
+                }
+            }
+        }
+    </script>
+
 </x-base-layout>
