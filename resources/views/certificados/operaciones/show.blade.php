@@ -1213,10 +1213,19 @@
                                                                         @csrf @method('PUT')
                                                                         <input type="hidden" name="tipo_certificado_id" value="{{ $tipo->id ?? '' }}">
 
-                                                                        <div class="alert bg-pastel-primary border-0 rounded-2 py-2 px-3 mb-2 d-flex align-items-center" style="font-size: 0.75rem;">
-                                                                            <i class="fas fa-info-circle text-primary me-2"></i>
-                                                                            <span class="text-muted">Las columnas resaltadas con el ícono <i class="fas fa-pen text-primary mx-1"></i> son editables. Haz clic sobre ellas para modificar su valor.</span>
+                                                                        {{-- NUEVA ALERTA Y BOTÓN DE PARÁMETROS --}}
+                                                                        <div class="alert bg-pastel-primary border-0 rounded-3 d-flex justify-content-between align-items-center py-2 px-3 mb-3">
+                                                                            <div class="text-dark" style="font-size: 0.85rem;">
+                                                                                <i class="fas fa-info-circle text-primary me-2"></i> Las columnas resaltadas con el icono <i class="fas fa-pen text-primary mx-1"></i> son editables.
+                                                                            </div>
+                                                                            
+                                                                            <button type="button" class="btn btn-sm btn-white border shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalParametros_{{ $certId }}">
+                                                                                <i class="fas fa-sliders-h me-1"></i> Parámetros de Regla
+                                                                            </button>
                                                                         </div>
+
+                                                                        {{-- INPUT OCULTO PARA LOS DÍAS DE GRACIA (Se llena desde el modal) --}}
+                                                                        <input type="hidden" name="dias_gracia_lote" id="input_dias_gracia_{{ $certId }}" value="">
 
                                                                         <div class="table-responsive border rounded-2 shadow-sm mb-3">
                                                                             <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1500px;">
@@ -1262,12 +1271,18 @@
                                                                                             <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">{{ $linea->id_car_sia_lineas }}</td>
 
                                                                                             {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
-                                                                                            <td class="p-0 align-middle">
-                                                                                                <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
-                                                                                                    <option class="text-dark" value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
-                                                                                                    <option class="text-dark" value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
-                                                                                                    <option class="text-dark" value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
-                                                                                                </select>
+                                                                                            <td class="p-0 align-middle position-relative">
+                                                                                                <div class="d-flex align-items-center h-100">
+                                                                                                    <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
+                                                                                                        <option class="text-dark" value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
+                                                                                                        <option class="text-dark" value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
+                                                                                                        <option class="text-dark" value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
+                                                                                                    </select>
+                                                                                                    <!-- BOTÓN DE RADIOGRAFÍA -->
+                                                                                                    <button type="button" class="btn btn-sm text-primary p-1 me-1 shadow-none bg-pastel-primary rounded-1" data-bs-toggle="modal" data-bs-target="#modalExplicacion-{{ $linea->id }}" title="Ver Radiografía del Cálculo">
+                                                                                                        <i class="fas fa-microscope"></i>
+                                                                                                    </button>
+                                                                                                </div>
                                                                                             </td>
 
                                                                                             <td class="p-0 align-middle border-start border-end">
@@ -1314,6 +1329,35 @@
                                                                             </div>
                                                                         @endif
                                                                     </form>
+
+                                                                    {{-- NUEVO MODAL: PARÁMETROS / DÍAS DE GRACIA (Se coloca fuera del formulario) --}}
+                                                                    <div class="modal fade" id="modalParametros_{{ $certId }}" tabindex="-1" aria-hidden="true">
+                                                                        <div class="modal-dialog modal-dialog-centered modal-sm">
+                                                                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                                                                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                                                    <h6 class="fw-bold mb-0 text-primary"><i class="fas fa-sliders-h me-2"></i> Excepción de Regla</h6>
+                                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                                                </div>
+                                                                                <div class="modal-body p-4">
+                                                                                    <label class="form-label text-muted fw-bold" style="font-size: 0.8rem;">Días de Gracia a aplicar al lote:</label>
+                                                                                    <div class="input-group">
+                                                                                        <input type="number" class="form-control" id="modal_input_gracia_{{ $certId }}" placeholder="Ej: 15" min="0">
+                                                                                        <span class="input-group-text bg-light text-muted">Días</span>
+                                                                                    </div>
+                                                                                    <div class="form-text mt-2" style="font-size: 0.75rem;">
+                                                                                        Este valor se inyectará en la metadata de todas las líneas al guardar la nueva versión, sin alterar las demás reglas.
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4" 
+                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;" 
+                                                                                            data-bs-dismiss="modal">
+                                                                                        Aplicar Parámetro
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
 
                                                             </td>
@@ -1467,6 +1511,139 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            
+                                            {{-- ========================================================= --}}
+                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO              --}}
+                                            {{-- ========================================================= --}}
+                                            @foreach($lineasEditor as $linea)
+                                                @php
+                                                    // Decodificación segura del JSON de metadatos
+                                                    $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
+                                                    
+                                                    // Extracción de reglas
+                                                    $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
+                                                    $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
+                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia); // Cálculo matemático real
+                                                    
+                                                    $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
+                                                    $observacionFase = $meta['observacion_fase'] ?? '';
+                                                    $observacionGeneral = $linea->observacion ?? '';
+                                                @endphp
+
+                                                <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                        <div class="modal-content border-0 shadow-lg rounded-4">
+                                                            
+                                                            {{-- Header --}}
+                                                            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                                <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
+                                                                    <i class="fas fa-microscope me-2"></i> Radiografía del Cálculo
+                                                                </h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                            </div>
+
+                                                            <div class="modal-body p-4">
+                                                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                                                    <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
+                                                                    <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
+                                                                </div>
+                                                                
+                                                                {{-- SECCIÓN 1: Fechas --}}
+                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
+                                                                <div class="row g-3 mb-4">
+                                                                    <div class="col-md-6">
+                                                                        <div class="p-3 bg-light rounded-3 border border-light h-100">
+                                                                            <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Vencimiento</span>
+                                                                            <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-times me-2 text-danger"></i>{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('d/m/Y') : 'N/A' }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <div class="p-3 bg-light rounded-3 border border-light h-100">
+                                                                            <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Corte (Día del Cálculo)</span>
+                                                                            <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-check me-2 text-primary"></i>{{ $linea->created_at ? \Carbon\Carbon::parse($linea->created_at)->format('d/m/Y') : 'N/A' }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                {{-- SECCIÓN 2: Ecuación Visual --}}
+                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-calculator me-2"></i>2. Cálculo de Mora</h6>
+                                                                <div class="row g-2 mb-2 align-items-center text-center">
+                                                                    <div class="col">
+                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm">
+                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días Transcurridos</span>
+                                                                            <span class="fs-4 fw-bold text-dark">{{ $diasTranscurridos }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-auto">
+                                                                        <i class="fas fa-minus text-muted"></i>
+                                                                    </div>
+                                                                    <div class="col">
+                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm">
+                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días de Gracia</span>
+                                                                            <span class="fs-4 fw-bold text-success">{{ $diasGracia }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-auto">
+                                                                        <i class="fas fa-equals text-muted"></i>
+                                                                    </div>
+                                                                    <div class="col">
+                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm border-danger border-opacity-50">
+                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Mora Efectiva</span>
+                                                                            <span class="fs-4 fw-bold text-danger">{{ $moraEfectiva }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <p class="text-muted text-center mb-4" style="font-size: 0.75rem;">La calificación se determinó basándose en <strong>{{ $moraEfectiva }} días</strong> de mora efectiva.</p>
+
+                                                                {{-- SECCIÓN 3: Dictamen y Reglas --}}
+                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
+                                                                <div class="alert bg-light border rounded-3 mb-0">
+                                                                    
+                                                                    <div class="bg-white p-3 rounded border mb-3">
+                                                                        <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
+                                                                            > {{ $observacionGeneral ?: $observacionFase }}
+                                                                        </p>
+                                                                    </div>
+
+                                                                    <div class="row align-items-center mb-3 text-center">
+                                                                        <div class="col-6 border-end">
+                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Clasificación de Regla</span>
+                                                                            <span class="badge bg-secondary text-uppercase">{{ $clasificacion }}</span>
+                                                                        </div>
+                                                                        <div class="col-6">
+                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Calificación Final</span>
+                                                                            <span class="badge rounded-1 {{ ($linea->calificacion ?? '') == 'Bueno' ? 'bg-success' : (($linea->calificacion ?? '') == 'Regular' ? 'bg-warning text-dark' : 'bg-danger') }} text-uppercase fs-6">
+                                                                                {{ $linea->calificacion ?? 'N/A' }}
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <hr class="text-muted opacity-25">
+
+                                                                    <div class="row text-dark" style="font-size: 0.75rem;">
+                                                                        <div class="col-md-6 mb-2">
+                                                                            <i class="fas {{ !empty($meta['requiere_accion']) ? 'fa-check-circle text-success' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Requiere Acción Manual
+                                                                        </div>
+                                                                        <div class="col-md-6 mb-2">
+                                                                            <i class="fas {{ !empty($meta['bloqueo_automatico']) ? 'fa-check-circle text-danger' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Bloqueo Automático
+                                                                        </div>
+                                                                        <div class="col-md-6 mb-2">
+                                                                            <i class="fas {{ !empty($meta['notificacion_gerencia']) ? 'fa-check-circle text-warning' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Notificación a Gerencia
+                                                                        </div>
+                                                                        <div class="col-md-6 mb-2">
+                                                                            <i class="fas {{ isset($meta['mora_dias_max']) && $meta['mora_dias_max'] > 0 ? 'fa-check-circle text-primary' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Límite Máximo de Regla: {{ $meta['mora_dias_max'] ?? 0 }} días
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                            </div>
+                                                            <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
                                         @endif
 
                                     @endforeach
