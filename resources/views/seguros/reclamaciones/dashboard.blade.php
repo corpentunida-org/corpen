@@ -17,7 +17,7 @@
                             seleccionadas.</span>
                     </h5>
                 </div>
-                <form class="row" method="post" action="{{ route('seguros.reclamacion.generarpdf') }}">
+                <form class="row" method="post" action="{{ route('seguros.reclamacion.generarpdf') }}" data-no-loading>
                     @csrf
                     <div class="col-xxl-3 col-md-6">
                         <div class="form-check">
@@ -41,7 +41,7 @@
                     </div>
                     <div class="d-flex justify-content-end gap-2">
                         <button type="submit" class="btn btn-md btn-primary">Descargar PDF</button>
-                        <a href="{{ route('seguros.reclamacion.download') }}" class="btn btn-light-brand">
+                        <a href="{{ route('seguros.reclamacion.download') }}" data-no-loading class="btn btn-light-brand">
                             <i class="feather-folder-plus me-2"></i>
                             <span>Descargar Excel</span>
                         </a>
@@ -95,7 +95,7 @@
 
                     <div class="text-center">
                         <a href="{{ route('seguros.reclamacion.exportarInformeCompleto') }}"
-                            class="btn btn-light-brand">
+                            data-no-loading class="btn btn-light-brand">
                             <i class="feather-folder-plus me-2"></i>
                             <span>Descargar Excel</span>
                         </a>

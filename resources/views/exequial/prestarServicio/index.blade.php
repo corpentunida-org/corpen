@@ -25,7 +25,7 @@
             <div class="card card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
-                        <h5 class="fs-4">{{ $registros->count() }}</h5>
+                        <h5 class="fs-4">{{ $totalGeneral }}</h5>
                         <span class="text-muted">TOTAL SERVICIOS</span>
                     </div>
                     <div class="avatar-text avatar-lg bg-success text-white rounded">
@@ -78,12 +78,47 @@
 
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
+            <div class="card-body">
+                <form action="{{ route('exequial.prestarServicio.index') }}" method="GET" class="row g-3 align-items-end">
+                    <div class="col-sm-6 col-md-3">
+                        <label class="form-label small text-muted mb-1">Desde</label>
+                        <input type="date" name="fecha_desde" value="{{ request('fecha_desde') }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <label class="form-label small text-muted mb-1">Hasta</label>
+                        <input type="date" name="fecha_hasta" value="{{ request('fecha_hasta') }}" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                        @if (request()->filled('fecha_desde') || request()->filled('fecha_hasta'))
+                            <a href="{{ route('exequial.prestarServicio.index') }}" class="btn btn-outline-secondary btn-sm">Quitar filtro (último mes)</a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-12">
+        <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Lista total de servicios prestados</h5>
-                <a href="{{ route('exequial.prestarServicio.dashboard') }}" class="d-flex me-1 btn btn-primary">
-                    <i class="feather-plus me-2"></i>
-                    <span>Abrir dashboard informe</span>
-                </a>
+                <h5 class="card-title">
+                    Lista de servicios prestados
+                    <span class="fs-12 fw-normal text-muted">
+                        {{ request()->filled('fecha_desde') || request()->filled('fecha_hasta') ? 'periodo filtrado' : 'último mes' }}
+                    </span>
+                </h5>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('exequial.asociados.index') }}" class="d-flex me-1 btn btn-danger"
+                        data-bs-toggle="tooltip" title="Busca al titular y usa el botón 'Prestar Servicio' en su ficha">
+                        <i class="fa-regular fa-bell me-2"></i>
+                        <span>Registrar nuevo servicio</span>
+                    </a>
+                    <a href="{{ route('exequial.prestarServicio.dashboard') }}" class="d-flex me-1 btn btn-primary">
+                        <i class="feather-plus me-2"></i>
+                        <span>Abrir dashboard informe</span>
+                    </a>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -160,9 +195,9 @@
                         </tbody>
                     </table>
                     <div class="d-flex justify-content-end gap-2 m-3 ">
-                        <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar
+                        <a href={{ route('prestarServicio.generarpdf', request()->query()) }} data-no-loading class="btn btn-md btn-primary">Descargar
                             PDF</a>
-                        <a href={{ route('prestarServicio.generate.excel') }} class="btn btn-md btn-warning">Descargar
+                        <a href={{ route('prestarServicio.generate.excel', request()->query()) }} data-no-loading class="btn btn-md btn-warning">Descargar
                             Excel</a>
                     </div>
                 </div>

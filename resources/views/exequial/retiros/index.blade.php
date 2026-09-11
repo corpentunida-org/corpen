@@ -43,10 +43,10 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Retirados</h5>
                 <div class="d-flex gap-2">
-                    <a href="{{ route('exequial.retiros.excel', request()->query()) }}" class="btn btn-sm btn-warning">
+                    <a href="{{ route('exequial.retiros.excel', request()->query()) }}" data-no-loading class="btn btn-sm btn-warning">
                         <i class="bi bi-file-earmark-excel me-1"></i> Excel
                     </a>
-                    <a href="{{ route('exequial.retiros.pdf', request()->query()) }}" class="btn btn-sm btn-primary">
+                    <a href="{{ route('exequial.retiros.pdf', request()->query()) }}" data-no-loading class="btn btn-sm btn-primary">
                         <i class="bi bi-file-earmark-pdf me-1"></i> PDF
                     </a>
                 </div>

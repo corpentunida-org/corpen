@@ -27,6 +27,8 @@ class StorePrestarServicioRequest extends FormRequest
             'nameBeneficiary' => ['required', 'string', 'max:150'],
             'cedulaFallecido' => ['required', 'string', 'max:20'],
             'lugarFallecimiento' => ['required', 'string', 'max:150'],
+            'tipoMuerte' => ['required', 'in:Natural,Accidental,Suicidio,Homicidio,Indeterminada'],
+            'ciudad_fallecimiento_id' => ['nullable', 'integer', 'exists:geo_ciudades,id_ciudad'],
             'fechaFallecimiento' => ['required', 'date'],
             'horaFallecimiento' => ['required'],
             'contacto' => ['nullable', 'string', 'max:150'],

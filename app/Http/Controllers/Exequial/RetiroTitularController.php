@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Exequial\StoreReafiliacionRequest;
 use App\Http\Requests\Exequial\StoreRetiroRequest;
 use App\Imports\ExcelExport;
+use App\Models\Asociado\MaeAsociado;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\TitularRetiro;
 use App\Services\Exequial\ExequialApiException;
@@ -93,6 +94,14 @@ class RetiroTitularController extends Controller
         }
 
         $titularLocal->update(['estado' => false]);
+
+        // Retirarse del plan de Exequiales no tiene por qué implicar un retiro pastoral —
+        // son cosas distintas — así que solo se toca MaeAsociado si el usuario lo marca
+        // explícitamente en el modal. No todo titular tiene registro de Asociado (join real:
+        // 5792/6787), así que se omite en silencio si no existe.
+        if ($request->boolean('marcar_pastor_retirado')) {
+            MaeAsociado::where('cedula', $cedula)->update(['estado_pastor' => 'Retirado']);
+        }
 
         TitularRetiro::create([
             'cod_cli' => $cedula,
