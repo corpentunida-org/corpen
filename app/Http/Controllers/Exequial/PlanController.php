@@ -3,38 +3,22 @@
 namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
-use App\Services\Exequial\ExequialApiException;
-use App\Services\Exequial\ExequialApiService;
+use App\Models\Exequiales\Plan;
 
 class PlanController extends Controller
 {
-    public function __construct(private ExequialApiService $api)
-    {
-    }
-
+    /**
+     * Catálogo local (tabla `planes`) en vez de SiaSoft — antes esto dependía de la API externa
+     * y los nombres de nomCodPlan() estaban hardcodeados por separado en un switch.
+     */
     public function index()
     {
-        try {
-            $response = $this->api->get('/api/Plan');
-            return $response->successful() ? $response->json() : [];
-        } catch (ExequialApiException $e) {
-            return [];
-        }
+        return Plan::orderBy('code')->get(['code', 'name'])->toArray();
     }
 
     public function nomCodPlan($cod)
     {
-        switch ($cod) {
-            case '01':
-                return 'Plan Basico';
-            case '02':
-                return 'Plan Ejecutivo';
-            case '03':
-                return 'Plan Unipersonal';
-            case '04':
-                return 'Plan Exento Pago';
-            default:
-                return ' ';
-        }
+        $code = str_pad((string) $cod, 2, '0', STR_PAD_LEFT);
+        return Plan::find($code)?->name ?? ' ';
     }
 }

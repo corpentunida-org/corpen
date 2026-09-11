@@ -99,7 +99,7 @@
             <div class="card-header">
                 <h5 class="card-title">Movimientos contables</h5>
                 <a href="{{ route('cinco.reportepdf', ['id' => $id]) }}"
-                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">
+                    data-no-loading class="btn btn-md bg-soft-teal text-teal border-soft-teal">
                     <i class="feather-plus me-2"></i>
                     <span>Imprimir Reporte</span>
                 </a>

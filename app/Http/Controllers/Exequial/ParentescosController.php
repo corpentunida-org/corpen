@@ -3,31 +3,24 @@
 namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
-use App\Services\Exequial\ExequialApiException;
-use App\Services\Exequial\ExequialApiService;
+use App\Models\Exequiales\Parentescos;
 use Illuminate\Support\Facades\Cache;
 
 class ParentescosController extends Controller
 {
-    public function __construct(private ExequialApiService $api)
-    {
-    }
-
     /**
      * El catálogo de parentescos rara vez cambia, pero showName()/show() se llaman una vez POR
      * REGISTRO dentro de bucles (dashboard, PDF, Excel de "prestar servicio") — sin esta caché,
-     * cada carga de esas pantallas dispara una petición HTTP nueva a la API externa por cada
-     * registro, lo que puede volverlas muy lentas o provocar timeouts con muchos registros.
+     * cada carga de esas pantallas dispara una consulta nueva por cada registro.
+     *
+     * Se lee de la tabla local `parentescos` (ya usada por SGRH, Seguros y MaeTerceros) en vez
+     * de la API de SiaSoft: se verificó que contiene los 33 códigos que aparecen realmente en
+     * los beneficiarios de Exequiales, sin faltantes.
      */
     private function catalogo(): array
     {
         return Cache::remember('exequial.parentescos.catalogo', 300, function () {
-            try {
-                $response = $this->api->get('/api/Exequiales/Relationship');
-                return $response->successful() ? $response->json() : [];
-            } catch (ExequialApiException $e) {
-                return [];
-            }
+            return Parentescos::orderBy('name')->get(['code', 'name'])->toArray();
         });
     }
 

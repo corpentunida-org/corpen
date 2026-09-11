@@ -17,6 +17,8 @@ class UpdatePrestarServicioRequest extends FormRequest
             'horaFallecimiento' => ['required'],
             'fechaFallecimiento' => ['required', 'date'],
             'lugarFallecimiento' => ['required', 'string', 'max:150'],
+            'tipoMuerte' => ['required', 'in:Natural,Accidental,Suicidio,Homicidio,Indeterminada'],
+            'ciudad_fallecimiento_id' => ['nullable', 'integer', 'exists:geo_ciudades,id_ciudad'],
             'contacto' => ['nullable', 'string', 'max:150'],
             'telefonoContacto' => ['nullable', 'string', 'max:30'],
             'contacto2' => ['nullable', 'string', 'max:150'],

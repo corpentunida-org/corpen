@@ -15,6 +15,8 @@ use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\ComaeTer;
 use App\Models\Exequiales\TitularRetiro;
 use App\Models\Maestras\MaeTerceros;
+use App\Models\Demografia\Ciudad;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -147,10 +149,18 @@ class ComaeExCliController extends Controller
                 $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
                 $jsonTit['codePlan'] = $nomPlan;
             }
+            // Mismo catálogo y misma cache key que MaeAsociadoController::edit(), reutilizado
+            // aquí para el desplegable de "ciudad de fallecimiento" del formulario Prestar
+            // Servicio (offcanvas de esta vista y el de beneficiarios/show, incluido debajo).
+            $ciudades = Cache::remember('ciudades_list_cache', now()->addDays(7), function () {
+                return Ciudad::with('subregion')->orderBy('nombre', 'asc')->get();
+            });
+
             return view('exequial.asociados.show', [
                 'asociado' => $jsonTit,
                 'beneficiarios' => $jsonBene,
                 'maeter' => $maeter,
+                'ciudades' => $ciudades,
             ]);
         } else {
             return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
@@ -185,6 +195,22 @@ class ComaeExCliController extends Controller
     {
         //$this->authorize('create', auth()->user());
         $fechaActual = Carbon::now();
+
+        // Antes se creaba el titular con cualquier cédula, sin validar que existiera en
+        // SiaSoft (API /api/Pastors) — mismo patrón que ya usan Seguros
+        // (SegPolizaController::store) y ComaeTerController::show. Sin este chequeo, un
+        // titular podía quedar creado en la API de Exequiales sin estar nunca registrado
+        // en la maestra de terceros, mostrando luego el aviso "El usuario no se encuentra
+        // registrado en la maestra de terceros" en la vista show().
+        try {
+            $pastor = $this->api->get('/api/Pastors', ['documentId' => $request->documentId]);
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+        if (!$pastor->successful() || !isset($pastor->json()['name'])) {
+            return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en SiaSoft.');
+        }
+
         try {
             $response = $this->api->post('/api/Exequiales/Tercero', [
                 'documentId' => $request->documentId,
@@ -307,5 +333,7 @@ class ComaeExCliController extends Controller
                 return $pdf->download(date('Y-m-d') . ' Reporte ' . $jsonTit['documentId'] . '.pdf');
             }
         }
+
+        return redirect()->route('exequial.asociados.index')->with('warning', 'No se pudo generar el reporte: no se encontró información del titular o los beneficiarios.');
     }
 }

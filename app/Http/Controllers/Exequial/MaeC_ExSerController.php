@@ -19,10 +19,23 @@ use App\Http\Controllers\AuditoriaController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 use App\Models\Exequiales\ComaeExRelPar;
+use App\Models\Demografia\Ciudad;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MaeC_ExSerController extends Controller
 {
+    /**
+     * Mismo catálogo y misma cache key que MaeAsociadoController::edit() — se reutiliza el
+     * mismo listado de ciudades (geo_ciudades) en vez de duplicar la consulta/caché.
+     */
+    private function ciudades()
+    {
+        return Cache::remember('ciudades_list_cache', now()->addDays(7), function () {
+            return Ciudad::with('subregion')->orderBy('nombre', 'asc')->get();
+        });
+    }
+
     public function __construct(private ExequialApiService $api)
     {
     }
@@ -32,19 +45,43 @@ class MaeC_ExSerController extends Controller
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, $area);
     }
-    public function index()
+    /**
+     * Query base compartida entre la lista y los informes (PDF/Excel) — mismo criterio que
+     * RetiroTitularController::filtrar(). Sin fecha_desde/fecha_hasta, el filtro por defecto es
+     * el último mes (antes se traía todo el histórico en cada visita); esto aplica igual a la
+     * lista y a los informes para que lo descargado sea siempre lo mismo que se ve en pantalla.
+     */
+    private function filtrarRegistros(Request $request)
     {
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $query = ExMonitoria::query();
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fechaFallecimiento', '>=', $request->fecha_desde);
+        } else {
+            $query->whereDate('fechaFallecimiento', '>=', Carbon::now()->subMonth()->startOfDay());
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fechaFallecimiento', '<=', $request->fecha_hasta);
+        }
+
+        return $query->orderBy('id', 'desc');
+    }
+
+    public function index(Request $request)
+    {
+        $registros = $this->filtrarRegistros($request)->get();
         $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
+        $totalGeneral = ExMonitoria::count();
         $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
         $nmen = ExMonitoria::where('genero', 'M')->count();
         $nwomen = ExMonitoria::where('genero', 'F')->count();
 
-        return view('exequial.prestarServicio.index', compact('registros', 'mReg', 'nmen', 'nwomen'));
+        return view('exequial.prestarServicio.index', compact('registros', 'totalGeneral', 'mReg', 'nmen', 'nwomen'));
     }
 
     public function edit($id)
@@ -59,7 +96,8 @@ class MaeC_ExSerController extends Controller
         $municipio = DB::table('MaeMunicipios')->where('id', $registro->municipio)->first();
         $departamento = $municipio ? DB::table('MaeDepartamentos')->where('codigo_Dane', $municipio->id_departamento)->first() : null;
         $regionsel = $departamento ? DB::table('MaeRegiones')->where('id', $departamento->id_region)->first() : null;
-        return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel'));
+        $ciudades = $this->ciudades();
+        return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel', 'ciudades'));
     }
 
     public function store(StorePrestarServicioRequest $request)
@@ -106,6 +144,8 @@ class MaeC_ExSerController extends Controller
                 'cedulaFallecido' => $request->cedulaFallecido,
                 'fechaFallecimiento' => $request->fechaFallecimiento,
                 'lugarFallecimiento' => strtoupper($request->lugarFallecimiento),
+                'tipoMuerte' => $request->tipoMuerte,
+                'ciudad_fallecimiento_id' => $request->ciudad_fallecimiento_id,
                 'parentesco' => $request->parentesco,
                 'estado' => $request->estadonuevo,
                 'contacto' => strtoupper($request->contacto),
@@ -130,9 +170,9 @@ class MaeC_ExSerController extends Controller
         return view('exequial.prestarServicio.index', ['registros' => $filtromes]);
     }
 
-    public function generarpdf()
+    public function generarpdf(Request $request)
     {
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $registros = $this->filtrarRegistros($request)->get();
         $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
@@ -143,10 +183,10 @@ class MaeC_ExSerController extends Controller
         //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 
-    public function generarExcelPrestarServicio()
+    public function generarExcelPrestarServicio(Request $request)
     {
         Carbon::setLocale('es');
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $registros = $this->filtrarRegistros($request)->get();
         $data = [];
         $i = 1;
         $controllerparentesco = app()->make(ParentescosController::class);
@@ -181,6 +221,8 @@ class MaeC_ExSerController extends Controller
             'horaFallecimiento' => $request->horaFallecimiento,
             'fechaFallecimiento' => $request->fechaFallecimiento,
             'lugarFallecimiento' => $request->lugarFallecimiento,
+            'tipoMuerte' => $request->tipoMuerte,
+            'ciudad_fallecimiento_id' => $request->ciudad_fallecimiento_id,
             'contacto' => $request->contacto,
             'telefonoContacto' => $request->telefonoContacto,
             'Contacto2' => $request->contacto2,
