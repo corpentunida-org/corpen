@@ -900,33 +900,48 @@ class OperacionController extends Controller
             try {
                 $operacion = CarSiaOperacion::with('tercero')->findOrFail($id);
 
-                // 1. Obtener el hash solicitado (histórico) o hacer fallback al más reciente
+                // 1. Obtener el hash solicitado
                 $hashFiltro = $request->query('hash');
 
                 if (!$hashFiltro) {
+                    // Quitamos la dependencia del numero_bloque para evitar vacíos en individuales
                     $hashFiltro = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                        ->where('numero_bloque', $operacion->numero_bloque)
                         ->orderBy('created_at', 'desc')
                         ->value('hash_certificado');
                 }
 
                 // 2. Extraer exactamente las líneas asociadas a esa versión (Hash)
                 $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                    ->where('numero_bloque', $operacion->numero_bloque)
                     ->where('hash_certificado', $hashFiltro)
                     ->get();
 
                 if ($lineas->isEmpty()) {
-                    abort(404, 'No hay datos procesados para generar este certificado.');
+                    // Retornar texto plano o HTML simple. NUNCA un abort() que lance una vista 404 grande en el iframe.
+                    return response('<div style="font-family:sans-serif; text-align:center; padding: 20px; color:#666;">No hay datos procesados para generar este certificado.</div>', 404);
                 }
 
-                // 3. Renderizar vista a PDF (utilizando barryvdh/laravel-dompdf o similar)
-                $pdf = Pdf::loadView('certificados.pdf.certificado_aldia', compact('operacion', 'lineas'));
+                // 3. Capturar el tipo de certificado (Prioridad al enviado por la Request desde Blade)
+                $tipoCertificadoId = $request->query('tipo_id') ?? $lineas->first()->id_car_sia_tipos;
+
+                // 4. Asignar dinámicamente la vista
+                $vistaPdf = match((int) $tipoCertificadoId) {
+                    1 => 'certificados.pdf.inicio',
+                    2 => 'certificados.pdf.paz_y_salvo',
+                    3 => 'certificados.pdf.cobro_persuasivo',
+                    4 => 'certificados.pdf.estado_cuenta',
+                    5 => 'certificados.pdf.acuerdos_pago',
+                    default => 'certificados.pdf.paz_y_salvo',
+                };
+
+                // 5. Renderizar vista a PDF
+                $pdf = Pdf::loadView($vistaPdf, compact('operacion', 'lineas'));
+                
                 return $pdf->stream("Certificado_{$operacion->numero_radicado}.pdf");
 
             } catch (\Exception $e) {
                 Log::error("Error al renderizar certificado: " . $e->getMessage());
-                return back()->with('error', 'Ocurrió un error al mostrar el certificado.');
+                // NUNCA hacer return back() dentro del contexto de un iframe. 
+                return response('<div style="font-family:sans-serif; text-align:center; padding: 20px; color:red;">Ocurrió un error al mostrar el certificado: ' . $e->getMessage() . '</div>', 500);
             }
         }
 
@@ -1138,7 +1153,8 @@ class OperacionController extends Controller
                 'lineas.*.fecha_ultimo_recordatorio'   => 'nullable|date',
                 'lineas.*.procesado_en'                => 'nullable|date',
                 'lineas.*.observacion'                 => 'nullable|string',
-                'tipo_certificado_id'                  => 'nullable|exists:car_sia_tipos,id'
+                'tipo_certificado_id'                  => 'nullable|exists:car_sia_tipos,id',
+                'dias_gracia_lote'                     => 'nullable|integer|min:0' // Validación del input oculto
             ]);
 
             try {
@@ -1146,9 +1162,7 @@ class OperacionController extends Controller
                     $operacion = CarSiaOperacion::findOrFail($id);
                     $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
 
-                    // OPTIMIZACIÓN DE MEMORIA:
-                    // En lugar de hacer una consulta SQL por cada línea editada, traemos todas
-                    // de una vez y las mapeamos por su ID ('keyBy') para acceso directo O(1).
+                    // OPTIMIZACIÓN DE MEMORIA
                     $lineasIds = array_keys($request->lineas);
                     $lineasOriginales = CarSiaOperacionLinea::whereIn('id', $lineasIds)
                         ->where('id_car_sia_operaciones', $operacion->id)
@@ -1156,18 +1170,50 @@ class OperacionController extends Controller
                         ->get()
                         ->keyBy('id');
 
-                    // Mecanismo de seguridad: previene manipulación de IDs desde el frontend
                     if ($lineasOriginales->count() !== count($lineasIds)) {
                         throw new \Exception("Una o más líneas no pertenecen a la operación actual o no existen.");
                     }
 
+                    // Capturar días de gracia general para el lote
+                    $nuevosDiasGracia = $request->filled('dias_gracia_lote') ? (int) $request->dias_gracia_lote : null;
+
                     foreach ($request->lineas as $lineaId => $data) {
                         $lineaOriginal = $lineasOriginales[$lineaId];
 
-                        // PATRÓN DE VERSIONADO: Replicamos la entidad para no perder el histórico.
+                        // PATRÓN DE VERSIONADO: Replicamos la entidad
                         $nuevaLinea = $lineaOriginal->replicate();
 
-                        // Asignación de datos: Si el frontend envía null/vacío, se conserva el valor original
+                        // ------------------------------------------------------------------
+                        // SOLUCIÓN JSON: Tratamiento de la columna 'metadata'
+                        // ------------------------------------------------------------------
+                        $metadataArray = [];
+                        
+                        // Como el modelo tiene el cast a 'array', $lineaOriginal->metadata ya es un arreglo (o null)
+                        if (!empty($lineaOriginal->metadata)) {
+                            $metadataArray = is_string($lineaOriginal->metadata) ? json_decode($lineaOriginal->metadata, true) : $lineaOriginal->metadata;
+                        }
+
+                        // Actualizar SOLAMENTE dias_gracia si se escribió algo en el modal
+                        if ($nuevosDiasGracia !== null) {
+                            $metadataArray['dias_gracia'] = $nuevosDiasGracia;
+                        }
+
+                        // Forzar el tipado correcto de todas las variables del JSON para evitar los strings "1" o "0"
+                        if (!empty($metadataArray)) {
+                            $metadataArray['dias_gracia'] = isset($metadataArray['dias_gracia']) ? (int) $metadataArray['dias_gracia'] : 0;
+                            $metadataArray['mora_dias_max'] = isset($metadataArray['mora_dias_max']) ? (int) $metadataArray['mora_dias_max'] : 0;
+                            
+                            $metadataArray['requiere_accion'] = isset($metadataArray['requiere_accion']) ? filter_var($metadataArray['requiere_accion'], FILTER_VALIDATE_BOOLEAN) : false;
+                            $metadataArray['bloqueo_automatico'] = isset($metadataArray['bloqueo_automatico']) ? filter_var($metadataArray['bloqueo_automatico'], FILTER_VALIDATE_BOOLEAN) : false;
+                            $metadataArray['notificacion_gerencia'] = isset($metadataArray['notificacion_gerencia']) ? filter_var($metadataArray['notificacion_gerencia'], FILTER_VALIDATE_BOOLEAN) : false;
+                            $metadataArray['incluir_historico_3_anos'] = isset($metadataArray['incluir_historico_3_anos']) ? filter_var($metadataArray['incluir_historico_3_anos'], FILTER_VALIDATE_BOOLEAN) : false;
+                        }
+
+                        // Asignar el array directamente al campo correcto (Laravel lo convierte a JSON automáticamente por el cast)
+                        $nuevaLinea->metadata = empty($metadataArray) ? null : $metadataArray;
+                        // ------------------------------------------------------------------
+
+                        // Asignación de datos restantes
                         $nuevaLinea->calificacion              = $data['calificacion'];
                         $nuevaLinea->id_car_sia_estados        = $data['id_car_sia_estados'] ?? $lineaOriginal->id_car_sia_estados;
                         $nuevaLinea->dias_mora_automaticos     = $data['dias_mora_automaticos'];
@@ -1181,17 +1227,10 @@ class OperacionController extends Controller
                             $nuevaLinea->id_car_sia_tipos = $request->tipo_certificado_id;
                         }
 
-                        // Firma de la nueva versión manual
                         $nuevaLinea->id_user = $auditoria['user_id'];
                         $nuevaLinea->hash_certificado = $auditoria['hash'];
 
                         $nuevaLinea->save();
-
-                        // TODO (Mejora futura): Manejo del estado "Activo"
-                        // Si estás calculando totales posteriormente, múltiples versiones de la misma línea
-                        // duplicarán los saldos. Considera agregar una bandera booleana:
-                        // $lineaOriginal->update(['es_version_activa' => false]);
-                        // $nuevaLinea->es_version_activa = true;
                     }
 
                     // Registro de la acción en la bitácora de auditoría
