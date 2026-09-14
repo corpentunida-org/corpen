@@ -36,8 +36,11 @@ class UserController extends Controller
     {
         $roles = Role::all();
         $user->load('actions.role', 'permissions');
-        $acciones = $count = auditoria::where('usuario', $user->name)->count();
-        $fecha = auditoria::where('usuario', $user->name)->orderBy('fechaRegistro', 'desc')->first();
+        // Por usuario_id, no por nombre: el nombre guardado en Auditoria es el que tenía el
+        // usuario al momento de cada acción, así que alguien renombrado (ej. "admin" -> nombre
+        // real) perdía sus registros viejos al filtrar por el nombre actual.
+        $acciones = $count = auditoria::where('usuario_id', $user->id)->count();
+        $fecha = auditoria::where('usuario_id', $user->id)->orderBy('fechaRegistro', 'desc')->first();
 
         // Permisos por rol: se combinan dos fuentes porque conviven dos esquemas de asignación.
         // El legado (columna permissions.role_id, un permiso "pertenece" a un solo rol) es el

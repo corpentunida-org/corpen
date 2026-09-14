@@ -8,6 +8,7 @@ use App\Http\Controllers\IndexController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\Admin\InformeUsoController;
 
 //CONTABILIDAD
 use App\Http\Controllers\Contabilidad\ConCuentaBancariaController;
@@ -204,6 +205,15 @@ Route::post('users/{user}/copiar-permisos', [UserController::class, 'copiarPermi
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
+Route::get('informe-uso', [InformeUsoController::class, 'index'])
+    ->name('admin.informeuso.index')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
+Route::get('informe-uso/excel', [InformeUsoController::class, 'exportarExcel'])
+    ->name('admin.informeuso.excel')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
+Route::get('informe-uso/pdf', [InformeUsoController::class, 'exportarPdf'])
+    ->name('admin.informeuso.pdf')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
     ->middleware(['auth']);

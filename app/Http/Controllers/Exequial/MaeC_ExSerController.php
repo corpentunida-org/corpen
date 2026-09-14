@@ -47,22 +47,31 @@ class MaeC_ExSerController extends Controller
     }
     /**
      * Query base compartida entre la lista y los informes (PDF/Excel) — mismo criterio que
-     * RetiroTitularController::filtrar(). Sin fecha_desde/fecha_hasta, el filtro por defecto es
-     * el último mes (antes se traía todo el histórico en cada visita); esto aplica igual a la
-     * lista y a los informes para que lo descargado sea siempre lo mismo que se ve en pantalla.
+     * RetiroTitularController::filtrar(). Sin ningún filtro, el default es el último mes (antes
+     * se traía todo el histórico en cada visita); esto aplica igual a la lista y a los informes
+     * para que lo descargado sea siempre lo mismo que se ve en pantalla.
+     *
+     * "anio" es un atajo pensado para auditoría (ver todo lo registrado por un funcionario, no
+     * solo lo reciente) y tiene prioridad sobre fecha_desde/fecha_hasta: 'todos' quita cualquier
+     * límite de fecha, y un año puntual filtra ese año completo.
      */
     private function filtrarRegistros(Request $request)
     {
         $query = ExMonitoria::query();
 
-        if ($request->filled('fecha_desde')) {
-            $query->whereDate('fechaFallecimiento', '>=', $request->fecha_desde);
+        if ($request->filled('anio')) {
+            if ($request->input('anio') !== 'todos') {
+                $query->whereYear('fechaFallecimiento', $request->input('anio'));
+            }
+        } elseif ($request->filled('fecha_desde') || $request->filled('fecha_hasta')) {
+            if ($request->filled('fecha_desde')) {
+                $query->whereDate('fechaFallecimiento', '>=', $request->fecha_desde);
+            }
+            if ($request->filled('fecha_hasta')) {
+                $query->whereDate('fechaFallecimiento', '<=', $request->fecha_hasta);
+            }
         } else {
             $query->whereDate('fechaFallecimiento', '>=', Carbon::now()->subMonth()->startOfDay());
-        }
-
-        if ($request->filled('fecha_hasta')) {
-            $query->whereDate('fechaFallecimiento', '<=', $request->fecha_hasta);
         }
 
         return $query->orderBy('id', 'desc');
@@ -77,11 +86,15 @@ class MaeC_ExSerController extends Controller
             $registro->parentesco = $nomPar;
         }
         $totalGeneral = ExMonitoria::count();
-        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
+        $mReg = ExMonitoria::whereDate('fechaFallecimiento', '>=', Carbon::now()->subMonth()->startOfDay())->count();
         $nmen = ExMonitoria::where('genero', 'M')->count();
         $nwomen = ExMonitoria::where('genero', 'F')->count();
+        $aniosDisponibles = ExMonitoria::selectRaw('DISTINCT YEAR(fechaFallecimiento) as anio')
+            ->whereNotNull('fechaFallecimiento')
+            ->orderByDesc('anio')
+            ->pluck('anio');
 
-        return view('exequial.prestarServicio.index', compact('registros', 'totalGeneral', 'mReg', 'nmen', 'nwomen'));
+        return view('exequial.prestarServicio.index', compact('registros', 'totalGeneral', 'mReg', 'nmen', 'nwomen', 'aniosDisponibles'));
     }
 
     public function edit($id)

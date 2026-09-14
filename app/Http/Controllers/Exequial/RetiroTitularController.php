@@ -38,6 +38,7 @@ class RetiroTitularController extends Controller
     private function filtrar(Request $request)
     {
         return TitularRetiro::query()
+            ->with(['registradoPor', 'reafiliadoPor'])
             ->when($request->filled('fecha_desde'), fn($q) => $q->whereDate('fecha_retiro', '>=', $request->fecha_desde))
             ->when($request->filled('fecha_hasta'), fn($q) => $q->whereDate('fecha_retiro', '<=', $request->fecha_hasta))
             ->when($request->filled('reportado') && $request->reportado !== 'todos', function ($q) use ($request) {
@@ -210,12 +211,13 @@ class RetiroTitularController extends Controller
             $r->nombre,
             optional($r->fecha_afiliacion)->format('Y-m-d'),
             $r->fecha_retiro->format('Y-m-d'),
+            $r->registradoPor->name ?? '—',
             $r->observaciones,
             $r->fecha_reafiliacion ? 'Reafiliado ' . $r->fecha_reafiliacion->format('Y-m-d') : 'Vigente',
             $r->reportado_aliado ? 'Sí' : 'No',
         ])->toArray();
 
-        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Observaciones', 'Estado', 'Reportado'];
+        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Registrado por', 'Observaciones', 'Estado', 'Reportado'];
         $name = 'Retirados_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new ExcelExport($data, $headings), $name);
