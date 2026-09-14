@@ -128,7 +128,7 @@
                             <div class="bg-light rounded-4 p-3 mb-3">
                                 <!-- Contenedor Flex para alinear texto a la izq y botón a la der -->
                                 <div class="d-flex justify-content-between align-items-start">
-                                    
+
                                     <!-- Datos del cliente -->
                                     <div>
                                         <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
@@ -137,24 +137,24 @@
 
                                     <!-- NUEVO: Píldora Desplegable Sutil -->
                                     <div class="dropdown ms-2">
-                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center" 
-                                                type="button" 
-                                                data-bs-toggle="dropdown" 
+                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
                                                 aria-expanded="false"
                                                 title="Ver historial de operaciones">
-                                            <i class="fas fa-history me-1 text-muted"></i> 
+                                            <i class="fas fa-history me-1 text-muted"></i>
                                             <span class="ms-1">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
                                         </button>
-                                        
+
                                         <!-- Menú flotante compacto -->
                                         <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="width: 260px; max-height: 250px; overflow-y: auto;">
                                             <li><h6 class="dropdown-header text-muted fs-8 text-uppercase fw-bold ls-1 mb-1">Historial Reciente</h6></li>
-                                            
+
                                             @if(isset($operacionesDelTercero) && $operacionesDelTercero->count() > 0)
                                                 @foreach($operacionesDelTercero as $opTercero)
                                                     @php $esActual = $opTercero->id == $operacion->id; @endphp
                                                     <li>
-                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1" 
+                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1"
                                                         href="{{ route('certificados.operaciones.show', $opTercero->id) }}"
                                                             <span class="text-truncate" style="max-width: 150px;">
                                                                 <i class="fas {{ $esActual ? 'fa-dot-circle' : 'fa-circle' }} fs-9 me-2 {{ $esActual ? 'text-primary' : 'text-muted opacity-25' }}"></i>
@@ -175,7 +175,7 @@
 
                                 </div>
                             </div>
-                            
+
                             <div class="d-flex justify-content-between mb-2 fs-7">
                                 <span class="text-muted"><i class="fas fa-phone-alt me-2 opacity-50"></i>Teléfono:</span>
                                 <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
@@ -1218,7 +1218,7 @@
                                                                             <div class="text-dark" style="font-size: 0.85rem;">
                                                                                 <i class="fas fa-info-circle text-primary me-2"></i> Las columnas resaltadas con el icono <i class="fas fa-pen text-primary mx-1"></i> son editables.
                                                                             </div>
-                                                                            
+
                                                                             <button type="button" class="btn btn-sm btn-white border shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalParametros_{{ $certId }}">
                                                                                 <i class="fas fa-sliders-h me-1"></i> Parámetros de Regla
                                                                             </button>
@@ -1268,7 +1268,15 @@
                                                                                                 @endif
                                                                                             </td>
 
-                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">{{ $linea->id_car_sia_lineas }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">
+                                                                                                {{-- Muestra el número de cuenta --}}
+                                                                                                <span class="d-block fw-bold text-dark" style="font-size: 0.75rem;">{{ $linea->id_car_sia_lineas }}</span>
+
+                                                                                                {{-- Muestra el campo de la relación (Ej: nombre). Usamos optional() por si viene nulo y no rompa la vista --}}
+                                                                                                <span style="font-size: 0.65rem;" title="Nombre de la línea">
+                                                                                                    {{ optional($linea->factura->lineaSia)->nombre ?? 'Sin descripción' }}
+                                                                                                </span>
+                                                                                            </td>
 
                                                                                             {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
                                                                                             <td class="p-0 align-middle position-relative">
@@ -1349,8 +1357,8 @@
                                                                                     </div>
                                                                                 </div>
                                                                                 <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4" 
-                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;" 
+                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4"
+                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;"
                                                                                             data-bs-dismiss="modal">
                                                                                         Aplicar Parámetro
                                                                                     </button>
@@ -1511,7 +1519,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             {{-- ========================================================= --}}
                                             {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO              --}}
                                             {{-- ========================================================= --}}
@@ -1519,12 +1527,12 @@
                                                 @php
                                                     // Decodificación segura del JSON de metadatos
                                                     $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
-                                                    
+
                                                     // Extracción de reglas
                                                     $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
                                                     $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
                                                     $moraEfectiva = max(0, $diasTranscurridos - $diasGracia); // Cálculo matemático real
-                                                    
+
                                                     $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
                                                     $observacionFase = $meta['observacion_fase'] ?? '';
                                                     $observacionGeneral = $linea->observacion ?? '';
@@ -1533,7 +1541,7 @@
                                                 <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
                                                     <div class="modal-dialog modal-dialog-centered modal-lg">
                                                         <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            
+
                                                             {{-- Header --}}
                                                             <div class="modal-header border-0 pb-0 pt-4 px-4">
                                                                 <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
@@ -1547,7 +1555,7 @@
                                                                     <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
                                                                     <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
                                                                 </div>
-                                                                
+
                                                                 {{-- SECCIÓN 1: Fechas --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
                                                                 <div class="row g-3 mb-4">
@@ -1598,7 +1606,7 @@
                                                                 {{-- SECCIÓN 3: Dictamen y Reglas --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
                                                                 <div class="alert bg-light border rounded-3 mb-0">
-                                                                    
+
                                                                     <div class="bg-white p-3 rounded border mb-3">
                                                                         <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
                                                                             > {{ $observacionGeneral ?: $observacionFase }}
@@ -1635,7 +1643,7 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                
+
                                                             </div>
                                                             <div class="modal-footer border-0 bg-light rounded-bottom-4">
                                                                 <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>

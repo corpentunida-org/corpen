@@ -1370,14 +1370,21 @@
                         </div>
                         <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
                         <div class="mb-3">
-                            <label for="id_car_sia_tipos" class="form-label fw-semibold text-muted">Tipo de Certificado</label>
-                            <select name="id_car_sia_tipos" id="id_car_sia_tipos" class="form-select bg-light border-0" required>
-                                <option value="">Seleccione un tipo...</option>
+                            <label for="id_car_sia_tipos" class="form-label fw-semibold text-muted">Tipos de Certificado (Selección Múltiple)</label>
+
+                            {{-- MODIFICACIÓN: name="id_car_sia_tipos[]" y atributo "multiple" --}}
+                            <select name="id_car_sia_tipos[]" id="id_car_sia_tipos" class="form-select bg-light border-0" size="4" multiple required>
                                 @isset($tipos)
-                                    @foreach($tipos as $tipo) <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option> @endforeach
+                                    @foreach($tipos as $tipo)
+                                        <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                    @endforeach
                                 @endisset
                             </select>
+                            <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                * Mantenga presionada la tecla <kbd>Ctrl</kbd> (o <kbd>Cmd</kbd> en Mac) para seleccionar varios.
+                            </small>
                         </div>
+
                         <div id="loadingMasivo" class="d-none mt-4">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="text-muted fw-semibold" style="font-size: 0.75rem;"><i class="fas fa-cogs me-1"></i> Ensamblando documentos...</span>

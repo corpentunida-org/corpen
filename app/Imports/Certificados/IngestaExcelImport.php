@@ -23,7 +23,7 @@ class IngestaExcelImport implements ToArray, WithHeadingRow, WithChunkReading
         $this->ahora = now()->format('Y-m-d H:i:s');
         $this->progresoToken = $progresoToken;
         $this->totalFilas = $totalFilas;
-        
+
         // APAGAMOS EL LOG DE LARAVEL PARA NO SATURAR LA RAM
         DB::disableQueryLog();
     }
@@ -59,11 +59,14 @@ class IngestaExcelImport implements ToArray, WithHeadingRow, WithChunkReading
             }
 
             $loteInsercionMasiva[] = [
+                // --- Campos de control generados por sistema ---
                 'estado'           => 'PENDIENTE',
                 'fecha_ad'         => $this->ahora,
                 'created_at'       => $this->ahora,
                 'updated_at'       => $this->ahora,
                 'numero_bloque'    => $this->nuevoBloque,
+
+                // --- Campos que ya tenías mapeados ---
                 'id_factura'       => $idFactura,
                 'tercero'          => $tercero,
                 'nombre_tercero'   => $this->valueFromRow($row, ['nombre_tercero', 'nombre'], 2, $valores),
@@ -74,6 +77,32 @@ class IngestaExcelImport implements ToArray, WithHeadingRow, WithChunkReading
                 'mes'              => $this->valueFromRow($row, ['mes'], 7, $valores),
                 'cuenta'           => $this->valueFromRow($row, ['cuenta'], 8, $valores),
                 'banco'            => $this->valueFromRow($row, ['banco'], 9, $valores),
+
+                // --- ¡NUEVOS! Campos agregados para completar la tabla ---
+                // Nota: El número al final de valueFromRow (ej: 10) es la columna de respaldo si no encuentra el encabezado.
+                'is_selected'      => $this->valueFromRow($row, ['is_selected'], 10, $valores) ?? null,
+                'detalle'          => $this->valueFromRow($row, ['detalle'], 11, $valores) ?? null,
+                'log_rq'           => $this->valueFromRow($row, ['log_rq'], 12, $valores) ?? null,
+                'anular'           => $this->valueFromRow($row, ['anular'], 13, $valores) ?? null,
+                'nombre_cuenta'    => $this->valueFromRow($row, ['nombre_cuenta'], 14, $valores) ?? null,
+                'tercero_base'     => $this->valueFromRow($row, ['tercero_base'], 15, $valores) ?? null,
+                'tercero_cco'      => $this->valueFromRow($row, ['tercero_cco'], 16, $valores) ?? null,
+                'doc_mov'          => $this->valueFromRow($row, ['doc_mov'], 17, $valores) ?? null,
+                'cco'              => $this->valueFromRow($row, ['cco'], 18, $valores) ?? null,
+                'trn'              => $this->valueFromRow($row, ['trn'], 19, $valores) ?? null,
+                'pagare'           => $this->valueFromRow($row, ['pagare'], 20, $valores) ?? null,
+                'cuota'            => $this->valueFromRow($row, ['cuota'], 21, $valores) ?? null,
+                'contabilizado'    => $this->valueFromRow($row, ['contabilizado'], 22, $valores) ?? null,
+                'nota'             => $this->valueFromRow($row, ['nota'], 23, $valores) ?? null,
+                'fecha_trn_banco'  => $this->valueFromRow($row, ['fecha_trn_banco'], 24, $valores) ?? null,
+                'valor_inicial'    => $this->valueFromRow($row, ['valor_inicial'], 25, $valores) ?? null,
+                'valor_pago_ofic'  => $this->valueFromRow($row, ['valor_pago_ofic'], 26, $valores) ?? null,
+                'valor_banco'      => $this->valueFromRow($row, ['valor_banco'], 27, $valores) ?? null,
+                'uid_banco'        => $this->valueFromRow($row, ['uid_banco'], 28, $valores) ?? null,
+                'fecha_edit'       => $this->valueFromRow($row, ['fecha_edit'], 29, $valores) ?? null,
+                'tipo'             => $this->valueFromRow($row, ['tipo'], 30, $valores) ?? null,
+                'id_cab'           => $this->valueFromRow($row, ['id_cab'], 31, $valores) ?? null,
+                'id_reg_cab_ref'   => $this->valueFromRow($row, ['id_reg_cab_ref'], 32, $valores) ?? null,
             ];
         }
 

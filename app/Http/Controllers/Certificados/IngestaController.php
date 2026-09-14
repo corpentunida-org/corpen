@@ -38,7 +38,7 @@ class IngestaController extends Controller
 {
 
     use LogAuditoriaTrait;
-    
+
     /**
      * =========================================================================
      * 1. LEE LOTES CRUDOS Y APLICA FILTROS POR BLOQUE ESPECÍFICO
@@ -238,7 +238,7 @@ class IngestaController extends Controller
 
             // --- INICIO DE INSERCIÓN DEL LOG ---
             $this->registrarLogAuditoria(
-                $nuevoBloque, 1, 1, 
+                $nuevoBloque, 1, 1,
                 'Carga masiva de Excel', 'Bloque', 'Carga masiva de Excel ejecutada exitosamente.',
                 [], // identificadores
                 ['registros_procesados' => $totalFilas], // metricas
@@ -269,7 +269,7 @@ class IngestaController extends Controller
                 : 'Archivo no identificado';
 
             $this->registrarLogAuditoria(
-                $nuevoBloque ?? null, 1, 13, 
+                $nuevoBloque ?? null, 1, 13,
                 'Error procesando Excel', 'Bloque', 'Fallo técnico durante la lectura del archivo Excel.',
                 [], [], [],
                 [
@@ -345,7 +345,7 @@ class IngestaController extends Controller
                     ->where('car_sia_api.numero_bloque', $bloqueOrigen)
                     ->where('car_sia_api.estado', 'PENDIENTE')
                     ->where(function ($query) {
-                        $query->whereNull('car_sia_api.anular')->orWhere('car_sia_api.anular', '!=', 1);
+                        $query->whereNull('car_sia_api.anular')->orWhere('car_sia_api.anular', '!=', '1');
                     })
                     ->distinct()
                     ->pluck('car_sia_api.tercero')
@@ -358,7 +358,7 @@ class IngestaController extends Controller
                     $hayPendientes = CarSiaApi::where('numero_bloque', $bloqueOrigen)
                         ->where('estado', 'PENDIENTE')
                         ->where(function ($query) {
-                            $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                            $query->whereNull('anular')->orWhere('anular', '!=', '1');
                         })->exists();
 
                     if ($hayPendientes) {
@@ -374,7 +374,7 @@ class IngestaController extends Controller
                 $registrosIgnorados = CarSiaApi::where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
                     ->where(function ($query) {
-                        $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                        $query->whereNull('anular')->orWhere('anular', '!=', '1');
                     })
                     ->whereNotExists(function ($query) {
                         $query->select(DB::raw(1))
@@ -456,7 +456,7 @@ class IngestaController extends Controller
                 CarSiaApi::where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
                     ->where(function ($query) {
-                        $query->whereNull('anular')->orWhere('anular', '!=', 1);
+                        $query->whereNull('anular')->orWhere('anular', '!=', '1');
                     })
                     ->whereExists(function ($query) {
                         $query->select(DB::raw(1))
