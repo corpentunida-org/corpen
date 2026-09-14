@@ -23,7 +23,7 @@ class Kernel extends HttpKernel
      * @var array<string, array<int, class-string|string>>
      */
     protected $middlewareGroups = [
-        'web' => [\App\Http\Middleware\EncryptCookies::class, \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, \Illuminate\Session\Middleware\AuthenticateSession::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Routing\Middleware\SubstituteBindings::class, \App\Http\Middleware\EncryptCookies::class],
+        'web' => [\App\Http\Middleware\EncryptCookies::class, \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class, \Illuminate\Session\Middleware\AuthenticateSession::class, \App\Http\Middleware\RegistrarActividadUsuario::class, \Illuminate\View\Middleware\ShareErrorsFromSession::class, \Illuminate\Routing\Middleware\SubstituteBindings::class, \App\Http\Middleware\EncryptCookies::class],
         'api' => [\Illuminate\Routing\Middleware\ThrottleRequests::class . ':api', \Illuminate\Session\Middleware\AuthenticateSession::class, \Illuminate\Routing\Middleware\SubstituteBindings::class],
     ];
 

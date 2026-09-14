@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         ExequialTercerosPermissionsSeeder::class,
         ExequialRetirosPermissionsSeeder::class,
         AdminIntegracionesPermissionsSeeder::class,
+        InformeUsoPermissionsSeeder::class,
     ]);
     }
 }

@@ -310,6 +310,9 @@
                                     <div>
                                         <p class="fs-12 text-muted text-uppercase fw-bold mb-1 tracking-wide">Actividad Reciente</p>
                                         <h6 class="fw-bolder mb-0 text-dark">{{ $acciones }} <span class="fs-13 fw-normal text-muted">interacciones</span></h6>
+                                        @candirect('admin.auditoria.index')
+                                            <a href="{{ route('admin.auditoria.index', ['usuario_id' => $user->id]) }}" class="fs-12">Ver historial completo</a>
+                                        @endcandirect
                                     </div>
                                     <div class="ui-icon-box ui-pastel-blue bg-transparent" style="width: 32px; height: 32px;">
                                         <i class="bi bi-graph-up-arrow fs-5"></i>

@@ -245,9 +245,16 @@
                                     </td>
 
                                     <td class="text-end text-md-center">
-                                        <a href="{{ route('admin.users.edit', $user->id) }}" class="ui-btn-action" data-bs-toggle="tooltip" title="Administrar Usuario">
-                                            <i class="bi bi-arrow-right"></i>
-                                        </a>
+                                        <div class="d-inline-flex gap-2">
+                                            @candirect('admin.auditoria.index')
+                                                <a href="{{ route('admin.auditoria.index', ['usuario_id' => $user->id]) }}" class="ui-btn-action" data-bs-toggle="tooltip" title="Ver Auditoría">
+                                                    <i class="bi bi-clock-history"></i>
+                                                </a>
+                                            @endcandirect
+                                            <a href="{{ route('admin.users.edit', $user->id) }}" class="ui-btn-action" data-bs-toggle="tooltip" title="Administrar Usuario">
+                                                <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
