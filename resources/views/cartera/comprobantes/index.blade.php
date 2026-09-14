@@ -1,84 +1,214 @@
 <x-base-layout>
+
     <div class="app-container py-5">
 
-        {{-- Barra de Título Estilo Documento --}}
-        <div class="d-flex align-items-center mb-4 px-3">
-            <div class="symbol symbol-40px me-3">
-                <div class="symbol-label bg-success text-white shadow-sm">
-                    <i class="fas fa-file-invoice text-white fs-4"></i>
+        {{-- ENCABEZADO MINIMALISTA Y CORPORATIVO --}}
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 px-3 gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-success bg-opacity-10 text-success p-3 rounded-4 shadow-sm d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-file-invoice-dollar fs-4"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bolder text-dark mb-1 fs-4" id="docTitle">
+                        Comprobantes de Pago de Cartera
+                    </h3>
+                    <div class="d-flex align-items-center gap-2 fs-7">
+                        <span class="text-muted fw-semibold">
+                            <i class="far fa-calendar-alt me-1"></i> Periodo:
+                            <span class="text-dark fw-bold">{{ isset($is_global) && $is_global ? 'Histórico General' : \Carbon\Carbon::createFromFormat('Y-m', $periodo)->translatedFormat('F Y') }}</span>
+                        </span>
+
+                        {{-- Badge Sincronizado con estilos en línea forzados --}}
+                        <span class="badge rounded-pill px-3 py-2 fw-bold" style="background-color: rgba(25, 135, 84, 0.1) !important; color: #198754 !important; border: 1px solid rgba(25, 135, 84, 0.2);">
+                            Sincronizado
+                        </span>
+
+                        @if(isset($is_global) && $is_global)
+                            {{-- Badge Modo Global con estilos en línea forzados --}}
+                            <span class="badge rounded-pill px-3 py-2 fw-bold" style="background-color: rgba(220, 53, 69, 0.1) !important; color: #dc3545 !important; border: 1px solid rgba(220, 53, 69, 0.2);">
+                                <i class="fas fa-globe me-1"></i> MODO GLOBAL
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
             <div>
-                <h3 class="fw-bold m-0 text-dark fs-4" id="docTitle">
-                    Soportes_Pago_Cartera_{{ isset($is_global) && $is_global ? 'HISTORICO' : str_replace('-', '', $periodo) }}.gsheet
-                </h3>
-                <div class="d-flex align-items-center gap-3 fs-9 mt-1">
-                    <span class="text-muted">Archivo guardado en Drive</span>
-                    <span class="badge badge-light-success text-success fw-bold px-2 py-1">SOLO LECTURA</span>
-                    @if(isset($is_global) && $is_global)
-                        <span class="badge badge-light-danger text-danger fw-bold px-2 py-1"><i class="fas fa-globe me-1 text-danger"></i> MODO GLOBAL</span>
-                    @endif
-                </div>
-            </div>
-            <div class="ms-auto d-flex gap-2">
-                <a href="{{ route('cartera.comprobantes.create') }}"
-                    class="btn btn-sm btn-primary fw-bold px-4 rounded-1 shadow-sm">
-                    <i class="fas fa-plus me-1"></i> Añadir fila
+                <a href="{{ route('cartera.comprobantes.create') }}" class="btn btn-success rounded-pill px-4 shadow-sm fw-semibold">
+                    <i class="fas fa-plus me-2"></i> Añadir Comprobante
                 </a>
             </div>
         </div>
 
-        {{-- BARRA DE FILTROS BACKEND (ESTILO BARRA DE FÓRMULAS) --}}
-        <form method="GET" action="{{ route('cartera.comprobantes.index') }}"
-            class="bg-white p-3 border border-gray-300 mx-3 mb-3 d-flex flex-wrap gap-3 align-items-end shadow-sm"
-            style="border-radius: 4px;">
+        {{-- BARRA DE FILTROS BACKEND (ESTILO BARRA DE FÓRMULAS - REDISEÑADO) --}}
+        <div class="card border-0 bg-white rounded-4 shadow-sm mx-3 mb-4">
+            <div class="card-body p-3">
+                <form method="GET" action="{{ route('cartera.comprobantes.index') }}" class="row g-2 align-items-center">
 
-            {{-- Mantenemos el estado actual si se está filtrando por pestaña --}}
-            @if(request('estado'))
-                <input type="hidden" name="estado" value="{{ request('estado') }}">
-            @endif
+                    {{-- Mantenemos el estado actual si se está filtrando por pestaña --}}
+                    @if(request('estado'))
+                        <input type="hidden" name="estado" value="{{ request('estado') }}">
+                    @endif
 
-            {{-- Filtro Obligatorio: Mes y Año --}}
-            <div>
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
-                <input type="month" name="periodo" id="inputPeriodo" value="{{ $periodo }}"
-                    class="form-control form-control-sm border-gray-300 fw-bold text-primary" required style="transition: 0.3s;">
+                    {{-- 1. FILTRO PERIODO (Secundario - Limpio, sin asteriscos ni cargas visuales pesadas) --}}
+                    <div class="col-12 col-md-3">
+                        <label for="inputPeriodo" class="form-label text-muted fs-8 fw-bold text-uppercase mb-1">
+                            Periodo (Año/Mes)
+                        </label>
+                        <input type="month"
+                            name="periodo"
+                            id="inputPeriodo"
+                            value="{{ $periodo }}"
+                            class="form-control form-control-sm border-0 bg-light rounded-3 fw-bold text-dark font-monospace px-3"
+                            required>
+                    </div>
+
+                    {{-- 2. BUSCADOR GENERAL (Primario - Icono integrado y placeholder conciso) --}}
+                    <div class="col-12 col-md-4">
+                        <label for="buscar" class="form-label text-muted fs-8 fw-bold text-uppercase mb-1">
+                            Búsqueda general
+                        </label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text border-0 bg-light text-muted rounded-start-3 ps-3">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text"
+                                name="buscar"
+                                id="buscar"
+                                value="{{ request('buscar') }}"
+                                class="form-control border-0 bg-light rounded-end-3 text-dark"
+                                placeholder="Cédula, monto, PR, CCO, observación...">
+                        </div>
+                    </div>
+
+                    {{-- 3. SWITCH GLOBAL (Accesorio - Integrado y limpio) --}}
+                    <div class="col-6 col-md-2 pt-md-4">
+                        <div class="form-check form-switch m-0 d-flex align-items-center gap-2" title="Buscar en toda la base de datos sin importar la fecha">
+                            <input class="form-check-input mt-0 cursor-pointer" type="checkbox" role="switch" id="switchGlobal" name="is_global" value="1" {{ isset($is_global) && $is_global ? 'checked' : '' }}>
+                            <label class="form-check-label text-secondary fs-8 fw-bold cursor-pointer user-select-none text-uppercase" for="switchGlobal">
+                                Busqueda Global
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- 4. BOTONES DE ACCIÓN (Alineados en la misma línea) --}}
+                    <div class="col-6 col-md-3 d-flex align-items-center justify-content-end gap-2 pt-md-4">
+
+                        {{-- Botón de Limpiar Filtro (Circular discreto que solo aparece si hay filtros activos) --}}
+                        @if(request()->hasAny(['buscar', 'is_global', 'estado']))
+                            <a href="{{ route('cartera.comprobantes.index') }}"
+                            class="btn btn-sm btn-light text-muted rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0"
+                            style="width: 31px; height: 31px;"
+                            title="Limpiar filtros">
+                                <i class="fas fa-times fs-7"></i>
+                            </a>
+                        @endif
+
+                        {{-- Botón de Consultar Principal (Estilo pastilla profesional) --}}
+                        <button type5="submit" class="btn btn-sm btn-dark rounded-pill px-3 fw-semibold shadow-sm w-100">
+                            <i class="fas fa-filter me-1 opacity-75"></i> Consultar Base
+                        </button>
+                    </div>
+
+                </form>
             </div>
+        </div>
 
-            {{-- Filtro Opcional: Búsqueda Global --}}
-            <div class="flex-grow-1">
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda General</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="buscar" value="{{ request('buscar') }}"
-                        class="form-control border-gray-300"
-                        placeholder="Buscar cédula, monto, cuota, PR, CCO, tipo pago, observación...">
+        {{-- SECCIÓN DE KPIS ULTRA PROFESIONALES Y FLUIDOS --}}
+        <div class="row g-3 mb-4">
+
+            {{-- KPI 1: Monto Total --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 position-relative overflow-hidden transition-all">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold fs-8 text-uppercase tracking-wider">Monto Recaudado</span>
+                        <div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 42px; height: 42px;">
+                            <i class="fas fa-dollar-sign fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h3 class="fw-bolder text-dark mb-0 fs-3">
+                            $ {{ number_format($montoTotal, 0, ',', '.') }}
+                        </h3>
+                    </div>
+                    <div class="mt-2 text-success fs-9 fw-semibold d-flex align-items-center">
+                        <i class="fas fa-chart-line me-1"></i> Suma total del periodo
+                    </div>
+                    {{-- Línea de acento inferior --}}
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-success" style="height: 3px; opacity: 0.5;"></div>
                 </div>
             </div>
 
-            {{-- Switch para Rastreo Global --}}
-            <div class="pb-1">
-                <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0" title="Buscar en toda la base de datos sin importar la fecha">
-                    <input class="form-check-input m-0 cursor-pointer" type="checkbox" role="switch" id="switchGlobal" name="is_global" value="1" {{ isset($is_global) && $is_global ? 'checked' : '' }} style="height: 22px; width: 44px;">
-                    <label class="form-check-label fs-9 fw-bold text-dark cursor-pointer ms-2 text-uppercase" for="switchGlobal">
-                        Global
-                    </label>
+            {{-- KPI 2: Comprobantes --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 position-relative overflow-hidden transition-all">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold fs-8 text-uppercase tracking-wider">Comprobantes</span>
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 42px; height: 42px;">
+                            <i class="fas fa-file-invoice fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h3 class="fw-bolder text-dark mb-0 fs-3">
+                            {{ number_format($totalRegistros, 0, ',', '.') }}
+                        </h3>
+                    </div>
+                    <div class="mt-2 text-primary fs-9 fw-semibold d-flex align-items-center">
+                        <i class="fas fa-database me-1"></i> Registros filtrados activos
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-primary" style="height: 3px; opacity: 0.5;"></div>
                 </div>
             </div>
 
-            {{-- Botones de Filtrado --}}
-            <div>
-                <button type="submit" class="btn btn-sm btn-success fw-bold px-4">
-                    <i class="fas fa-filter me-1"></i> Consultar Base
-                </button>
-                <a href="{{ route('cartera.comprobantes.index') }}" class="btn btn-sm btn-light-danger btn-icon ms-1"
-                    title="Limpiar Filtros">
-                    <i class="fas fa-times"></i>
-                </a>
+            {{-- KPI 3: Pendientes --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 position-relative overflow-hidden transition-all">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold fs-8 text-uppercase tracking-wider">Pendientes</span>
+                        <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 42px; height: 42px;">
+                            <i class="fas fa-clock fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-baseline">
+                        <h3 class="fw-bolder text-dark mb-0 fs-3">
+                            {{ number_format($totalPendientes, 0, ',', '.') }}
+                        </h3>
+                    </div>
+                    <div class="mt-2 text-warning fs-9 fw-semibold d-flex align-items-center">
+                        <i class="fas fa-exclamation-circle me-1"></i> Requieren revisión de cartera
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-warning" style="height: 3px; opacity: 0.5;"></div>
+                </div>
             </div>
-        </form>
 
-        {{-- Contenedor de la Hoja --}}
+            {{-- KPI 4: Conciliados --}}
+            <div class="col-sm-6 col-xl-3">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100 position-relative overflow-hidden transition-all">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold fs-8 text-uppercase tracking-wider">Conciliados</span>
+                        <div class="bg-info bg-opacity-10 text-info rounded-circle d-flex align-items-center justify-content-center shadow-xs" style="width: 42px; height: 42px;">
+                            <i class="fas fa-check-circle fs-6"></i>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h3 class="fw-bolder text-dark mb-0 fs-3">
+                            {{ number_format($totalConciliados, 0, ',', '.') }}
+                        </h3>
+                        @if($totalRegistros > 0)
+                            <span class="badge bg-info bg-opacity-10 text-info fw-bold rounded-pill px-2.5 py-1 fs-9">
+                                {{ round(($totalConciliados / $totalRegistros) * 100) }}% del total
+                            </span>
+                        @endif
+                    </div>
+                    <div class="mt-2 text-info fs-9 fw-semibold d-flex align-items-center">
+                        <i class="fas fa-shield-alt me-1"></i> Pagos verificados con éxito
+                    </div>
+                    <div class="position-absolute bottom-0 start-0 end-0 bg-info" style="height: 3px; opacity: 0.5;"></div>
+                </div>
+            </div>
+
+        </div>
+
+        {{-- CONTENEDOR DE LA HOJA --}}
         <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column"
             style="border-radius: 0px; overflow: hidden; min-height: 500px;">
 
@@ -133,10 +263,10 @@
                                         $txs = $comprobante->id_transaccion_bancaria;
                                         $txStr = is_array($txs) && count($txs) > 0 ? implode(', ', $txs) : ($txs ? $txs : 'Ninguna');
                                     @endphp
-                                    <i class="fas fa-info-circle text-info" 
+                                    <i class="fas fa-info-circle text-info"
                                        style="cursor: help;"
-                                       data-bs-toggle="tooltip" 
-                                       data-bs-html="true" 
+                                       data-bs-toggle="tooltip"
+                                       data-bs-html="true"
                                        title="<div class='text-start p-1' style='font-size: 11px; min-width: 200px;'>
                                                 <div class='mb-2 text-warning fw-bolder border-bottom border-secondary pb-1'><i class='fas fa-code me-1'></i> DATOS TÉCNICOS</div>
                                                 <div class='mb-1'><strong class='text-white'>ID Interacción:</strong> <span class='text-light'>{{ $comprobante->id_interaction ?? 'N/A' }}</span></div>
@@ -396,7 +526,7 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                
+
                 // INICIALIZAR TOOLTIPS (PARA LA INFORMACIÓN AL PONER EL MOUSE)
                 const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
