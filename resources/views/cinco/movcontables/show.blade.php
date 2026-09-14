@@ -53,7 +53,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
-                            <h5>{{ $fechas->fecha_ipuc->format('Y-m-d') ?? 'sin fecha' }}</h5>
+                            <h5>{{ $fechas->fecha_ipuc?->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -70,7 +70,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
-                            <h5>{{ $fechas->fec_aport->format('Y-m-d') ?? 'sin fecha' }}</h5>
+                            <h5>{{ $fechas->fec_aport?->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -87,7 +87,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5>{{ $fechas->fec_minis->format('Y-m-d') ?? 'sin fecha' }}</h5>
+                            <h5>{{ $fechas->fec_minis?->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -143,8 +143,8 @@
                                                         <td>{{ $mov->NumComprob }}</td>
                                                         <td>{{ $mov->Fecha }}</td>
                                                         <td>{{ $mov->Observacion }}</td>
-                                                        <td>{{ number_format($mov->VrDebitos) }}</td>
-                                                        <td>{{ number_format($mov->VrCreditos) }}</td>
+                                                        <td>{{ number_format($mov->VrDebitos ?? 0) }}</td>
+                                                        <td>{{ number_format($mov->VrCreditos ?? 0) }}</td>
                                                     </tr>
                                                     @php
                                                         $contadorcreditos += $mov->VrCreditos;
@@ -159,8 +159,8 @@
                                                             <td>{{ $mov->NumComprob }}</td>
                                                             <td>{{ $mov->Fecha }}</td>
                                                             <td>{{ $mov->Observacion }}</td>
-                                                            <td>{{ number_format($mov->VrDebitos) }}</td>
-                                                            <td>{{ number_format($mov->VrCreditos) }}</td>
+                                                            <td>{{ number_format($mov->VrDebitos ?? 0) }}</td>
+                                                            <td>{{ number_format($mov->VrCreditos ?? 0) }}</td>
                                                         </tr>
                                                         @php
                                                             $contadorcreditos += $mov->VrCreditos;
@@ -175,10 +175,10 @@
                                                 <td></td>
                                                 <td></td>
                                                 <td><span class=fw-bold>Débitos: </span>$
-                                                    {{ number_format($contadordebitos) }}
+                                                    {{ number_format($contadordebitos ?? 0) }}
                                                 </td>
                                                 <td><span class=fw-bold>Créditos: </span>$
-                                                    {{ number_format($contadorcreditos) }}
+                                                    {{ number_format($contadorcreditos ?? 0) }}
                                                 </td>
                                             <tr>
                                         </tbody>

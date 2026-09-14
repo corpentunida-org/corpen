@@ -114,11 +114,11 @@
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Municipio</label>
-                            <select class="form-select" name="municipio" required>
+                            <select class="form-select" name="municipio" id="municipioSelect" required>
                                 <option value="" disabled {{ old('municipio', $congregacion->municipio) ? '' : 'selected' }}>Seleccione un municipio</option>
                                 @foreach($municipios as $m)
                                     <option value="{{ $m->id }}" {{ old('municipio', $congregacion->municipio) == $m->id ? 'selected' : '' }}>
-                                        {{ $m->nombre }}
+                                        {{ $m->id == \App\Models\Maestras\MaeCongregacion::MUNICIPIO_EXTERIOR_ID ? '🌎 ' . $m->nombre . ' (fuera de Colombia)' : $m->nombre }}
                                     </option>
                                 @endforeach
                             </select>
@@ -130,6 +130,15 @@
                                 value="{{ old('direccion', $congregacion->direccion) }}">
                         </div>
 
+                    </div>
+
+                    <div class="row" id="filaMunicipioExterior" style="display: none;">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Ciudad / País</label>
+                            <input type="text" class="form-control" name="municipio_exterior_detalle"
+                                placeholder="Ej: Lima, Perú"
+                                value="{{ old('municipio_exterior_detalle', $congregacion->municipio_exterior_detalle) }}">
+                        </div>
                     </div>
 
                     <div class="row">
@@ -214,7 +223,7 @@
                         function buscar(cedula) {
                             if (cedula.length >= 5) {
                                 nombreInput.value = 'Buscando...';
-                                fetch(`/buscar-pastor?cedula=${cedula}`)
+                                fetch(`{{ route('maestras.buscar.pastor') }}?cedula=${cedula}`)
                                     .then(res => {
                                         if (!res.ok) throw new Error();
                                         return res.json();
@@ -246,6 +255,21 @@
                     // Activar búsqueda en ambos campos
                     buscarPastorPorCampo('cedulaPastor', 'nombrePastor');
                     buscarPastorPorCampo('cedulaPastorAnterior', 'nombrePastorAnterior');
+                </script>
+
+                <script>
+                    (function () {
+                        var MUNICIPIO_EXTERIOR_ID = '{{ \App\Models\Maestras\MaeCongregacion::MUNICIPIO_EXTERIOR_ID }}';
+                        var select = document.getElementById('municipioSelect');
+                        var fila = document.getElementById('filaMunicipioExterior');
+
+                        function toggle() {
+                            fila.style.display = (select.value === MUNICIPIO_EXTERIOR_ID) ? '' : 'none';
+                        }
+
+                        select.addEventListener('change', toggle);
+                        toggle();
+                    })();
                 </script>
 
 
