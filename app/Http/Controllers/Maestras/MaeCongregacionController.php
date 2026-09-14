@@ -70,6 +70,7 @@ class MaeCongregacionController extends Controller
             'estado' => $request->estado,
             'clase' => $request->clase,
             'municipio' => $request->municipio,
+            'municipio_exterior_detalle' => $this->municipioExteriorDetalle($request),
             'direccion' => strtoupper($request->direccion),
             'telefono' => $request->telefono,
             'celular' => $request->celular,
@@ -109,6 +110,7 @@ class MaeCongregacionController extends Controller
             'estado' => $request->estado,
             'clase' => $request->clase,
             'municipio' => $request->municipio,
+            'municipio_exterior_detalle' => $this->municipioExteriorDetalle($request),
             'direccion' => strtoupper($request->direccion),
             'telefono' => $request->telefono,
             'celular' => $request->celular,
@@ -119,6 +121,20 @@ class MaeCongregacionController extends Controller
         ]);
 
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación actualizada exitosamente!');
+    }
+
+    /**
+     * El detalle libre (ciudad/país) solo tiene sentido cuando se elige el municipio
+     * "sentinela" de Otro/Exterior; si se elige un municipio real, se limpia para no dejar
+     * texto viejo colgado de una elección anterior.
+     */
+    private function municipioExteriorDetalle(Request $request): ?string
+    {
+        if ((int) $request->municipio !== MaeCongregacion::MUNICIPIO_EXTERIOR_ID) {
+            return null;
+        }
+
+        return $request->municipio_exterior_detalle ? strtoupper($request->municipio_exterior_detalle) : null;
     }
 
     /**
@@ -158,7 +174,7 @@ class MaeCongregacionController extends Controller
      */
     public function show($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTercero'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 
@@ -178,7 +194,7 @@ class MaeCongregacionController extends Controller
      */
     public function generarPdf($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTercero'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 

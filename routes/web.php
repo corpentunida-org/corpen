@@ -95,6 +95,8 @@ use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 
 //MAESTRAS
 use App\Http\Controllers\Maestras\MaeCongregacionController;
+use App\Http\Controllers\Maestras\MaeDistritoController;
+use App\Http\Controllers\Maestras\CongregacionImportController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
@@ -669,11 +671,29 @@ Route::prefix('maestras')
             ->parameters(['tipos' => 'tipo']);
 
         // CONGREGACION (CORREGIDO)
+        // La importación va ANTES del resource: el resource registra un GET
+        // congregaciones/{congregacion} (show) que, si va primero, se traga "importar" como si
+        // fuera un código de congregación (route model binding falla -> 404 engañoso).
+        Route::prefix('congregaciones/importar')
+            ->name('congregacion.importar.')
+            ->middleware('candirect:maestras.congregaciones.importar')
+            ->group(function () {
+                Route::get('/', [CongregacionImportController::class, 'index'])->name('index');
+                Route::post('analizar', [CongregacionImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [CongregacionImportController::class, 'confirmar'])->name('confirmar');
+            });
+
         Route::resource('congregaciones', MaeCongregacionController::class)
             ->names('congregacion')
             ->parameters(['congregaciones' => 'congregacion']);
 
         Route::get('buscar-pastor', [MaeCongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
+
+        // DISTRITOS
+        Route::resource('distritos', MaeDistritoController::class)
+            ->names('distrito')
+            ->parameters(['distritos' => 'distrito'])
+            ->except(['show']);
 
         Route::get('departamentos/{region}', [MaeMunicipiosController::class, 'listadepartamentos'])->name('departamentos.listar');
         Route::get('municipios/{departamento}', [MaeMunicipiosController::class, 'listamunicipios'])->name('municipios.listar');

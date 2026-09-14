@@ -192,7 +192,7 @@
                 </tr>
                 <tr>
                     <th>Municipio</th>
-                    <td>{{ $congregacion->maeMunicipios->nombre ?? 'No disponible' }}</td>
+                    <td>{{ $congregacion->municipio_nombre ?? 'No disponible' }}</td>
                 </tr>
             </table>
 
@@ -201,8 +201,8 @@
                 <tr>
                     <th>Pastor Asignado</th>
                     <td>
-                        <strong>{{ $congregacion->MaeTerceros->nom_ter ?? 'Sin asignar' }}</strong><br>
-                        <small>Código: {{ $congregacion->MaeTerceros->cod_ter ?? 'N/A' }}</small>
+                        <strong>{{ $congregacion->maeTercero->nom_ter ?? 'Sin asignar' }}</strong><br>
+                        <small>Código: {{ $congregacion->maeTercero->cod_ter ?? 'N/A' }}</small>
                     </td>
                 </tr>
                 <tr>
