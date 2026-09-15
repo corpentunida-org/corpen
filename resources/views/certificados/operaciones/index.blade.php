@@ -789,10 +789,12 @@
                                                 @forelse($operaciones as $operacion)
                                                     <tr style="border-bottom: 1px solid #f1f3f5;">
 
-                                                        {{-- Columna: Radicado --}}
+                                                        {{-- Columna: Radicado (AHORA ES CLICKEABLE) --}}
                                                         <td class="ps-3 py-2">
-                                                            <div class="fw-bold text-dark">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
-                                                            <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
+                                                            <a href="{{ route('certificados.operaciones.show', $operacion->id) }}" class="text-decoration-none d-block">
+                                                                <div class="fw-bold text-primary">{{ $operacion->numero_radicado ?? 'N/A' }}</div>
+                                                                <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-cube me-1 opacity-50"></i> API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
+                                                            </a>
                                                         </td>
 
                                                         {{-- Columna: Tercero --}}

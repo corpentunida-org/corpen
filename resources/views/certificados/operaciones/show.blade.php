@@ -1128,7 +1128,8 @@
 
                                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
                                         <div class="table-responsive">
-                                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 0.75rem;">
+                                            {{-- ID AGREGADO AQUÍ PARA CONTROLAR EL ACORDEÓN --}}
+                                            <table class="table table-sm table-bordered align-middle mb-0" id="acordeonCertificados" style="font-size: 0.75rem;">
                                                 @foreach($historialTipos as $registro)
                                                     @php
                                                         $certId = $loop->iteration;
@@ -1176,7 +1177,8 @@
                                                     </thead>
 
                                                     {{-- Cuerpo del Certificado (Controles, PDF y Editor en linea) --}}
-                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                                    {{-- ATRIBUTO data-bs-parent AGREGADO AQUÍ PARA CERRAR LOS DEMÁS --}}
+                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" data-bs-parent="#acordeonCertificados" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
                                                         <tr>
                                                             <td class="p-3 bg-white">
 
@@ -1338,7 +1340,7 @@
                                                                         @endif
                                                                     </form>
 
-                                                                    {{-- NUEVO MODAL: PARÁMETROS / DÍAS DE GRACIA (Se coloca fuera del formulario) --}}
+                                                                    {{-- MODAL: PARÁMETROS / DÍAS DE GRACIA --}}
                                                                     <div class="modal fade" id="modalParametros_{{ $certId }}" tabindex="-1" aria-hidden="true">
                                                                         <div class="modal-dialog modal-dialog-centered modal-sm">
                                                                             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1511,7 +1513,6 @@
                                                         </div>
                                                         <div class="modal-footer border-0 px-4 pb-4 pt-0">
                                                             <button type="button" class="btn btn-sm btn-light rounded-1 px-3" data-bs-dismiss="modal">Cancelar</button>
-                                                            {{-- Llamado JS para submit global --}}
                                                             <button type="button" class="btn btn-sm btn-success rounded-1 px-4 fw-bold shadow-sm" onclick="enviarFormularioRemoto('formEditor_{{ $certId }}', this)">
                                                                 Confirmar y Guardar
                                                             </button>
@@ -1520,19 +1521,13 @@
                                                 </div>
                                             </div>
 
-                                            {{-- ========================================================= --}}
-                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO              --}}
-                                            {{-- ========================================================= --}}
+                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO --}}
                                             @foreach($lineasEditor as $linea)
                                                 @php
-                                                    // Decodificación segura del JSON de metadatos
                                                     $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
-
-                                                    // Extracción de reglas
                                                     $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
                                                     $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
-                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia); // Cálculo matemático real
-
+                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia);
                                                     $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
                                                     $observacionFase = $meta['observacion_fase'] ?? '';
                                                     $observacionGeneral = $linea->observacion ?? '';
@@ -1541,22 +1536,18 @@
                                                 <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
                                                     <div class="modal-dialog modal-dialog-centered modal-lg">
                                                         <div class="modal-content border-0 shadow-lg rounded-4">
-
-                                                            {{-- Header --}}
                                                             <div class="modal-header border-0 pb-0 pt-4 px-4">
                                                                 <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
                                                                     <i class="fas fa-microscope me-2"></i> Radiografía del Cálculo
                                                                 </h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                                             </div>
-
                                                             <div class="modal-body p-4">
                                                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                                                     <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
                                                                     <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
                                                                 </div>
 
-                                                                {{-- SECCIÓN 1: Fechas --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
                                                                 <div class="row g-3 mb-4">
                                                                     <div class="col-md-6">
@@ -1573,7 +1564,6 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {{-- SECCIÓN 2: Ecuación Visual --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-calculator me-2"></i>2. Cálculo de Mora</h6>
                                                                 <div class="row g-2 mb-2 align-items-center text-center">
                                                                     <div class="col">
@@ -1603,16 +1593,13 @@
                                                                 </div>
                                                                 <p class="text-muted text-center mb-4" style="font-size: 0.75rem;">La calificación se determinó basándose en <strong>{{ $moraEfectiva }} días</strong> de mora efectiva.</p>
 
-                                                                {{-- SECCIÓN 3: Dictamen y Reglas --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
                                                                 <div class="alert bg-light border rounded-3 mb-0">
-
                                                                     <div class="bg-white p-3 rounded border mb-3">
                                                                         <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
                                                                             > {{ $observacionGeneral ?: $observacionFase }}
                                                                         </p>
                                                                     </div>
-
                                                                     <div class="row align-items-center mb-3 text-center">
                                                                         <div class="col-6 border-end">
                                                                             <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Clasificación de Regla</span>
@@ -1625,25 +1612,7 @@
                                                                             </span>
                                                                         </div>
                                                                     </div>
-
-                                                                    <hr class="text-muted opacity-25">
-
-                                                                    <div class="row text-dark" style="font-size: 0.75rem;">
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['requiere_accion']) ? 'fa-check-circle text-success' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Requiere Acción Manual
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['bloqueo_automatico']) ? 'fa-check-circle text-danger' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Bloqueo Automático
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['notificacion_gerencia']) ? 'fa-check-circle text-warning' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Notificación a Gerencia
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ isset($meta['mora_dias_max']) && $meta['mora_dias_max'] > 0 ? 'fa-check-circle text-primary' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Límite Máximo de Regla: {{ $meta['mora_dias_max'] ?? 0 }} días
-                                                                        </div>
-                                                                    </div>
                                                                 </div>
-
                                                             </div>
                                                             <div class="modal-footer border-0 bg-light rounded-bottom-4">
                                                                 <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
@@ -1664,6 +1633,7 @@
                                     </div>
                                 @endif
                             </div>
+
 
                             {{-- ======================================================= --}}
                             {{-- TAB 5: GRÁFICOS E INDICADORES                           --}}
