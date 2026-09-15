@@ -252,7 +252,7 @@
                         </td>
                         <td>
                             @if($esAlDia)
-                                <span class="text-al-dia">AL DÍA</span>
+                                <span class="text-al-dia">PENDIENTE</span>
                             @else
                                 <span class="text-en-mora">EN MORA</span>
                             @endif

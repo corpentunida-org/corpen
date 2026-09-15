@@ -164,7 +164,7 @@
                         <td class="text-center">{{ $fechaVencimiento }}</td>
                         <td class="text-center">
                             <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                {{ $esAlDia ? 'AL DÍA' : "EN MORA ($peorMora días)" }}
+                                {{ $esAlDia ? 'PENDIENTE' : "EN MORA ($peorMora días)" }}
                             </span>
                         </td>
                     </tr>
