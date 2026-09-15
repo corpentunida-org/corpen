@@ -128,7 +128,7 @@
                             <div class="bg-light rounded-4 p-3 mb-3">
                                 <!-- Contenedor Flex para alinear texto a la izq y botón a la der -->
                                 <div class="d-flex justify-content-between align-items-start">
-                                    
+
                                     <!-- Datos del cliente -->
                                     <div>
                                         <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
@@ -137,24 +137,24 @@
 
                                     <!-- NUEVO: Píldora Desplegable Sutil -->
                                     <div class="dropdown ms-2">
-                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center" 
-                                                type="button" 
-                                                data-bs-toggle="dropdown" 
+                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center"
+                                                type="button"
+                                                data-bs-toggle="dropdown"
                                                 aria-expanded="false"
                                                 title="Ver historial de operaciones">
-                                            <i class="fas fa-history me-1 text-muted"></i> 
+                                            <i class="fas fa-history me-1 text-muted"></i>
                                             <span class="ms-1">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
                                         </button>
-                                        
+
                                         <!-- Menú flotante compacto -->
                                         <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="width: 260px; max-height: 250px; overflow-y: auto;">
                                             <li><h6 class="dropdown-header text-muted fs-8 text-uppercase fw-bold ls-1 mb-1">Historial Reciente</h6></li>
-                                            
+
                                             @if(isset($operacionesDelTercero) && $operacionesDelTercero->count() > 0)
                                                 @foreach($operacionesDelTercero as $opTercero)
                                                     @php $esActual = $opTercero->id == $operacion->id; @endphp
                                                     <li>
-                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1" 
+                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1"
                                                         href="{{ route('certificados.operaciones.show', $opTercero->id) }}"
                                                             <span class="text-truncate" style="max-width: 150px;">
                                                                 <i class="fas {{ $esActual ? 'fa-dot-circle' : 'fa-circle' }} fs-9 me-2 {{ $esActual ? 'text-primary' : 'text-muted opacity-25' }}"></i>
@@ -175,7 +175,7 @@
 
                                 </div>
                             </div>
-                            
+
                             <div class="d-flex justify-content-between mb-2 fs-7">
                                 <span class="text-muted"><i class="fas fa-phone-alt me-2 opacity-50"></i>Teléfono:</span>
                                 <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
@@ -1128,7 +1128,8 @@
 
                                     <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
                                         <div class="table-responsive">
-                                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 0.75rem;">
+                                            {{-- ID AGREGADO AQUÍ PARA CONTROLAR EL ACORDEÓN --}}
+                                            <table class="table table-sm table-bordered align-middle mb-0" id="acordeonCertificados" style="font-size: 0.75rem;">
                                                 @foreach($historialTipos as $registro)
                                                     @php
                                                         $certId = $loop->iteration;
@@ -1176,15 +1177,44 @@
                                                     </thead>
 
                                                     {{-- Cuerpo del Certificado (Controles, PDF y Editor en linea) --}}
-                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                                    {{-- ATRIBUTO data-bs-parent AGREGADO AQUÍ PARA CERRAR LOS DEMÁS --}}
+                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" data-bs-parent="#acordeonCertificados" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
                                                         <tr>
                                                             <td class="p-3 bg-white">
+
+                                                                @php
+                                                                    // 1. Variables dinámicas usando las relaciones reales del modelo $operacion->tercero
+                                                                    $telefonoDestino = $operacion->tercero->tel ?? '0000000000'; // Sin el '57', se le añade abajo
+                                                                    $nombreCliente   = $operacion->tercero->nom_ter ?? 'Nombre del Cliente';
+                                                                    $numeroCredito   = $operacion->numero_radicado ?? $operacion->id;
+                                                                    $remitente1      = Auth::user()->name ?? 'Asesor';
+                                                                    $remitente2      = 'SIA Cartera';
+
+                                                                    // 2. Generar la URL absoluta del PDF
+                                                                    $urlPdf = route('certificados.operaciones.pdf_individual', [
+                                                                        'id'      => $operacion->id,
+                                                                        'tipo_id' => $tipo->id ?? null,
+                                                                        'hash'    => $hashActual
+                                                                    ]);
+
+                                                                    // 3. Construir el texto del mensaje (usando \n para los saltos de línea)
+                                                                    $mensajeTexto = "Dios lo bendiga Hermano: \n*{$nombreCliente}*\nAdjunto encontrará el reporte de su estado de cuenta del crédito {$numeroCredito}\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n\nQuedo atento a cualquier comentario o sugerencia que desee compartir.\n\n*Gracias por su atención.*\nCordialmente;\n_{$remitente1}_\n_{$remitente2}_\n\n*Nota:* Si tiene problemas con el enlace adjunto, contáctenos por este medio.\n\n*Adjunto Documento:* \n{$urlPdf}";
+
+                                                                    // 4. Armar el enlace final codificando el texto
+                                                                    $linkWhatsapp = "https://api.whatsapp.com/send?phone=57{$telefonoDestino}&text=" . urlencode($mensajeTexto);
+                                                                @endphp
 
                                                                 {{-- Controles (Botones alternar PDF/Editor y Versiones) --}}
                                                                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom border-dashed">
                                                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase mb-2 mb-md-0"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
 
                                                                     <div class="d-flex align-items-center gap-3">
+
+                                                                        {{-- BOTÓN DE WHATSAPP INTEGRADO AQUÍ --}}
+                                                                        <a href="{{ $linkWhatsapp }}" target="_blank" class="btn btn-sm btn-success rounded-1 px-3 fw-bold shadow-sm d-flex align-items-center" title="Enviar PDF por WhatsApp">
+                                                                            <i class="fab fa-whatsapp me-2 fs-6"></i> Enviar por WhatsApp
+                                                                        </a>
+
                                                                         @if($versionesDeEsteTipo->count() > 1)
                                                                             <button type="button" class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
                                                                                 <i class="fas fa-history me-1"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
@@ -1218,7 +1248,7 @@
                                                                             <div class="text-dark" style="font-size: 0.85rem;">
                                                                                 <i class="fas fa-info-circle text-primary me-2"></i> Las columnas resaltadas con el icono <i class="fas fa-pen text-primary mx-1"></i> son editables.
                                                                             </div>
-                                                                            
+
                                                                             <button type="button" class="btn btn-sm btn-white border shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalParametros_{{ $certId }}">
                                                                                 <i class="fas fa-sliders-h me-1"></i> Parámetros de Regla
                                                                             </button>
@@ -1268,7 +1298,15 @@
                                                                                                 @endif
                                                                                             </td>
 
-                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">{{ $linea->id_car_sia_lineas }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">
+                                                                                                {{-- Muestra el número de cuenta --}}
+                                                                                                <span class="d-block fw-bold text-dark" style="font-size: 0.75rem;">{{ $linea->id_car_sia_lineas }}</span>
+
+                                                                                                {{-- Muestra el campo de la relación (Ej: nombre). Usamos optional() por si viene nulo y no rompa la vista --}}
+                                                                                                <span style="font-size: 0.65rem;" title="Nombre de la línea">
+                                                                                                    {{ optional($linea->factura->lineaSia)->nombre ?? 'Sin descripción' }}
+                                                                                                </span>
+                                                                                            </td>
 
                                                                                             {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
                                                                                             <td class="p-0 align-middle position-relative">
@@ -1330,7 +1368,7 @@
                                                                         @endif
                                                                     </form>
 
-                                                                    {{-- NUEVO MODAL: PARÁMETROS / DÍAS DE GRACIA (Se coloca fuera del formulario) --}}
+                                                                    {{-- MODAL: PARÁMETROS / DÍAS DE GRACIA --}}
                                                                     <div class="modal fade" id="modalParametros_{{ $certId }}" tabindex="-1" aria-hidden="true">
                                                                         <div class="modal-dialog modal-dialog-centered modal-sm">
                                                                             <div class="modal-content border-0 shadow-lg rounded-4">
@@ -1349,8 +1387,8 @@
                                                                                     </div>
                                                                                 </div>
                                                                                 <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4" 
-                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;" 
+                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4"
+                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;"
                                                                                             data-bs-dismiss="modal">
                                                                                         Aplicar Parámetro
                                                                                     </button>
@@ -1503,7 +1541,6 @@
                                                         </div>
                                                         <div class="modal-footer border-0 px-4 pb-4 pt-0">
                                                             <button type="button" class="btn btn-sm btn-light rounded-1 px-3" data-bs-dismiss="modal">Cancelar</button>
-                                                            {{-- Llamado JS para submit global --}}
                                                             <button type="button" class="btn btn-sm btn-success rounded-1 px-4 fw-bold shadow-sm" onclick="enviarFormularioRemoto('formEditor_{{ $certId }}', this)">
                                                                 Confirmar y Guardar
                                                             </button>
@@ -1511,20 +1548,14 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            {{-- ========================================================= --}}
-                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO              --}}
-                                            {{-- ========================================================= --}}
+
+                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO --}}
                                             @foreach($lineasEditor as $linea)
                                                 @php
-                                                    // Decodificación segura del JSON de metadatos
                                                     $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
-                                                    
-                                                    // Extracción de reglas
                                                     $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
                                                     $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
-                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia); // Cálculo matemático real
-                                                    
+                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia);
                                                     $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
                                                     $observacionFase = $meta['observacion_fase'] ?? '';
                                                     $observacionGeneral = $linea->observacion ?? '';
@@ -1533,22 +1564,18 @@
                                                 <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
                                                     <div class="modal-dialog modal-dialog-centered modal-lg">
                                                         <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            
-                                                            {{-- Header --}}
                                                             <div class="modal-header border-0 pb-0 pt-4 px-4">
                                                                 <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
                                                                     <i class="fas fa-microscope me-2"></i> Radiografía del Cálculo
                                                                 </h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                                                             </div>
-
                                                             <div class="modal-body p-4">
                                                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                                                     <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
                                                                     <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
                                                                 </div>
-                                                                
-                                                                {{-- SECCIÓN 1: Fechas --}}
+
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
                                                                 <div class="row g-3 mb-4">
                                                                     <div class="col-md-6">
@@ -1565,7 +1592,6 @@
                                                                     </div>
                                                                 </div>
 
-                                                                {{-- SECCIÓN 2: Ecuación Visual --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-calculator me-2"></i>2. Cálculo de Mora</h6>
                                                                 <div class="row g-2 mb-2 align-items-center text-center">
                                                                     <div class="col">
@@ -1595,16 +1621,13 @@
                                                                 </div>
                                                                 <p class="text-muted text-center mb-4" style="font-size: 0.75rem;">La calificación se determinó basándose en <strong>{{ $moraEfectiva }} días</strong> de mora efectiva.</p>
 
-                                                                {{-- SECCIÓN 3: Dictamen y Reglas --}}
                                                                 <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
                                                                 <div class="alert bg-light border rounded-3 mb-0">
-                                                                    
                                                                     <div class="bg-white p-3 rounded border mb-3">
                                                                         <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
                                                                             > {{ $observacionGeneral ?: $observacionFase }}
                                                                         </p>
                                                                     </div>
-
                                                                     <div class="row align-items-center mb-3 text-center">
                                                                         <div class="col-6 border-end">
                                                                             <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Clasificación de Regla</span>
@@ -1617,25 +1640,7 @@
                                                                             </span>
                                                                         </div>
                                                                     </div>
-
-                                                                    <hr class="text-muted opacity-25">
-
-                                                                    <div class="row text-dark" style="font-size: 0.75rem;">
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['requiere_accion']) ? 'fa-check-circle text-success' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Requiere Acción Manual
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['bloqueo_automatico']) ? 'fa-check-circle text-danger' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Bloqueo Automático
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ !empty($meta['notificacion_gerencia']) ? 'fa-check-circle text-warning' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Notificación a Gerencia
-                                                                        </div>
-                                                                        <div class="col-md-6 mb-2">
-                                                                            <i class="fas {{ isset($meta['mora_dias_max']) && $meta['mora_dias_max'] > 0 ? 'fa-check-circle text-primary' : 'fa-times-circle text-muted opacity-50' }} me-2"></i> Límite Máximo de Regla: {{ $meta['mora_dias_max'] ?? 0 }} días
-                                                                        </div>
-                                                                    </div>
                                                                 </div>
-                                                                
                                                             </div>
                                                             <div class="modal-footer border-0 bg-light rounded-bottom-4">
                                                                 <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
@@ -1656,6 +1661,7 @@
                                     </div>
                                 @endif
                             </div>
+                            {{-- Cierrte tab 4 --}}
 
                             {{-- ======================================================= --}}
                             {{-- TAB 5: GRÁFICOS E INDICADORES                           --}}
