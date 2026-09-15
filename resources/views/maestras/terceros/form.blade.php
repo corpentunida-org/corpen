@@ -240,16 +240,12 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     @elseif($field === 'cod_dist')
-                                        <select
-                                            name="{{ $field }}"class="form-select @error('cod_dist') is-invalid @enderror">
-                                            @foreach ($distritos as $distrito)
-                                                <option value="{{ $distrito->COD_DIST }}" @selected($value == $distrito->COD_DIST)>
-                                                    {{ $distrito->NOM_DIST }}</option>
-                                            @endforeach
-                                        </select>
-                                        @error('cod_dist')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
+                                        @php
+                                            $distritoActual = $distritos->firstWhere('COD_DIST', $value);
+                                        @endphp
+                                        <input type="text" class="form-control bg-light-subtle" disabled
+                                            value="{{ $distritoActual->NOM_DIST ?? ($value ?: 'Sin distrito') }}">
+                                        <small class="text-muted">Se toma automáticamente de la congregación — no se edita aquí.</small>
                                     @elseif($field === 'sexo')
                                         <select name="sexo" class="form-select @error('sexo') is-invalid @enderror">
                                             <option value="">Seleccione...</option>
@@ -270,6 +266,13 @@
                                         @error($field)
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
+                                    @elseif($field === 'congrega')
+                                        @php
+                                            $congregacionActual = \App\Models\Maestras\MaeCongregacion::where('codigo', $value)->first();
+                                        @endphp
+                                        <input type="text" class="form-control bg-light-subtle" disabled
+                                            value="{{ $congregacionActual->nombre ?? ($value ?: 'Sin congregación') }}">
+                                        <small class="text-muted">Se toma automáticamente de la congregación — no se edita aquí.</small>
                                     @elseif(in_array($field, ['observ', 'razon_soc', 'nom_conyug']))
                                         <textarea name="{{ $field }}" class="form-control @error($field) is-invalid @enderror" rows="2"
                                             placeholder="Ingrese {{ str_replace('_', ' ', $field) }}">{{ $value }}</textarea>

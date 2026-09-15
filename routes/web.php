@@ -97,6 +97,8 @@ use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 use App\Http\Controllers\Maestras\MaeCongregacionController;
 use App\Http\Controllers\Maestras\MaeDistritoController;
 use App\Http\Controllers\Maestras\CongregacionImportController;
+use App\Http\Controllers\Maestras\TerceroImportController;
+use App\Http\Controllers\Maestras\ComaeTerImportController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
@@ -660,10 +662,36 @@ Route::prefix('maestras')
     ->name('maestras.')
     ->group(function () {
         // TERCEROS
+        // La importación va ANTES del resource, por la misma razón que en Congregaciones: el
+        // resource registra GET terceros/{tercero} (show), que si va primero se traga
+        // "importar" como si fuera una cédula (route model binding falla -> 404 engañoso).
+        Route::prefix('terceros/importar')
+            ->name('terceros.importar.')
+            ->middleware('candirect:maestras.terceros.importar')
+            ->group(function () {
+                Route::get('/', [TerceroImportController::class, 'index'])->name('index');
+                Route::get('plantilla', [TerceroImportController::class, 'plantilla'])->name('plantilla');
+                Route::post('analizar', [TerceroImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [TerceroImportController::class, 'confirmar'])->name('confirmar');
+            });
+
         Route::resource('terceros', MaeTercerosController::class)
             ->names('terceros')
             ->parameters(['terceros' => 'tercero']);
         Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])->name('terceros.generarPdf');
+
+        // COMAE_TER: import genérico del volcado externo de Terceros (no solo pastores). Prefijo
+        // propio fuera de "terceros/" a propósito, para no depender del orden con el resource de
+        // arriba.
+        Route::prefix('comae-ter/importar')
+            ->name('comaeter.importar.')
+            ->middleware('candirect:maestras.comaeter.importar')
+            ->group(function () {
+                Route::get('/', [ComaeTerImportController::class, 'index'])->name('index');
+                Route::get('plantilla', [ComaeTerImportController::class, 'plantilla'])->name('plantilla');
+                Route::post('analizar', [ComaeTerImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [ComaeTerImportController::class, 'confirmar'])->name('confirmar');
+            });
 
         // TIPO
         Route::resource('tipos', MaeTiposController::class)

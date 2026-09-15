@@ -181,10 +181,13 @@ class CongregacionImportService
         $analisis = $this->analizar($filas);
         $porAplicar = array_merge($analisis['nuevos'], $analisis['actualizaciones']);
 
-        // cod_ter => codigo de la congregación que pastorea, para la cascada a MaeTerceros.congrega.
+        // cod_ter => [codigo, distrito] de la congregación que pastorea, para la cascada a
+        // MaeTerceros (congrega + cod_dist juntos — antes solo se cascadeaba congrega, dejando
+        // cod_dist desincronizado para todo pastor que solo pasara por esta importación y no
+        // por el backfill manual).
         $pastorPorCongregacion = collect($porAplicar)
             ->filter(fn ($f) => !empty($f['datos']['pastor']))
-            ->pluck('datos.codigo', 'datos.pastor');
+            ->mapWithKeys(fn ($f) => [$f['datos']['pastor'] => ['codigo' => $f['datos']['codigo'], 'distrito' => $f['datos']['distrito']]]);
 
         DB::transaction(function () use ($porAplicar, $pastorPorCongregacion) {
             foreach (array_chunk($porAplicar, self::TAMANO_LOTE) as $lote) {
@@ -216,20 +219,26 @@ class CongregacionImportService
             return;
         }
 
-        $case = 'CASE cod_ter ';
-        $bindings = [];
-        foreach ($lote as $codTer => $codigoCongregacion) {
-            $case .= 'WHEN ? THEN ? ';
-            $bindings[] = $codTer;
-            $bindings[] = $codigoCongregacion;
+        $casoCongrega = 'CASE cod_ter ';
+        $casoDistrito = 'CASE cod_ter ';
+        $bindingsCongrega = [];
+        $bindingsDistrito = [];
+        foreach ($lote as $codTer => $datos) {
+            $casoCongrega .= 'WHEN ? THEN ? ';
+            $bindingsCongrega[] = $codTer;
+            $bindingsCongrega[] = $datos['codigo'];
+            $casoDistrito .= 'WHEN ? THEN ? ';
+            $bindingsDistrito[] = $codTer;
+            $bindingsDistrito[] = $datos['distrito'];
         }
-        $case .= 'END';
+        $casoCongrega .= 'END';
+        $casoDistrito .= 'END';
 
         $placeholders = implode(',', array_fill(0, count($codTers), '?'));
 
         DB::update(
-            "UPDATE MaeTerceros SET congrega = {$case} WHERE cod_ter IN ({$placeholders})",
-            [...$bindings, ...$codTers]
+            "UPDATE MaeTerceros SET congrega = {$casoCongrega}, cod_dist = {$casoDistrito} WHERE cod_ter IN ({$placeholders})",
+            [...$bindingsCongrega, ...$bindingsDistrito, ...$codTers]
         );
     }
 

@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
         AdminIntegracionesPermissionsSeeder::class,
         InformeUsoPermissionsSeeder::class,
         CongregacionImportarPermissionsSeeder::class,
+        TerceroImportarPermissionsSeeder::class,
     ]);
     }
 }
