@@ -216,7 +216,7 @@ class OperacionController extends Controller
                 $totalLinea = $facturas->sum('valor');
                 $facturasOrdenadas = $facturas->sortBy('cuota')->map(function($factura) {
                     if ($factura->fecha_venci) {
-                        $fechaV = Carbon::parse($factura->fecha_venci);
+                        $fechaV = \Carbon\Carbon::parse($factura->fecha_venci);
                         $factura->diasMoraCalculados = now()->diffInDays($fechaV, false);
                         $factura->fechaVFormateada = $fechaV->format('d/m/Y');
                     } else {
@@ -316,6 +316,7 @@ class OperacionController extends Controller
                 })
                 ->orderBy('created_at', 'desc')
                 ->get()
+                ->unique('id_car_sia_tipos') // <-- NUEVO: Evita que salgan múltiples acordeones del mismo tipo
                 ->map(function ($registro) use ($operacion) {
                     $registro->es_lote = is_null($registro->id_car_sia_operaciones);
                     $lineaAsociada = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos)->first();
@@ -330,24 +331,38 @@ class OperacionController extends Controller
                         }
                     }
 
-                    // Líneas asociadas a este tipo en general para calcular versiones
-                    $lineasParaEsteTipo = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos);
+                    // =========================================================================
+                    // SOLUCIÓN: Filtro inteligente que agrupa la versión masiva y las individuales
+                    // =========================================================================
+                    $lineasParaEsteTipo = collect($operacion->lineas)->filter(function($linea) use ($registro) {
+                        // 1. Es una línea guardada explícitamente para este tipo (La nueva versión)
+                        if ($linea->id_car_sia_tipos == $registro->id_car_sia_tipos) return true;
+
+                        // 2. Es una línea del masivo (Base). No tiene tipo asignado, le sirve a todos para empezar.
+                        if (empty($linea->id_car_sia_tipos) && !str_contains($linea->hash_certificado, '-TIPO-')) return true;
+
+                        // 3. Fallback de seguridad leyendo el string del hash
+                        if (str_contains($linea->hash_certificado, "-TIPO-{$registro->id_car_sia_tipos}-")) return true;
+
+                        return false;
+                    });
 
                     $versionesDeEsteTipo = collect($lineasParaEsteTipo)->groupBy('hash_certificado')->map(function($grupo) {
                         return collect($grupo)->first();
                     })->sortByDesc('created_at');
 
-                    // CORRECCIÓN: Obtener el hash actual de forma robusta directamente consultando la BD
-                    $hashActual = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                        ->orderBy('created_at', 'desc')
-                        ->value('hash_certificado');
+                    // Tomamos directamente el hash de la primera versión (la más reciente)
+                    $hashActual = $versionesDeEsteTipo->first()->hash_certificado ?? null;
 
-                    // CORRECCIÓN: Consultar las líneas del editor filtrando por el hash actual para que no lleguen vacías
-                    $lineasEditor = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
-                        ->where('numero_bloque', $operacion->numero_bloque)
-                        ->where('hash_certificado', $hashActual)
-                        ->get()
-                        ->unique('id_factura');
+                    // Consultar las líneas del editor filtrando por el hash actual
+                    $lineasEditor = collect();
+                    if ($hashActual) {
+                        $lineasEditor = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                            ->where('numero_bloque', $operacion->numero_bloque)
+                            ->where('hash_certificado', $hashActual)
+                            ->get()
+                            ->unique('id_factura');
+                    }
 
                     $registro->versionesDeEsteTipo = $versionesDeEsteTipo;
                     $registro->hashActual = $hashActual;
@@ -392,7 +407,6 @@ class OperacionController extends Controller
                                         ->where('estado_activo', 1)
                                         ->get();
 
-
             // ==============================================================================
             // NUEVO: CONSULTAMOS LAS MAESTRAS PARA EL MODAL DE ACTUALIZAR TERCERO
             // ==============================================================================
@@ -407,7 +421,7 @@ class OperacionController extends Controller
             ));
 
         } catch (\Exception $e) {
-            Log::error('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW): ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW): ' . $e->getMessage());
             return back()->with('error', 'No se pudo cargar el detalle de la operación.');
         }
     }
@@ -1266,13 +1280,19 @@ class OperacionController extends Controller
 
     public function generarInformeCliente($id)
     {
-        // 1. Obtenemos la operación con sus relaciones (tercero y líneas)
-        $operacion = CarSiaOperacion::with(['tercero', 'lineas'])->findOrFail($id);
+        // 1. Obtenemos la operación con sus relaciones, asegurando traer la factura asociada
+        $operacion = CarSiaOperacion::with(['tercero', 'lineas.factura'])->findOrFail($id);
 
-        // 2. Cargamos la vista exacta usando la ruta que indicaste
-        $pdf = Pdf::loadView('certificados.operaciones.pdf', compact('operacion'));
+        // 2. Filtramos para obtener ÚNICAMENTE el último registro por cada factura (id_factura)
+        $lineasValidas = $operacion->lineas
+            ->sortByDesc('created_at') // Ordena del más reciente al más antiguo
+            ->unique('id_factura')     // Se queda únicamente con la última versión de cada factura
+            ->values();                // Reindexa la colección
 
-        // 3. Mostramos el PDF en el navegador (stream) o forzamos descarga (download)
+        // 3. Cargamos la vista pasando la operación y la variable $lineasValidas
+        $pdf = Pdf::loadView('certificados.operaciones.pdf', compact('operacion', 'lineasValidas'));
+
+        // 4. Mostramos el PDF en el navegador
         return $pdf->stream('informe_cliente_' . $operacion->numero_radicado . '.pdf');
     }
 

@@ -1182,11 +1182,39 @@
                                                         <tr>
                                                             <td class="p-3 bg-white">
 
+                                                                @php
+                                                                    // 1. Variables dinámicas usando las relaciones reales del modelo $operacion->tercero
+                                                                    $telefonoDestino = $operacion->tercero->tel ?? '0000000000'; // Sin el '57', se le añade abajo
+                                                                    $nombreCliente   = $operacion->tercero->nom_ter ?? 'Nombre del Cliente';
+                                                                    $numeroCredito   = $operacion->numero_radicado ?? $operacion->id;
+                                                                    $remitente1      = Auth::user()->name ?? 'Asesor';
+                                                                    $remitente2      = 'SIA Cartera';
+
+                                                                    // 2. Generar la URL absoluta del PDF
+                                                                    $urlPdf = route('certificados.operaciones.pdf_individual', [
+                                                                        'id'      => $operacion->id,
+                                                                        'tipo_id' => $tipo->id ?? null,
+                                                                        'hash'    => $hashActual
+                                                                    ]);
+
+                                                                    // 3. Construir el texto del mensaje (usando \n para los saltos de línea)
+                                                                    $mensajeTexto = "Dios lo bendiga Hermano: \n*{$nombreCliente}*\nAdjunto encontrará el reporte de su estado de cuenta del crédito {$numeroCredito}\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n\nQuedo atento a cualquier comentario o sugerencia que desee compartir.\n\n*Gracias por su atención.*\nCordialmente;\n_{$remitente1}_\n_{$remitente2}_\n\n*Nota:* Si tiene problemas con el enlace adjunto, contáctenos por este medio.\n\n*Adjunto Documento:* \n{$urlPdf}";
+
+                                                                    // 4. Armar el enlace final codificando el texto
+                                                                    $linkWhatsapp = "https://api.whatsapp.com/send?phone=57{$telefonoDestino}&text=" . urlencode($mensajeTexto);
+                                                                @endphp
+
                                                                 {{-- Controles (Botones alternar PDF/Editor y Versiones) --}}
                                                                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom border-dashed">
                                                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase mb-2 mb-md-0"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
 
                                                                     <div class="d-flex align-items-center gap-3">
+
+                                                                        {{-- BOTÓN DE WHATSAPP INTEGRADO AQUÍ --}}
+                                                                        <a href="{{ $linkWhatsapp }}" target="_blank" class="btn btn-sm btn-success rounded-1 px-3 fw-bold shadow-sm d-flex align-items-center" title="Enviar PDF por WhatsApp">
+                                                                            <i class="fab fa-whatsapp me-2 fs-6"></i> Enviar por WhatsApp
+                                                                        </a>
+
                                                                         @if($versionesDeEsteTipo->count() > 1)
                                                                             <button type="button" class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
                                                                                 <i class="fas fa-history me-1"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
@@ -1633,7 +1661,7 @@
                                     </div>
                                 @endif
                             </div>
-
+                            {{-- Cierrte tab 4 --}}
 
                             {{-- ======================================================= --}}
                             {{-- TAB 5: GRÁFICOS E INDICADORES                           --}}

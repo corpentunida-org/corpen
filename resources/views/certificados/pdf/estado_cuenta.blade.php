@@ -162,7 +162,7 @@
             <table class="table-detalles">
                 <thead>
                     <tr>
-                        <th width="15%">Obligación</th>
+                        <th width="15%">Factura</th>
                         <th width="10%">Cuota</th>
                         <th width="20%">Vencimiento</th>
                         <th width="15%">Días Mora</th>
@@ -185,7 +185,7 @@
                                 : 'N/A';
                         @endphp
                         <tr>
-                            <td class="text-center"><strong>{{ $factura->cuenta ?? 'N/A' }}</strong></td>
+                            <td class="text-center font-monospace"><strong>#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</strong></td>
                             <td class="text-center">{{ $factura->cuota ?? 'N/A' }}</td>
                             <td class="text-center">{{ $fechaVencimiento }}</td>
                             <td class="text-center">

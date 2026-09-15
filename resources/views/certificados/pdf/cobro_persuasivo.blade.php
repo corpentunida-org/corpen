@@ -211,11 +211,11 @@
 
         <table class="table-detalles">
             <thead>
-                <!-- TÍTULO DE LA LÍNEA INTEGRADO (Soluciona el problema visual) -->
+                <!-- TÍTULO DE LA LÍNEA INTEGRADO -->
                 <tr class="title-row">
                     <th colspan="6">{{ mb_strtoupper($nombreLinea, 'UTF-8') }}</th>
                 </tr>
-                <!-- ENCABEZADOS DE COLUMNA EXACTOS CON PORCENTAJES PRECISOS -->
+                <!-- ENCABEZADOS DE COLUMNA -->
                 <tr class="header-row">
                     <th width="15%">FACTURA</th>
                     <th width="10%">CUOTA</th>
@@ -240,7 +240,7 @@
                             : 'N/A';
                     @endphp
                     <tr>
-                        <td><strong>{{ $factura->cuenta ?? 'N/A' }}</strong></td>
+                        <td><strong style="font-family: monospace;">#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</strong></td>
                         <td>{{ $factura->cuota ?? 'N/A' }}</td>
                         <td>{{ $fechaVencimiento }}</td>
                         <td>
