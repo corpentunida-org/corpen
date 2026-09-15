@@ -155,7 +155,8 @@ class OperacionController extends Controller
 
             // Catálogos para modales
             $tiposAlerta = CarSiaTipoAlerta::all();
-            $tipos = CarSiaTipo::all();
+            // Filtramos para traer únicamente los tipos con ID 3 y 4
+            $tipos = CarSiaTipo::whereIn('id', [3, 4])->get();
             $configuracionesBase = CarSiaConfig::with('accionVencimiento')->get();
 
             return view('certificados.operaciones.index', compact(
