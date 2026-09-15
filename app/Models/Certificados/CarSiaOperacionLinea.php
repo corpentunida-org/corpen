@@ -30,12 +30,14 @@ class CarSiaOperacionLinea extends Model
         'fecha_ultimo_recordatorio',
         'dias_mora_automaticos',
         'procesado_en',
-        // --- CAMPOS NUEVOS DE AUDITORÍA Y CERTIFICADOS ---
+        // --- CAMPOS DE AUDITORÍA Y CERTIFICADOS ---
         'id_user',
         'id_car_sia_tipos',
         'hash_certificado',
         // --- CAMPO JSON ---
         'metadata',
+        // --- CAMPO DE ESTADO API ---
+        'estadoApi',
     ];
 
     // 3. Conversión de tipos de datos (Casting)
@@ -58,7 +60,7 @@ class CarSiaOperacionLinea extends Model
     {
         // Nota: Si la llave primaria en car_sia_api no es 'id' sino 'id_factura',
         // debes declararlo así: return $this->belongsTo(CarSiaApi::class, 'id_factura', 'id_factura');
-        return $this->belongsTo(CarSiaApi::class, 'id_factura');
+        return $this->belongsTo(CarSiaApi::class, 'id_factura', 'id_factura');
     }
 
     /**

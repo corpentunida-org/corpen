@@ -1258,7 +1258,7 @@
                                                                         <input type="hidden" name="dias_gracia_lote" id="input_dias_gracia_{{ $certId }}" value="">
 
                                                                         <div class="table-responsive border rounded-2 shadow-sm mb-3">
-                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1500px;">
+                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1600px;">
                                                                                 <thead class="text-muted text-uppercase" style="font-size: 0.65rem; background-color: #f1f5f9;">
                                                                                     <tr>
                                                                                         {{-- SECCIÓN INFO ERP (Read-Only) --}}
@@ -1272,12 +1272,13 @@
 
                                                                                         {{-- SECCIÓN EDITABLE (Inputs form elements) --}}
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Calificación</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 10%;"><i class="fas fa-pen me-1"></i> Estado Línea</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 9%;"><i class="fas fa-pen me-1"></i> Estado SIA</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Estado API</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 6%;"><i class="fas fa-pen me-1"></i> Mora</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Vencimiento</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Último Rec.</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Procesado</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 13%;"><i class="fas fa-pen me-1"></i> Observación</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 12%;"><i class="fas fa-pen me-1"></i> Observación</th>
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
@@ -1287,28 +1288,29 @@
                                                                                             {{-- COLUMNAS INFORMATIVAS (Fondo Gris Claro) --}}
                                                                                             <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">API-{{ str_pad($linea->numero_bloque, 4, '0', STR_PAD_LEFT) }}</td>
                                                                                             <td class="px-2 py-1 text-center fw-bold text-dark" style="background-color: #f8fafc; font-family: monospace;">#{{ $linea->id_factura }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura->cuota ?? '-' }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura->pagare ?? 'S/N' }}</td>
-                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura?->cuota ?? '-' }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura?->pagare ?? 'S/N' }}</td>
+                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura?->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
 
                                                                                             <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
-                                                                                                @if(isset($linea->factura) && $linea->factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
-                                                                                                @elseif(isset($linea->factura) && $linea->factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
-                                                                                                @else <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
+                                                                                                @if($linea->factura?->estado == 'PROCESADO')
+                                                                                                    <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
+                                                                                                @elseif($linea->factura?->anular == 1)
+                                                                                                    <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
+                                                                                                @else
+                                                                                                    <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
                                                                                                 @endif
                                                                                             </td>
 
                                                                                             <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">
-                                                                                                {{-- Muestra el número de cuenta --}}
                                                                                                 <span class="d-block fw-bold text-dark" style="font-size: 0.75rem;">{{ $linea->id_car_sia_lineas }}</span>
-
-                                                                                                {{-- Muestra el campo de la relación (Ej: nombre). Usamos optional() por si viene nulo y no rompa la vista --}}
                                                                                                 <span style="font-size: 0.65rem;" title="Nombre de la línea">
-                                                                                                    {{ optional($linea->factura->lineaSia)->nombre ?? 'Sin descripción' }}
+                                                                                                    {{ $linea->factura?->lineaSia?->nombre ?? 'Sin descripción' }}
                                                                                                 </span>
                                                                                             </td>
-
                                                                                             {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
+
+                                                                                            {{-- 1. Calificación --}}
                                                                                             <td class="p-0 align-middle position-relative">
                                                                                                 <div class="d-flex align-items-center h-100">
                                                                                                     <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
@@ -1323,6 +1325,7 @@
                                                                                                 </div>
                                                                                             </td>
 
+                                                                                            {{-- 2. Estado SIA --}}
                                                                                             <td class="p-0 align-middle border-start border-end">
                                                                                                 <select name="lineas[{{ $linea->id }}][id_car_sia_estados]" class="form-select form-select-sm border-0 shadow-none text-center text-muted fw-semibold w-100 rounded-0 bg-transparent py-1">
                                                                                                     <option value="">Seleccione...</option>
@@ -1332,28 +1335,44 @@
                                                                                                 </select>
                                                                                             </td>
 
+                                                                                            {{-- 3. Estado API (Actualización inmediata por Factura y Bloque) --}}
+                                                                                            <td class="p-0 align-middle border-start border-end">
+                                                                                                <select name="lineas[{{ $linea->id }}][estadoApi]"
+                                                                                                        class="form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 {{ $linea->estadoApi == 1 ? 'text-success fw-bold' : 'text-muted' }}"
+                                                                                                        onchange="actualizarEstadoApiDirecto(this, '{{ $linea->id_factura }}', '{{ $linea->numero_bloque }}')">
+                                                                                                    <option value="" {{ is_null($linea->estadoApi) || $linea->estadoApi === '' ? 'selected' : '' }}>No Pago</option>
+                                                                                                    <option value="1" {{ $linea->estadoApi == 1 ? 'selected' : '' }}>Pago</option>
+                                                                                                </select>
+                                                                                            </td>
+
+                                                                                            {{-- 4. Días de Mora Automáticos --}}
                                                                                             <td class="p-0 align-middle">
                                                                                                 <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="form-control form-control-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->dias_mora_automaticos < 0 ? 'text-danger' : 'text-dark' }}" value="{{ $linea->dias_mora_automaticos }}" required>
                                                                                             </td>
 
+                                                                                            {{-- 5. Fecha Vencimiento --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 6. Fecha Último Recordatorio --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 7. Procesado En --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][procesado_en]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->procesado_en ? \Carbon\Carbon::parse($linea->procesado_en)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 8. Observación --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="text" name="lineas[{{ $linea->id }}][observacion]" class="form-control form-control-sm border-0 shadow-none w-100 rounded-0 bg-transparent py-1 px-2" value="{{ $linea->observacion }}" placeholder="...">
                                                                                             </td>
+
                                                                                         </tr>
                                                                                     @empty
-                                                                                        <tr><td colspan="14" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
+                                                                                        <tr><td colspan="15" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
                                                                                     @endforelse
                                                                                 </tbody>
                                                                             </table>
@@ -2250,6 +2269,45 @@
                     icon.classList.add('fa-chevron-circle-down');
                 }
             }
+        }
+
+        // ========================================== -->
+        // FUNCIÓN PARA ACTUALIZAR ESTADO API DIRECTO  -->
+        // ========================================== -->
+        function actualizarEstadoApiDirecto(selectElement, idFactura, numeroBloque) {
+            const nuevoEstado = selectElement.value;
+
+            // Cambiar visualmente el estilo de forma inmediata mientras responde el servidor
+            if (nuevoEstado == '1') {
+                selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 text-success';
+            } else {
+                selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 text-muted';
+            }
+
+            // Construir la URL usando la ruta nombrada de Laravel
+            const url = `{{ route('certificados.operaciones.estado_api.bloque', ['idFactura' => ':id', 'numeroBloque' => ':bloque']) }}`
+                        .replace(':id', idFactura)
+                        .replace(':bloque', numeroBloque);
+
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ estadoApi: nuevoEstado !== "" ? nuevoEstado : null })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Error al actualizar el estado API: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error de red:', error);
+                alert('Ocurrió un error de red al intentar actualizar el estado API.');
+            });
         }
     </script>
 
