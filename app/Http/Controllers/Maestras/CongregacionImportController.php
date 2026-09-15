@@ -29,6 +29,8 @@ class CongregacionImportController extends Controller
      */
     public function analizar(Request $request)
     {
+        $this->ampliarMemoria();
+
         $request->validate([
             'archivo' => ['required', 'file', 'mimes:xlsx,xls'],
         ]);
@@ -53,6 +55,8 @@ class CongregacionImportController extends Controller
      */
     public function confirmar(Request $request)
     {
+        $this->ampliarMemoria();
+
         $request->validate(['token' => ['required', 'string'], 'archivo_nombre' => ['required', 'string']]);
 
         $ruta = 'importaciones-congregaciones/' . $request->input('token') . '.xlsx';
@@ -77,5 +81,16 @@ class CongregacionImportController extends Controller
             'success',
             "Importación aplicada: {$resultado['insertados']} congregaciones nuevas, {$resultado['actualizados']} actualizadas, {$resultado['pastores_enlazados']} pastores enlazados en Maestra de Terceros. {$resultado['excepciones']} filas quedaron fuera por excepciones."
         );
+    }
+
+    /**
+     * Cargar un Excel de miles de filas con PhpSpreadsheet ya usa ~250MB en una sola pasada
+     * (medido directamente en el importador de Terceros, mismo tamaño de archivo). Con el resto
+     * de Laravel encima eso deja poco margen frente al memory_limit por defecto (500M). Se sube
+     * solo para estas dos acciones, no de forma global.
+     */
+    private function ampliarMemoria(): void
+    {
+        ini_set('memory_limit', '1024M');
     }
 }

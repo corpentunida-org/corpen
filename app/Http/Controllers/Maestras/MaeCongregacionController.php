@@ -62,8 +62,12 @@ class MaeCongregacionController extends Controller
             return redirect()->back()->withInput()->with('error', 'El código ingresado ya está registrado.');
         }
 
+        if ($error = $this->errorPastorYaAsignado($request->pastor)) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
+
         // Crear la congregación
-        MaeCongregacion::create([
+        $congregacion = MaeCongregacion::create([
             'codigo' => $request->Codigo,
             'nombre' => strtoupper($request->nombre),
             'pastor' => $request->pastor,
@@ -79,6 +83,8 @@ class MaeCongregacionController extends Controller
             'cierre' => $request->cierre,
             'observacion' => $request->observacion,
         ]);
+
+        $this->sincronizarPastorConTercero($congregacion);
 
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación registrada exitosamente!');
     }
@@ -102,6 +108,10 @@ class MaeCongregacionController extends Controller
      */
     public function update(Request $request, MaeCongregacion $congregacion)
     {
+        if ($error = $this->errorPastorYaAsignado($request->pastor, $congregacion->codigo)) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
+
         // Se actualiza la congregación directamente con los datos del request.
         $congregacion->update([
             'nombre' => strtoupper($request->nombre),
@@ -120,7 +130,47 @@ class MaeCongregacionController extends Controller
             'observacion' => $request->observacion,
         ]);
 
+        $this->sincronizarPastorConTercero($congregacion);
+
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación actualizada exitosamente!');
+    }
+
+    /**
+     * Un pastor solo puede estar a cargo de una congregación a la vez. Se valida antes de
+     * guardar en vez de dejar que ocurra y quedar con el mismo pastor "activo" en dos partes.
+     */
+    private function errorPastorYaAsignado(?string $pastor, ?string $codigoActual = null): ?string
+    {
+        if ($pastor === null || $pastor === '') {
+            return null;
+        }
+
+        $otra = MaeCongregacion::where('pastor', $pastor)
+            ->when($codigoActual, fn ($q) => $q->where('codigo', '!=', $codigoActual))
+            ->first();
+
+        if (!$otra) {
+            return null;
+        }
+
+        return "Este pastor ya está a cargo de la congregación {$otra->codigo} - {$otra->nombre}. Retíralo de ahí primero (o usa esa congregación) antes de asignarlo aquí.";
+    }
+
+    /**
+     * El pastor asignado a la congregación queda enlazado en su propio registro de tercero
+     * (congrega + cod_dist), la única forma en que esos dos campos se actualizan — ver
+     * MaeTercerosController::store()/update(), donde quedaron bloqueados.
+     */
+    private function sincronizarPastorConTercero(MaeCongregacion $congregacion): void
+    {
+        if ($congregacion->pastor === null || $congregacion->pastor === '') {
+            return;
+        }
+
+        MaeTerceros::where('cod_ter', $congregacion->pastor)->update([
+            'congrega' => $congregacion->codigo,
+            'cod_dist' => $congregacion->distrito,
+        ]);
     }
 
     /**

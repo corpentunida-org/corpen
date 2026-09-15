@@ -6,8 +6,29 @@
     </a>
 
     <ul class="nxl-submenu">
-        <li class="nxl-item {{ request()->routeIs('maestras.terceros.*') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('maestras.terceros.index') }}">Terceros</a>
+        {{-- ====================================================================== --}}
+        {{-- SUBMENÚ ANIDADO: TERCEROS --}}
+        {{-- ====================================================================== --}}
+        <li class="nxl-item nxl-hasmenu {{ request()->routeIs('maestras.terceros.*') ? 'active' : '' }}">
+            <a href="javascript:void(0);" class="nxl-link">
+                <span class="nxl-mtext">Terceros</span>
+                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+            </a>
+            <ul class="nxl-submenu">
+                <li class="nxl-item {{ request()->routeIs('maestras.terceros.index', 'maestras.terceros.create', 'maestras.terceros.edit', 'maestras.terceros.show') ? 'active' : '' }}">
+                    <a class="nxl-link" href="{{ route('maestras.terceros.index') }}">Listado</a>
+                </li>
+                @candirect('maestras.terceros.importar')
+                <li class="nxl-item {{ request()->routeIs('maestras.terceros.importar.*') ? 'active' : '' }}">
+                    <a class="nxl-link" href="{{ route('maestras.terceros.importar.index') }}">Importar Pastores IPUC</a>
+                </li>
+                @endcandirect
+                @candirect('maestras.comaeter.importar')
+                <li class="nxl-item {{ request()->routeIs('maestras.comaeter.importar.*') ? 'active' : '' }}">
+                    <a class="nxl-link" href="{{ route('maestras.comaeter.importar.index') }}">Actualizar Terceros (CoMae_ter)</a>
+                </li>
+                @endcandirect
+            </ul>
         </li>
         {{-- ====================================================================== --}}
         {{-- SUBMENÚ ANIDADO: CONGREGACIONES --}}

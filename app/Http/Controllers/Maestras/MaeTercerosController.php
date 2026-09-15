@@ -55,16 +55,16 @@ class MaeTercerosController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Añadimos la validación estricta para que los selects NO pasen vacíos
+        // congrega/cod_dist ya NO se piden aquí: solo se fijan al asignar el tercero como
+        // pastor de una congregación (MaeCongregacionController), para que esa sea la única
+        // fuente de verdad y no se puedan desincronizar.
         $request->validate(
             [
                 'cod_ter' => 'required|string|max:20|unique:MaeTerceros,cod_ter',
                 'nom_ter' => 'required|string|max:255',
                 'tdoc' => 'required|string|max:5',
                 'tip_pers' => 'required|string|max:1',
-                'congrega' => 'required|string', // <-- ¡AQUÍ ESTÁ LA MAGIA!
-                'tip_prv' => 'required|string', // <-- (O tip_cli, dependiendo de tu BD)
-                'cod_dist' => 'required|string', // <-- Obligamos a que traigan datos
+                'tip_prv' => 'required|string',
                 'email' => 'nullable|email',
                 'fec_nac' => 'nullable|date',
                 'fec_minis' => 'nullable|date',
@@ -72,15 +72,15 @@ class MaeTercerosController extends Controller
                 'fec_aport' => 'nullable|date',
             ],
             [
-                // Mensajes de error personalizados por si acaso
-                'congrega.required' => 'Por favor, selecciona una congregación.',
                 'tip_prv.required' => 'Por favor, selecciona un tipo.',
-                'cod_dist.required' => 'Por favor, selecciona un distrito.',
             ],
         );
 
         // Preparar datos para guardar
         $data = $request->only($this->fillableFields());
+        // Defensa en profundidad: aunque no haya <input name="..."> en el formulario, un POST
+        // armado a mano no debe poder tocar estos dos campos por esta vía.
+        unset($data['congrega'], $data['cod_dist']);
 
         // Formatear fechas si existen
         $dateFields = ['fec_nac', 'fec_minis', 'fecha_ipuc', 'fec_aport', 'fec_ing', 'fec_cump', 'fec_act', 'fec_dat', 'fec_falle', 'fecha_lice', 'fecha_aded', 'fec_expcc'];
@@ -123,9 +123,7 @@ class MaeTercerosController extends Controller
             'nom_ter' => 'sometimes|required|string|max:255',
             'tdoc' => 'sometimes|required|string|max:5',
             'tip_pers' => 'sometimes|required|string|max:1',
-            'congrega' => 'sometimes|required|string',
             'tip_prv' => 'sometimes|required|string',
-            'cod_dist' => 'sometimes|required|string',
             'email' => 'nullable|email',
             'fec_nac' => 'nullable|date',
             'fec_minis' => 'nullable|date',
@@ -134,6 +132,9 @@ class MaeTercerosController extends Controller
         ]);
 
         $data = collect($validated)->filter(fn($v) => !is_null($v) && $v !== '')->toArray();
+        // congrega/cod_dist se fijan únicamente desde MaeCongregacionController — ver el
+        // comentario equivalente en store().
+        unset($data['congrega'], $data['cod_dist']);
         $tercero->update($data);
         return redirect()->back()->with('success', 'Actualizado correctamente');
     }
