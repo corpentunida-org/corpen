@@ -93,7 +93,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 18px;
-            font-size: 8.5pt;
+            font-size: 8pt;
             border: 1px solid #94a3b8;
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             page-break-inside: auto;
@@ -115,19 +115,19 @@
         .header-row th {
             background-color: #e2e8f0;
             color: #0f172a;
-            padding: 6px 5px;
+            padding: 6px 4px;
             text-align: center;
             font-weight: bold;
             border: 1px solid #cbd5e1;
             border-bottom: 2px solid #64748b;
             text-transform: uppercase;
-            font-size: 7.5pt;
+            font-size: 7pt;
             letter-spacing: 0.3px;
         }
 
         /* Celdas de datos */
         .table-detalles td {
-            padding: 6px 5px;
+            padding: 6px 4px;
             border: 1px solid #cbd5e1;
             text-align: center;
             color: #334155;
@@ -151,18 +151,34 @@
         .badge-ok {
             color: #047857;
             background-color: #d1fae5;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-weight: bold;
-            font-size: 7.5pt;
+            font-size: 7pt;
         }
         .badge-mora {
             color: #b91c1c;
             background-color: #fee2e2;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 3px;
             font-weight: bold;
-            font-size: 7.5pt;
+            font-size: 7pt;
+        }
+        .badge-api-pago {
+            color: #047857;
+            background-color: #d1fae5;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7pt;
+        }
+        .badge-api-falta {
+            color: #b45309;
+            background-color: #fef3c7;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7pt;
         }
 
         /* Subtotales con jerarquía intermedia clara */
@@ -255,16 +271,17 @@
             <thead>
                 <!-- TÍTULO DE LA LÍNEA INTEGRADO -->
                 <tr class="title-row">
-                    <th colspan="6">{{ mb_strtoupper($nombreLinea, 'UTF-8') }}</th>
+                    <th colspan="7">{{ mb_strtoupper($nombreLinea, 'UTF-8') }}</th>
                 </tr>
                 <!-- ENCABEZADOS DE COLUMNA -->
                 <tr class="header-row">
-                    <th width="15%">Factura</th>
-                    <th width="10%">Cuota</th>
-                    <th width="22%">Vencimiento</th>
+                    <th width="14%">Factura</th>
+                    <th width="8%">Cuota</th>
+                    <th width="18%">Vencimiento</th>
                     <th width="10%">Mora</th>
-                    <th width="18%">Estado</th>
-                    <th width="25%" class="text-right">Valor</th>
+                    <th width="16%">Estado Mora</th>
+                    <th width="16%">Estado API</th>
+                    <th width="18%" class="text-right">Valor</th>
                 </tr>
             </thead>
             <tbody>
@@ -280,6 +297,10 @@
                         $fechaVencimiento = $factura && $factura->fecha_venci
                             ? \Carbon\Carbon::parse($factura->fecha_venci)->format('d/m/Y')
                             : 'N/A';
+
+                        // Validación del Estado API
+                        $estadoApiVal = $linea->estadoApi;
+                        $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
                     @endphp
                     <tr>
                         <td style="font-family: monospace; font-weight: bold; color: #0f172a;">#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</td>
@@ -287,7 +308,7 @@
                         <td>{{ $fechaVencimiento }}</td>
                         <td>
                             @if($diasMora > 0)
-                                <span style="color: #b91c1c; font-weight: bold; font-size: 9pt;">{{ $diasMora }}</span>
+                                <span style="color: #b91c1c; font-weight: bold; font-size: 8.5pt;">{{ $diasMora }}</span>
                             @else
                                 <span style="color: #64748b;">0</span>
                             @endif
@@ -297,13 +318,22 @@
                                 {{ $esAlDia ? 'PENDIENTE' : 'EN MORA' }}
                             </span>
                         </td>
+                        <td>
+                            @if($tieneEstadoApi)
+                                <span class="badge-api-pago">
+                                    {{ $estadoApiVal == '1' ? 'PAGO' : strtoupper($estadoApiVal) }}
+                                </span>
+                            @else
+                                <span class="badge-api-falta">FALTA POR PAGAR</span>
+                            @endif
+                        </td>
                         <td class="text-right" style="font-weight: bold; color: #0f172a;">${{ number_format($valorCuota, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="tr-subtotal">
-                    <td colspan="5" class="text-right">SUBTOTAL {{ mb_strtoupper($nombreLinea, 'UTF-8') }}:</td>
+                    <td colspan="6" class="text-right">SUBTOTAL {{ mb_strtoupper($nombreLinea, 'UTF-8') }}:</td>
                     <td class="text-right" style="color: #0f172a; font-size: 9.5pt;">${{ number_format($subtotalLinea, 2, ',', '.') }}</td>
                 </tr>
             </tfoot>

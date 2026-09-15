@@ -1531,6 +1531,9 @@ Route::middleware(['auth'])
         // Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
         Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 
+        // Actualizar únicamente el estado API de una factura específica dentro de un bloque/lote
+        Route::put('facturas/{idFactura}/bloque/{numeroBloque}/estado-api', [OperacionController::class, 'actualizarEstadoApiPorBloque'])->name('operaciones.estado_api.bloque');
+
         // Actualizar datos de maestra (Tercero) desde la vista de Operación
         Route::put('operaciones/{id}/tercero', [OperacionController::class, 'actualizarTercero'])->name('operaciones.actualizar_tercero');
 
