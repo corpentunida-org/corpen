@@ -330,14 +330,24 @@ class OperacionController extends Controller
                         }
                     }
 
+                    // Líneas asociadas a este tipo en general para calcular versiones
                     $lineasParaEsteTipo = collect($operacion->lineas)->where('id_car_sia_tipos', $registro->id_car_sia_tipos);
 
                     $versionesDeEsteTipo = collect($lineasParaEsteTipo)->groupBy('hash_certificado')->map(function($grupo) {
                         return collect($grupo)->first();
                     })->sortByDesc('created_at');
 
-                    $hashActual = collect($versionesDeEsteTipo)->first()->hash_certificado ?? null;
-                    $lineasEditor = collect($lineasParaEsteTipo)->where('hash_certificado', $hashActual)->unique('id_factura');
+                    // CORRECCIÓN: Obtener el hash actual de forma robusta directamente consultando la BD
+                    $hashActual = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                        ->orderBy('created_at', 'desc')
+                        ->value('hash_certificado');
+
+                    // CORRECCIÓN: Consultar las líneas del editor filtrando por el hash actual para que no lleguen vacías
+                    $lineasEditor = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)
+                        ->where('numero_bloque', $operacion->numero_bloque)
+                        ->where('hash_certificado', $hashActual)
+                        ->get()
+                        ->unique('id_factura');
 
                     $registro->versionesDeEsteTipo = $versionesDeEsteTipo;
                     $registro->hashActual = $hashActual;
@@ -379,8 +389,8 @@ class OperacionController extends Controller
             // CONSULTAMOS LAS REGLAS BASE ACTIVAS PARA EL MODAL DE CREAR
             // ==============================================================================
             $configuracionesBase = CarSiaConfig::with('accionVencimiento')
-                                    ->where('estado_activo', 1)
-                                    ->get();
+                                        ->where('estado_activo', 1)
+                                        ->get();
 
 
             // ==============================================================================
@@ -691,23 +701,28 @@ class OperacionController extends Controller
                 $id_user = Auth::id();
                 $totalOperacionesProcesadas = 0;
 
-                // 1. Registrar eventos globales para TODOS los tipos seleccionados
-                $registrosGlobales = [];
+                // ==========================================
+                // Registrar eventos globales (Tipos seleccionados)
+                // Usamos firstOrCreate para evitar duplicar registros globales innecesarios.
+                // ==========================================
                 foreach ($tipos_seleccionados as $id_tipo) {
-                    $registrosGlobales[] = [
-                        'id_car_sia_operaciones' => null,
-                        'numero_bloque'          => $bloque,
-                        'id_car_sia_tipos'       => $id_tipo,
-                        'id_user'                => $id_user,
-                        'created_at'             => $ahora,
-                        'updated_at'             => $ahora,
-                    ];
+                    CarSiaTipoOperacion::firstOrCreate(
+                        [
+                            'numero_bloque'          => $bloque,
+                            'id_car_sia_tipos'       => $id_tipo,
+                            'id_car_sia_operaciones' => null,
+                        ],
+                        [
+                            'id_user'    => $id_user,
+                            'created_at' => $ahora,
+                            'updated_at' => $ahora,
+                        ]
+                    );
                 }
-                CarSiaTipoOperacion::insert($registrosGlobales);
 
                 // 2. Procesamiento por lotes (Chunks) de 500
                 CarSiaOperacion::where('numero_bloque', $bloque)
-                    ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $tipos_seleccionados, $bloque, &$totalOperacionesProcesadas) {
+                    ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $bloque, &$totalOperacionesProcesadas) {
 
                         // Extracción masiva de IDs
                         $tercerosIds = $operacionesChunk->pluck('id_tercero')->toArray();
@@ -810,39 +825,33 @@ class OperacionController extends Controller
                                 ], JSON_UNESCAPED_UNICODE);
                             }
 
-                            // AQUI ESTA LA MAGIA: Determinar los tipos finales (Globales vs Individuales)
-                            // Si la operación tiene configuraciones manuales, usamos esas. Si no, usamos todas las globales seleccionadas.
-                            $tiposParaEstaOperacion = isset($tiposIndividuales[$operacion->id])
-                                ? $tiposIndividuales[$operacion->id]->pluck('id_car_sia_tipos')->toArray()
-                                : $tipos_seleccionados;
+                            // ==========================================
+                            // HASH UNIFICADO Y FIN DEL BUCLE DE TIPOS
+                            // Quitamos el bucle interno por cada tipo de certificado.
+                            // El hash ya no lleva el tipo adentro, lo que evita que se dupliquen
+                            // las 10 facturas en car_sia_operaciones_lineas.
+                            // ==========================================
+                            $hash_certificado = "API-{$bloque}-OP-{$operacion->id}-TS-{$timestamp}";
 
-                            $tiposParaEstaOperacion = array_unique($tiposParaEstaOperacion); // Evitar duplicados
-
-                            // Generar una línea (CarSiaOperacionLinea) por cada tipo seleccionado
-                            foreach ($tiposParaEstaOperacion as $id_tipo_final) {
-
-                                $hash_certificado = "API-{$bloque}-TIPO-{$id_tipo_final}-OP-{$operacion->id}-TS-{$timestamp}";
-
-                                $lineasAInsertar[] = [
-                                    'id_car_sia_operaciones' => $operacion->id,
-                                    'id_factura'             => $factura->id,
-                                    'id_car_sia_lineas'      => $factura->cuenta,
-                                    'numero_bloque'          => $bloque,
-                                    'observacion'            => $observacion,
-                                    'calificacion'           => $calificacion,
-                                    'metadata'               => $metadataRegla,
-                                    'fecha_venci'            => $factura->fecha_venci,
-                                    'id_car_sia_estados'     => 3,
-                                    'dias_mora_automaticos'  => $diasMora,
-                                    'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
-                                    'id_user'                => $id_user,
-                                    'id_car_sia_tipos'       => $id_tipo_final !== 'N/A' ? $id_tipo_final : null,
-                                    'hash_certificado'       => $hash_certificado,
-                                ];
-                            }
+                            $lineasAInsertar[] = [
+                                'id_car_sia_operaciones' => $operacion->id,
+                                'id_factura'             => $factura->id,
+                                'id_car_sia_lineas'      => $factura->cuenta,
+                                'numero_bloque'          => $bloque,
+                                'observacion'            => $observacion,
+                                'calificacion'           => $calificacion,
+                                'metadata'               => $metadataRegla,
+                                'fecha_venci'            => $factura->fecha_venci,
+                                'id_car_sia_estados'     => 3,
+                                'dias_mora_automaticos'  => $diasMora,
+                                'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
+                                'id_user'                => $id_user,
+                                'id_car_sia_tipos'       => null, // Se gestiona a nivel global en la tabla pivote de tipos
+                                'hash_certificado'       => $hash_certificado,
+                            ];
                         }
 
-                        // 6. Inserción Masiva (Upsert)
+                        // 6. Inserción Masiva (Upsert) de líneas únicas
                         if (!empty($lineasAInsertar)) {
                             collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
                                 CarSiaOperacionLinea::upsert(
@@ -861,7 +870,6 @@ class OperacionController extends Controller
                     });
 
                 // 7. Registro en Log de Auditoría
-                // Extraemos los nombres de todos los tipos seleccionados para dejarlos en el Log
                 $nombresTipos = \App\Models\Certificados\CarSiaTipo::whereIn('id', $tipos_seleccionados)->pluck('nombre')->implode(', ');
 
                 $this->registrarLogAuditoria(

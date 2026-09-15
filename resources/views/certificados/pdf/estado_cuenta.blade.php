@@ -197,7 +197,7 @@
                             </td>
                             <td class="text-center">
                                 <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                    {{ $esAlDia ? 'AL DÍA' : 'EN MORA' }}
+                                    {{ $esAlDia ? 'PENDIENTE' : 'EN MORA' }}
                                 </span>
                             </td>
                             <td class="text-right">${{ number_format($valorCuota, 2, ',', '.') }}</td>
