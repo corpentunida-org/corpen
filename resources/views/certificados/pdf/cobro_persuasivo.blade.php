@@ -10,10 +10,10 @@
         }
 
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 9pt;
+            font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+            font-size: 9.5pt;
             line-height: 1.4;
-            color: #334155;
+            color: #1e293b; /* Texto principal oscuro de alta legibilidad */
             text-align: justify;
             margin: 0;
             padding: 0;
@@ -40,7 +40,7 @@
             right: 0cm;
             text-align: right;
             font-size: 8pt;
-            color: #64748b;
+            color: #475569;
             font-weight: bold;
         }
         .page-number:before {
@@ -50,22 +50,24 @@
         /* 4. ENCABEZADO DE DOCUMENTO */
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .org-title {
-            font-size: 11pt;
-            color: #0f172a;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-        .doc-title {
             font-size: 12pt;
             color: #0f172a;
             font-weight: bold;
             text-transform: uppercase;
-            margin-top: 8px;
-            padding-bottom: 8px;
-            border-bottom: 1.5px solid #cbd5e1;
+            letter-spacing: 0.5px;
+        }
+        .doc-title {
+            font-size: 11pt;
+            color: #0284c7; /* Azul corporativo destacado */
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 6px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #0284c7;
             width: 85%;
             margin-left: auto;
             margin-right: auto;
@@ -74,88 +76,128 @@
         /* 5. CAJA INFORMATIVA DEL ASOCIADO */
         .intro-box {
             background-color: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid #1e293b;
-            padding: 12px;
-            border-radius: 2px;
-            margin-bottom: 20px;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid #0f172a; /* Jerarquía visual fuerte */
+            padding: 12px 14px;
+            border-radius: 4px;
+            margin-bottom: 18px;
             font-size: 9.5pt;
+            color: #334155;
+        }
+        .intro-box strong {
+            color: #0f172a;
         }
 
-        /* 6. TABLAS BLINDADAS (SIN ERRORES VISUALES) */
+        /* 6. TABLAS CON JERARQUÍA Y ALTO CONTRASTE */
         .table-detalles {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             font-size: 8.5pt;
+            border: 1px solid #94a3b8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             page-break-inside: auto;
         }
 
-        /* Fila del título de la línea (Integrado en la tabla) */
+        /* Fila del título de la línea (Máxima jerarquía de sección) */
         .title-row th {
-            background-color: #1e293b;
+            background-color: #0f172a;
             color: #ffffff;
             text-align: left;
-            padding: 7px 10px;
+            padding: 7px 12px;
             font-size: 9pt;
             text-transform: uppercase;
-            border: 1px solid #1e293b;
+            letter-spacing: 0.5px;
+            border: 1px solid #0f172a;
         }
 
-        /* Fila de los 6 encabezados */
+        /* Fila de encabezados de columnas */
         .header-row th {
-            background-color: #f1f5f9;
+            background-color: #e2e8f0;
             color: #0f172a;
-            padding: 7px 4px;
+            padding: 6px 5px;
             text-align: center;
             font-weight: bold;
             border: 1px solid #cbd5e1;
+            border-bottom: 2px solid #64748b;
+            text-transform: uppercase;
+            font-size: 7.5pt;
+            letter-spacing: 0.3px;
         }
 
         /* Celdas de datos */
         .table-detalles td {
-            padding: 6px 4px;
-            border: 1px solid #e2e8f0;
+            padding: 6px 5px;
+            border: 1px solid #cbd5e1;
             text-align: center;
+            color: #334155;
         }
 
-        /* Alternancia de color en filas */
+        /* Alternancia de color (Cebra) */
         .table-detalles tbody tr:nth-child(even) {
-            background-color: #fbfcfd;
+            background-color: #f8fafc;
+        }
+        .table-detalles tbody tr:hover {
+            background-color: #f1f5f9;
         }
         .table-detalles tbody tr {
             page-break-inside: avoid;
         }
 
-        /* 7. ESTILOS DE TEXTO Y TOTALES */
+        /* 7. ESTILOS DE TEXTO, ESTADOS Y BADGES */
         .text-right { text-align: right !important; }
-        .text-al-dia { color: #15803d; font-weight: bold; }
-        .text-en-mora { color: #b91c1c; font-weight: bold; }
 
+        /* Insignias de Estado con lectura inmediata */
+        .badge-ok {
+            color: #047857;
+            background-color: #d1fae5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7.5pt;
+        }
+        .badge-mora {
+            color: #b91c1c;
+            background-color: #fee2e2;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+            font-size: 7.5pt;
+        }
+
+        /* Subtotales con jerarquía intermedia clara */
         .tr-subtotal td {
             font-weight: bold;
             background-color: #f1f5f9;
             color: #0f172a;
-            border-top: 2px solid #94a3b8;
+            border-top: 2px solid #64748b;
+            border-bottom: 2px solid #64748b;
             padding: 7px 6px;
+            font-size: 9pt;
         }
 
+        /* Caja de Total General con impacto visual definitivo */
         .total-box {
             display: inline-block;
             background-color: #0f172a;
             color: #ffffff;
             padding: 10px 18px;
-            font-size: 10.5pt;
+            font-size: 11pt;
             font-weight: bold;
-            border-radius: 4px;
+            border-radius: 6px;
+            letter-spacing: 0.5px;
+            border: 1px solid #334155;
         }
 
         .legal-notice {
             font-size: 8.5pt;
-            color: #64748b;
-            margin-top: 20px;
-            margin-bottom: 30px;
+            color: #475569;
+            margin-top: 15px;
+            margin-bottom: 25px;
             line-height: 1.4;
+        }
+        .legal-notice strong {
+            color: #0f172a;
         }
 
         /* 8. FIRMA */
@@ -164,7 +206,7 @@
             border-collapse: collapse;
         }
         .signature-cell {
-            border-top: 1.5px solid #334155;
+            border-top: 2px solid #0f172a;
             text-align: center;
             padding-top: 6px;
         }
@@ -217,12 +259,12 @@
                 </tr>
                 <!-- ENCABEZADOS DE COLUMNA -->
                 <tr class="header-row">
-                    <th width="15%">FACTURA</th>
-                    <th width="10%">CUOTA</th>
-                    <th width="22%">FECHA DE VENCIMIENTO</th>
-                    <th width="10%">MORA</th>
-                    <th width="18%">ESTADO</th>
-                    <th width="25%" class="text-right">VALOR</th>
+                    <th width="15%">Factura</th>
+                    <th width="10%">Cuota</th>
+                    <th width="22%">Vencimiento</th>
+                    <th width="10%">Mora</th>
+                    <th width="18%">Estado</th>
+                    <th width="25%" class="text-right">Valor</th>
                 </tr>
             </thead>
             <tbody>
@@ -240,31 +282,29 @@
                             : 'N/A';
                     @endphp
                     <tr>
-                        <td><strong style="font-family: monospace;">#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</strong></td>
-                        <td>{{ $factura->cuota ?? 'N/A' }}</td>
+                        <td style="font-family: monospace; font-weight: bold; color: #0f172a;">#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</td>
+                        <td style="font-weight: 600;">{{ $factura->cuota ?? 'N/A' }}</td>
                         <td>{{ $fechaVencimiento }}</td>
                         <td>
                             @if($diasMora > 0)
-                                <span style="color: #b91c1c; font-weight: bold;">{{ $diasMora }}</span>
+                                <span style="color: #b91c1c; font-weight: bold; font-size: 9pt;">{{ $diasMora }}</span>
                             @else
-                                0
+                                <span style="color: #64748b;">0</span>
                             @endif
                         </td>
                         <td>
-                            @if($esAlDia)
-                                <span class="text-al-dia">PENDIENTE</span>
-                            @else
-                                <span class="text-en-mora">EN MORA</span>
-                            @endif
+                            <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
+                                {{ $esAlDia ? 'PENDIENTE' : 'EN MORA' }}
+                            </span>
                         </td>
-                        <td class="text-right">${{ number_format($valorCuota, 2, ',', '.') }}</td>
+                        <td class="text-right" style="font-weight: bold; color: #0f172a;">${{ number_format($valorCuota, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="tr-subtotal">
                     <td colspan="5" class="text-right">SUBTOTAL {{ mb_strtoupper($nombreLinea, 'UTF-8') }}:</td>
-                    <td class="text-right">${{ number_format($subtotalLinea, 2, ',', '.') }}</td>
+                    <td class="text-right" style="color: #0f172a; font-size: 9.5pt;">${{ number_format($subtotalLinea, 2, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -272,21 +312,21 @@
         @php $granTotalDeuda += $subtotalLinea; @endphp
 
     @empty
-        <div style="text-align: center; padding: 20px; background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 4px; font-weight: bold; color: #64748b; margin-bottom: 20px;">
+        <div style="text-align: center; padding: 20px; background-color: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; font-weight: bold; color: #64748b; margin-bottom: 20px;">
             El(la) asociado(a) no registra obligaciones o compromisos activos actualmente.
         </div>
     @endforelse
 
     <!-- BLOQUE FINAL: TOTAL Y FIRMA -->
-    <table width="100%" style="page-break-inside: avoid; border-collapse: collapse;">
+    <table width="100%" style="page-break-inside: avoid; border-collapse: collapse; margin-top: 10px;">
         <tr>
             <td style="padding: 0;">
 
                 @if($granTotalDeuda > 0)
-                    <table width="100%">
+                    <table width="100%" style="margin-bottom: 15px;">
                         <tr>
                             <td width="30%"></td>
-                            <td width="70%" align="right" style="padding-bottom: 15px;">
+                            <td width="70%" align="right">
                                 <div class="total-box">
                                     TOTAL COMPROMISOS ACTIVOS: ${{ number_format($granTotalDeuda, 2, ',', '.') }}
                                 </div>
@@ -304,7 +344,7 @@
                     <tr>
                         <td class="signature-cell">
                             <strong style="color: #0f172a; font-size: 9.5pt;">Área de Cartera</strong><br>
-                            <span style="font-size: 8.5pt; color: #475569;">CORPENTUNIDA</span>
+                            <span style="font-size: 8.5pt; color: #475569; font-weight: bold;">CORPENTUNIDA</span>
                         </td>
                     </tr>
                 </table>
