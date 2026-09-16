@@ -201,7 +201,7 @@ class OperacionController extends Controller
 
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
-            $registrosCrudos = CarSiaApi::with('lineaSia')
+            $registrosCrudos = CarSiaApi::with(['lineaSia', 'comprobantesBase']) 
                 ->where('numero_bloque', $operacion->numero_bloque)
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
@@ -849,7 +849,7 @@ class OperacionController extends Controller
 
                             $lineasAInsertar[] = [
                                 'id_car_sia_operaciones' => $operacion->id,
-                                'id_factura'             => $factura->id,
+                                'id_factura'             => $factura->id_factura,
                                 'id_car_sia_lineas'      => $factura->cuenta,
                                 'numero_bloque'          => $bloque,
                                 'observacion'            => $observacion,
@@ -1088,7 +1088,7 @@ class OperacionController extends Controller
                     [
                         'id_car_sia_operaciones' => $operacion->id,
                         'numero_bloque'          => $operacion->numero_bloque,
-                        'id_factura'             => $factura->id,
+                        'id_factura'             => $factura->id_factura,
                         'hash_certificado'       => $auditoria['hash'],
                     ],
                     [
@@ -1166,16 +1166,17 @@ class OperacionController extends Controller
         {
             // Validaciones estrictas de los arrays que provienen del frontend
             $request->validate([
-                'lineas'                               => 'required|array',
-                'lineas.*.calificacion'                => 'required|string',
+                'lineas'                             => 'required|array',
+                'lineas.*.calificacion'              => 'required|string',
                 'lineas.*.id_car_sia_estados'          => 'nullable|exists:car_sia_estados,id',
-                'lineas.*.dias_mora_automaticos'       => 'required|numeric',
-                'lineas.*.fecha_venci'                 => 'nullable|date',
+                'lineas.*.estadoApi'                 => 'nullable|in:1,0', // Validación para el estado API (Pago = 1, No Pago = null/0)
+                'lineas.*.dias_mora_automaticos'     => 'required|numeric',
+                'lineas.*.fecha_venci'               => 'nullable|date',
                 'lineas.*.fecha_ultimo_recordatorio'   => 'nullable|date',
-                'lineas.*.procesado_en'                => 'nullable|date',
-                'lineas.*.observacion'                 => 'nullable|string',
-                'tipo_certificado_id'                  => 'nullable|exists:car_sia_tipos,id',
-                'dias_gracia_lote'                     => 'nullable|integer|min:0' // Validación del input oculto
+                'lineas.*.procesado_en'              => 'nullable|date',
+                'lineas.*.observacion'               => 'nullable|string',
+                'tipo_certificado_id'                => 'nullable|exists:car_sia_tipos,id',
+                'dias_gracia_lote'                   => 'nullable|integer|min:0' // Validación del input oculto
             ]);
 
             try {
@@ -1234,15 +1235,17 @@ class OperacionController extends Controller
                         $nuevaLinea->metadata = empty($metadataArray) ? null : $metadataArray;
                         // ------------------------------------------------------------------
 
-                        // Asignación de datos restantes
-                        $nuevaLinea->calificacion              = $data['calificacion'];
-                        $nuevaLinea->id_car_sia_estados        = $data['id_car_sia_estados'] ?? $lineaOriginal->id_car_sia_estados;
+                        // Asignación de datos restantes (Incluyendo estadoApi)
+                        $nuevaLinea->calificacion               = $data['calificacion'];
+                        $nuevaLinea->id_car_sia_estados         = $data['id_car_sia_estados'] ?? $lineaOriginal->id_car_sia_estados;
+                        // Asignación de estadoApi: Si viene con '1', lo guarda como 1; de lo contrario, lo deja como null (No Pago)
+                        $nuevaLinea->estadoApi                  = isset($data['estadoApi']) && $data['estadoApi'] !== '' ? $data['estadoApi'] : null;
                         $nuevaLinea->dias_mora_automaticos     = $data['dias_mora_automaticos'];
-                        $nuevaLinea->fecha_venci               = $data['fecha_venci'];
-                        $nuevaLinea->fecha_ultimo_recordatorio = $data['fecha_ultimo_recordatorio'] ?? $lineaOriginal->fecha_ultimo_recordatorio;
-                        $nuevaLinea->procesado_en              = $data['procesado_en'] ?? $lineaOriginal->procesado_en;
-                        $nuevaLinea->observacion               = $data['observacion'] ?? '';
-                        $nuevaLinea->numero_bloque             = $operacion->numero_bloque;
+                        $nuevaLinea->fecha_venci                = $data['fecha_venci'];
+                        $nuevaLinea->fecha_ultimo_recordatorio   = $data['fecha_ultimo_recordatorio'] ?? $lineaOriginal->fecha_ultimo_recordatorio;
+                        $nuevaLinea->procesado_en               = $data['procesado_en'] ?? $lineaOriginal->procesado_en;
+                        $nuevaLinea->observacion                = $data['observacion'] ?? '';
+                        $nuevaLinea->numero_bloque              = $operacion->numero_bloque;
 
                         if ($request->filled('tipo_certificado_id')) {
                             $nuevaLinea->id_car_sia_tipos = $request->tipo_certificado_id;
@@ -1272,6 +1275,44 @@ class OperacionController extends Controller
             }
         }
 
+        /**
+         * 13. ACTUALIZACIÓN MASIVA DE ESTADO API POR FACTURA Y BLOQUE
+         *
+         * Actualiza únicamente la columna 'estadoApi' para todos los registros
+         * que compartan el mismo id_factura dentro de un número de bloque específico,
+         * protegiendo los historiales y cartas de períodos anteriores.
+         */
+        public function actualizarEstadoApiPorBloque(Request $request, $idFactura, $numeroBloque)
+        {
+            $request->validate([
+                'estadoApi' => 'nullable|string|max:50',
+            ], [
+                'estadoApi.max' => 'El estado API no puede superar los 50 caracteres.',
+            ]);
+
+            $nuevoEstado = $request->input('estadoApi');
+
+            try {
+                // Actualización masiva directa y aislada únicamente a la columna 'estadoApi'
+                $filasActualizadas = CarSiaOperacionLinea::where('id_factura', $idFactura)
+                    ->where('numero_bloque', $numeroBloque) // <--- Protege los bloques/historiales pasados
+                    ->update(['estadoApi' => $nuevoEstado]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Se actualizó el estado API de la factura #{$idFactura} para el bloque {$numeroBloque} en {$filasActualizadas} registro(s).",
+                    'affected_rows' => $filasActualizadas
+                ], 200);
+
+            } catch (\Exception $e) {
+                Log::error("SIA - Error al actualizar estado API masivo por bloque: " . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al actualizar el estado API.',
+                    'error' => $e->getMessage()
+                ], 500);
+            }
+        }
     // =========================================================================
     // FIN PROCESAMIENTO MASIVO, INDIVIDUAL Y SELECTIVO
     // =========================================================================

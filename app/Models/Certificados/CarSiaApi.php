@@ -61,4 +61,55 @@ class CarSiaApi extends Model
         return $this->belongsTo(CarSiaLinea::class, 'cuenta', 'cuenta');
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | ACCESSORS PARA RELACIONES VIRTUALES
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Accessor: Extrae solo el número del 'doc_mov'.
+     * Ej: "PR-9594" -> 9594
+     */
+    public function getPrNumberAttribute()
+    {
+        if (!$this->doc_mov) {
+            return null;
+        }
+
+        // str_replace es muy rápido. Si a futuro tienes otros prefijos como "NC-9594",
+        // puedes usar preg_replace('/[^0-9]/', '', $this->doc_mov) para dejar solo los números.
+        return (int) str_replace('PR-', '', $this->doc_mov);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONES Y ACCESSORS (FILTRADO COMPUESTO)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * 1. RELACIÓN BASE: Trae TODOS los comprobantes que coincidan con el PR.
+     * Usamos 'hasMany' porque un PR puede tener varias cuotas (Ej: 1, 2, 3...)
+     */
+    public function comprobantesBase()
+    {
+        return $this->hasMany(\App\Models\Cartera\CarComprobantePago::class, 'pr', 'pr_number');
+    }
+
+    /**
+     * 2. ACCESSOR VIRTUAL: Filtra la colección en memoria buscando la cuota exacta.
+     * Como se llama 'getComprobantePagoAttribute', en Blade se usará como ->comprobantePago
+     */
+    public function getComprobantePagoAttribute()
+    {
+        // Si no hay cuota o no es un número, no hay coincidencia válida
+        if (!$this->cuota || !is_numeric($this->cuota)) {
+            return null;
+        }
+
+        // Buscamos dentro de los comprobantes cargados el que tenga el mismo número de cuota.
+        // Casteamos (int) para que el "15" (VARCHAR) se convierta en 15 (INT) y crucen perfecto.
+        return $this->comprobantesBase->firstWhere('numero_cuota', (int) $this->cuota);
+    }
 }

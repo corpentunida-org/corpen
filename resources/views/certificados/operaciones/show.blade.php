@@ -918,7 +918,8 @@
                                                     {{-- Fila Agrupadora tipo Accordion --}}
                                                     <thead class="bg-light">
                                                         <tr>
-                                                            <th colspan="8" class="p-0 border-bottom-0">
+                                                            {{-- ¡IMPORTANTE! Cambiamos el colspan a 9 por la nueva columna --}}
+                                                            <th colspan="9" class="p-0 border-bottom-0">
                                                                 <button class="btn btn-light w-100 d-flex justify-content-between align-items-center rounded-0 px-3 py-2 shadow-none border-0 text-start collapsed"
                                                                         type="button"
                                                                         data-bs-toggle="collapse"
@@ -953,11 +954,15 @@
                                                         <tr class="bg-white text-muted text-uppercase" style="font-size: 0.65rem;">
                                                             <th class="px-3 py-2 border-bottom text-secondary" style="width: 12%;">N° Factura</th>
                                                             <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Cuota</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary" style="width: 15%;">Pagaré</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 12%;">F. Vencimiento</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 10%;">Días Mora</th>
-                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 15%;">V. Inicial (Bruto)</th>
-                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 15%;">V. a Pagar (Neto)</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary" style="width: 10%;">Pagaré</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 10%;">F. Vencimiento</th>
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 8%;">Días Mora</th>
+                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 14%;">V. Inicial (Bruto)</th>
+                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 14%;">V. a Pagar (Neto)</th>
+
+                                                            {{-- NUEVA COLUMNA COMPROBANTE --}}
+                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 12%;">Comprobante</th>
+
                                                             <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 15%;">Estado</th>
                                                         </tr>
 
@@ -977,6 +982,22 @@
                                                                 </td>
                                                                 <td class="px-3 py-1 text-end text-muted">${{ number_format((float)$factura->valor_inicial, 2) }}</td>
                                                                 <td class="px-3 py-1 text-end fw-bold" style="color: #047857;">${{ number_format((float)$factura->valor, 2) }}</td>
+
+                                                                {{-- NUEVA CELDA: LÓGICA DEL COMPROBANTE --}}
+                                                                <td class="px-2 py-1 text-center">
+                                                                    @if($factura->comprobantePago)
+                                                                        <a href="{{ $factura->comprobantePago->url_archivo }}" target="_blank" class="badge bg-success text-white text-decoration-none d-inline-flex align-items-center gap-1 shadow-sm" title="Ver Archivo: {{ $factura->comprobantePago->nombre_archivo_simple }}">
+                                                                            <i class="fas fa-file-invoice-dollar"></i> Pagado
+                                                                        </a>
+                                                                        <div class="mt-1" style="font-size: 0.6rem; color: #6c757d; font-weight: 600;">
+                                                                            ${{ number_format((float)$factura->comprobantePago->monto_pagado, 0) }}
+                                                                        </div>
+                                                                    @else
+                                                                        <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">Sin registro</span>
+                                                                    @endif
+                                                                </td>
+                                                                {{-- FIN NUEVA CELDA --}}
+
                                                                 <td class="px-2 py-1 text-center">
                                                                     @if($factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> PROCESADO</span>
                                                                     @elseif($factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.7rem;"><i class="fas fa-ban me-1"></i> ANULADO</span>
@@ -1258,7 +1279,7 @@
                                                                         <input type="hidden" name="dias_gracia_lote" id="input_dias_gracia_{{ $certId }}" value="">
 
                                                                         <div class="table-responsive border rounded-2 shadow-sm mb-3">
-                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1500px;">
+                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1600px;">
                                                                                 <thead class="text-muted text-uppercase" style="font-size: 0.65rem; background-color: #f1f5f9;">
                                                                                     <tr>
                                                                                         {{-- SECCIÓN INFO ERP (Read-Only) --}}
@@ -1267,17 +1288,22 @@
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 4%;">Cuota</th>
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Pagaré</th>
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-end" style="width: 7%;">Valor $</th>
+
+                                                                                        {{-- NUEVA COLUMNA COMPROBANTE --}}
+                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Comprobante</th>
+
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Estado ERP</th>
                                                                                         <th class="px-2 py-2 border-bottom text-secondary text-center border-end" style="width: 7%;">Cuenta</th>
 
                                                                                         {{-- SECCIÓN EDITABLE (Inputs form elements) --}}
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Calificación</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 10%;"><i class="fas fa-pen me-1"></i> Estado Línea</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 9%;"><i class="fas fa-pen me-1"></i> Estado SIA</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Estado API</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 6%;"><i class="fas fa-pen me-1"></i> Mora</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Vencimiento</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Último Rec.</th>
                                                                                         <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Procesado</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 13%;"><i class="fas fa-pen me-1"></i> Observación</th>
+                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 12%;"><i class="fas fa-pen me-1"></i> Observación</th>
                                                                                     </tr>
                                                                                 </thead>
                                                                                 <tbody style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
@@ -1287,28 +1313,43 @@
                                                                                             {{-- COLUMNAS INFORMATIVAS (Fondo Gris Claro) --}}
                                                                                             <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">API-{{ str_pad($linea->numero_bloque, 4, '0', STR_PAD_LEFT) }}</td>
                                                                                             <td class="px-2 py-1 text-center fw-bold text-dark" style="background-color: #f8fafc; font-family: monospace;">#{{ $linea->id_factura }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura->cuota ?? '-' }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura->pagare ?? 'S/N' }}</td>
-                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura?->cuota ?? '-' }}</td>
+                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura?->pagare ?? 'S/N' }}</td>
+                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura?->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
+
+                                                                                            {{-- NUEVA CELDA COMPROBANTE --}}
+                                                                                            <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
+                                                                                                @if($linea->factura?->comprobantePago)
+                                                                                                    <a href="{{ $linea->factura->comprobantePago->url_archivo }}" target="_blank" class="badge bg-success text-white text-decoration-none d-inline-flex align-items-center gap-1 shadow-sm" title="Ver Archivo: {{ $linea->factura->comprobantePago->nombre_archivo_simple }}">
+                                                                                                        <i class="fas fa-file-invoice-dollar"></i> Pagado
+                                                                                                    </a>
+                                                                                                    <div class="mt-1" style="font-size: 0.6rem; color: #6c757d; font-weight: 600;">
+                                                                                                        ${{ number_format((float)$linea->factura->comprobantePago->monto_pagado, 0) }}
+                                                                                                    </div>
+                                                                                                @else
+                                                                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">Sin registro</span>
+                                                                                                @endif
+                                                                                            </td>
 
                                                                                             <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
-                                                                                                @if(isset($linea->factura) && $linea->factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
-                                                                                                @elseif(isset($linea->factura) && $linea->factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
-                                                                                                @else <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
+                                                                                                @if($linea->factura?->estado == 'PROCESADO')
+                                                                                                    <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
+                                                                                                @elseif($linea->factura?->anular == 1)
+                                                                                                    <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
+                                                                                                @else
+                                                                                                    <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
                                                                                                 @endif
                                                                                             </td>
 
                                                                                             <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">
-                                                                                                {{-- Muestra el número de cuenta --}}
                                                                                                 <span class="d-block fw-bold text-dark" style="font-size: 0.75rem;">{{ $linea->id_car_sia_lineas }}</span>
-
-                                                                                                {{-- Muestra el campo de la relación (Ej: nombre). Usamos optional() por si viene nulo y no rompa la vista --}}
                                                                                                 <span style="font-size: 0.65rem;" title="Nombre de la línea">
-                                                                                                    {{ optional($linea->factura->lineaSia)->nombre ?? 'Sin descripción' }}
+                                                                                                    {{ $linea->factura?->lineaSia?->nombre ?? 'Sin descripción' }}
                                                                                                 </span>
                                                                                             </td>
-
                                                                                             {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
+
+                                                                                            {{-- 1. Calificación --}}
                                                                                             <td class="p-0 align-middle position-relative">
                                                                                                 <div class="d-flex align-items-center h-100">
                                                                                                     <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
@@ -1323,6 +1364,7 @@
                                                                                                 </div>
                                                                                             </td>
 
+                                                                                            {{-- 2. Estado SIA --}}
                                                                                             <td class="p-0 align-middle border-start border-end">
                                                                                                 <select name="lineas[{{ $linea->id }}][id_car_sia_estados]" class="form-select form-select-sm border-0 shadow-none text-center text-muted fw-semibold w-100 rounded-0 bg-transparent py-1">
                                                                                                     <option value="">Seleccione...</option>
@@ -1332,28 +1374,45 @@
                                                                                                 </select>
                                                                                             </td>
 
+                                                                                            {{-- 3. Estado API (Actualización inmediata por Factura y Bloque) --}}
+                                                                                            <td class="p-0 align-middle border-start border-end">
+                                                                                                <select name="lineas[{{ $linea->id }}][estadoApi]"
+                                                                                                        class="form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 {{ $linea->estadoApi == 1 ? 'text-success fw-bold' : 'text-muted' }}"
+                                                                                                        onchange="actualizarEstadoApiDirecto(this, '{{ $linea->id_factura }}', '{{ $linea->numero_bloque }}')">
+                                                                                                    <option value="" {{ is_null($linea->estadoApi) || $linea->estadoApi === '' ? 'selected' : '' }}>No Pago</option>
+                                                                                                    <option value="1" {{ $linea->estadoApi == 1 ? 'selected' : '' }}>Pago</option>
+                                                                                                </select>
+                                                                                            </td>
+
+                                                                                            {{-- 4. Días de Mora Automáticos --}}
                                                                                             <td class="p-0 align-middle">
                                                                                                 <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="form-control form-control-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->dias_mora_automaticos < 0 ? 'text-danger' : 'text-dark' }}" value="{{ $linea->dias_mora_automaticos }}" required>
                                                                                             </td>
 
+                                                                                            {{-- 5. Fecha Vencimiento --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 6. Fecha Último Recordatorio --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 7. Procesado En --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="date" name="lineas[{{ $linea->id }}][procesado_en]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->procesado_en ? \Carbon\Carbon::parse($linea->procesado_en)->format('Y-m-d') : '' }}">
                                                                                             </td>
 
+                                                                                            {{-- 8. Observación --}}
                                                                                             <td class="p-0 align-middle border-start">
                                                                                                 <input type="text" name="lineas[{{ $linea->id }}][observacion]" class="form-control form-control-sm border-0 shadow-none w-100 rounded-0 bg-transparent py-1 px-2" value="{{ $linea->observacion }}" placeholder="...">
                                                                                             </td>
+
                                                                                         </tr>
                                                                                     @empty
-                                                                                        <tr><td colspan="14" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
+                                                                                        {{-- Ajustado colspan a 16 por la nueva columna --}}
+                                                                                        <tr><td colspan="16" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
                                                                                     @endforelse
                                                                                 </tbody>
                                                                             </table>
@@ -1548,109 +1607,108 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                        @endif
 
-                                            {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO --}}
-                                            @foreach($lineasEditor as $linea)
-                                                @php
-                                                    $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
-                                                    $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
-                                                    $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
-                                                    $moraEfectiva = max(0, $diasTranscurridos - $diasGracia);
-                                                    $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
-                                                    $observacionFase = $meta['observacion_fase'] ?? '';
-                                                    $observacionGeneral = $linea->observacion ?? '';
-                                                @endphp
+                                        {{-- BLOQUE DE MODALES DE RADIOGRAFÍA DEL CÁLCULO --}}
+                                        @foreach($lineasEditor as $linea)
+                                            @php
+                                                $meta = is_string($linea->metadata) ? json_decode($linea->metadata, true) : (array) ($linea->metadata ?? []);
+                                                $diasGracia = (int) ($meta['dias_gracia'] ?? 0);
+                                                $diasTranscurridos = (int) ($linea->dias_mora_automaticos ?? 0);
+                                                $moraEfectiva = max(0, $diasTranscurridos - $diasGracia);
+                                                $clasificacion = $meta['clasificacion_mora'] ?? 'Indeterminada';
+                                                $observacionFase = $meta['observacion_fase'] ?? '';
+                                                $observacionGeneral = $linea->observacion ?? '';
+                                            @endphp
 
-                                                <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                        <div class="modal-content border-0 shadow-lg rounded-4">
-                                                            <div class="modal-header border-0 pb-0 pt-4 px-4">
-                                                                <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
-                                                                    <i class="fas fa-microscope me-2"></i> Radiografía del Cálculo
-                                                                </h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            <div class="modal fade" id="modalExplicacion-{{ $linea->id }}" tabindex="-1" aria-labelledby="modalExplicacionLabel-{{ $linea->id }}" aria-hidden="true">
+                                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                    <div class="modal-content border-0 shadow-lg rounded-4">
+                                                        <div class="modal-header border-0 pb-0 pt-4 px-4">
+                                                            <h5 class="fw-bold mb-0 text-primary" id="modalExplicacionLabel-{{ $linea->id }}">
+                                                                <i class="fas fa-microscope me-2"></i> Radiografía del Cálculo
+                                                            </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                                        </div>
+                                                        <div class="modal-body p-4">
+                                                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                                                <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
+                                                                <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
                                                             </div>
-                                                            <div class="modal-body p-4">
-                                                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                                                    <p class="text-muted fs-7 mb-0">Auditoría de calificación para la factura <strong class="text-dark font-monospace fs-6">#{{ $linea->id_factura }}</strong></p>
-                                                                    <span class="badge bg-light text-secondary border"><i class="fas fa-user-circle me-1"></i> {{ optional($linea->usuario)->name ?? 'Sistema' }}</span>
-                                                                </div>
 
-                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
-                                                                <div class="row g-3 mb-4">
-                                                                    <div class="col-md-6">
-                                                                        <div class="p-3 bg-light rounded-3 border border-light h-100">
-                                                                            <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Vencimiento</span>
-                                                                            <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-times me-2 text-danger"></i>{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('d/m/Y') : 'N/A' }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="p-3 bg-light rounded-3 border border-light h-100">
-                                                                            <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Corte (Día del Cálculo)</span>
-                                                                            <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-check me-2 text-primary"></i>{{ $linea->created_at ? \Carbon\Carbon::parse($linea->created_at)->format('d/m/Y') : 'N/A' }}</span>
-                                                                        </div>
+                                                            <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="far fa-calendar-alt me-2"></i>1. Línea de Tiempo Base</h6>
+                                                            <div class="row g-3 mb-4">
+                                                                <div class="col-md-6">
+                                                                    <div class="p-3 bg-light rounded-3 border border-light h-100">
+                                                                        <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Vencimiento</span>
+                                                                        <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-times me-2 text-danger"></i>{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('d/m/Y') : 'N/A' }}</span>
                                                                     </div>
                                                                 </div>
-
-                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-calculator me-2"></i>2. Cálculo de Mora</h6>
-                                                                <div class="row g-2 mb-2 align-items-center text-center">
-                                                                    <div class="col">
-                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm">
-                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días Transcurridos</span>
-                                                                            <span class="fs-4 fw-bold text-dark">{{ $diasTranscurridos }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-auto">
-                                                                        <i class="fas fa-minus text-muted"></i>
-                                                                    </div>
-                                                                    <div class="col">
-                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm">
-                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días de Gracia</span>
-                                                                            <span class="fs-4 fw-bold text-success">{{ $diasGracia }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-auto">
-                                                                        <i class="fas fa-equals text-muted"></i>
-                                                                    </div>
-                                                                    <div class="col">
-                                                                        <div class="p-3 bg-white rounded-3 border shadow-sm border-danger border-opacity-50">
-                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Mora Efectiva</span>
-                                                                            <span class="fs-4 fw-bold text-danger">{{ $moraEfectiva }}</span>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <p class="text-muted text-center mb-4" style="font-size: 0.75rem;">La calificación se determinó basándose en <strong>{{ $moraEfectiva }} días</strong> de mora efectiva.</p>
-
-                                                                <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
-                                                                <div class="alert bg-light border rounded-3 mb-0">
-                                                                    <div class="bg-white p-3 rounded border mb-3">
-                                                                        <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
-                                                                            > {{ $observacionGeneral ?: $observacionFase }}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div class="row align-items-center mb-3 text-center">
-                                                                        <div class="col-6 border-end">
-                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Clasificación de Regla</span>
-                                                                            <span class="badge bg-secondary text-uppercase">{{ $clasificacion }}</span>
-                                                                        </div>
-                                                                        <div class="col-6">
-                                                                            <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Calificación Final</span>
-                                                                            <span class="badge rounded-1 {{ ($linea->calificacion ?? '') == 'Bueno' ? 'bg-success' : (($linea->calificacion ?? '') == 'Regular' ? 'bg-warning text-dark' : 'bg-danger') }} text-uppercase fs-6">
-                                                                                {{ $linea->calificacion ?? 'N/A' }}
-                                                                            </span>
-                                                                        </div>
+                                                                <div class="col-md-6">
+                                                                    <div class="p-3 bg-light rounded-3 border border-light h-100">
+                                                                        <span class="d-block text-muted" style="font-size: 0.70rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.25rem;">Fecha de Corte (Día del Cálculo)</span>
+                                                                        <span class="fs-6 fw-bold text-dark"><i class="far fa-calendar-check me-2 text-primary"></i>{{ $linea->created_at ? \Carbon\Carbon::parse($linea->created_at)->format('d/m/Y') : 'N/A' }}</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                                <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+
+                                                            <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-calculator me-2"></i>2. Cálculo de Mora</h6>
+                                                            <div class="row g-2 mb-2 align-items-center text-center">
+                                                                <div class="col">
+                                                                    <div class="p-3 bg-white rounded-3 border shadow-sm">
+                                                                        <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días Transcurridos</span>
+                                                                        <span class="fs-4 fw-bold text-dark">{{ $diasTranscurridos }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <i class="fas fa-minus text-muted"></i>
+                                                                </div>
+                                                                <div class="col">
+                                                                    <div class="p-3 bg-white rounded-3 border shadow-sm">
+                                                                        <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Días de Gracia</span>
+                                                                        <span class="fs-4 fw-bold text-success">{{ $diasGracia }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-auto">
+                                                                    <i class="fas fa-equals text-muted"></i>
+                                                                </div>
+                                                                <div class="col">
+                                                                    <div class="p-3 bg-white rounded-3 border shadow-sm border-danger border-opacity-50">
+                                                                        <span class="d-block text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; font-weight: 700;">Mora Efectiva</span>
+                                                                        <span class="fs-4 fw-bold text-danger">{{ $moraEfectiva }}</span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
+                                                            <p class="text-muted text-center mb-4" style="font-size: 0.75rem;">La calificación se determinó basándose en <strong>{{ $moraEfectiva }} días</strong> de mora efectiva.</p>
+
+                                                            <h6 class="fw-bold mb-3 text-secondary border-bottom pb-2" style="font-size: 0.85rem;"><i class="fas fa-gavel me-2"></i>3. Dictamen del Sistema</h6>
+                                                            <div class="alert bg-light border rounded-3 mb-0">
+                                                                <div class="bg-white p-3 rounded border mb-3">
+                                                                    <p class="text-dark font-monospace mb-0" style="font-size: 0.85rem;">
+                                                                        > {{ $observacionGeneral ?: $observacionFase }}
+                                                                    </p>
+                                                                </div>
+                                                                <div class="row align-items-center mb-3 text-center">
+                                                                    <div class="col-6 border-end">
+                                                                        <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Clasificación de Regla</span>
+                                                                        <span class="badge bg-secondary text-uppercase">{{ $clasificacion }}</span>
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <span class="d-block text-muted mb-1" style="font-size: 0.70rem; text-transform: uppercase;">Calificación Final</span>
+                                                                        <span class="badge rounded-1 {{ ($linea->calificacion ?? '') == 'Bueno' ? 'bg-success' : (($linea->calificacion ?? '') == 'Regular' ? 'bg-warning text-dark' : 'bg-danger') }} text-uppercase fs-6">
+                                                                            {{ $linea->calificacion ?? 'N/A' }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer border-0 bg-light rounded-bottom-4">
+                                                            <button type="button" class="btn btn-secondary btn-sm rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            @endforeach
-                                        @endif
-
+                                            </div>
+                                        @endforeach
                                     @endforeach
 
                                 @else
@@ -2250,6 +2308,45 @@
                     icon.classList.add('fa-chevron-circle-down');
                 }
             }
+        }
+
+        // ========================================== -->
+        // FUNCIÓN PARA ACTUALIZAR ESTADO API DIRECTO  -->
+        // ========================================== -->
+        function actualizarEstadoApiDirecto(selectElement, idFactura, numeroBloque) {
+            const nuevoEstado = selectElement.value;
+
+            // Cambiar visualmente el estilo de forma inmediata mientras responde el servidor
+            if (nuevoEstado == '1') {
+                selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 text-success';
+            } else {
+                selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 text-muted';
+            }
+
+            // Construir la URL usando la ruta nombrada de Laravel
+            const url = `{{ route('certificados.operaciones.estado_api.bloque', ['idFactura' => ':id', 'numeroBloque' => ':bloque']) }}`
+                        .replace(':id', idFactura)
+                        .replace(':bloque', numeroBloque);
+
+            fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ estadoApi: nuevoEstado !== "" ? nuevoEstado : null })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Error al actualizar el estado API: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error de red:', error);
+                alert('Ocurrió un error de red al intentar actualizar el estado API.');
+            });
         }
     </script>
 
