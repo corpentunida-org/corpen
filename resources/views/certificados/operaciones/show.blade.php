@@ -522,9 +522,39 @@
             <div class="col-xl-8 col-lg-7">
                 <div class="card card-custom shadow-sm border-0 h-100">
 
+                    {{-- ESTILOS PARA LA BARRA DE DESPLAZAMIENTO (Scrollbar) --}}
+                    <style>
+                        /* Habilita una barra delgada en Firefox */
+                        .tabs-scrollable {
+                            scrollbar-width: thin;
+                            scrollbar-color: #cbd5e1 transparent;
+                        }
+                        /* Estilos para navegadores basados en WebKit (Chrome, Edge, Safari) */
+                        .tabs-scrollable::-webkit-scrollbar {
+                            height: 6px; /* Altura de la barra horizontal */
+                        }
+                        .tabs-scrollable::-webkit-scrollbar-track {
+                            background: #f8f9fa; /* Color del canal por donde se mueve */
+                            border-radius: 10px;
+                        }
+                        .tabs-scrollable::-webkit-scrollbar-thumb {
+                            background-color: #cbd5e1; /* Color de la barrita */
+                            border-radius: 10px;
+                        }
+                        .tabs-scrollable::-webkit-scrollbar-thumb:hover {
+                            background-color: #94a3b8; /* Color cuando pasas el mouse */
+                        }
+                    </style>
+
                     {{-- CABECERA: TABS DE NAVEGACIÓN --}}
                     <div class="card-header bg-white pt-3 pb-0 border-bottom px-4" style="border-radius: 20px 20px 0 0;">
-                        <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto" id="operacionTabs" role="tablist" style="scrollbar-width: none;">
+                        <!--
+                            CAMBIOS:
+                            1. Se eliminó style="scrollbar-width: none;"
+                            2. Se agregó la clase 'tabs-scrollable' para aplicar el diseño superior
+                            3. Se agregó 'pb-2' (padding-bottom) para que la barra no pise el borde activo de las pestañas
+                        -->
+                        <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto tabs-scrollable pb-2" id="operacionTabs" role="tablist">
 
                             <!-- Parámetros -->
                             <li class="nav-item" role="presentation">
@@ -603,6 +633,16 @@
                                         <i class="fas fa-paperclip fs-8"></i>
                                     </span>
                                     Soportes
+                                </button>
+                            </li>
+
+                            <!-- Interacciones -->
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="interacciones-tab" data-bs-toggle="tab" data-bs-target="#interacciones" type="button" role="tab">
+                                    <span class="bg-pastel-warning text-warning rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
+                                        <i class="fas fa-headset fs-8"></i>
+                                    </span>
+                                    Interacciones
                                 </button>
                             </li>
 
@@ -1833,27 +1873,247 @@
                             </div>
 
                             {{-- ======================================================= --}}
-                            {{-- INICIO TAB 7: SOPORTES (NUEVA PESTAÑA) --}}
+                            {{-- INICIO TAB 7: SOPORTES (FORMATO HOJA DE CÁLCULO PRO) --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="soportes" role="tabpanel" aria-labelledby="soportes-tab" tabindex="0">
 
-                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                                     <div>
-                                        <h5 class="fw-bold text-dark mb-1">Soportes y Comprobantes</h5>
-                                        <p class="text-muted fs-7 mb-0">Gestión de archivos adjuntos, facturas y comprobantes de la operación.</p>
+                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Registro de Soportes Financieros</h5>
+                                        <p class="text-muted fs-7 mb-0">Trazabilidad detallada de pagos, obligaciones y rutas AWS S3.</p>
                                     </div>
+                                    @if(isset($soportes) && $soportes->count() > 0)
+                                        <div class="bg-pastel-success text-success px-3 py-2 rounded-3 shadow-sm border border-success border-opacity-25">
+                                            <span class="fs-7 fw-bold"><i class="fas fa-check-circle me-1"></i> {{ $soportes->count() }} Soportes validados</span>
+                                        </div>
+                                    @endif
                                 </div>
 
-                                {{-- Contenedor o estructura para los soportes --}}
-                                <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
-                                    <i class="fas fa-folder-open fs-1 text-secondary mb-3 opacity-25"></i>
-                                    <h6 class="fw-bold text-dark">No hay soportes cargados</h6>
-                                    <p class="mb-0 fs-7">Aquí podrás consultar las rutas firmadas y los archivos asociados.</p>
-                                </div>
+                                @if(isset($soportes) && $soportes->count() > 0)
+                                    <div class="card border border-light shadow-sm rounded-4 overflow-hidden bg-white">
+                                        <div class="table-responsive">
+                                            {{-- Tabla estilo hoja de cálculo: hover sutil, bordes limpios, fuente compacta --}}
+                                            <table class="table table-hover align-middle mb-0 text-nowrap" style="font-size: 0.85rem;">
+                                                <thead class="bg-light" style="border-bottom: 2px solid #e2e8f0;">
+                                                    <tr>
+                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Transacción / Fecha</th>
+                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Aplicación (Obligación / Banco)</th>
+                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Detalle & Cuota</th>
+                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Responsable</th>
+                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase text-end" style="font-size: 0.65rem; letter-spacing: 0.8px;">Monto Pagado</th>
+                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase text-center" style="font-size: 0.65rem; letter-spacing: 0.8px;">Acción</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="border-top-0">
+                                                    @foreach($soportes as $soporte)
+                                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+
+                                                            {{-- 1. Transacción y Fecha --}}
+                                                            <td class="ps-4 py-3">
+                                                                <div class="d-flex flex-column">
+                                                                    <span class="fw-bolder text-dark mb-1 fs-7">
+                                                                        <i class="fas fa-hashtag text-muted me-1" style="font-size: 0.65rem;"></i>PR-{{ str_pad($soporte->pr, 5, '0', STR_PAD_LEFT) }}
+                                                                    </span>
+                                                                    <span class="text-muted fw-medium" style="font-size: 0.70rem;">
+                                                                        {{ $soporte->fecha_pago ? \Carbon\Carbon::parse($soporte->fecha_pago)->format('d M, Y - h:i A') : \Carbon\Carbon::parse($soporte->created_at)->format('d M, Y') }}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 2. Aplicación (Crédito/Banco) corregido con el atributo ->nombre --}}
+                                                            <td class="py-3">
+                                                                <div class="d-flex flex-column gap-2">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25 me-2 py-1" style="width: 60px; font-size: 0.65rem;">Crédito</span>
+                                                                        <span class="fw-bold text-dark text-truncate" style="max-width: 200px;" title="{{ optional($soporte->obligacion)->nombre ?? 'Línea #' . $soporte->id_obligacion }}">
+                                                                            {{ optional($soporte->obligacion)->nombre ?? 'Línea #' . $soporte->id_obligacion }}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <span class="badge bg-pastel-secondary text-secondary border border-secondary border-opacity-25 me-2 py-1" style="width: 60px; font-size: 0.65rem;">Banco</span>
+                                                                        <span class="text-muted text-truncate fw-medium" style="max-width: 200px; font-size: 0.75rem;">
+                                                                            {{ optional($soporte->banco)->nombre_banco ?? 'Cuenta no especificada' }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 3. Detalle y Tipo de Pago --}}
+                                                            <td class="py-3">
+                                                                <div class="d-flex flex-column justify-content-center h-100">
+                                                                    <span class="fw-semibold text-dark mb-1">
+                                                                        Cuota {{ $soporte->numero_cuota }}
+                                                                    </span>
+                                                                    <span class="badge bg-light text-muted border text-start d-inline-block text-truncate" style="max-width: 140px; font-size: 0.65rem;" title="{{ $soporte->tipo_pago ?? 'Abono / Pago' }}">
+                                                                        {{ $soporte->tipo_pago ?? 'Abono regular' }}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 4. Usuario Responsable --}}
+                                                            <td class="py-3">
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 text-secondary border shadow-sm" style="width: 26px; height: 26px;">
+                                                                        <i class="fas fa-user-astronaut" style="font-size: 0.6rem;"></i>
+                                                                    </div>
+                                                                    <span class="text-muted fw-medium text-truncate" style="max-width: 120px; font-size: 0.75rem;" title="{{ optional($soporte->user)->name ?? 'Sistema / Externo' }}">
+                                                                        {{ optional($soporte->user)->name ?? 'Sistema / Externo' }}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 5. Monto Pagado (Alineado a la derecha, fuente resaltada) --}}
+                                                            <td class="py-3 text-end pe-4 align-middle">
+                                                                <span class="fw-bolder" style="font-size: 0.95rem; color: #0f172a; letter-spacing: -0.3px;">
+                                                                    ${{ number_format($soporte->monto_pagado, 0, ',', '.') }}
+                                                                </span>
+                                                            </td>
+
+                                                            {{-- 6. Acción: Botón AWS S3 --}}
+                                                            <td class="py-3 text-center pe-4">
+                                                                @if($soporte->url_archivo && $soporte->url_archivo !== '#')
+                                                                    <a href="{{ $soporte->url_archivo }}" target="_blank" class="btn btn-sm btn-primary shadow-sm hover-opacity rounded-pill px-3 py-1 fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                                                        <i class="fas fa-cloud-download-alt me-1"></i> VER
+                                                                    </a>
+                                                                @else
+                                                                    <span class="badge bg-light text-muted border py-1 px-2 rounded-pill" style="font-size: 0.65rem;">
+                                                                        <i class="fas fa-eye-slash me-1"></i> No físico
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-secondary rounded-circle mb-3" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-folder-open fs-2 text-secondary opacity-50"></i>
+                                        </div>
+                                        <h6 class="fw-bolder text-dark mb-1">Cero soportes registrados</h6>
+                                        <p class="mb-0 fs-7 text-muted">Aún no se han procesado comprobantes físicos ni transferencias de esta operación en AWS S3.</p>
+                                    </div>
+                                @endif
 
                             </div>
                             {{-- ======================================================= --}}
                             {{-- FIN TAB 7 --}}
+                            {{-- ======================================================= --}}
+
+                            {{-- ======================================================= --}}
+                            {{-- INICIO TAB 8: INTERACCIONES (CRM / CONTACTOS) --}}
+                            {{-- ======================================================= --}}
+                            <div class="tab-pane fade" id="interacciones" role="tabpanel" aria-labelledby="interacciones-tab" tabindex="0">
+
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Registro de Interacciones</h5>
+                                        <p class="text-muted fs-7 mb-0">Historial de llamadas, correos y gestiones realizadas con este cliente.</p>
+                                    </div>
+                                    @if(isset($interacciones) && $interacciones->count() > 0)
+                                        <div class="bg-pastel-warning text-warning px-3 py-2 rounded-3 shadow-sm border border-warning border-opacity-25">
+                                            <span class="fs-7 fw-bold text-dark"><i class="fas fa-history me-1 text-warning"></i> {{ $interacciones->count() }} Gestiones</span>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if(isset($interacciones) && $interacciones->count() > 0)
+                                    <div class="card border border-light shadow-sm rounded-4 overflow-hidden bg-white">
+                                        <div class="table-responsive">
+                                            {{-- Tabla estilo SaaS / Hoja de cálculo --}}
+                                            <table class="table table-hover align-middle mb-0 text-nowrap" style="font-size: 0.85rem;">
+                                                <thead class="bg-light" style="border-bottom: 2px solid #e2e8f0;">
+                                                    <tr>
+                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Fecha & Canal</th>
+                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Asesor / Agente</th>
+                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Gestión & Resultado</th>
+                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase w-50" style="font-size: 0.65rem; letter-spacing: 0.8px;">Notas / Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="border-top-0">
+                                                    @foreach($interacciones as $interaccion)
+                                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+
+                                                            {{-- 1. Fecha y Canal --}}
+                                                            <td class="ps-4 py-3">
+                                                                <div class="d-flex flex-column">
+                                                                    <span class="fw-bolder text-dark mb-1 fs-7">
+                                                                        {{ $interaccion->interaction_date ? $interaccion->interaction_date->format('d M, Y - h:i A') : 'Sin fecha' }}
+                                                                    </span>
+                                                                    <div class="d-flex align-items-center mt-1">
+                                                                        <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25 py-1 px-2" style="font-size: 0.60rem;">
+                                                                            <i class="fas fa-link me-1"></i>
+                                                                            {{-- Nota: Ajusta 'nombre' por el atributo real de tu modelo IntChannel si es diferente --}}
+                                                                            {{ optional($interaccion->channel)->nombre ?? 'Canal Estándar' }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 2. Agente / Asesor --}}
+                                                            <td class="py-3">
+                                                                <div class="d-flex align-items-center">
+                                                                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 text-secondary border shadow-sm" style="width: 32px; height: 32px;">
+                                                                        <i class="fas fa-headset" style="font-size: 0.75rem;"></i>
+                                                                    </div>
+                                                                    <div class="d-flex flex-column">
+                                                                        <span class="text-dark fw-bold text-truncate" style="max-width: 150px; font-size: 0.75rem;" title="{{ optional($interaccion->agent)->name ?? 'No asignado' }}">
+                                                                            {{ optional($interaccion->agent)->name ?? 'No asignado' }}
+                                                                        </span>
+                                                                        @if($interaccion->duration)
+                                                                            <span class="text-muted" style="font-size: 0.65rem;">
+                                                                                <i class="far fa-clock me-1"></i>{{ $interaccion->duration }} min
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 3. Tipo de Gestión y Resultado (Outcome) --}}
+                                                            <td class="py-3">
+                                                                <div class="d-flex flex-column gap-1">
+                                                                    <span class="text-dark fw-semibold" style="font-size: 0.75rem;">
+                                                                        {{ optional($interaccion->type)->nombre ?? 'Gestión General' }}
+                                                                    </span>
+                                                                    <span class="badge bg-light text-muted border text-start d-inline-block text-truncate" style="max-width: 160px; font-size: 0.65rem;" title="{{ optional($interaccion->outcomeRelation)->nombre ?? 'Sin estado' }}">
+                                                                        <i class="fas fa-check-double me-1"></i> {{ optional($interaccion->outcomeRelation)->nombre ?? 'Pendiente / Sin estado' }}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+
+                                                            {{-- 4. Notas (Con text-wrap para que se pueda leer el comentario) --}}
+                                                            <td class="py-3 pe-4 text-wrap" style="min-width: 250px;">
+                                                                @if($interaccion->notes)
+                                                                    <p class="mb-0 text-muted" style="font-size: 0.75rem; line-height: 1.4;">
+                                                                        {{ $interaccion->notes }}
+                                                                    </p>
+                                                                @else
+                                                                    <span class="text-black-50 fst-italic" style="font-size: 0.70rem;">Sin observaciones adicionales...</span>
+                                                                @endif
+                                                            </td>
+
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-warning rounded-circle mb-3" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-headset fs-2 text-warning opacity-75"></i>
+                                        </div>
+                                        <h6 class="fw-bolder text-dark mb-1">Sin historial de contacto</h6>
+                                        <p class="mb-0 fs-7 text-muted">Aún no se han registrado interacciones, llamadas o seguimientos con este cliente.</p>
+                                    </div>
+                                @endif
+
+                            </div>
+                            {{-- ======================================================= --}}
+                            {{-- FIN TAB 8 --}}
                             {{-- ======================================================= --}}
 
                         </div>
