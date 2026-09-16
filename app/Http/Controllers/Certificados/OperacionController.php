@@ -201,7 +201,7 @@ class OperacionController extends Controller
 
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
-            $registrosCrudos = CarSiaApi::with('lineaSia')
+            $registrosCrudos = CarSiaApi::with(['lineaSia', 'comprobantesBase']) 
                 ->where('numero_bloque', $operacion->numero_bloque)
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
@@ -1274,7 +1274,7 @@ class OperacionController extends Controller
                 return redirect()->back()->with('error', 'Ocurrió un error al intentar guardar los cambios.');
             }
         }
-        
+
         /**
          * 13. ACTUALIZACIÓN MASIVA DE ESTADO API POR FACTURA Y BLOQUE
          *
