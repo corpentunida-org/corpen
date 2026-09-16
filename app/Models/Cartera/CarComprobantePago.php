@@ -159,6 +159,21 @@ class CarComprobantePago extends Model
 
     /*
     |--------------------------------------------------------------------------
+    | ACCESSORS PARA RELACIONES VIRTUALES
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Accessor: Formatea el ID 'pr' para que coincida con el 'doc_mov' de SIA.
+     * Ej: 9594 -> "PR-9594"
+     */
+    public function getPrFormatAttribute()
+    {
+        return $this->pr ? 'PR-' . $this->pr : null;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | RELACIONES DE ELOQUENT (RELATIONSHIPS)
     |--------------------------------------------------------------------------
     */
@@ -201,5 +216,32 @@ class CarComprobantePago extends Model
     public function banco(): BelongsTo
     {
         return $this->belongsTo(ConCuentaBancaria::class, 'id_banco', 'id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONES Y ACCESSORS (FILTRADO COMPUESTO)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * 1. RELACIÓN BASE: Trae TODOS los registros de la API SIA con este PR
+     */
+    public function siaApiBase()
+    {
+        return $this->hasMany(\App\Models\Certificados\CarSiaApi::class, 'doc_mov', 'pr_format');
+    }
+
+    /**
+     * 2. ACCESSOR VIRTUAL: Encuentra el registro exacto donde la cuota también coincida
+     */
+    public function getSiaApiAttribute()
+    {
+        if (!$this->numero_cuota) {
+            return null;
+        }
+
+        // Casteamos a (string) para que el INT 15 cruce con el VARCHAR "15"
+        return $this->siaApiBase->firstWhere('cuota', (string) $this->numero_cuota);
     }
 }
