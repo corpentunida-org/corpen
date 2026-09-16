@@ -34,6 +34,18 @@ use Maatwebsite\Excel\Facades\Excel;
  * personal interno, así que aquí no aplica la salvedad de Reservas y se suma completo al
  * ranking por usuario también.
  *
+ * `scp_soportes`/`scp_observaciones` (Soporte/Mesa de Ayuda — tickets internos de sistemas) y
+ * `wor_tasks`/`wor_task_comments`/`wor_task_histories` (Flujo de Trabajo — gestión de proyectos y
+ * tareas) tampoco escriben en Auditoria: eran, hasta ahora, dos áreas más completamente invisibles
+ * para este informe (~307 y ~166 eventos reales en los últimos 6 meses respectivamente). Los dos
+ * son 100% personal interno (verificado contra users.type), así que se suman completos también al
+ * ranking por usuario, sin la salvedad de Reservas.
+ * - SOLICITUDES cuenta cada ticket creado (scp_soportes) y cada observación/respuesta registrada
+ *   sobre un ticket (scp_observaciones) — igual que Interacciones, cada gestión sobre el caso es
+ *   una unidad de actividad real, no solo la apertura.
+ * - FLUJO DE TRABAJO cuenta cada tarea creada (wor_tasks), cada comentario (wor_task_comments) y
+ *   cada cambio de estado (wor_task_histories, por `cambiado_por`).
+ *
  * "Tiempo activo" tiene dos fuentes de naturaleza distinta, que no se deben sumar como si fueran
  * lo mismo:
  * - sesiones_usuario (login/logout, ver App\Listeners\Registrar*Sesion y
@@ -154,6 +166,36 @@ class InformeUsoController extends Controller
             $porArea->put('CARTERA', ($porArea->get('CARTERA', 0)) + $totalCartera);
         }
 
+        $totalSolicitudes = DB::table('scp_soportes')
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta)
+                ->count()
+            + DB::table('scp_observaciones')
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta)
+                ->count();
+
+        if ($totalSolicitudes > 0) {
+            $porArea->put('SOLICITUDES', ($porArea->get('SOLICITUDES', 0)) + $totalSolicitudes);
+        }
+
+        $totalFlujoTrabajo = DB::table('wor_tasks')
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta)
+                ->count()
+            + DB::table('wor_task_comments')
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta)
+                ->count()
+            + DB::table('wor_task_histories')
+                ->whereDate('created_at', '>=', $desde)
+                ->whereDate('created_at', '<=', $hasta)
+                ->count();
+
+        if ($totalFlujoTrabajo > 0) {
+            $porArea->put('FLUJO DE TRABAJO', ($porArea->get('FLUJO DE TRABAJO', 0)) + $totalFlujoTrabajo);
+        }
+
         $maximo = $porArea->max() ?: 1;
 
         return $porArea->sortDesc()->map(fn ($total, $area) => [
@@ -209,6 +251,46 @@ class InformeUsoController extends Controller
             ->groupBy('id_user')
             ->pluck('total', 'id_user');
 
+        $deSoportesCreados = DB::table('scp_soportes')
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->whereNotNull('id_users')
+            ->select('id_users', DB::raw('count(*) as total'))
+            ->groupBy('id_users')
+            ->pluck('total', 'id_users');
+
+        $deObservaciones = DB::table('scp_observaciones')
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->whereNotNull('id_users')
+            ->select('id_users', DB::raw('count(*) as total'))
+            ->groupBy('id_users')
+            ->pluck('total', 'id_users');
+
+        $deTareasCreadas = DB::table('wor_tasks')
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->whereNotNull('user_id')
+            ->select('user_id', DB::raw('count(*) as total'))
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        $deComentariosTareas = DB::table('wor_task_comments')
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->whereNotNull('user_id')
+            ->select('user_id', DB::raw('count(*) as total'))
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        $deCambiosEstadoTareas = DB::table('wor_task_histories')
+            ->whereDate('created_at', '>=', $desde)
+            ->whereDate('created_at', '<=', $hasta)
+            ->whereNotNull('cambiado_por')
+            ->select('cambiado_por', DB::raw('count(*) as total'))
+            ->groupBy('cambiado_por')
+            ->pluck('total', 'cambiado_por');
+
         $totales = collect();
         foreach ($deAuditoria as $userId => $total) {
             $totales->put($userId, $totales->get($userId, 0) + $total);
@@ -223,6 +305,21 @@ class InformeUsoController extends Controller
             $totales->put($userId, $totales->get($userId, 0) + $total);
         }
         foreach ($deCartera as $userId => $total) {
+            $totales->put($userId, $totales->get($userId, 0) + $total);
+        }
+        foreach ($deSoportesCreados as $userId => $total) {
+            $totales->put($userId, $totales->get($userId, 0) + $total);
+        }
+        foreach ($deObservaciones as $userId => $total) {
+            $totales->put($userId, $totales->get($userId, 0) + $total);
+        }
+        foreach ($deTareasCreadas as $userId => $total) {
+            $totales->put($userId, $totales->get($userId, 0) + $total);
+        }
+        foreach ($deComentariosTareas as $userId => $total) {
+            $totales->put($userId, $totales->get($userId, 0) + $total);
+        }
+        foreach ($deCambiosEstadoTareas as $userId => $total) {
             $totales->put($userId, $totales->get($userId, 0) + $total);
         }
 

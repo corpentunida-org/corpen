@@ -224,15 +224,32 @@ class ComaeExCliController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
         if ($response->successful()) {
-            ComaeExCli::create([
-                'cod_cli' => $request->documentId,
-                'cod_plan' => $request->plan,
-                'fec_ing' => $fechaActual,
-                'cod_cco' => 'C1010',
-                'estado' => true,
-                'fec_ini' => $fechaActual,
-                'por_descto' => $request->discount,
-            ]);
+            // El titular YA quedó creado en el sistema externo de Exequiales (la llamada de
+            // arriba tuvo éxito) — lo de aquí abajo es solo el espejo local en EXE_ExCli, que
+            // usan el listado y la consulta por cédula (ComaeExCliController::index/show) para
+            // no depender de la API externa en cada búsqueda. Un fallo transitorio de BD justo
+            // acá (se confirmó un caso real: título creado en la API, sin fila local) deja al
+            // titular invisible en toda consulta/listado de la app aunque sí exista afuera —
+            // y sin este try/catch, el usuario ve un error 500 crudo sin saber que la creación
+            // externa sí ocurrió, con el riesgo de reintentar y duplicarlo allá.
+            try {
+                ComaeExCli::create([
+                    'cod_cli' => $request->documentId,
+                    'cod_plan' => $request->plan,
+                    'fec_ing' => $fechaActual,
+                    'cod_cco' => 'C1010',
+                    'estado' => true,
+                    'fec_ini' => $fechaActual,
+                    'por_descto' => $request->discount,
+                ]);
+            } catch (\Throwable $e) {
+                report($e);
+                return redirect()->back()->with('error',
+                    'El titular se creó en el sistema externo de Exequiales, pero no se pudo guardar la copia local '
+                    . '(posible error temporal de conexión a la base de datos). NO vuelvas a intentar crearlo con la '
+                    . 'misma cédula — ya existe allá y quedaría duplicado. Contacta a Sistemas para sincronizarlo.'
+                );
+            }
             $accion = 'add titular ' . $request->documentId;
             $this->auditoria($accion, 'EXEQUIALES');
             // Antes usaba $request->cedulaAsociado, un campo que este formulario nunca envía
