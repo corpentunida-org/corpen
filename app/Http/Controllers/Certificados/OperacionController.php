@@ -201,7 +201,7 @@ class OperacionController extends Controller
 
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
-            $registrosCrudos = CarSiaApi::with(['lineaSia', 'comprobantesBase']) 
+            $registrosCrudos = CarSiaApi::with(['lineaSia', 'comprobantesBase'])
                 ->where('numero_bloque', $operacion->numero_bloque)
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
@@ -414,14 +414,33 @@ class OperacionController extends Controller
             $maeTipos = MaeTipo::all();
             $congregaciones = MaeCongregacion::orderBy('codigo', 'asc')->get();
 
-            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $operacionesDelTercero)
+            // ==============================================================================
+            // NUEVO: CONSULTA DE TODOS LOS CERTIFICADOS DEL TERCERO (Para la nueva pestaña)
+            // ==============================================================================
+            // Obtenemos todas las operaciones asociadas a este tercero
+            $todasLasOperacionesTercero = CarSiaOperacion::where('id_tercero', $operacion->id_tercero)
+                ->select('id', 'numero_bloque')
+                ->get();
+
+            $idsTercero = $todasLasOperacionesTercero->pluck('id')->toArray();
+            $bloquesTercero = $todasLasOperacionesTercero->pluck('numero_bloque')->filter()->toArray();
+
+            $certificadosGlobalesTercero = CarSiaTipoOperacion::with(['tipo', 'operacion'])
+                ->whereIn('id_car_sia_operaciones', $idsTercero)
+                ->orWhereIn('numero_bloque', $bloquesTercero)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->unique('hash_certificado'); // Agrupamos por hash para traer solo un registro por versión
+            // ==============================================================================
+
+            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $certificadosGlobalesTercero)
             return view('certificados.operaciones.show', compact(
                 'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
-                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero'
+                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero'
             ));
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW): ' . $e->getMessage());
+            Log::error('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW): ' . $e->getMessage());
             return back()->with('error', 'No se pudo cargar el detalle de la operación.');
         }
     }
