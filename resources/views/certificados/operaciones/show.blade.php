@@ -596,6 +596,16 @@
                                 </button>
                             </li>
 
+                            <!-- Soportes -->
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="soportes-tab" data-bs-toggle="tab" data-bs-target="#soportes" type="button" role="tab">
+                                    <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
+                                        <i class="fas fa-paperclip fs-8"></i>
+                                    </span>
+                                    Soportes
+                                </button>
+                            </li>
+
                         </ul>
                     </div>
 
@@ -1821,6 +1831,30 @@
                                     </div>
                                 @endif
                             </div>
+
+                            {{-- ======================================================= --}}
+                            {{-- INICIO TAB 7: SOPORTES (NUEVA PESTAÑA) --}}
+                            {{-- ======================================================= --}}
+                            <div class="tab-pane fade" id="soportes" role="tabpanel" aria-labelledby="soportes-tab" tabindex="0">
+
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">Soportes y Comprobantes</h5>
+                                        <p class="text-muted fs-7 mb-0">Gestión de archivos adjuntos, facturas y comprobantes de la operación.</p>
+                                    </div>
+                                </div>
+
+                                {{-- Contenedor o estructura para los soportes --}}
+                                <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
+                                    <i class="fas fa-folder-open fs-1 text-secondary mb-3 opacity-25"></i>
+                                    <h6 class="fw-bold text-dark">No hay soportes cargados</h6>
+                                    <p class="mb-0 fs-7">Aquí podrás consultar las rutas firmadas y los archivos asociados.</p>
+                                </div>
+
+                            </div>
+                            {{-- ======================================================= --}}
+                            {{-- FIN TAB 7 --}}
+                            {{-- ======================================================= --}}
 
                         </div>
                     </div>
