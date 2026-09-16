@@ -201,10 +201,40 @@ class OperacionController extends Controller
 
             $lineasUnicas = $operacion->lineas->unique('id_factura');
 
-            $registrosCrudos = CarSiaApi::with(['lineaSia', 'comprobantesBase'])
+            $registrosCrudos = CarSiaApi::with([
+                'lineaSia',
+                'comprobantesBase.user',
+                'comprobantesBase.obligacion',
+                'comprobantesBase.banco'
+            ])
                 ->where('numero_bloque', $operacion->numero_bloque)
                 ->where('tercero', $operacion->id_tercero)
                 ->get();
+
+            // ==============================================================================
+            // EXTRAER LOS SOPORTES (COMPROBANTES FÍSICOS DE AWS S3)
+            // ==============================================================================
+            // Usamos el accessor 'comprobantePago' para cruzar exacto el PR y la Cuota
+            $soportes = $registrosCrudos->map(function ($registro) {
+                return $registro->comprobantePago;
+            })->filter()->unique('id');
+            // ==============================================================================
+
+            // ==============================================================================
+            // NUEVO: EXTRAER LAS INTERACCIONES (CRM) DEL TERCERO
+            // Llaves de cruce: Interaction (client_id) -> Operacion (id_tercero)
+            // ==============================================================================
+            $interacciones = \App\Models\Interacciones\Interaction::with([
+                'agent',
+                'channel',
+                'type',
+                'outcomeRelation',
+                'usuarioAsignado'
+            ])
+            ->where('client_id', $operacion->id_tercero)
+            ->orderBy('interaction_date', 'desc')
+            ->get();
+            // ==============================================================================
 
             // --- LÓGICA DE BLADE TRASLADADA (Tab 1: Líneas y Facturas) ---
             $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
@@ -433,10 +463,10 @@ class OperacionController extends Controller
                 ->unique('hash_certificado'); // Agrupamos por hash para traer solo un registro por versión
             // ==============================================================================
 
-            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $certificadosGlobalesTercero)
+            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $soportes E $interacciones AQUÍ)
             return view('certificados.operaciones.show', compact(
                 'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
-                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero'
+                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero', 'soportes', 'interacciones'
             ));
 
         } catch (\Exception $e) {
