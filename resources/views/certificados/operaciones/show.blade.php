@@ -47,37 +47,32 @@
 
     <div class="app-container py-4">
 
-        <!-- ========================================== -->
-        <!-- ENCABEZADO DE LA VISTA                     -->
-        <!-- ========================================== -->
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-4">
-            <!-- Título y Botón Volver -->
+        {{-- ======================================================= --}}
+        {{-- ENCABEZADO DE LA VISTA: OPERACIÓN                       --}}
+        {{-- ======================================================= --}}
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 px-2">
             <div>
-                <a href="{{ route('certificados.operaciones.index') }}" class="text-decoration-none text-muted d-inline-flex align-items-center fw-semibold hover-opacity mb-2" style="font-size: 0.85rem;">
-                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm border" style="width: 28px; height: 28px;">
-                        <i class="fas fa-chevron-left fs-8 text-secondary"></i>
+                {{-- Enlace Volver Minimalista --}}
+                <a href="{{ route('certificados.operaciones.index') }}"
+                class="text-decoration-none text-muted d-inline-flex align-items-center mb-2"
+                style="font-size: 0.75rem; transition: color 0.15s ease;"
+                onmouseover="this.style.color='#0284c7';"
+                onmouseout="this.style.color='#64748b';">
+                    <div class="rounded-circle d-flex justify-content-center align-items-center me-1.5 border" style="width: 22px; height: 22px; background-color: #f8fafc; border-color: #e2e8f0 !important; color: #64748b;">
+                        <i class="fas fa-chevron-left" style="font-size: 0.55rem;"></i>
                     </div>
                     Volver a la matriz
                 </a>
-                <h1 class="h3 fw-bold m-0 text-dark d-flex align-items-center gap-3">
-                    Operación
-                    <span class="badge bg-pastel-primary px-3 py-2 rounded-pill fs-6 shadow-sm border border-primary border-opacity-10">
+
+                {{-- Título y Radicado Integrados --}}
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h1 class="fw-medium text-secondary m-0" style="font-size: 1.15rem; letter-spacing: -0.3px;">Operación</h1>
+                    <span class="badge rounded-pill d-inline-flex align-items-center shadow-none" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 0.25rem 0.7rem; font-size: 0.75rem; font-weight: 500; letter-spacing: -0.2px;">
                         # {{ $operacion->numero_radicado }}
                     </span>
-                </h1>
-            </div>
-
-            <!-- Botones de Acción Globales -->
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <a href="{{ route('certificados.operaciones.informe_cliente', $operacion->id) }}"
-                    target="_blank"
-                    class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold text-white d-flex align-items-center hover-opacity"
-                    onclick="bloquearBotonUI(this, 'Generando...')">
-                    <i class="fas fa-chart-line me-2"></i> Informe Cliente
-                </a>
+                </div>
             </div>
         </div>
-
         <!-- ========================================== -->
         <!-- ALERTAS DE SESIÓN (Éxito / Error)          -->
         <!-- ========================================== -->
@@ -99,101 +94,105 @@
         <!-- ========================================== -->
         <div class="row g-4">
 
-            <!-- ---------------------------------------------------- -->
-            <!-- COLUMNA IZQUIERDA (Info Básica, Técnica y Trazabilidad) -->
-            <!-- ---------------------------------------------------- -->
+            {{-- ======================================================= --}}
+            {{-- COLUMNA IZQUIERDA (Info Básica, Técnica y Trazabilidad) --}}
+            {{-- ======================================================= --}}
             <div class="col-xl-4 col-lg-5">
 
                 {{-- TARJETA: INFORMACIÓN DEL CLIENTE (Tercero Maestras) --}}
-                <div class="card card-custom shadow-sm mb-4 border-0">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between mb-4">
-                            <div class="d-flex align-items-center">
-                                <div class="symbol-label bg-pastel-primary me-3" style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 15px;">
-                                    <i class="fas fa-user-tie text-primary fs-4"></i>
+                <div class="card border-0 shadow-sm mb-3 bg-white" style="border-radius: 10px; border: 1px solid #f1f5f9 !important;">
+                    <div class="card-body p-3">
+
+                        {{-- Encabezado de la Tarjeta --}}
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
+                            <div class="d-flex align-items-center gap-2.5">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-none" style="width: 36px; height: 36px; background-color: #e0f2fe; color: #0284c7;">
+                                    <i class="fas fa-user-tie" style="font-size: 0.9rem;"></i>
                                 </div>
                                 <div>
-                                    <h5 class="fw-bold text-dark mb-0">Datos del Cliente</h5>
-                                    <span class="text-muted fs-8">Información de Maestras</span>
+                                    <h6 class="fw-semibold text-dark mb-0" style="font-size: 0.85rem; letter-spacing: -0.2px;">Datos del Cliente</h6>
+                                    <span class="text-muted" style="font-size: 0.68rem;">Información de Maestras</span>
                                 </div>
                             </div>
                             @if($operacion->tercero)
-                                <button type="button" class="btn btn-sm btn-light text-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEditarTercero">
-                                    <i class="fas fa-edit me-1"></i> Editar
+                                <button type="button" class="btn btn-light border rounded-pill px-2.5 py-0 text-muted shadow-none d-inline-flex align-items-center" style="font-size: 0.68rem; height: 26px; transition: all 0.2s ease; background-color: #f8fafc;" onmouseover="this.style.backgroundColor='#e0f2fe'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;" onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;" data-bs-toggle="modal" data-bs-target="#modalEditarTercero">
+                                    <i class="fas fa-edit me-1 text-primary"></i> Editar
                                 </button>
                             @endif
                         </div>
 
                         @if($operacion->tercero)
-                            <div class="bg-light rounded-4 p-3 mb-3">
-                                <!-- Contenedor Flex para alinear texto a la izq y botón a la der -->
+                            {{-- Contenedor Principal del Cliente (Tono Pastel Suave) --}}
+                            <div class="rounded-3 p-2.5 mb-3" style="background-color: #f8fafc; border: 1px solid #e2e8f0;">
                                 <div class="d-flex justify-content-between align-items-start">
-
-                                    <!-- Datos del cliente -->
-                                    <div>
-                                        <div class="fw-bolder text-dark fs-6">{{ $operacion->tercero->nom_ter }}</div>
-                                        <div class="text-muted fs-8 mt-1">NIT: {{ $operacion->tercero->cod_ter }}</div>
+                                    <div class="overflow-hidden pe-2">
+                                        <div class="fw-semibold text-dark text-truncate" style="font-size: 0.8rem;" title="{{ $operacion->tercero->nom_ter }}">{{ $operacion->tercero->nom_ter }}</div>
+                                        <div class="text-muted font-monospace mt-0.5" style="font-size: 0.68rem;">NIT: {{ $operacion->tercero->cod_ter }}</div>
                                     </div>
 
-                                    <!-- NUEVO: Píldora Desplegable Sutil -->
-                                    <div class="dropdown ms-2">
-                                        <button class="btn btn-sm bg-white text-primary rounded-pill border py-1 px-2 fs-8 fw-semibold dropdown-toggle shadow-sm hover-opacity d-flex align-items-center"
+                                    {{-- Píldora Desplegable de Historial --}}
+                                    <div class="dropdown flex-shrink-0">
+                                        <button class="btn btn-sm bg-white text-secondary rounded-pill border py-0.5 px-2 shadow-none d-flex align-items-center dropdown-toggle"
                                                 type="button"
                                                 data-bs-toggle="dropdown"
                                                 aria-expanded="false"
+                                                style="font-size: 0.68rem; border-color: #cbd5e1 !important;"
                                                 title="Ver historial de operaciones">
-                                            <i class="fas fa-history me-1 text-muted"></i>
-                                            <span class="ms-1">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
+                                            <i class="fas fa-history text-muted opacity-50 me-1"></i>
+                                            <span class="fw-semibold">{{ isset($operacionesDelTercero) ? $operacionesDelTercero->count() : 0 }}</span>
                                         </button>
 
-                                        <!-- Menú flotante compacto -->
-                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" style="width: 260px; max-height: 250px; overflow-y: auto;">
-                                            <li><h6 class="dropdown-header text-muted fs-8 text-uppercase fw-bold ls-1 mb-1">Historial Reciente</h6></li>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-1 mt-1" style="width: 240px; max-height: 220px; overflow-y: auto; font-size: 0.72rem;">
+                                            <li><h6 class="dropdown-header text-muted text-uppercase fw-semibold mb-1" style="font-size: 0.6rem; letter-spacing: 0.3px;">Historial Reciente</h6></li>
 
                                             @if(isset($operacionesDelTercero) && $operacionesDelTercero->count() > 0)
                                                 @foreach($operacionesDelTercero as $opTercero)
                                                     @php $esActual = $opTercero->id == $operacion->id; @endphp
                                                     <li>
-                                                        <a class="dropdown-item rounded-3 {{ $esActual ? 'bg-pastel-primary text-primary fw-bold' : 'text-dark' }} d-flex justify-content-between align-items-center py-2 mb-1"
-                                                        href="{{ route('certificados.operaciones.show', $opTercero->id) }}"
-                                                            <span class="text-truncate" style="max-width: 150px;">
-                                                                <i class="fas {{ $esActual ? 'fa-dot-circle' : 'fa-circle' }} fs-9 me-2 {{ $esActual ? 'text-primary' : 'text-muted opacity-25' }}"></i>
+                                                        <a class="dropdown-item rounded-2 py-1.5 px-2 mb-0.5 d-flex justify-content-between align-items-center {{ $esActual ? 'fw-semibold text-primary' : 'text-secondary' }}"
+                                                        style="font-size: 0.7rem; background-color: {{ $esActual ? '#e0f2fe' : 'transparent' }};"
+                                                        href="{{ route('certificados.operaciones.show', $opTercero->id) }}">
+                                                            <span class="text-truncate" style="max-width: 130px;">
+                                                                <i class="fas {{ $esActual ? 'fa-dot-circle text-primary' : 'fa-circle text-muted opacity-25' }} me-1" style="font-size: 0.5rem;"></i>
                                                                 Rad: {{ $opTercero->numero_radicado }}
                                                             </span>
-                                                            <span class="badge {{ $esActual ? 'bg-primary' : 'bg-light text-muted' }} rounded-pill border" style="font-size: 0.65rem;">
+                                                            <span class="badge rounded-pill border {{ $esActual ? 'bg-primary text-white border-primary' : 'bg-white text-muted border-light' }}" style="font-size: 0.58rem; font-weight: 400; padding: 0.15rem 0.4rem;">
                                                                 API-{{ str_pad($opTercero->numero_bloque, 4, '0', STR_PAD_LEFT) }}
                                                             </span>
                                                         </a>
                                                     </li>
                                                 @endforeach
                                             @else
-                                                <li><span class="dropdown-item text-muted fs-8 py-2">Sin operaciones previas</span></li>
+                                                <li><span class="dropdown-item text-muted py-1" style="font-size: 0.68rem;">Sin operaciones previas</span></li>
                                             @endif
                                         </ul>
                                     </div>
-                                    <!-- FIN Píldora -->
-
                                 </div>
                             </div>
 
-                            <div class="d-flex justify-content-between mb-2 fs-7">
-                                <span class="text-muted"><i class="fas fa-phone-alt me-2 opacity-50"></i>Teléfono:</span>
-                                <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2 fs-7">
-                                <span class="text-muted"><i class="fas fa-envelope me-2 opacity-50"></i>Email:</span>
-                                <span class="fw-semibold text-dark text-truncate ms-2" style="max-width: 150px;" title="{{ $operacion->tercero->email }}">{{ $operacion->tercero->email ?? 'N/A' }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-2 fs-7">
-                                <span class="text-muted"><i class="fas fa-map-marker-alt me-2 opacity-50"></i>Ciudad:</span>
-                                <span class="fw-semibold text-dark">{{ $operacion->tercero->ciudad ?? 'N/A' }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between fs-7">
-                                <span class="text-muted"><i class="fas fa-map me-2 opacity-50"></i>Dirección:</span>
-                                <span class="fw-semibold text-dark text-end ms-3">{{ $operacion->tercero->dir ?? 'N/A' }}</span>
+                            {{-- Datos de Contacto (Lista Minimalista) --}}
+                            <div class="d-flex flex-column gap-2" style="font-size: 0.72rem;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted d-flex align-items-center gap-1.5"><i class="fas fa-phone-alt opacity-50" style="font-size: 0.65rem;"></i> Teléfono:</span>
+                                    <span class="fw-semibold text-dark">{{ $operacion->tercero->tel ?? 'N/A' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted d-flex align-items-center gap-1.5"><i class="fas fa-envelope opacity-50" style="font-size: 0.65rem;"></i> Email:</span>
+                                    <span class="fw-semibold text-dark text-truncate ms-2" style="max-width: 150px;" title="{{ $operacion->tercero->email }}">{{ $operacion->tercero->email ?? 'N/A' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted d-flex align-items-center gap-1.5"><i class="fas fa-map-marker-alt opacity-50" style="font-size: 0.65rem;"></i> Ciudad:</span>
+                                    <span class="fw-semibold text-dark">{{ $operacion->tercero->ciudad ?? 'N/A' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted d-flex align-items-center gap-1.5"><i class="fas fa-map opacity-50" style="font-size: 0.65rem;"></i> Dirección:</span>
+                                    <span class="fw-semibold text-dark text-end text-truncate ms-2" style="max-width: 160px;" title="{{ $operacion->tercero->dir }}">{{ $operacion->tercero->dir ?? 'N/A' }}</span>
+                                </div>
                             </div>
                         @else
-                            <div class="alert bg-pastel-warning text-center border-0 rounded-4">Tercero no encontrado en maestras.</div>
+                            <div class="text-center py-4 rounded" style="background-color: #fefce8; border: 1px dashed #fde047; color: #854d0e;">
+                                <span style="font-size: 0.72rem;">Tercero no encontrado en maestras.</span>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -202,152 +201,144 @@
                 @if($operacion->tercero)
                 <div class="modal fade" id="modalEditarTercero" tabindex="-1" aria-labelledby="modalEditarTerceroLabel" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
-                        <div class="modal-content border-0 shadow">
-                            <div class="modal-header bg-light border-bottom-0">
-                                <h5 class="modal-title fw-bold text-dark" id="modalEditarTerceroLabel">
-                                    <i class="fas fa-user-edit text-primary me-2"></i>Actualizar Datos del Cliente
+                        <div class="modal-content border-0 shadow" style="border-radius: 12px;">
+                            <div class="modal-header border-bottom px-4 py-3" style="background-color: #f8fafc; border-color: #f1f5f9 !important;">
+                                <h5 class="modal-title fw-semibold text-dark d-flex align-items-center gap-2" id="modalEditarTerceroLabel" style="font-size: 0.95rem;">
+                                    <i class="fas fa-user-edit text-primary"></i> Actualizar Datos del Cliente
                                 </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.75rem;"></button>
                             </div>
                             <form action="{{ route('certificados.operaciones.actualizar_tercero', $operacion->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <div class="modal-body p-4">
-                                    <div class="alert alert-info bg-pastel-info border-0 fs-7 mb-4">
-                                        <i class="fas fa-info-circle me-2"></i> El "Nombre Completo" se autogenerará al guardar uniendo los nombres y apellidos en MAYÚSCULAS.
+                                <div class="modal-body p-4" style="font-size: 0.75rem;">
+                                    <div class="p-2.5 rounded-3 mb-3 text-muted d-flex align-items-center gap-2" style="background-color: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1 !important;">
+                                        <i class="fas fa-info-circle flex-shrink-0"></i>
+                                        <span>El "Nombre Completo" se autogenerará al guardar uniendo los nombres y apellidos en MAYÚSCULAS.</span>
                                     </div>
 
-                                    <div class="row g-3">
+                                    <div class="row g-3 mb-3">
                                         <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Primer Nombre</label>
-                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="nom1" value="{{ $operacion->tercero->nom1 }}" required>
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Primer Nombre</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="text-transform: uppercase; font-size: 0.75rem; border-color: #cbd5e1;" name="nom1" value="{{ $operacion->tercero->nom1 }}" required>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Segundo Nombre</label>
-                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="nom2" value="{{ $operacion->tercero->nom2 }}">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Segundo Nombre</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="text-transform: uppercase; font-size: 0.75rem; border-color: #cbd5e1;" name="nom2" value="{{ $operacion->tercero->nom2 }}">
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Primer Apellido</label>
-                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="apl1" value="{{ $operacion->tercero->apl1 }}" required>
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Primer Apellido</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="text-transform: uppercase; font-size: 0.75rem; border-color: #cbd5e1;" name="apl1" value="{{ $operacion->tercero->apl1 }}" required>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Segundo Apellido</label>
-                                            <input type="text" class="form-control" style="text-transform: uppercase;" name="apl2" value="{{ $operacion->tercero->apl2 }}">
-                                        </div>
-
-                                        <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Teléfono Principal (tel)</label>
-                                            <input type="text" class="form-control" name="tel" value="{{ $operacion->tercero->tel }}">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Segundo Apellido</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="text-transform: uppercase; font-size: 0.75rem; border-color: #cbd5e1;" name="apl2" value="{{ $operacion->tercero->apl2 }}">
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Teléfono Secundario (tel1)</label>
-                                            <input type="text" class="form-control" name="tel1" value="{{ $operacion->tercero->tel1 }}">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Teléfono Principal (tel)</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="font-size: 0.75rem; border-color: #cbd5e1;" name="tel" value="{{ $operacion->tercero->tel }}">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Teléfono Secundario (tel1)</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="font-size: 0.75rem; border-color: #cbd5e1;" name="tel1" value="{{ $operacion->tercero->tel1 }}">
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Correo Electrónico</label>
-                                            <input type="email" class="form-control" name="email" value="{{ $operacion->tercero->email }}">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Correo Electrónico</label>
+                                            <input type="email" class="form-control form-control-sm shadow-none" style="font-size: 0.75rem; border-color: #cbd5e1;" name="email" value="{{ $operacion->tercero->email }}">
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label text-muted fs-8 fw-bold text-uppercase">Dirección</label>
-                                            <input type="text" class="form-control" name="dir" value="{{ $operacion->tercero->dir }}">
+                                            <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Dirección</label>
+                                            <input type="text" class="form-control form-control-sm shadow-none" style="font-size: 0.75rem; border-color: #cbd5e1;" name="dir" value="{{ $operacion->tercero->dir }}">
                                         </div>
-
-                                        @php
-                                            // 1. Buscar nombre del Distrito
-                                            $idDist = trim((string)($operacion->tercero->cod_dist ?? ''));
-                                            $nomDist = '';
-                                            foreach($distritos as $d) {
-                                                if (trim((string)($d->COD_DIST ?? $d->cod_dist ?? '')) === $idDist) {
-                                                    $nomDist = $d->NOM_DIST ?? $d->nom_dist ?? $d->DETALLE ?? $d->COMPUEST ?? 'Sin nombre';
-                                                    break;
-                                                }
-                                            }
-
-                                            // 2. Buscar nombre del Tipo
-                                            $idTipo = trim((string)($operacion->tercero->tip_prv ?? ''));
-                                            $nomTipo = '';
-                                            foreach($maeTipos as $t) {
-                                                if (trim((string)($t->id ?? $t->tip_prv ?? '')) === $idTipo) {
-                                                    $nomTipo = $t->nombre ?? $t->descripcion ?? $t->tipo ?? 'Sin descripción';
-                                                    break;
-                                                }
-                                            }
-
-                                            // 3. Buscar nombre de la Congregación
-                                            $idCong = trim((string)($operacion->tercero->congrega ?? ''));
-                                            $nomCong = '';
-                                            foreach($congregaciones as $c) {
-                                                if (trim((string)($c->codigo ?? $c->congrega ?? '')) === $idCong) {
-                                                    $nomCong = $c->nombre ?? $c->descripcion ?? $c->iglesia ?? 'Sin descripción';
-                                                    break;
-                                                }
-                                            }
-                                        @endphp
-
-                                        <!-- RESUMEN DE DATOS ACTUALES Y BOTÓN ACTUALIZAR -->
-                                        <div class="alert alert-info py-2 px-3 mb-3 fs-7 d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>Distrito:</strong> {{ $idDist !== '' ? ($nomDist !== '' ? "$idDist - $nomDist" : $idDist) : 'Sin asignación' }} <span class="mx-2">|</span>
-                                                <strong>Tipo:</strong> {{ $idTipo !== '' ? ($nomTipo !== '' ? "$idTipo - $nomTipo" : $idTipo) : 'Sin asignación' }} <span class="mx-2">|</span>
-                                                <strong>Congregación:</strong> {{ $idCong !== '' ? ($nomCong !== '' ? "$idCong - $nomCong" : $idCong) : 'Sin asignación' }}
-                                            </div>
-                                            <button class="btn btn-sm btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#camposActualizar" aria-expanded="false" aria-controls="camposActualizar">
-                                                Actualizar
-                                            </button>
-                                        </div>
-
-                                        <!-- CONTENEDOR DESPLEGABLE CON LOS SELECTS -->
-                                        <div class="collapse" id="camposActualizar">
-                                            <div class="row">
-                                                <!-- 1. DISTRITO -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Distrito</label>
-                                                    <select class="form-select select2-buscador" name="cod_dist" id="select_cod_dist">
-                                                        <option value="">Seleccione o busque...</option>
-                                                        @foreach($distritos as $distritoItem)
-                                                            @php $valDistrito = trim($distritoItem->COD_DIST ?? $distritoItem->cod_dist ?? ''); @endphp
-                                                            <option value="{{ $valDistrito }}" {{ $idDist === (string)$valDistrito ? 'selected' : '' }}>
-                                                                {{ $valDistrito }} - {{ $distritoItem->NOM_DIST ?? $distritoItem->nom_dist ?? $distritoItem->DETALLE ?? $distritoItem->COMPUEST ?? 'Sin nombre' }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <!-- 2. TIPO DE CLIENTE -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Tipo</label>
-                                                    <select class="form-select select2-buscador" name="tip_prv" id="select_tip_prv">
-                                                        <option value="">Seleccione o busque...</option>
-                                                        @foreach($maeTipos as $tipoItem)
-                                                            @php $valTipo = trim($tipoItem->id ?? $tipoItem->tip_prv ?? ''); @endphp
-                                                            <option value="{{ $valTipo }}" {{ $idTipo === (string)$valTipo ? 'selected' : '' }}>
-                                                                {{ $tipoItem->nombre ?? $tipoItem->descripcion ?? $tipoItem->tipo ?? 'Sin descripción' }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-
-                                                <!-- 3. CONGREGACIÓN -->
-                                                <div class="col-md-4">
-                                                    <label class="form-label text-muted fs-8 fw-bold text-uppercase">Congregación</label>
-                                                    <select class="form-select select2-buscador" name="congrega" id="select_congrega">
-                                                        <option value="">Seleccione o busque...</option>
-                                                        @foreach($congregaciones as $congregaItem)
-                                                            @php $valCongrega = trim($congregaItem->codigo ?? $congregaItem->congrega ?? ''); @endphp
-                                                            <option value="{{ $valCongrega }}" {{ $idCong === (string)$valCongrega ? 'selected' : '' }}>
-                                                                {{ $valCongrega }} - {{ $congregaItem->nombre ?? $congregaItem->descripcion ?? $congregaItem->iglesia ?? 'Sin descripción' }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                     </div>
+
+                                    @php
+                                        $idDist = trim((string)($operacion->tercero->cod_dist ?? ''));
+                                        $nomDist = '';
+                                        foreach($distritos as $d) {
+                                            if (trim((string)($d->COD_DIST ?? $d->cod_dist ?? '')) === $idDist) {
+                                                $nomDist = $d->NOM_DIST ?? $d->nom_dist ?? $d->DETALLE ?? $d->COMPUEST ?? 'Sin nombre';
+                                                break;
+                                            }
+                                        }
+
+                                        $idTipo = trim((string)($operacion->tercero->tip_prv ?? ''));
+                                        $nomTipo = '';
+                                        foreach($maeTipos as $t) {
+                                            if (trim((string)($t->id ?? $t->tip_prv ?? '')) === $idTipo) {
+                                                $nomTipo = $t->nombre ?? $t->descripcion ?? $t->tipo ?? 'Sin descripción';
+                                                break;
+                                            }
+                                        }
+
+                                        $idCong = trim((string)($operacion->tercero->congrega ?? ''));
+                                        $nomCong = '';
+                                        foreach($congregaciones as $c) {
+                                            if (trim((string)($c->codigo ?? $c->congrega ?? '')) === $idCong) {
+                                                $nomCong = $c->nombre ?? $c->descripcion ?? $c->iglesia ?? 'Sin descripción';
+                                                break;
+                                            }
+                                        }
+                                    @endphp
+
+                                    {{-- Resumen y Botón Desplegable Actualizar --}}
+                                    <div class="p-2.5 rounded-3 mb-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+                                        <div class="text-muted" style="font-size: 0.68rem;">
+                                            <strong>Distrito:</strong> {{ $idDist !== '' ? ($nomDist !== '' ? "$idDist - $nomDist" : $idDist) : 'Sin asignación' }} <span class="mx-1">|</span>
+                                            <strong>Tipo:</strong> {{ $idTipo !== '' ? ($nomTipo !== '' ? "$idTipo - $nomTipo" : $idTipo) : 'Sin asignación' }} <span class="mx-1">|</span>
+                                            <strong>Congregación:</strong> {{ $idCong !== '' ? ($nomCong !== '' ? "$idCong - $nomCong" : $idCong) : 'Sin asignación' }}
+                                        </div>
+                                        <button class="btn btn-sm btn-light border rounded-pill px-3 py-1 text-primary fw-semibold shadow-none flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#camposActualizar" aria-expanded="false" aria-controls="camposActualizar" style="font-size: 0.68rem; background-color: #e0f2fe; border-color: #bae6fd !important;">
+                                            Configurar Selects
+                                        </button>
+                                    </div>
+
+                                    {{-- Contenedor Desplegable con los Selects --}}
+                                    <div class="collapse" id="camposActualizar">
+                                        <div class="row g-3 p-3 rounded-3 mb-3" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Distrito</label>
+                                                <select class="form-select form-select-sm select2-buscador shadow-none" name="cod_dist" id="select_cod_dist" style="font-size: 0.72rem; border-color: #cbd5e1;">
+                                                    <option value="">Seleccione o busque...</option>
+                                                    @foreach($distritos as $distritoItem)
+                                                        @php $valDistrito = trim($distritoItem->COD_DIST ?? $distritoItem->cod_dist ?? ''); @endphp
+                                                        <option value="{{ $valDistrito }}" {{ $idDist === (string)$valDistrito ? 'selected' : '' }}>
+                                                            {{ $valDistrito }} - {{ $distritoItem->NOM_DIST ?? $distritoItem->nom_dist ?? $distritoItem->DETALLE ?? $distritoItem->COMPUEST ?? 'Sin nombre' }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Tipo</label>
+                                                <select class="form-select form-select-sm select2-buscador shadow-none" name="tip_prv" id="select_tip_prv" style="font-size: 0.72rem; border-color: #cbd5e1;">
+                                                    <option value="">Seleccione o busque...</option>
+                                                    @foreach($maeTipos as $tipoItem)
+                                                        @php $valTipo = trim($tipoItem->id ?? $tipoItem->tip_prv ?? ''); @endphp
+                                                        <option value="{{ $valTipo }}" {{ $idTipo === (string)$valTipo ? 'selected' : '' }}>
+                                                            {{ $tipoItem->nombre ?? $tipoItem->descripcion ?? $tipoItem->tipo ?? 'Sin descripción' }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label text-muted mb-1" style="font-size: 0.68rem;">Congregación</label>
+                                                <select class="form-select form-select-sm select2-buscador shadow-none" name="congrega" id="select_congrega" style="font-size: 0.72rem; border-color: #cbd5e1;">
+                                                    <option value="">Seleccione o busque...</option>
+                                                    @foreach($congregaciones as $congregaItem)
+                                                        @php $valCongrega = trim($congregaItem->codigo ?? $congregaItem->congrega ?? ''); @endphp
+                                                        <option value="{{ $valCongrega }}" {{ $idCong === (string)$valCongrega ? 'selected' : '' }}>
+                                                            {{ $valCongrega }} - {{ $congregaItem->nombre ?? $congregaItem->descripcion ?? $congregaItem->iglesia ?? 'Sin descripción' }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
-                                <div class="modal-footer bg-light border-top-0">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary fw-bold">
+                                <div class="modal-footer border-top px-4 py-3" style="background-color: #f8fafc; border-color: #f1f5f9 !important;">
+                                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3 text-muted shadow-none" data-bs-dismiss="modal" style="font-size: 0.7rem;">Cancelar</button>
+                                    <button type="submit" class="btn btn-sm btn-light border rounded-pill px-3 text-primary fw-semibold shadow-none" style="font-size: 0.7rem; background-color: #e0f2fe; border-color: #bae6fd !important;">
                                         <i class="fas fa-save me-1"></i> Actualizar y Concatenar
                                     </button>
                                 </div>
@@ -358,95 +349,100 @@
                 @endif
 
                 {{-- TARJETA: INFORMACIÓN TÉCNICA Y ETL --}}
-                <div class="card card-custom shadow-sm border-0">
-                    <div class="card-body p-4">
-                        <h6 class="text-uppercase fw-bold text-muted mb-3 fs-8"><i class="fas fa-microchip me-2"></i> Info Técnica (ETL)</h6>
-                        <div class="d-flex justify-content-between mb-2 fs-7">
-                            <span class="text-muted">Número Radicado:</span>
-                            <span class="fw-bold text-dark">{{ $operacion->numero_radicado }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2 fs-7">
-                            <span class="text-muted">Lote / Bloque:</span>
-                            <span class="badge bg-pastel-primary rounded-pill px-3">API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2 fs-7">
-                            <span class="text-muted">Fecha Creación Lote:</span>
-                            <span class="fw-semibold text-dark">
-                                {{ $operacion->created_at ? $operacion->created_at->format('d/m/Y') : 'N/A' }}
-                            </span>
+                <div class="card border-0 shadow-sm mb-3 bg-white" style="border-radius: 10px; border: 1px solid #f1f5f9 !important;">
+                    <div class="card-body p-3">
+                        <h6 class="text-uppercase text-secondary mb-3 fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.3px;">
+                            <i class="fas fa-microchip me-1.5 text-primary"></i> Info Técnica (ETL)
+                        </h6>
+                        <div class="d-flex flex-column gap-2" style="font-size: 0.72rem;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Número Radicado:</span>
+                                <span class="font-monospace fw-semibold text-dark">{{ $operacion->numero_radicado }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Lote / Bloque:</span>
+                                <span class="badge rounded-pill" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.58rem; font-weight: 500; padding: 0.2rem 0.6rem;">
+                                    API-{{ str_pad($operacion->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted">Fecha Creación Lote:</span>
+                                <span class="fw-semibold text-dark">
+                                    {{ $operacion->created_at ? $operacion->created_at->format('d/m/Y') : 'N/A' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 {{-- TARJETA: MATRIZ DE TRAZABILIDAD (TIMELINE DE AUDITORÍA) --}}
-                <div class="card card-custom p-3 shadow-sm d-flex flex-column mt-4" style="flex: 1; min-height: 0;">
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
-                        <h5 class="fw-bold text-dark m-0 d-flex align-items-center gap-2" style="font-size: 1.05rem;">
-                            <i class="fas fa-shield-alt text-muted"></i> Matriz de Trazabilidad
-                        </h5>
+                <div class="card border-0 shadow-sm bg-white" style="border-radius: 10px; border: 1px solid #f1f5f9 !important; height: 460px; max-height: 460px; display: flex; flex-direction: column; overflow: hidden !important;">
+
+                    {{-- Header Trazabilidad Estático (Altura fija de 60px) --}}
+                    <div class="px-3 pt-3 pb-2 border-bottom flex-shrink-0" style="background-color: #f8fafc; border-color: #f1f5f9 !important; height: 60px;">
+                        <h6 class="fw-semibold text-dark mb-0 d-flex align-items-center gap-1.5" style="font-size: 0.85rem; letter-spacing: -0.2px;">
+                            <i class="fas fa-shield-alt text-muted opacity-75"></i> Matriz de Trazabilidad
+                        </h6>
+                        <span class="text-muted" style="font-size: 0.65rem;">Registro de eventos y auditoría del sistema</span>
                     </div>
 
-                    <p class="text-muted mb-3" style="font-size:.8rem;">Registro de eventos y trazabilidad del sistema.</p>
-
-                    <div class="flex-grow-1 overflow-auto custom-scrollbar pe-2">
+                    {{-- Cuerpo con Scroll Forzado por CSS Inline (Sin depender de clases externas) --}}
+                    <div class="p-3" style="flex: 1 1 auto !important; overflow-y: scroll !important; min-height: 0 !important; height: calc(460px - 60px) !important;">
                         @if(isset($logsAuditoria) && $logsAuditoria->count() > 0)
-                            <div class="position-relative ms-2" style="border-left: 2px solid var(--c-border, #dee2e6);">
+                            <div class="position-relative ms-2" style="border-left: 2px solid #e2e8f0;">
                                 @foreach($logsAuditoria as $log)
-
-                                    {{-- REGLA DE PRIORIZACIÓN: Es del bloque general (nulo) o es de mi operación directa --}}
                                     @if(is_null($log->id_car_sia_operaciones) || $log->id_car_sia_operaciones == $operacion->id)
-
-                                        <div class="position-relative mb-3 ps-3 pt-1">
+                                        <div class="position-relative mb-3 ps-3">
                                             {{-- Punto del Timeline --}}
-                                            <span class="position-absolute bg-primary rounded-circle border border-2 border-white shadow-sm" style="width: 12px; height: 12px; left: -7px; top: 8px;"></span>
+                                            <span class="position-absolute rounded-circle border border-2 border-white shadow-none" style="width: 10px; height: 10px; left: -6px; top: 4px; background-color: #0284c7;"></span>
 
-                                            {{-- Tarjeta del Log --}}
-                                            <div class="p-2 rounded bg-light border border-light shadow-sm">
-                                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                                    <span class="fw-bold text-dark" style="font-size: .75rem; line-height: 1.2;">
+                                            {{-- Tarjeta del Log Minimalista con Tonos Pastel --}}
+                                            <div class="p-2.5 rounded-3 border bg-white" style="border-color: #e2e8f0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                                <div class="d-flex justify-content-between align-items-start mb-1 gap-2">
+                                                    <span class="fw-semibold text-dark text-truncate" style="font-size: 0.72rem; line-height: 1.2; max-width: 150px;" title="{{ $log->tituloEvento ?? 'Evento de Sistema' }}">
                                                         {{ $log->tituloEvento ?? 'Evento de Sistema' }}
                                                     </span>
-                                                    <span class="text-muted" style="font-size: .65rem; white-space: nowrap;">
+                                                    <span class="badge rounded-pill text-muted bg-light border flex-shrink-0" style="font-size: 0.58rem; padding: 0.15rem 0.4rem; font-weight: normal;">
                                                         {{ $log->fechaEvento ?? '—' }}
                                                     </span>
                                                 </div>
 
-                                                <div class="text-muted mb-2 d-flex justify-content-between align-items-center" style="font-size: .7rem;">
-                                                    <div>
-                                                        <i class="fas fa-user-circle me-1 opacity-50"></i>
-                                                        <span class="fw-medium text-dark">{{ $log->nombreUsuario ?? 'Sistema Automático' }}</span>
+                                                {{-- Info Usuario --}}
+                                                <div class="text-muted mb-2 d-flex justify-content-between align-items-center gap-1" style="font-size: 0.65rem;">
+                                                    <div class="text-truncate pe-1">
+                                                        <i class="fas fa-user-circle opacity-50 me-1"></i>
+                                                        <span class="fw-semibold text-dark">{{ $log->nombreUsuario ?? 'Sistema Automático' }}</span>
                                                         @if(!empty($log->cargoUsuario))
-                                                            <span class="fst-italic opacity-75">({{ $log->cargoUsuario }})</span>
+                                                            <span class="text-muted opacity-75">({{ $log->cargoUsuario }})</span>
                                                         @endif
                                                     </div>
                                                     @if(!empty($log->ipDelUsuario))
-                                                        <span class="text-muted" style="font-size: .6rem; font-family: monospace;" title="IP de origen">
+                                                        <span class="text-muted font-monospace flex-shrink-0 bg-light px-1.5 py-0.5 rounded border border-light" style="font-size: 0.58rem;" title="IP de origen">
                                                             {{ $log->ipDelUsuario }}
                                                         </span>
                                                     @endif
                                                 </div>
 
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="badge bg-white text-secondary border shadow-none" style="font-size: .6rem; padding: .2rem .4rem;">
-                                                            <i class="fas fa-desktop me-1"></i> {{ $log->origenEvento ?? 'Sistema' }}
+                                                <div class="d-flex justify-content-between align-items-center pt-2 border-top gap-1 flex-wrap" style="border-color: #f1f5f9 !important;">
+                                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                                        <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #475569; border-color: #cbd5e1 !important; font-size: 0.58rem; font-weight: 400; padding: 0.15rem 0.4rem;">
+                                                            <i class="fas fa-desktop me-0.5 opacity-50"></i> {{ $log->origenEvento ?? 'Sistema' }}
                                                         </span>
 
-                                                        {{-- DIFERENCIACIÓN VISUAL POR ORIGEN DEL LOG (Lote vs Individual) --}}
                                                         @if(is_null($log->id_car_sia_operaciones))
-                                                            <span class="badge bg-light text-primary border border-primary border-opacity-25 shadow-none ms-1" style="font-size: .6rem; padding: .2rem .4rem;" title="Evento a nivel de Lote/Bloque">
-                                                                <i class="fas fa-layer-group me-1"></i> Lote General
+                                                            <span class="badge rounded-pill" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 0.58rem; font-weight: 500; padding: 0.15rem 0.5rem;" title="Evento a nivel de Lote/Bloque">
+                                                                <i class="fas fa-layer-group me-0.5"></i> Lote General
                                                             </span>
                                                         @else
-                                                            <span class="badge bg-light text-success border border-success border-opacity-25 shadow-none ms-1" style="font-size: .6rem; padding: .2rem .4rem;" title="Acción directa en esta operación">
-                                                                <i class="fas fa-user-check me-1"></i> Individual
+                                                            <span class="badge rounded-pill" style="background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; font-size: 0.58rem; font-weight: 500; padding: 0.15rem 0.5rem;" title="Acción directa en esta operación">
+                                                                <i class="fas fa-user-check me-0.5"></i> Individual
                                                             </span>
                                                         @endif
                                                     </div>
 
-                                                    {{-- Botón para ver detalles (JSON payload, métricas, etc.) --}}
+                                                    {{-- Botón Detalles --}}
                                                     @if($log->hayDetalles && isset($log->detalles_procesados) && count($log->detalles_procesados) > 0)
-                                                        <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-medium d-flex align-items-center gap-1" style="font-size: .65rem;" onclick="document.getElementById('detalles-trazabilidad-{{ $loop->index }}').classList.toggle('d-none')">
+                                                        <button type="button" class="btn btn-sm text-primary p-0 m-0 border-0 bg-transparent fw-semibold d-flex align-items-center gap-1 shadow-none" style="font-size: 0.62rem;" onclick="document.getElementById('detalles-trazabilidad-{{ $loop->index }}').classList.toggle('d-none')">
                                                             <i class="fas fa-search-plus"></i> Detalles
                                                         </button>
                                                     @endif
@@ -454,14 +450,13 @@
 
                                                 {{-- Contenedor de Detalles Oculto --}}
                                                 @if($log->hayDetalles && isset($log->detalles_procesados) && count($log->detalles_procesados) > 0)
-                                                    <div id="detalles-trazabilidad-{{ $loop->index }}" class="d-none mt-2 pt-2 border-top border-light">
-                                                        <div class="p-2 bg-white rounded border border-secondary border-opacity-10 text-wrap text-break" style="font-size: 0.65rem;">
+                                                    <div id="detalles-trazabilidad-{{ $loop->index }}" class="d-none mt-2 pt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                                        <div class="p-2 rounded-2 text-wrap text-break" style="font-size: 0.62rem; background-color: #f8fafc; border: 1px solid #e2e8f0;">
                                                             @foreach($log->detalles_procesados as $llave => $valor)
                                                                 @php
                                                                     $esJson = is_string($valor) && is_array(json_decode($valor, true)) && json_last_error() === JSON_ERROR_NONE;
                                                                     $datosParseados = $esJson ? json_decode($valor, true) : $valor;
 
-                                                                    // Limpiamos nulos o métricas vacías
                                                                     if (is_array($datosParseados) || is_object($datosParseados)) {
                                                                         $datosParseados = collect($datosParseados)->filter(function($v, $k) use ($llave) {
                                                                             if (strtolower($llave) === 'metricas' && $v === 0) return false;
@@ -471,22 +466,22 @@
                                                                 @endphp
 
                                                                 @if((is_array($datosParseados) && count($datosParseados) > 0) || (!is_array($datosParseados) && $datosParseados !== '' && $datosParseados !== null))
-                                                                    <div class="mb-2 border-bottom border-light pb-1">
-                                                                        <strong class="text-primary opacity-75 text-uppercase d-block mb-1" style="font-size: 0.55rem; letter-spacing: 0.5px;">
+                                                                    <div class="mb-1.5 pb-1 border-bottom border-light last-border-0">
+                                                                        <strong class="text-primary text-uppercase d-block mb-0.5" style="font-size: 0.55rem; letter-spacing: 0.3px;">
                                                                             {{ str_replace('_', ' ', $llave) }}
                                                                         </strong>
 
                                                                         @if(is_array($datosParseados))
                                                                             <div class="d-flex flex-wrap gap-1">
                                                                                 @foreach($datosParseados as $subKey => $subVal)
-                                                                                    <span class="badge bg-light text-dark border border-secondary border-opacity-25" style="font-size: 0.6rem; font-weight: 500;">
+                                                                                    <span class="badge rounded-pill border" style="background-color: #ffffff; color: #334155; border-color: #cbd5e1 !important; font-size: 0.58rem; font-weight: normal; padding: 0.15rem 0.4rem;">
                                                                                         <span class="text-muted">{{ str_replace('_', ' ', ucfirst($subKey)) }}:</span>
-                                                                                        <span class="fw-bold">{{ is_array($subVal) ? json_encode($subVal, JSON_UNESCAPED_UNICODE) : $subVal }}</span>
+                                                                                        <span class="fw-semibold">{{ is_array($subVal) ? json_encode($subVal, JSON_UNESCAPED_UNICODE) : $subVal }}</span>
                                                                                     </span>
                                                                                 @endforeach
                                                                             </div>
                                                                         @else
-                                                                            <span class="text-dark fw-medium" style="font-size: 0.65rem;">
+                                                                            <span class="text-dark fw-medium" style="font-size: 0.62rem;">
                                                                                 {{ $datosParseados }}
                                                                             </span>
                                                                         @endif
@@ -496,19 +491,17 @@
                                                         </div>
                                                     </div>
                                                 @endif
-                                                {{-- Fin Detalles --}}
 
                                             </div>
                                         </div>
-
-                                    @endif {{-- Fin validación de prioridad --}}
+                                    @endif
                                 @endforeach
                             </div>
                         @else
-                            <div class="text-center py-4 d-flex flex-column align-items-center justify-content-center h-100">
-                                <i class="fas fa-clipboard-list fs-2 mb-3 text-secondary opacity-25"></i>
-                                <h6 class="fw-bold text-dark mb-1" style="font-size: .9rem;">Sin Movimientos</h6>
-                                <p class="text-muted mb-0" style="font-size: .75rem; max-width: 200px;">No hay registros de auditoría.</p>
+                            <div class="text-center py-5 text-muted h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="fas fa-clipboard-list fs-3 mb-2 text-secondary opacity-25"></i>
+                                <h6 class="fw-semibold text-dark mb-1" style="font-size: 0.8rem;">Sin Movimientos</h6>
+                                <p class="mb-0 text-muted" style="font-size: 0.68rem;">No hay registros de auditoría para mostrar.</p>
                             </div>
                         @endif
                     </div>
@@ -681,44 +674,52 @@
                             <div class="tab-pane fade" id="parametros" role="tabpanel">
 
                                 {{-- ENCABEZADO Y BOTÓN --}}
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase">
-                                        <i class="fas fa-cog me-2"></i> Configuración General
-                                    </h6>
-                                    <button type="button" class="btn bg-pastel-primary text-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity border border-primary border-opacity-25" onclick="$('#modalCrearConfiguracion').modal('show');">
-                                        <i class="fas fa-plus-circle me-2 opacity-75"></i> Nuevos Parámetros
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Configuración General</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Configuraciones de excepción y parámetros de la operación.</p>
+                                    </div>
+                                    <button type="button"
+                                            class="btn btn-light border rounded-pill px-3 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center"
+                                            style="font-size: 0.7rem; height: 26px; transition: all 0.2s ease;"
+                                            onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;"
+                                            onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;"
+                                            onclick="$('#modalCrearConfiguracion').modal('show');">
+                                        <i class="fas fa-plus-circle me-1.5 text-primary opacity-75"></i> Nuevos Parámetros
                                     </button>
                                 </div>
 
                                 @if(isset($operacionesConfiguradas) && $operacionesConfiguradas->count() > 0)
 
                                     {{-- CONTENEDOR TABLA ULTRA PRO --}}
-                                    <div class="bg-white border rounded-3 shadow-sm overflow-hidden mb-3">
+                                    <div class="card border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
 
                                         {{-- TOOLBAR PEQUEÑO --}}
-                                        <div class="bg-light px-3 py-2 border-bottom text-muted small d-flex justify-content-between align-items-center">
-                                            <span><i class="fas fa-hand-pointer text-primary me-1"></i> Haz clic en la fila para ver detalles, trazabilidad y editar la lógica</span>
-                                            <span class="badge bg-primary text-white shadow-sm px-2 py-1" style="font-size: 0.7rem;">
+                                        <div class="px-3 py-2 border-bottom text-muted d-flex justify-content-between align-items-center" style="font-size: 0.7rem; background-color: #f8fafc; border-color: #f1f5f9 !important;">
+                                            <span><i class="fas fa-hand-pointer text-primary opacity-75 me-1"></i> Haz clic en la fila para ver detalles, trazabilidad y editar la lógica</span>
+                                            <span class="badge rounded-pill shadow-sm" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 0.25rem 0.6rem; font-size: 0.65rem; font-weight: 500;">
                                                 {{ collect($operacionesConfiguradas)->sum(fn($op) => collect($op->configuracion)->count()) }} Registros
                                             </span>
                                         </div>
 
                                         <div class="table-responsive custom-scrollbar" style="max-height: 500px; overflow-y: auto;">
-                                            <table class="table table-sm table-hover align-middle mb-0" style="font-size: 0.75rem;">
-                                                <thead class="table-light text-uppercase text-muted sticky-top shadow-sm" style="font-size: 0.65rem;">
+                                            <table class="table table-sm align-middle mb-0 text-nowrap" style="font-size: 0.72rem; border-collapse: separate; border-spacing: 0;">
+
+                                                <thead class="text-uppercase text-secondary sticky-top shadow-sm" style="font-size: 0.6rem; letter-spacing: 0.3px; background-color: #f8fafc; z-index: 1;">
                                                     <tr>
-                                                        <th class="text-center py-2 border-bottom" style="width: 5%;"></th>
-                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Alcance</th>
-                                                        <th class="py-2 border-bottom" style="width: 15%;">Radicado</th>
-                                                        <th class="py-2 border-bottom" style="width: 15%;">Cliente</th>
-                                                        <th class="py-2 border-bottom" style="width: 20%;">Acción Vencimiento</th>
-                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Frec.</th>
-                                                        <th class="text-center py-2 border-bottom" style="width: 10%;">Est. Acción</th>
-                                                        <th class="text-center py-2 border-bottom" style="width: 5%;">Notif.</th>
-                                                        <th class="text-center pe-3 py-2 border-bottom" style="width: 10%;">Estado</th>
+                                                        <th class="text-center py-3 ps-3 border-bottom fw-medium" style="width: 5%; border-color: #e2e8f0 !important;"></th>
+                                                        <th class="text-center py-3 px-2 border-bottom fw-medium" style="width: 10%; border-color: #e2e8f0 !important;">Alcance</th>
+                                                        <th class="py-3 px-3 border-bottom fw-medium text-start" style="width: 12%; border-color: #e2e8f0 !important;">Radicado</th>
+                                                        <th class="py-3 px-3 border-bottom fw-medium text-start" style="width: 15%; border-color: #e2e8f0 !important;">Cliente</th>
+                                                        <th class="py-3 px-3 border-bottom fw-medium text-start" style="width: 18%; border-color: #e2e8f0 !important;">Acción Vencimiento</th>
+                                                        <th class="text-center py-3 px-2 border-bottom fw-medium" style="width: 10%; border-color: #e2e8f0 !important;">Frec.</th>
+                                                        <th class="text-center py-3 px-2 border-bottom fw-medium" style="width: 10%; border-color: #e2e8f0 !important;">Est. Acción</th>
+                                                        <th class="text-center py-3 px-2 border-bottom fw-medium" style="width: 8%; border-color: #e2e8f0 !important;">Notif.</th>
+                                                        <th class="text-center py-3 pe-3 border-bottom fw-medium" style="width: 12%; border-color: #e2e8f0 !important;">Estado</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody>
+
+                                                <tbody class="border-top-0">
                                                     {{-- ITERACIÓN DE CONFIGURACIONES --}}
                                                     @foreach($operacionesConfiguradas as $op)
                                                         @php
@@ -732,7 +733,7 @@
                                                                 // Diferenciación Visual LOTE vs EXCEPCIÓN
                                                                 $esLote = is_null($conf->id_car_sia_operaciones);
                                                                 $tipoAlcance = $esLote ? 'LOTE' : 'EXCEPCIÓN';
-                                                                $badgeAlcance = $esLote ? 'bg-pastel-primary text-primary border-primary' : 'bg-pastel-success text-success border-success';
+                                                                $badgeAlcance = $esLote ? 'background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd;' : 'background-color: #f0fdf4; color: #059669; border: 1px solid #a7f3d0;';
                                                                 $iconoAlcance = $esLote ? 'fa-layer-group' : 'fa-user-tag';
 
                                                                 $configBaseOp = $conf->configuracionBase;
@@ -745,72 +746,82 @@
                                                             @endphp
 
                                                             {{-- FILA PRINCIPAL (VISIBLE) --}}
-                                                            <tr style="background-color: #fff; cursor: {{ $esLote ? 'not-allowed' : 'pointer' }}; border-bottom: 1px solid #f1f3f5; transition: background-color 0.2s;"
-                                                                class="parent-row {{ !$conf->estado_activo ? 'opacity-75 bg-light' : '' }}"
+                                                            <tr style="background-color: #fff; cursor: {{ $esLote ? 'not-allowed' : 'pointer' }}; transition: background-color 0.15s ease;"
+                                                                class="parent-row border-bottom {{ !$conf->estado_activo ? 'opacity-75' : '' }}"
+                                                                style="border-color: #f1f5f9 !important;"
 
-                                                                {{-- Validamos si NO es lote para habilitar el clic y el hover --}}
                                                                 @if(!$esLote)
                                                                     onclick="toggleParametros('det-op-{{ $conf->id }}', this)"
-                                                                    onmouseover="this.style.backgroundColor='#f8f9fa'"
-                                                                    onmouseout="this.style.backgroundColor='#fff'"
+                                                                    onmouseover="this.style.backgroundColor='#f8fafc'"
+                                                                    onmouseout="this.style.backgroundColor='#ffffff'"
                                                                 @endif>
 
-                                                                <td class="text-center py-2">
+                                                                <td class="text-center py-3 ps-3">
                                                                     @if($esLote)
                                                                         <i class="fas fa-lock text-muted opacity-25" title="La configuración en LOTE no es editable desde aquí"></i>
                                                                     @else
-                                                                        <i class="fas fa-chevron-circle-down text-info opacity-50 icon-toggle"></i>
+                                                                        <i class="fas fa-chevron-circle-down text-info opacity-50 icon-toggle" style="font-size: 0.8rem;"></i>
                                                                     @endif
                                                                 </td>
 
                                                                 {{-- COLUMNA: ALCANCE VISUAL --}}
-                                                                <td class="text-center py-2">
-                                                                    <span class="badge {{ $badgeAlcance }} border border-opacity-25 px-2 py-1" style="font-size: 0.65rem;">
-                                                                        <i class="fas {{ $iconoAlcance }} me-1"></i> {{ $tipoAlcance }}
+                                                                <td class="text-center py-3 px-2">
+                                                                    <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="{{ $badgeAlcance }} padding: 0.2rem 0.5rem; font-size: 0.6rem; font-weight: 400;">
+                                                                        <i class="fas {{ $iconoAlcance }} opacity-75"></i> {{ $tipoAlcance }}
                                                                     </span>
                                                                 </td>
 
-                                                                <td class="font-monospace fw-bold text-dark py-2">
+                                                                <td class="font-monospace fw-medium text-secondary py-3 px-3">
                                                                     {{ $esLote ? 'API-'.str_pad($conf->numero_bloque, 4, '0', STR_PAD_LEFT) : ($op->numero_radicado ?? 'N/A') }}
                                                                 </td>
 
-                                                                <td class="text-truncate py-2 text-secondary" title="{{ $nombreCliente }}" style="max-width: 120px;">{{ $nombreCliente }}</td>
-
-                                                                <td class="fw-bold text-dark text-truncate py-2" title="{{ $accionVencOp?->nombre ?? 'N/A' }}" style="max-width: 180px;">{{ $accionVencOp?->nombre ?? 'N/A' }}</td>
-
-                                                                <td class="text-center py-2">
-                                                                    @if($configBaseOp?->frecuencia_recordatorio_dias) <span class="badge bg-light text-dark border">Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} d</span>
-                                                                    @else <span class="text-muted">—</span> @endif
+                                                                <td class="text-truncate py-3 px-3 text-secondary" title="{{ $nombreCliente }}" style="max-width: 140px;">
+                                                                    {{ $nombreCliente }}
                                                                 </td>
 
-                                                                <td class="text-center py-2">
-                                                                    @if(isset($accionVencOp?->estado))
-                                                                        <span class="badge {{ $accionVencOp->estado ? 'bg-white text-success border border-success' : 'bg-white text-danger border border-danger' }} px-2 py-1">
-                                                                            {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                <td class="fw-medium text-secondary text-truncate py-3 px-3" title="{{ $accionVencOp?->nombre ?? 'N/A' }}" style="max-width: 180px;">
+                                                                    {{ $accionVencOp?->nombre ?? 'N/A' }}
+                                                                </td>
+
+                                                                <td class="text-center py-3 px-2">
+                                                                    @if($configBaseOp?->frecuencia_recordatorio_dias)
+                                                                        <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; font-size: 0.6rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                            Cada {{ $configBaseOp->frecuencia_recordatorio_dias }} d
                                                                         </span>
                                                                     @else
-                                                                        <span class="text-muted">—</span>
+                                                                        <span class="text-muted opacity-50">—</span>
                                                                     @endif
                                                                 </td>
 
-                                                                <td class="text-center py-2">
-                                                                    @if($conf->estado_notificacion) <span class="text-success"><i class="fas fa-bell"></i></span>
-                                                                    @else <span class="text-muted"><i class="fas fa-bell-slash"></i></span> @endif
+                                                                <td class="text-center py-3 px-2">
+                                                                    @if(isset($accionVencOp?->estado))
+                                                                        <span class="badge rounded-pill border {{ $accionVencOp->estado ? 'bg-white text-success border-success' : 'bg-white text-danger border-danger' }}" style="font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                            {{ $accionVencOp->estado ? 'ACTIVA' : 'INACTIVA' }}
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="text-muted opacity-50">—</span>
+                                                                    @endif
                                                                 </td>
 
-                                                                {{-- ========================================================================= --}}
-                                                                {{-- (BOTÓN INTERACTIVO)                                  --}}
-                                                                {{-- ========================================================================= --}}
-                                                                <td class="text-center pe-3 py-2" onclick="event.stopPropagation();">
+                                                                <td class="text-center py-3 px-2">
+                                                                    @if($conf->estado_notificacion)
+                                                                        <span class="text-success opacity-75"><i class="fas fa-bell"></i></span>
+                                                                    @else
+                                                                        <span class="text-muted opacity-25"><i class="fas fa-bell-slash"></i></span>
+                                                                    @endif
+                                                                </td>
+
+                                                                <td class="text-center py-3 pe-3" onclick="event.stopPropagation();">
                                                                     @if(method_exists($conf, 'trashed') && $conf->trashed())
-                                                                        <span class="badge bg-danger text-white" style="font-size: 0.60rem;">ELIMINADA</span>
+                                                                        <span class="badge rounded-pill bg-danger text-white" style="font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">ELIMINADA</span>
                                                                     @else
                                                                         <form action="{{ route('certificados.operaciones.config.toggle', $conf->id) }}" method="POST" class="m-0 p-0 d-inline">
                                                                             @csrf
                                                                             @method('PATCH')
                                                                             <button type="submit"
-                                                                                    class="badge border-0 {{ $conf->estado_activo ? 'bg-success' : 'bg-secondary' }} text-white shadow-sm"
-                                                                                    style="cursor: pointer; padding: 0.4em 0.6em; font-size: 0.60rem; transition: all 0.2s;"
+                                                                                    class="badge rounded-pill border-0 {{ $conf->estado_activo ? 'bg-success' : 'bg-secondary' }} text-white shadow-none"
+                                                                                    style="cursor: pointer; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 500; transition: opacity 0.2s;"
+                                                                                    onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
                                                                                     title="Clic para cambiar a {{ $conf->estado_activo ? 'INACTIVO' : 'ACTIVO' }}">
                                                                                 {{ $conf->estado_activo ? 'ACTIVA' : 'INACTIVA' }}
                                                                             </button>
@@ -822,37 +833,33 @@
                                                             {{-- Evitamos renderizar el formulario si es LOTE --}}
                                                             @if(!$esLote)
                                                                 {{-- FILA DESPLEGABLE (FORMULARIO EDICIÓN JSON Y TRAZABILIDAD) --}}
-                                                                <tr id="det-op-{{ $conf->id }}" style="display: none; background-color: #f4f6f8; box-shadow: inset 0 4px 6px -4px rgba(0,0,0,0.1);">
+                                                                <tr id="det-op-{{ $conf->id }}" style="display: none; background-color: #f8fafc;">
                                                                     <td colspan="9" class="p-0 border-0">
-                                                                        <div class="py-3 px-3" onclick="event.stopPropagation();">
+                                                                        <div class="p-3" onclick="event.stopPropagation();">
 
-                                                                            <form action="{{ route('certificados.operaciones.config.update_parametros', $conf->id) }}" method="POST" class="bg-white rounded-3 shadow-sm border border-start-0 w-100 p-3 position-relative" style="border-left: 4px solid {{ $esLote ? '#0d6efd' : '#0dcaf0' }} !important;">
+                                                                            <form action="{{ route('certificados.operaciones.config.update_parametros', $conf->id) }}" method="POST" class="bg-white rounded-3 shadow-sm border p-3 position-relative" style="border-color: #e2e8f0 !important; border-left: 3px solid #0284c7 !important;">
                                                                                 @csrf
                                                                                 @method('PUT')
 
-                                                                                <div class="position-absolute text-{{ $esLote ? 'primary' : 'info' }} d-none d-md-block" style="left: -15px; top: -12px;">
-                                                                                    <i class="fas fa-level-up-alt fa-rotate-90 fs-5 opacity-50"></i>
-                                                                                </div>
-
-                                                                                {{-- METADATOS Y TRAZABILIDAD COMPLETA (Todos los campos de la BD) --}}
-                                                                                <div class="bg-light border rounded-3 p-2 mb-3 d-flex flex-wrap gap-3 align-items-center text-muted" style="font-size: 0.65rem;">
-                                                                                    <span><i class="fas fa-fingerprint text-secondary me-1"></i><strong>ID Reg:</strong> {{ $conf->id }}</span>
-                                                                                    <span><i class="fas fa-cubes text-secondary me-1"></i><strong>Bloque:</strong> {{ $conf->numero_bloque }}</span>
-                                                                                    <span><i class="fas fa-file-invoice text-secondary me-1"></i><strong>ID Op:</strong> {{ $conf->id_car_sia_operaciones ?? 'N/A' }}</span>
-                                                                                    <span><i class="fas fa-cog text-secondary me-1"></i><strong>ID Config:</strong> {{ $conf->id_car_sia_config }}</span>
-                                                                                    <span><i class="fas fa-user-circle text-secondary me-1"></i><strong>Usuario Mod:</strong> {{ $conf->id_user }} ({{ $conf->usuario->name ?? 'Sistema' }})</span>
-                                                                                    <span><i class="fas fa-calendar-plus text-secondary me-1"></i><strong>Creado:</strong> {{ $conf->created_at ? $conf->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
-                                                                                    <span><i class="fas fa-sync-alt text-secondary me-1"></i><strong>Modificado:</strong> {{ $conf->updated_at ? $conf->updated_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                                                                                {{-- METADATOS Y TRAZABILIDAD COMPLETA --}}
+                                                                                <div class="bg-light border rounded-3 p-2 mb-3 d-flex flex-wrap gap-3 align-items-center text-muted" style="font-size: 0.65rem; border-color: #f1f5f9 !important;">
+                                                                                    <span><i class="fas fa-fingerprint opacity-50 me-1"></i><strong>ID Reg:</strong> {{ $conf->id }}</span>
+                                                                                    <span><i class="fas fa-cubes opacity-50 me-1"></i><strong>Bloque:</strong> {{ $conf->numero_bloque }}</span>
+                                                                                    <span><i class="fas fa-file-invoice opacity-50 me-1"></i><strong>ID Op:</strong> {{ $conf->id_car_sia_operaciones ?? 'N/A' }}</span>
+                                                                                    <span><i class="fas fa-cog opacity-50 me-1"></i><strong>ID Config:</strong> {{ $conf->id_car_sia_config }}</span>
+                                                                                    <span><i class="fas fa-user-circle opacity-50 me-1"></i><strong>Usuario Mod:</strong> {{ $conf->id_user }} ({{ $conf->usuario->name ?? 'Sistema' }})</span>
+                                                                                    <span><i class="fas fa-calendar-plus opacity-50 me-1"></i><strong>Creado:</strong> {{ $conf->created_at ? $conf->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                                                                                    <span><i class="fas fa-sync-alt opacity-50 me-1"></i><strong>Modificado:</strong> {{ $conf->updated_at ? $conf->updated_at->format('d/m/Y H:i') : 'N/A' }}</span>
                                                                                 </div>
 
                                                                                 <div class="row g-3">
                                                                                     {{-- COLUMNA 1: EDICIÓN DE PARÁMETROS JSON (Clasificación) --}}
-                                                                                    <div class="col-md-4 border-end position-relative pe-md-3">
-                                                                                        <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-sliders-h me-1"></i> Lógica (Clasificación)</span>
+                                                                                    <div class="col-md-4 border-end pe-md-3" style="border-color: #f1f5f9 !important;">
+                                                                                        <span class="d-block fw-medium text-secondary mb-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.3px;"><i class="fas fa-sliders-h opacity-75 me-1 text-primary"></i> Lógica (Clasificación)</span>
 
                                                                                         <div class="mb-2">
                                                                                             <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Clasificación de Mora</label>
-                                                                                            <select name="parametros[clasificacion_mora]" class="form-select form-select-sm" style="font-size: 0.75rem;">
+                                                                                            <select name="parametros[clasificacion_mora]" class="form-select form-select-sm shadow-none" style="font-size: 0.72rem; border-color: #cbd5e1;">
                                                                                                 <option value="bueno" {{ $claseMoraOp == 'bueno' ? 'selected' : '' }}>BUENO</option>
                                                                                                 <option value="regular" {{ $claseMoraOp == 'regular' ? 'selected' : '' }}>REGULAR</option>
                                                                                                 <option value="atencion_especial" {{ $claseMoraOp == 'atencion_especial' ? 'selected' : '' }}>ATENCIÓN ESPECIAL</option>
@@ -864,43 +871,42 @@
                                                                                         <div class="row g-2 mb-2">
                                                                                             <div class="col-6">
                                                                                                 <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Max Mora (Días)</label>
-                                                                                                <input type="number" class="form-control form-control-sm" name="parametros[mora_dias_max]" value="{{ $pOp['mora_dias_max'] ?? 0 }}" style="font-size: 0.75rem;">
+                                                                                                <input type="number" class="form-control form-control-sm shadow-none" name="parametros[mora_dias_max]" value="{{ $pOp['mora_dias_max'] ?? 0 }}" style="font-size: 0.72rem; border-color: #cbd5e1;">
                                                                                             </div>
                                                                                             <div class="col-6">
                                                                                                 <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Días de Gracia</label>
-                                                                                                <input type="number" class="form-control form-control-sm" name="parametros[dias_gracia]" value="{{ $pOp['dias_gracia'] ?? 0 }}" style="font-size: 0.75rem;">
+                                                                                                <input type="number" class="form-control form-control-sm shadow-none" name="parametros[dias_gracia]" value="{{ $pOp['dias_gracia'] ?? 0 }}" style="font-size: 0.72rem; border-color: #cbd5e1;">
                                                                                             </div>
                                                                                         </div>
 
-                                                                                        {{-- Campo justificacion nativo de la tabla --}}
                                                                                         <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Observación / Justificación</label>
-                                                                                        <textarea name="justificacion" class="form-control form-control-sm" rows="2" style="font-size: 0.75rem;">{{ $conf->justificacion }}</textarea>
+                                                                                        <textarea name="justificacion" class="form-control form-control-sm shadow-none" rows="2" style="font-size: 0.72rem; border-color: #cbd5e1;">{{ $conf->justificacion }}</textarea>
                                                                                     </div>
 
                                                                                     {{-- COLUMNA 2: EDICIÓN DE PARÁMETROS JSON (Activadores) --}}
-                                                                                    <div class="col-md-4 border-end position-relative pe-md-3">
-                                                                                        <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-bolt me-1"></i> Activadores Lógicos</span>
+                                                                                    <div class="col-md-4 border-end pe-md-3" style="border-color: #f1f5f9 !important;">
+                                                                                        <span class="d-block fw-medium text-secondary mb-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.3px;"><i class="fas fa-bolt opacity-75 me-1 text-warning"></i> Activadores Lógicos</span>
 
-                                                                                        <div class="d-flex flex-column gap-2 mt-2">
+                                                                                        <div class="d-flex flex-column gap-2.5 mt-2">
                                                                                             <div class="form-check form-switch m-0">
                                                                                                 <input type="hidden" name="parametros[requiere_accion]" value="0">
-                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[requiere_accion]" value="1" {{ !empty($pOp['requiere_accion']) ? 'checked' : '' }}>
-                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Requiere Acción Restrictiva</label>
+                                                                                                <input class="form-check-input shadow-none" type="checkbox" role="switch" name="parametros[requiere_accion]" value="1" {{ !empty($pOp['requiere_accion']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-secondary" style="font-size: 0.72rem;">Requiere Acción Restrictiva</label>
                                                                                             </div>
                                                                                             <div class="form-check form-switch m-0">
                                                                                                 <input type="hidden" name="parametros[bloqueo_automatico]" value="0">
-                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[bloqueo_automatico]" value="1" {{ !empty($pOp['bloqueo_automatico']) ? 'checked' : '' }}>
-                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Bloqueo Automático Cupo</label>
+                                                                                                <input class="form-check-input shadow-none" type="checkbox" role="switch" name="parametros[bloqueo_automatico]" value="1" {{ !empty($pOp['bloqueo_automatico']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-secondary" style="font-size: 0.72rem;">Bloqueo Automático Cupo</label>
                                                                                             </div>
                                                                                             <div class="form-check form-switch m-0">
                                                                                                 <input type="hidden" name="parametros[notificacion_gerencia]" value="0">
-                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[notificacion_gerencia]" value="1" {{ !empty($pOp['notificacion_gerencia']) ? 'checked' : '' }}>
-                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Notificación a Gerencia</label>
+                                                                                                <input class="form-check-input shadow-none" type="checkbox" role="switch" name="parametros[notificacion_gerencia]" value="1" {{ !empty($pOp['notificacion_gerencia']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-secondary" style="font-size: 0.72rem;">Notificación a Gerencia</label>
                                                                                             </div>
                                                                                             <div class="form-check form-switch m-0">
                                                                                                 <input type="hidden" name="parametros[incluir_historico_3_anos]" value="0">
-                                                                                                <input class="form-check-input shadow-sm" type="checkbox" name="parametros[incluir_historico_3_anos]" value="1" {{ !empty($pOp['incluir_historico_3_anos']) ? 'checked' : '' }}>
-                                                                                                <label class="form-check-label text-dark" style="font-size: 0.75rem;">Evaluación Histórica (3 Años)</label>
+                                                                                                <input class="form-check-input shadow-none" type="checkbox" role="switch" name="parametros[incluir_historico_3_anos]" value="1" {{ !empty($pOp['incluir_historico_3_anos']) ? 'checked' : '' }}>
+                                                                                                <label class="form-check-label text-secondary" style="font-size: 0.72rem;">Evaluación Histórica (3 Años)</label>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -908,38 +914,40 @@
                                                                                     {{-- COLUMNA 3: ESTADO NATIVO Y GUARDADO --}}
                                                                                     <div class="col-md-4 ps-md-3 d-flex flex-column justify-content-between">
                                                                                         <div>
-                                                                                            <span class="d-block fw-bold text-primary mb-2" style="font-size: 0.70rem; text-transform: uppercase;"><i class="fas fa-shield-alt me-1"></i> Estado de la Regla</span>
+                                                                                            <span class="d-block fw-medium text-secondary mb-2" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.3px;"><i class="fas fa-shield-alt opacity-75 me-1 text-success"></i> Estado de la Regla</span>
 
                                                                                             <div class="mb-2">
                                                                                                 <label class="form-label text-muted mb-1" style="font-size: 0.65rem;">Vigente Hasta</label>
-                                                                                                <input type="date" class="form-control form-control-sm" name="vigente_hasta" value="{{ $conf->vigente_hasta ? \Carbon\Carbon::parse($conf->vigente_hasta)->format('Y-m-d') : '' }}" style="font-size: 0.75rem;">
+                                                                                                <input type="date" class="form-control form-control-sm shadow-none" name="vigente_hasta" value="{{ $conf->vigente_hasta ? \Carbon\Carbon::parse($conf->vigente_hasta)->format('Y-m-d') : '' }}" style="font-size: 0.72rem; border-color: #cbd5e1;">
                                                                                             </div>
 
                                                                                             <div class="d-flex align-items-center gap-2 mb-2">
                                                                                                 <div class="form-check form-switch m-0">
                                                                                                     <input type="hidden" name="estado_notificacion" value="0">
-                                                                                                    <input class="form-check-input shadow-sm" type="checkbox" name="estado_notificacion" value="1" {{ $conf->estado_notificacion ? 'checked' : '' }}>
-                                                                                                    <label class="form-check-label text-dark" style="font-size: 0.75rem;"><i class="fas fa-bell text-warning"></i> Alertas Notificación</label>
+                                                                                                    <input class="form-check-input shadow-none" type="checkbox" role="switch" name="estado_notificacion" value="1" {{ $conf->estado_notificacion ? 'checked' : '' }}>
+                                                                                                    <label class="form-check-label text-secondary" style="font-size: 0.72rem;"><i class="fas fa-bell text-warning me-1"></i> Alertas Notificación</label>
                                                                                                 </div>
                                                                                             </div>
 
                                                                                             <div class="d-flex align-items-center gap-2">
                                                                                                 <div class="form-check form-switch m-0">
                                                                                                     <input type="hidden" name="estado_activo" value="0">
-                                                                                                    <input class="form-check-input shadow-sm" type="checkbox" name="estado_activo" value="1" {{ $conf->estado_activo ? 'checked' : '' }}>
-                                                                                                    <label class="form-check-label {{ $conf->estado_activo ? 'text-success' : 'text-danger' }} fw-bold" style="font-size: 0.75rem;">{{ $conf->estado_activo ? 'Regla Activa' : 'Regla Inactiva' }}</label>
+                                                                                                    <input class="form-check-input shadow-none" type="checkbox" role="switch" name="estado_activo" value="1" {{ $conf->estado_activo ? 'checked' : '' }}>
+                                                                                                    <label class="form-check-label fw-medium {{ $conf->estado_activo ? 'text-success' : 'text-danger' }}" style="font-size: 0.72rem;">{{ $conf->estado_activo ? 'Regla Activa' : 'Regla Inactiva' }}</label>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
 
                                                                                         <div class="mt-3">
-                                                                                            <button type="submit" class="btn btn-sm btn-primary w-100 rounded-pill fw-bold shadow-sm">
+                                                                                            <button type="submit" class="btn btn-sm btn-light border rounded-pill w-100 fw-medium shadow-none text-primary" style="font-size: 0.7rem; height: 28px; background-color: #f0f9ff; border-color: #bae6fd !important;">
                                                                                                 <i class="fas fa-save me-1"></i> Guardar Cambios
                                                                                             </button>
                                                                                         </div>
                                                                                     </div>
+
                                                                                 </div>
                                                                             </form>
+
                                                                         </div>
                                                                     </td>
                                                                 </tr>
@@ -948,18 +956,19 @@
                                                         @endforeach
                                                     @endforeach
                                                 </tbody>
+
                                             </table>
                                         </div>
                                     </div>
 
                                 @else
                                     {{-- ESTADO VACÍO REDISEÑADO --}}
-                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed mt-2 shadow-sm">
-                                        <i class="fas fa-cogs fs-1 text-secondary mb-3 opacity-25"></i>
-                                        <h6 class="fw-bold text-dark">Configuración Estándar</h6>
-                                        <p class="mb-0 fs-7">No hay parámetros excepcionales configurados para esta operación.</p>
-                                        <button type="button" class="btn btn-sm btn-outline-primary mt-3 rounded-pill fw-bold px-4" onclick="$('#modalCrearConfiguracion').modal('show');">
-                                            <i class="fas fa-plus me-1"></i> Crear Excepción
+                                    <div class="text-center py-5 rounded mx-2" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-cogs fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Configuración Estándar</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">No hay parámetros excepcionales configurados para esta operación.</p>
+                                        <button type="button" class="btn btn-sm btn-light border rounded-pill mt-3 px-4 fw-medium text-muted shadow-none" style="font-size: 0.7rem;" onclick="$('#modalCrearConfiguracion').modal('show');">
+                                            <i class="fas fa-plus me-1 text-primary"></i> Crear Excepción
                                         </button>
                                     </div>
                                 @endif
@@ -971,175 +980,256 @@
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
 
-                                @if($lineasAgrupadas->count() > 0)
+                                {{-- CABECERA / SUBTÍTULO + BOTÓN DE ACCIÓN GLOBAL --}}
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-3 px-2">
 
-                                    {{-- Mini-subtítulo Informativo --}}
-                                    <div class="alert bg-light border rounded-3 mb-3 py-2 px-3 d-flex align-items-center shadow-sm" style="border-color: var(--c-border) !important;">
-                                        <i class="fas fa-info-circle text-primary me-2"></i>
-                                        <span class="text-muted" style="font-size: 0.8rem;">
-                                            El cliente <strong class="text-dark">{{ $operacion->tercero ? $operacion->tercero->nom_ter . ' ' . $operacion->tercero->apl1 : 'Seleccionado' }}</strong>
-                                            tiene registradas <strong class="text-primary">{{ $lineasAgrupadas->count() }} {{ $lineasAgrupadas->count() == 1 ? 'línea' : 'líneas' }}</strong> en su historial.
+                                    {{-- Mini-subtítulo Informativo (Suave y sin bordes bruscos) --}}
+                                    <div class="d-flex align-items-center gap-2 py-2 px-3 rounded text-muted m-0 flex-grow-1" style="background-color: #f8fafc; font-size: 0.75rem; border: 1px solid #f1f5f9;">
+                                        <i class="fas fa-info-circle opacity-50"></i>
+                                        <span>
+                                            Historial de <span class="fw-medium text-secondary">{{ $operacion->tercero ? Str::title(strtolower($operacion->tercero->nom_ter . ' ' . $operacion->tercero->apl1)) : 'Seleccionado' }}</span>.
+                                            Contiene <span class="fw-medium text-secondary">{{ $lineasAgrupadas->count() }} {{ $lineasAgrupadas->count() == 1 ? 'línea' : 'líneas' }}</span> de facturación.
                                         </span>
                                     </div>
 
-                                    <div class="card shadow-sm border-0 mb-3" style="border-radius: 12px; overflow: hidden;">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem;">
+                                    {{-- Botón de Acción Global: Informe Cliente (Minimalista Estilo Píldora) --}}
+                                    <div class="d-flex align-items-center flex-shrink-0">
+                                        <a href="{{ route('certificados.operaciones.informe_cliente', $operacion->id) }}"
+                                        target="_blank"
+                                        class="btn btn-light border rounded-pill px-3 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center"
+                                        style="font-size: 0.7rem; height: 32px; transition: all 0.2s ease; background-color: #f8fafc;"
+                                        onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;"
+                                        onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;"
+                                        onclick="bloquearBotonUI(this, 'Generando...')">
+                                            <i class="fas fa-chart-line me-1.5 text-primary opacity-75"></i> Informe Cliente
+                                        </a>
+                                    </div>
 
-                                                @foreach($lineasAgrupadas as $nombreLinea => $datosLinea)
-                                                    {{-- Fila Agrupadora tipo Accordion --}}
-                                                    <thead class="bg-light">
-                                                        <tr>
-                                                            {{-- ¡IMPORTANTE! Cambiamos el colspan a 9 por la nueva columna --}}
-                                                            <th colspan="9" class="p-0 border-bottom-0">
-                                                                <button class="btn btn-light w-100 d-flex justify-content-between align-items-center rounded-0 px-3 py-2 shadow-none border-0 text-start collapsed"
-                                                                        type="button"
-                                                                        data-bs-toggle="collapse"
-                                                                        data-bs-target="#collapseLinea-{{ $loop->index }}"
-                                                                        aria-expanded="false"
-                                                                        aria-controls="collapseLinea-{{ $loop->index }}"
-                                                                        style="background-color: #f8f9fa;">
+                                </div>
 
-                                                                    <span class="fw-bold text-dark" style="font-size: 0.85rem;">
-                                                                        <i class="fas fa-chevron-down text-secondary me-2" style="font-size: 0.7rem;"></i>
-                                                                        <div class="d-flex align-items-center gap-2">
-                                                                            <i class="fas fa-layer-group text-primary"></i>
-                                                                            <span class="text-dark">{{ $nombreLinea }}</span>
-                                                                            <span class="badge bg-pastel-info text-info border border-info border-opacity-25 ms-1" style="font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3px;">
-                                                                                <i class="fas fa-database me-1 opacity-75"></i> Historial de Siasoft (Solo consulta)
-                                                                            </span>
-                                                                        </div>
-                                                                    </span>
-                                                                    <div class="d-flex gap-3 fw-normal text-muted" style="font-size: 0.7rem;">
-                                                                        <span><i class="fas fa-file-invoice me-1"></i> {{ $datosLinea['count'] }} Facturas</span>
-                                                                        <span class="fw-bold text-success"><i class="fas fa-dollar-sign me-1"></i> Total: ${{ number_format((float)$datosLinea['total'], 2) }}</span>
-                                                                    </div>
-                                                                </button>
-                                                            </th>
-                                                        </tr>
-                                                    </thead>
+                                @if($lineasAgrupadas->count() > 0)
 
-                                                    {{-- Cuerpo Colapsable con los datos de las facturas --}}
-                                                    <tbody id="collapseLinea-{{ $loop->index }}" class="collapse border-bottom" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                    {{-- CONTENEDOR PRINCIPAL --}}
+                                    <div class="card border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
 
-                                                        {{-- Cabeceras de las Columnas --}}
-                                                        <tr class="bg-white text-muted text-uppercase" style="font-size: 0.65rem;">
-                                                            <th class="px-3 py-2 border-bottom text-secondary" style="width: 12%;">N° Factura</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Cuota</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary" style="width: 10%;">Pagaré</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 10%;">F. Vencimiento</th>
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 8%;">Días Mora</th>
-                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 14%;">V. Inicial (Bruto)</th>
-                                                            <th class="px-3 py-2 border-bottom text-secondary text-end" style="width: 14%;">V. a Pagar (Neto)</th>
+                                        @foreach($lineasAgrupadas as $nombreLinea => $datosLinea)
+                                            {{-- Agrupador de Línea (Botón + Tabla independiente) --}}
+                                            <div class="border-bottom" style="border-color: #f1f5f9 !important;">
 
-                                                            {{-- NUEVA COLUMNA COMPROBANTE --}}
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 12%;">Comprobante</th>
+                                                {{-- HEADER DEL ACCORDION --}}
+                                                <button class="btn d-block w-100 text-start p-3 shadow-none collapsed rounded-0 border-0"
+                                                        type="button"
+                                                        data-bs-toggle="collapse"
+                                                        data-bs-target="#collapseLinea-{{ $loop->index }}"
+                                                        aria-expanded="false"
+                                                        aria-controls="collapseLinea-{{ $loop->index }}"
+                                                        style="background-color: #ffffff; transition: background-color 0.15s ease;"
+                                                        onmouseover="this.style.backgroundColor='#f8fafc';"
+                                                        onmouseout="this.style.backgroundColor='#ffffff';">
 
-                                                            <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 15%;">Estado</th>
-                                                        </tr>
+                                                    <div class="row align-items-center w-100 m-0" style="font-size: 0.72rem;">
 
-                                                        {{-- Filas de Datos (Facturas individuales) --}}
-                                                        @foreach($datosLinea['facturas'] as $factura)
-                                                            <tr>
-                                                                <td class="px-3 py-1 fw-bold text-dark" style="font-family: monospace;">{{ $factura->id_factura ?? 'N/A' }}</td>
-                                                                <td class="px-2 py-1 text-center text-muted">{{ $factura->cuota ?? '-' }}</td>
-                                                                <td class="px-2 py-1 text-muted">{{ $factura->pagare ?? 'S/N' }}</td>
-                                                                <td class="px-2 py-1 text-center">
-                                                                    @if($factura->fecha_venci) {{ $factura->fechaVFormateada }}
-                                                                    @else <span class="text-muted opacity-50">-</span> @endif
-                                                                </td>
-                                                                <td class="px-2 py-1 text-center">
-                                                                    @if($factura->diasMoraCalculados < 0) <span class="text-danger fw-bold">{{ abs(intval($factura->diasMoraCalculados)) }}</span>
-                                                                    @else <span class="text-muted">0</span> @endif
-                                                                </td>
-                                                                <td class="px-3 py-1 text-end text-muted">${{ number_format((float)$factura->valor_inicial, 2) }}</td>
-                                                                <td class="px-3 py-1 text-end fw-bold" style="color: #047857;">${{ number_format((float)$factura->valor, 2) }}</td>
+                                                        {{-- Columna 1: Título de la Línea y Badge --}}
+                                                        <div class="col-12 col-md-6 d-flex align-items-center gap-2 p-0 mb-2 mb-md-0">
+                                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white border flex-shrink-0" style="width: 24px; height: 24px; border-color: #e2e8f0 !important; color: #64748b;">
+                                                                <i class="fas fa-layer-group opacity-75" style="font-size: 0.65rem;"></i>
+                                                            </div>
+                                                            <span class="fw-medium text-secondary text-truncate" style="letter-spacing: -0.1px;">
+                                                                {{ Str::title(strtolower($nombreLinea)) }}
+                                                            </span>
+                                                            <span class="badge rounded-pill" style="padding: 0.2rem 0.5rem; font-size: 0.58rem; font-weight: 400; background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd;">
+                                                                Siasoft
+                                                            </span>
+                                                        </div>
 
-                                                                {{-- NUEVA CELDA: LÓGICA DEL COMPROBANTE --}}
-                                                                <td class="px-2 py-1 text-center">
-                                                                    @if($factura->comprobantePago)
-                                                                        <a href="{{ $factura->comprobantePago->url_archivo }}" target="_blank" class="badge bg-success text-white text-decoration-none d-inline-flex align-items-center gap-1 shadow-sm" title="Ver Archivo: {{ $factura->comprobantePago->nombre_archivo_simple }}">
-                                                                            <i class="fas fa-file-invoice-dollar"></i> Pagado
-                                                                        </a>
-                                                                        <div class="mt-1" style="font-size: 0.6rem; color: #6c757d; font-weight: 600;">
-                                                                            ${{ number_format((float)$factura->comprobantePago->monto_pagado, 0) }}
-                                                                        </div>
-                                                                    @else
-                                                                        <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">Sin registro</span>
-                                                                    @endif
-                                                                </td>
-                                                                {{-- FIN NUEVA CELDA --}}
+                                                        {{-- Columna 2: Totales y Flecha --}}
+                                                        <div class="col-12 col-md-6 p-0 d-flex align-items-center justify-content-md-end gap-3 text-muted" style="font-size: 0.7rem;">
+                                                            <span class="d-flex align-items-center gap-1">
+                                                                <i class="fas fa-file-invoice opacity-50"></i> {{ $datosLinea['count'] }} facturas
+                                                            </span>
+                                                            <span class="d-flex align-items-center gap-1 fw-medium text-secondary">
+                                                                <i class="fas fa-dollar-sign opacity-50"></i> {{ number_format((float)$datosLinea['total'], 2) }}
+                                                            </span>
+                                                            <i class="fas fa-chevron-down opacity-50 ms-2" style="font-size: 0.6rem;"></i>
+                                                        </div>
 
-                                                                <td class="px-2 py-1 text-center">
-                                                                    @if($factura->estado == 'PROCESADO') <span class="text-success fw-bold" style="font-size: 0.7rem;"><i class="fas fa-check me-1"></i> PROCESADO</span>
-                                                                    @elseif($factura->anular == 1) <span class="text-danger fw-bold" style="font-size: 0.7rem;"><i class="fas fa-ban me-1"></i> ANULADO</span>
-                                                                    @else <span class="text-secondary fw-semibold" style="font-size: 0.7rem;"><i class="fas fa-hourglass-half me-1"></i> PENDIENTE</span>
-                                                                    @endif
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                @endforeach
+                                                    </div>
+                                                </button>
 
-                                            </table>
-                                        </div>
+                                                {{-- CUERPO COLAPSABLE CON TABLA INDEPENDIENTE --}}
+                                                <div id="collapseLinea-{{ $loop->index }}" class="collapse" style="background-color: #ffffff;">
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm align-middle mb-0 text-nowrap" style="font-size: 0.72rem; border-collapse: separate; border-spacing: 0;">
+
+                                                            {{-- Cabeceras de las Columnas --}}
+                                                            <thead class="text-uppercase text-secondary" style="font-size: 0.6rem; letter-spacing: 0.3px; background-color: #f8fafc;">
+                                                                <tr>
+                                                                    <th class="ps-4 pe-2 py-3 border-bottom fw-medium text-start" style="width: 12%; border-color: #e2e8f0 !important;">N° Factura</th>
+                                                                    <th class="px-2 py-3 border-bottom fw-medium text-center" style="width: 6%; border-color: #e2e8f0 !important;">Cuota</th>
+                                                                    <th class="px-2 py-3 border-bottom fw-medium text-start" style="width: 9%; border-color: #e2e8f0 !important;">Pagaré</th>
+                                                                    <th class="px-2 py-3 border-bottom fw-medium text-center" style="width: 10%; border-color: #e2e8f0 !important;">Vence</th>
+                                                                    <th class="px-2 py-3 border-bottom fw-medium text-center" style="width: 8%; border-color: #e2e8f0 !important;">Mora</th>
+                                                                    <th class="px-3 py-3 border-bottom fw-medium text-end" style="width: 14%; border-color: #e2e8f0 !important;">V. Inicial</th>
+                                                                    <th class="px-3 py-3 border-bottom fw-medium text-end" style="width: 14%; border-color: #e2e8f0 !important;">V. Neto</th>
+                                                                    <th class="px-2 py-3 border-bottom fw-medium text-center" style="width: 13%; border-color: #e2e8f0 !important;">Soporte</th>
+                                                                    <th class="pe-4 ps-2 py-3 border-bottom fw-medium text-center" style="width: 14%; border-color: #e2e8f0 !important;">Estado</th>
+                                                                </tr>
+                                                            </thead>
+
+                                                            {{-- Filas de Datos (Facturas individuales) --}}
+                                                            <tbody class="border-top-0">
+                                                                @foreach($datosLinea['facturas'] as $factura)
+                                                                    <tr class="border-bottom" style="border-color: #f1f5f9 !important; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='transparent';">
+                                                                        <td class="ps-4 pe-2 py-3 text-secondary font-monospace" style="font-size: 0.72rem;">{{ $factura->id_factura ?? 'N/A' }}</td>
+                                                                        <td class="px-2 py-3 text-center text-muted">{{ $factura->cuota ?? '-' }}</td>
+                                                                        <td class="px-2 py-3 text-muted text-start">{{ $factura->pagare ?? 'S/N' }}</td>
+
+                                                                        <td class="px-2 py-3 text-center text-muted">
+                                                                            @if($factura->fecha_venci)
+                                                                                {{ $factura->fechaVFormateada }}
+                                                                            @else
+                                                                                <span class="opacity-25">-</span>
+                                                                            @endif
+                                                                        </td>
+
+                                                                        <td class="px-2 py-3 text-center">
+                                                                            @if($factura->diasMoraCalculados < 0)
+                                                                                <span class="badge rounded-pill" style="background-color: #fee2e2; color: #b91c1c; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">{{ abs(intval($factura->diasMoraCalculados)) }} d</span>
+                                                                            @else
+                                                                                <span class="text-muted opacity-50">0</span>
+                                                                            @endif
+                                                                        </td>
+
+                                                                        <td class="px-3 py-3 text-end text-muted">${{ number_format((float)$factura->valor_inicial, 2) }}</td>
+                                                                        <td class="px-3 py-3 text-end fw-medium text-secondary">${{ number_format((float)$factura->valor, 2) }}</td>
+
+                                                                        {{-- LÓGICA DEL COMPROBANTE --}}
+                                                                        <td class="px-2 py-3 text-center">
+                                                                            @if($factura->comprobantePago)
+                                                                                <a href="{{ $factura->comprobantePago->url_archivo }}" target="_blank" class="badge rounded-pill text-decoration-none d-inline-flex align-items-center gap-1" style="background-color: #d1fae5; color: #047857; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 500;" title="Ver Archivo: {{ $factura->comprobantePago->nombre_archivo_simple }}">
+                                                                                    <i class="fas fa-file-invoice-dollar opacity-75"></i> Pago
+                                                                                </a>
+                                                                                <div class="mt-0.5 text-muted" style="font-size: 0.6rem;">
+                                                                                    ${{ number_format((float)$factura->comprobantePago->monto_pagado, 0) }}
+                                                                                </div>
+                                                                            @else
+                                                                                <a href="{{ route('interactions.create') }}" target="_blank" class="btn btn-sm btn-light border rounded-pill px-2.5 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center" style="font-size: 0.62rem; height: 22px; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;" onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;">
+                                                                                    <i class="fas fa-plus me-1 text-primary"></i> Agregar
+                                                                                </a>
+                                                                            @endif
+                                                                        </td>
+
+                                                                        {{-- ESTADO --}}
+                                                                        <td class="pe-4 ps-2 py-3 text-center">
+                                                                            @if($factura->estado == 'PROCESADO')
+                                                                                <span class="badge rounded-pill" style="background-color: #d1fae5; color: #047857; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 400;">Procesado</span>
+                                                                            @elseif($factura->anular == 1)
+                                                                                <span class="badge rounded-pill" style="background-color: #fee2e2; color: #b91c1c; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 400;">Anulado</span>
+                                                                            @else
+                                                                                <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 400;">Pendiente</span>
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        @endforeach
                                     </div>
                                 @else
-                                    <div class="text-center py-5 text-muted bg-white rounded-4 border">
-                                        <i class="fas fa-database fs-1 text-secondary mb-3 opacity-25"></i>
-                                        <h6 class="fw-bold text-dark">Sin Datos en el ERP</h6>
-                                        <p class="mb-0 fs-7">No se encontraron facturas asociadas a este cliente en el bloque.</p>
+                                    {{-- Empty State Suave --}}
+                                    <div class="text-center py-5 rounded mx-2" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-database fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Sin Datos en Siasoft</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">No se encontraron facturas asociadas a este cliente.</p>
                                     </div>
                                 @endif
+
                             </div>
 
                             {{-- ======================================================= --}}
                             {{-- TAB 2: ALERTAS                                          --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="alertas" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-clock me-2"></i> Registro de Alertas</h6>
-                                    <button type="button" class="btn bg-pastel-info shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalAlerta">
-                                        <i class="fas fa-bell me-2 opacity-75"></i> Nueva Alerta
+
+                                {{-- HEADER DE LA SECCIÓN --}}
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Registro de Alertas</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Control y programación de avisos o notificaciones para esta operación.</p>
+                                    </div>
+
+                                    {{-- Botón "Nueva Alerta" Estilo Píldora Minimalista --}}
+                                    <button type="button"
+                                            class="btn btn-light border rounded-pill px-3 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center"
+                                            style="font-size: 0.7rem; height: 26px; transition: all 0.2s ease;"
+                                            onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;"
+                                            onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalAlerta">
+                                        <i class="fas fa-bell me-1.5 text-primary opacity-75"></i> Nueva Alerta
                                     </button>
                                 </div>
+
                                 @if($historialAlertas->count() > 0)
-                                    <div class="row g-3">
+                                    <div class="row g-2 px-2">
                                         @foreach($historialAlertas as $alerta)
                                             @php $esAlertaBloque = is_null($alerta->id_car_sia_operaciones); @endphp
                                             <div class="col-12">
-                                                <div class="p-3 border rounded-4 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-white shadow-sm hover-opacity">
+                                                <div class="p-3 bg-white rounded-3 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center shadow-sm border" style="border-color: #f1f5f9 !important; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='#ffffff';">
+
+                                                    {{-- Info principal de la Alerta --}}
                                                     <div class="d-flex align-items-center gap-3 mb-2 mb-sm-0">
-                                                        <div class="bg-pastel-info rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px;"><i class="fas fa-bell text-info fs-5"></i></div>
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 36px; height: 36px; background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd;">
+                                                            <i class="fas fa-bell" style="font-size: 0.8rem;"></i>
+                                                        </div>
                                                         <div>
-                                                            <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-2">
-                                                                {{ $alerta->tipoAlerta->nombre ?? 'Tipo de Alerta Desconocido' }}
-                                                                @if($esAlertaBloque) <span class="badge bg-pastel-primary px-2 py-1" style="font-size: 0.65rem;"><i class="fas fa-layer-group"></i> Lote</span>
-                                                                @else <span class="badge bg-pastel-secondary text-dark px-2 py-1 border" style="font-size: 0.65rem;"><i class="fas fa-user"></i> Cliente</span>
+                                                            <div class="fw-medium text-secondary d-flex align-items-center gap-2" style="font-size: 0.8rem;">
+                                                                <span>{{ $alerta->tipoAlerta->nombre ?? 'Tipo de Alerta Desconocido' }}</span>
+                                                                @if($esAlertaBloque)
+                                                                    <span class="badge rounded-pill" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                        <i class="fas fa-layer-group opacity-75 me-1"></i> Lote
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                        <i class="fas fa-user opacity-75 me-1"></i> Cliente
+                                                                    </span>
                                                                 @endif
                                                             </div>
-                                                            <div class="text-muted fs-8 mt-1 d-flex align-items-center flex-wrap gap-3">
-                                                                <span><i class="far fa-calendar-alt me-1"></i> Programada para: <span class="fw-semibold text-dark">{{ $alerta->fecha_programada ? \Carbon\Carbon::parse($alerta->fecha_programada)->format('d/m/Y') : 'N/A' }}</span></span>
-                                                                <span><i class="fas fa-user-edit text-muted opacity-50 me-1"></i> Creada por: <span class="fw-semibold text-dark">{{ optional($alerta->usuario)->name ?? 'Sistema' }}</span></span>
+                                                            <div class="text-muted mt-1 d-flex align-items-center flex-wrap gap-3" style="font-size: 0.7rem;">
+                                                                <span><i class="far fa-calendar-alt opacity-50 me-1"></i> Programada: <span class="fw-medium text-secondary">{{ $alerta->fecha_programada ? \Carbon\Carbon::parse($alerta->fecha_programada)->format('d/m/Y') : 'N/A' }}</span></span>
+                                                                <span><i class="fas fa-user-edit opacity-50 me-1"></i> Creada por: <span class="fw-medium text-secondary">{{ optional($alerta->usuario)->name ?? 'Sistema' }}</span></span>
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    {{-- Estado (Procesada / Pendiente) --}}
                                                     <div class="text-sm-end ms-5 ms-sm-0">
                                                         @if($alerta->procesado_en)
-                                                            <span class="badge bg-pastel-success rounded-pill px-3 py-2 mb-1"><i class="fas fa-check me-1"></i> Procesada</span>
-                                                            <div class="text-muted" style="font-size: 0.7rem;">El {{ \Carbon\Carbon::parse($alerta->procesado_en)->format('d/m/Y h:i A') }}</div>
+                                                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background-color: #d1fae5; color: #047857; padding: 0.3rem 0.7rem; font-size: 0.65rem; font-weight: 500;">
+                                                                <i class="fas fa-check opacity-75"></i> Procesada
+                                                            </span>
+                                                            <div class="text-muted mt-1" style="font-size: 0.62rem;">El {{ \Carbon\Carbon::parse($alerta->procesado_en)->format('d/m/Y h:i A') }}</div>
                                                         @else
-                                                            <span class="badge bg-pastel-warning rounded-pill px-3 py-2"><i class="fas fa-hourglass-half me-1"></i> Pendiente</span>
+                                                            <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background-color: #fef3c7; color: #d97706; border: 1px solid #fde68a; padding: 0.3rem 0.7rem; font-size: 0.65rem; font-weight: 500;">
+                                                                <i class="fas fa-hourglass-half opacity-75"></i> Pendiente
+                                                            </span>
                                                         @endif
                                                     </div>
+
                                                 </div>
                                             </div>
                                         @endforeach
                                     </div>
                                 @else
-                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
-                                        <i class="fas fa-bell-slash fs-1 text-secondary mb-3 opacity-25"></i>
-                                        <p class="mb-0 fw-semibold">No hay alertas programadas para esta operación.</p>
+                                    {{-- Empty State Suave --}}
+                                    <div class="text-center py-5 rounded mx-2" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-bell-slash fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Sin Alertas Programadas</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">No hay recordatorios ni notificaciones asociadas a esta operación.</p>
                                     </div>
                                 @endif
                             </div>
@@ -1148,62 +1238,106 @@
                             {{-- TAB 3: HISTORIAL ETL / ESTADO                           --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="historial" role="tabpanel">
-                                <div class="row g-4">
+                                <div class="row g-4 px-2">
+
+                                    {{-- COLUMNA 1: Transiciones de Estado --}}
                                     <div class="col-md-6">
                                         <div class="d-flex justify-content-between align-items-center mb-4">
-                                            <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-exchange-alt me-2"></i> Transiciones de Estado</h6>
-                                            <button type="button" class="btn bg-pastel-warning shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTransicionar">
-                                                <i class="fas fa-exchange-alt me-2 opacity-75"></i> Cambiar Estado
+                                            <div>
+                                                <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Transiciones de Estado</h5>
+                                                <p class="text-muted mb-0" style="font-size: 0.75rem;">Historial de cambios de estado en la operación.</p>
+                                            </div>
+
+                                            {{-- Botón Estilo Píldora Minimalista --}}
+                                            <button type="button"
+                                                    class="btn btn-light border rounded-pill px-3 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center"
+                                                    style="font-size: 0.7rem; height: 26px; transition: all 0.2s ease;"
+                                                    onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;"
+                                                    onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalTransicionar">
+                                                <i class="fas fa-exchange-alt me-1.5 text-primary opacity-75"></i> Cambiar Estado
                                             </button>
                                         </div>
 
                                         @if($historialEstados->count() > 0)
-                                            <div class="border-start border-2 border-primary border-opacity-25 ms-3 ps-4 position-relative">
+                                            <div class="border-start border-2 ms-3 ps-4 position-relative py-2" style="border-color: #cbd5e1 !important;">
                                                 @foreach($historialEstados as $historialEstado)
                                                     @php $esEstadoBloque = is_null($historialEstado->id_car_sia_operaciones); @endphp
                                                     <div class="mb-4 position-relative">
-                                                        <span class="position-absolute bg-white border border-2 border-primary rounded-circle" style="width: 14px; height: 14px; left: -1.8rem; top: 0.25rem;"></span>
-                                                        <div class="fw-bold text-dark d-flex align-items-center gap-2 flex-wrap">
-                                                            {{ $historialEstado->estado->nombre ?? 'Estado Desconocido' }}
-                                                            @if($esEstadoBloque) <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-layer-group me-1"></i> API-{{ str_pad($historialEstado->numero_bloque, 4, '0', STR_PAD_LEFT) }}</span>
-                                                            @else <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
+                                                        {{-- Indicador de la línea de tiempo --}}
+                                                        <span class="position-absolute bg-white border border-2 rounded-circle" style="width: 12px; height: 12px; left: -1.82rem; top: 0.2rem; border-color: #0284c7 !important;"></span>
+
+                                                        <div class="fw-medium text-secondary d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.8rem;">
+                                                            <span>{{ $historialEstado->estado->nombre ?? 'Estado Desconocido' }}</span>
+                                                            @if($esEstadoBloque)
+                                                                <span class="badge rounded-pill" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                    <i class="fas fa-layer-group opacity-75 me-1"></i> API-{{ str_pad($historialEstado->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                                </span>
+                                                            @else
+                                                                <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                    <i class="fas fa-user opacity-75 me-1"></i> Individual
+                                                                </span>
                                                             @endif
                                                         </div>
-                                                        <div class="text-muted fs-8 mt-1 d-flex flex-wrap gap-2">
-                                                            <span><i class="far fa-clock me-1"></i> {{ $historialEstado->created_at ? $historialEstado->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
-                                                            <span>| <i class="fas fa-user-tag text-muted opacity-50 ms-1 me-1"></i> {{ optional($historialEstado->usuario)->name ?? 'Sistema' }}</span>
+
+                                                        <div class="text-muted mt-1 d-flex flex-wrap gap-2" style="font-size: 0.7rem;">
+                                                            <span><i class="far fa-clock opacity-50 me-1"></i> {{ $historialEstado->created_at ? $historialEstado->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
+                                                            <span class="opacity-50">|</span>
+                                                            <span><i class="fas fa-user-tag opacity-50 me-1"></i> {{ optional($historialEstado->usuario)->name ?? 'Sistema' }}</span>
                                                         </div>
                                                     </div>
                                                 @endforeach
                                             </div>
                                         @else
-                                            <div class="bg-light p-3 rounded-4 text-center text-muted fs-8">Sin historial de estados registrado.</div>
+                                            <div class="text-center py-4 rounded" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">Sin historial de estados registrado.</p>
+                                            </div>
                                         @endif
                                     </div>
+
+                                    {{-- COLUMNA 2: Eventos Inyectados --}}
                                     <div class="col-md-6">
-                                        <h6 class="fw-bold text-muted mb-4 fs-8 text-uppercase"><i class="fas fa-tags me-2"></i> Eventos Inyectados</h6>
+                                        <div class="mb-4" style="padding-top: 2px;">
+                                            <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Eventos Inyectados</h5>
+                                            <p class="text-muted mb-0" style="font-size: 0.75rem;">Registro de eventos y tipos aplicados en el sistema.</p>
+                                        </div>
+
                                         @if($historialTipos->count() > 0)
-                                            <div class="border-start border-2 border-info border-opacity-25 ms-3 ps-4 position-relative">
+                                            <div class="border-start border-2 ms-3 ps-4 position-relative py-2" style="border-color: #cbd5e1 !important;">
                                                 @foreach($historialTipos as $historialTipo)
                                                     <div class="mb-4 position-relative">
-                                                        <span class="position-absolute bg-white border border-2 border-info rounded-circle" style="width: 14px; height: 14px; left: -1.8rem; top: 0.25rem;"></span>
-                                                        <div class="fw-bold text-dark d-flex align-items-center gap-2 flex-wrap">
-                                                            {{ $historialTipo->tipo->nombre ?? 'Tipo Desconocido' }}
-                                                            @if($historialTipo->es_lote) <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-layer-group me-1"></i> API-{{ str_pad($historialTipo->numero_bloque, 4, '0', STR_PAD_LEFT) }}</span>
-                                                            @else <span class="badge bg-pastel-secondary text-dark border border-secondary border-opacity-25" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
+                                                        {{-- Indicador de la línea de tiempo --}}
+                                                        <span class="position-absolute bg-white border border-2 rounded-circle" style="width: 12px; height: 12px; left: -1.82rem; top: 0.2rem; border-color: #0d9488 !important;"></span>
+
+                                                        <div class="fw-medium text-secondary d-flex align-items-center gap-2 flex-wrap" style="font-size: 0.8rem;">
+                                                            <span>{{ $historialTipo->tipo->nombre ?? 'Tipo Desconocido' }}</span>
+                                                            @if($historialTipo->es_lote)
+                                                                <span class="badge rounded-pill" style="background-color: #f0fdf4; color: #0d9488; border: 1px solid #ccfbf1; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                    <i class="fas fa-layer-group opacity-75 me-1"></i> API-{{ str_pad($historialTipo->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                                </span>
+                                                            @else
+                                                                <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                                    <i class="fas fa-user opacity-75 me-1"></i> Individual
+                                                                </span>
                                                             @endif
                                                         </div>
-                                                        <div class="text-muted fs-8 mt-1 d-flex flex-wrap gap-2">
-                                                            <span><i class="far fa-clock me-1"></i> {{ $historialTipo->created_at ? $historialTipo->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
-                                                            <span>| <i class="fas fa-user-edit text-muted opacity-50 ms-1 me-1"></i> {{ $historialTipo->nombre_user ?? 'Sistema' }}{{ $historialTipo->cargo_user ?? '' }}</span>
+
+                                                        <div class="text-muted mt-1 d-flex flex-wrap gap-2" style="font-size: 0.7rem;">
+                                                            <span><i class="far fa-clock opacity-50 me-1"></i> {{ $historialTipo->created_at ? $historialTipo->created_at->format('d M, Y h:i A') : 'Fecha no disponible' }}</span>
+                                                            <span class="opacity-50">|</span>
+                                                            <span><i class="fas fa-user-edit opacity-50 me-1"></i> {{ $historialTipo->nombre_user ?? 'Sistema' }}{{ $historialTipo->cargo_user ?? '' }}</span>
                                                         </div>
                                                     </div>
                                                 @endforeach
                                             </div>
                                         @else
-                                            <div class="bg-light p-3 rounded-4 text-center text-muted fs-8">Sin eventos inyectados.</div>
+                                            <div class="text-center py-4 rounded" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                                <p class="mb-0 text-muted" style="font-size: 0.75rem;">Sin eventos inyectados.</p>
+                                            </div>
                                         @endif
                                     </div>
+
                                 </div>
                             </div>
 
@@ -1236,54 +1370,53 @@
                                                     <thead class="bg-white">
                                                         <tr>
                                                             <th class="p-0 border-0">
-                                                                <button class="btn w-100 text-decoration-none px-3 py-1.5 border-bottom shadow-none collapsed transition-all"
+                                                                {{-- Botón agolpador: Fuerzo alineación izquierda, display block y ancho 100% para evitar centrado automático --}}
+                                                                <button class="btn d-block w-100 text-start p-3 border-bottom shadow-none collapsed"
                                                                         type="button"
                                                                         data-bs-toggle="collapse"
                                                                         data-bs-target="#collapseCertificado-{{ $certId }}"
                                                                         aria-expanded="false"
                                                                         aria-controls="collapseCertificado-{{ $certId }}"
-                                                                        style="background-color: #f8fafc; border-color: #f1f5f9 !important;">
+                                                                        style="background-color: #fcfdfd; transition: background-color 0.2s ease; border-color: #f1f5f9 !important;">
 
-                                                                    {{-- Contenedor simétrico con tipografía natural (suave a la vista) --}}
-                                                                    <div class="row align-items-center mx-0 text-start" style="font-size: 0.72rem;">
+                                                                    {{-- Contenedor simétrico: w-100 y m-0 son vitales para mantener la grilla estable --}}
+                                                                    <div class="row align-items-center w-100 m-0" style="font-size: 0.75rem;">
 
-                                                                        {{-- Columna 1: Icono y Título en formato natural (no mayúscula forzada) --}}
-                                                                        <div class="col-12 col-md-5 d-flex align-items-center gap-2 py-1">
-                                                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white border shadow-sm flex-shrink-0" style="width: 24px; height: 24px; border-color: #e2e8f0 !important;">
-                                                                                <i class="fas fa-file-pdf text-danger" style="font-size: 0.65rem;"></i>
+                                                                        {{-- Columna 1: Icono y Título (Title Case para que sea más natural) --}}
+                                                                        <div class="col-12 col-md-5 d-flex align-items-center gap-3 p-0 mb-2 mb-md-0">
+                                                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white border shadow-sm flex-shrink-0" style="width: 28px; height: 28px; border-color: #e2e8f0 !important;">
+                                                                                <i class="fas fa-file-pdf text-danger" style="font-size: 0.8rem;"></i>
                                                                             </div>
-                                                                            <span class="fw-semibold text-secondary text-truncate" style="letter-spacing: -0.1px;">
+                                                                            <span class="fw-semibold text-secondary text-truncate" style="letter-spacing: 0.2px;">
                                                                                 {{ Str::title(strtolower($tipo->nombre ?? 'Documento ' . $certId)) }}
                                                                             </span>
                                                                         </div>
 
-                                                                        {{-- Columna 2: Lote / Tipo (Pastel muy suave) --}}
-                                                                        <div class="col-6 col-md-2 py-1">
+                                                                        {{-- Columna 2: Lote / Tipo (Badges súper sutiles) --}}
+                                                                        <div class="col-4 col-md-2 p-0">
                                                                             @if($registro->es_lote)
-                                                                                <span class="badge px-2 py-0.5 rounded-pill fw-medium border" style="font-size: 0.6rem; background-color: #f1f5f9; color: #475569; border-color: #e2e8f0 !important;">
-                                                                                    <i class="fas fa-layer-group me-1 text-muted"></i> Lote: {{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                                                <span class="badge rounded-pill fw-medium border" style="padding: 0.35rem 0.6rem; font-size: 0.65rem; background-color: #f1f5f9; color: #475569; border-color: #e2e8f0 !important;">
+                                                                                    <i class="fas fa-layer-group me-1 opacity-75"></i> Lote: {{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }}
                                                                                 </span>
                                                                             @else
-                                                                                <span class="badge px-2 py-0.5 rounded-pill fw-medium border" style="font-size: 0.6rem; background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important;">
-                                                                                    <i class="fas fa-user me-1 text-muted"></i> Individual
+                                                                                <span class="badge rounded-pill fw-medium border" style="padding: 0.35rem 0.6rem; font-size: 0.65rem; background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important;">
+                                                                                    <i class="fas fa-user me-1 opacity-75"></i> Individual
                                                                                 </span>
                                                                             @endif
                                                                         </div>
 
-                                                                        {{-- Columna 3: Fecha y Hora (Discreta) --}}
-                                                                        <div class="col-6 col-md-3 py-1 text-muted" style="font-size: 0.68rem;">
-                                                                            <div class="d-flex align-items-center gap-1">
-                                                                                <i class="far fa-clock text-muted opacity-75" style="font-size: 0.6rem;"></i>
-                                                                                <span>{{ $registro->created_at ? $registro->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
-                                                                            </div>
+                                                                        {{-- Columna 3: Fecha y Hora (Discreta y alineada) --}}
+                                                                        <div class="col-5 col-md-3 p-0 text-muted d-flex align-items-center gap-2" style="font-size: 0.7rem;">
+                                                                            <i class="far fa-clock opacity-50"></i>
+                                                                            <span>{{ $registro->created_at ? $registro->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
                                                                         </div>
 
-                                                                        {{-- Columna 4: Usuario discreto + Flecha suave --}}
-                                                                        <div class="col-12 col-md-2 py-1 d-flex align-items-center justify-content-between justify-content-md-end gap-2">
-                                                                            <span class="text-muted text-truncate" style="font-size: 0.68rem;" title="{{ $registro->nombre_user ?? 'Sistema' }}">
+                                                                        {{-- Columna 4: Usuario discreto + Flecha (Totalmente a la derecha) --}}
+                                                                        <div class="col-3 col-md-2 p-0 d-flex align-items-center justify-content-end gap-2 text-muted">
+                                                                            <span class="text-truncate fw-medium" style="font-size: 0.7rem;" title="{{ $registro->nombre_user ?? 'Sistema' }}">
                                                                                 <i class="fas fa-user-circle me-1 opacity-50"></i>{{ Str::before($registro->nombre_user ?? 'Sistema', ' ') }}
                                                                             </span>
-                                                                            <i class="fas fa-chevron-down text-muted opacity-50" style="font-size: 0.6rem; transition: transform 0.2s ease;"></i>
+                                                                            <i class="fas fa-chevron-down opacity-50 ms-1" style="font-size: 0.65rem;"></i>
                                                                         </div>
 
                                                                     </div>
@@ -1812,8 +1945,13 @@
                             {{-- TAB 5: GRÁFICOS E INDICADORES                           --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="graficos" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-chart-line me-2"></i> Resumen Visual de la Operación</h6>
+
+                                {{-- HEADER DE LA SECCIÓN --}}
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Resumen Visual de la Operación</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Análisis estadístico de cartera y distribución de eventos del sistema.</p>
+                                    </div>
                                 </div>
 
                                 @php
@@ -1835,26 +1973,52 @@
                                     $chartEventosData = $logsAuditoria->groupBy('tituloEvento')->map->count();
                                 @endphp
 
-                                <div class="row g-4">
+                                <div class="row g-3 px-2">
+
                                     <!-- Gráfico 1: Estado de las Facturas -->
                                     <div class="col-md-6">
-                                        <div class="border rounded-4 p-4 bg-white shadow-sm h-100">
-                                            <h6 class="fw-bold text-dark fs-7 mb-3 text-center">Composición de Cartera</h6>
-                                            <div class="d-flex justify-content-center align-items-center bg-light rounded-3" style="height: 250px; position: relative;">
-                                                <canvas id="chartCartera"></canvas>
+                                        <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 8px; border: 1px solid #f1f5f9 !important;">
+
+                                            <div class="card-header bg-white border-bottom pt-3 pb-2 px-4 d-flex justify-content-between align-items-center" style="border-color: #f8fafc !important;">
+                                                <span class="fw-medium text-secondary" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-chart-pie text-primary opacity-75 me-2"></i> Composición de Cartera
+                                                </span>
+                                                <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; font-size: 0.6rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                    Facturas
+                                                </span>
                                             </div>
+
+                                            <div class="card-body p-4 d-flex justify-content-center align-items-center" style="min-height: 260px;">
+                                                <div style="width: 100%; max-width: 280px; height: 230px; position: relative;">
+                                                    <canvas id="chartCartera"></canvas>
+                                                </div>
+                                            </div>
+
                                         </div>
                                     </div>
 
                                     <!-- Gráfico 2: Tiempos o Tipos de Eventos -->
                                     <div class="col-md-6">
-                                        <div class="border rounded-4 p-4 bg-white shadow-sm h-100">
-                                            <h6 class="fw-bold text-dark fs-7 mb-3 text-center">Distribución de Eventos (ETL)</h6>
-                                            <div class="d-flex justify-content-center align-items-center bg-light rounded-3" style="height: 250px; position: relative;">
-                                                <canvas id="chartEventos"></canvas>
+                                        <div class="card border-0 shadow-sm h-100 bg-white" style="border-radius: 8px; border: 1px solid #f1f5f9 !important;">
+
+                                            <div class="card-header bg-white border-bottom pt-3 pb-2 px-4 d-flex justify-content-between align-items-center" style="border-color: #f8fafc !important;">
+                                                <span class="fw-medium text-secondary" style="font-size: 0.8rem;">
+                                                    <i class="fas fa-chart-bar text-info opacity-75 me-2"></i> Distribución de Eventos (ETL)
+                                                </span>
+                                                <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #64748b; font-size: 0.6rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                    Auditoría
+                                                </span>
                                             </div>
+
+                                            <div class="card-body p-4 d-flex justify-content-center align-items-center" style="min-height: 260px;">
+                                                <div style="width: 100%; height: 230px; position: relative;">
+                                                    <canvas id="chartEventos"></canvas>
+                                                </div>
+                                            </div>
+
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
 
@@ -1862,113 +2026,133 @@
                             {{-- TAB 6: OPERARIOS Y RENDIMIENTO                          --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="operarios" role="tabpanel">
-                                <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-users me-2"></i> Índice de Intervención por Usuario</h6>
+
+                                {{-- HEADER DE LA SECCIÓN --}}
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Índice de Intervención por Usuario</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Métricas de rendimiento y participación de operarios en la operación.</p>
+                                    </div>
                                 </div>
 
                                 @if($operariosData->count() > 0)
-                                    <div class="row g-3">
+                                    <div class="row g-3 px-2">
                                         @foreach($operariosData as $operario)
                                             <div class="col-md-6 col-lg-4">
-                                                <div class="p-3 border rounded-4 bg-white shadow-sm hover-opacity transition-all h-100">
+                                                <div class="card border-0 shadow-sm h-100 bg-white p-3" style="border-radius: 8px; border: 1px solid #f1f5f9 !important; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='#ffffff';">
 
+                                                    {{-- Info del Operario --}}
                                                     <div class="d-flex align-items-center mb-3">
-                                                        <div class="bg-pastel-primary rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 45px; height: 45px;">
-                                                            <i class="fas fa-user-astronaut text-primary fs-5"></i>
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 38px; height: 38px; background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd;">
+                                                            <i class="fas fa-user text-primary opacity-75" style="font-size: 0.85rem;"></i>
                                                         </div>
-                                                        <div>
-                                                            <h6 class="fw-bold text-dark mb-0 fs-7 text-truncate" style="max-width: 180px;" title="{{ $operario['nombre'] }}">{{ $operario['nombre'] }}</h6>
-                                                            <span class="text-muted" style="font-size: 0.7rem;">{{ $operario['cargo'] }}</span>
+                                                        <div class="overflow-hidden">
+                                                            <h6 class="fw-medium text-secondary mb-0 text-truncate" style="font-size: 0.8rem; max-width: 170px;" title="{{ $operario['nombre'] }}">{{ $operario['nombre'] }}</h6>
+                                                            <span class="text-muted d-block text-truncate" style="font-size: 0.68rem; max-width: 170px;" title="{{ $operario['cargo'] }}">{{ $operario['cargo'] }}</span>
                                                         </div>
                                                     </div>
 
-                                                    <!-- Barra de progreso del índice de intervención -->
+                                                    {{-- Métricas / Procesos ejecutados --}}
                                                     <div class="mb-2 d-flex justify-content-between align-items-end">
-                                                        <span class="text-muted fw-semibold" style="font-size: 0.75rem;">Procesos ejecutados</span>
-                                                        <span class="fw-bold text-primary fs-6">{{ $operario['cantidad'] }}</span>
+                                                        <span class="text-muted" style="font-size: 0.7rem;">Procesos ejecutados</span>
+                                                        <span class="fw-medium text-secondary" style="font-size: 0.9rem; letter-spacing: -0.2px;">{{ $operario['cantidad'] }}</span>
                                                     </div>
 
-                                                    <div class="progress mb-3" style="height: 6px; background-color: #f1f5f9; border-radius: 4px;">
-                                                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $operario['porcentaje'] }}%; border-radius: 4px;" aria-valuenow="{{ $operario['porcentaje'] }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                    {{-- Barra de progreso minimalista --}}
+                                                    <div class="progress mb-3" style="height: 4px; background-color: #f1f5f9; border-radius: 2px;">
+                                                        <div class="progress-bar" role="progressbar" style="width: {{ $operario['porcentaje'] }}%; background-color: #0284c7; border-radius: 2px;" aria-valuenow="{{ $operario['porcentaje'] }}" aria-valuemin="0" aria-valuemax="100"></div>
                                                     </div>
 
-                                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                                        <span class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-history me-1"></i> Último: {{ $operario['ultimo'] }}</span>
-                                                        <span class="badge bg-pastel-success text-success" style="font-size: 0.7rem;">{{ $operario['porcentaje'] }}% del total</span>
+                                                    {{-- Footer de la Tarjeta --}}
+                                                    <div class="d-flex justify-content-between align-items-center pt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                                        <span class="text-muted" style="font-size: 0.65rem;"><i class="far fa-clock opacity-50 me-1"></i> {{ $operario['ultimo'] }}</span>
+                                                        <span class="badge rounded-pill" style="background-color: #f0fdf4; color: #059669; border: 1px solid #a7f3d0; font-size: 0.58rem; font-weight: 400; padding: 0.2rem 0.5rem;">
+                                                            {{ $operario['porcentaje'] }}% del total
+                                                        </span>
                                                     </div>
+
                                                 </div>
                                             </div>
                                         @endforeach
                                     </div>
                                 @else
-                                    <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
-                                        <i class="fas fa-user-slash fs-1 text-secondary mb-3 opacity-25"></i>
-                                        <h6 class="fw-bold text-dark">Sin Intervenciones</h6>
-                                        <p class="mb-0 fs-7">Aún no hay registros de operarios en esta operación.</p>
+                                    {{-- Empty State Suave --}}
+                                    <div class="text-center py-5 rounded mx-2" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-user-slash fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Sin Intervenciones</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">Aún no hay registros de operarios en esta operación.</p>
                                     </div>
                                 @endif
+
                             </div>
 
                             {{-- ======================================================= --}}
-                            {{-- INICIO TAB 7: SOPORTES (FORMATO HOJA DE CÁLCULO PRO) --}}
+                            {{-- INICIO TAB 7: SOPORTES (FORMATO HOJA DE CÁLCULO PRO)    --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="soportes" role="tabpanel" aria-labelledby="soportes-tab" tabindex="0">
 
+                                {{-- HEADER DE LA SECCIÓN --}}
                                 <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                                     <div>
-                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Registro de Soportes Financieros</h5>
-                                        <p class="text-muted fs-7 mb-0">Trazabilidad detallada de pagos, obligaciones y rutas AWS S3.</p>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Registro de Soportes Financieros</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Trazabilidad detallada de pagos, obligaciones y rutas.</p>
                                     </div>
                                     @if(isset($soportes) && $soportes->count() > 0)
-                                        <div class="bg-pastel-success text-success px-3 py-2 rounded-3 shadow-sm border border-success border-opacity-25">
-                                            <span class="fs-7 fw-bold"><i class="fas fa-check-circle me-1"></i> {{ $soportes->count() }} Soportes validados</span>
-                                        </div>
+                                        {{-- Badge total soportes estilo píldora minimalista --}}
+                                        <span class="badge rounded-pill d-inline-flex align-items-center gap-1 shadow-sm"
+                                            style="background-color: #d1fae5; color: #047857; border: 1px solid #a7f3d0; padding: 0.4rem 0.8rem; font-size: 0.7rem; font-weight: 500;">
+                                            <i class="fas fa-check-circle opacity-75"></i> {{ $soportes->count() }} Soportes validados
+                                        </span>
                                     @endif
                                 </div>
 
                                 @if(isset($soportes) && $soportes->count() > 0)
-                                    <div class="card border border-light shadow-sm rounded-4 overflow-hidden bg-white">
+                                    {{-- CONTENEDOR PRINCIPAL --}}
+                                    <div class="card border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
                                         <div class="table-responsive">
-                                            {{-- Tabla estilo hoja de cálculo: hover sutil, bordes limpios, fuente compacta --}}
-                                            <table class="table table-hover align-middle mb-0 text-nowrap" style="font-size: 0.85rem;">
-                                                <thead class="bg-light" style="border-bottom: 2px solid #e2e8f0;">
+
+                                            <table class="table table-sm align-middle mb-0 text-nowrap" style="font-size: 0.72rem; border-collapse: separate; border-spacing: 0;">
+
+                                                {{-- Cabeceras de las Columnas --}}
+                                                <thead class="text-uppercase text-secondary" style="font-size: 0.6rem; letter-spacing: 0.3px; background-color: #f8fafc;">
                                                     <tr>
-                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Transacción / Fecha</th>
-                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Aplicación (Obligación / Banco)</th>
-                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Detalle & Cuota</th>
-                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Responsable</th>
-                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase text-end" style="font-size: 0.65rem; letter-spacing: 0.8px;">Monto Pagado</th>
-                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase text-center" style="font-size: 0.65rem; letter-spacing: 0.8px;">Acción</th>
+                                                        <th class="ps-4 pe-3 py-3 border-bottom fw-medium text-start" style="width: 18%; border-color: #e2e8f0 !important;">Transacción / Fecha</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-start" style="width: 25%; border-color: #e2e8f0 !important;">Obligación / Banco</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-start" style="width: 15%; border-color: #e2e8f0 !important;">Detalle & Cuota</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-start" style="width: 15%; border-color: #e2e8f0 !important;">Responsable</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-end" style="width: 14%; border-color: #e2e8f0 !important;">Monto Pagado</th>
+                                                        <th class="pe-4 ps-3 py-3 border-bottom fw-medium text-center" style="width: 13%; border-color: #e2e8f0 !important;">Acción</th>
                                                     </tr>
                                                 </thead>
+
                                                 <tbody class="border-top-0">
                                                     @foreach($soportes as $soporte)
-                                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                        <tr class="border-bottom" style="border-color: #f1f5f9 !important; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='transparent';">
 
                                                             {{-- 1. Transacción y Fecha --}}
-                                                            <td class="ps-4 py-3">
-                                                                <div class="d-flex flex-column">
-                                                                    <span class="fw-bolder text-dark mb-1 fs-7">
-                                                                        <i class="fas fa-hashtag text-muted me-1" style="font-size: 0.65rem;"></i>PR-{{ str_pad($soporte->pr, 5, '0', STR_PAD_LEFT) }}
+                                                            <td class="ps-4 pe-3 py-3">
+                                                                <div class="d-flex flex-column gap-1">
+                                                                    <span class="fw-medium text-secondary font-monospace" style="font-size: 0.75rem;">
+                                                                        <i class="fas fa-hashtag text-muted opacity-50 me-1" style="font-size: 0.6rem;"></i>PR-{{ str_pad($soporte->pr, 5, '0', STR_PAD_LEFT) }}
                                                                     </span>
-                                                                    <span class="text-muted fw-medium" style="font-size: 0.70rem;">
+                                                                    <span class="text-muted" style="font-size: 0.68rem;">
                                                                         {{ $soporte->fecha_pago ? \Carbon\Carbon::parse($soporte->fecha_pago)->format('d M, Y - h:i A') : \Carbon\Carbon::parse($soporte->created_at)->format('d M, Y') }}
                                                                     </span>
                                                                 </div>
                                                             </td>
 
-                                                            {{-- 2. Aplicación (Crédito/Banco) corregido con el atributo ->nombre --}}
-                                                            <td class="py-3">
-                                                                <div class="d-flex flex-column gap-2">
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25 me-2 py-1" style="width: 60px; font-size: 0.65rem;">Crédito</span>
-                                                                        <span class="fw-bold text-dark text-truncate" style="max-width: 200px;" title="{{ optional($soporte->obligacion)->nombre ?? 'Línea #' . $soporte->id_obligacion }}">
+                                                            {{-- 2. Aplicación (Crédito/Banco) --}}
+                                                            <td class="px-3 py-3">
+                                                                <div class="d-flex flex-column gap-1">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <span class="badge rounded-pill text-uppercase text-center" style="width: 50px; background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; font-size: 0.55rem; font-weight: 400;">Crédito</span>
+                                                                        <span class="fw-medium text-secondary text-truncate" style="max-width: 180px; font-size: 0.72rem;" title="{{ optional($soporte->obligacion)->nombre ?? 'Línea #' . $soporte->id_obligacion }}">
                                                                             {{ optional($soporte->obligacion)->nombre ?? 'Línea #' . $soporte->id_obligacion }}
                                                                         </span>
                                                                     </div>
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span class="badge bg-pastel-secondary text-secondary border border-secondary border-opacity-25 me-2 py-1" style="width: 60px; font-size: 0.65rem;">Banco</span>
-                                                                        <span class="text-muted text-truncate fw-medium" style="max-width: 200px; font-size: 0.75rem;">
+                                                                    <div class="d-flex align-items-center gap-2">
+                                                                        <span class="badge rounded-pill text-uppercase text-center" style="width: 50px; background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; font-size: 0.55rem; font-weight: 400;">Banco</span>
+                                                                        <span class="text-muted text-truncate" style="max-width: 180px; font-size: 0.68rem;" title="{{ optional($soporte->banco)->nombre_banco ?? 'Cuenta no especificada' }}">
                                                                             {{ optional($soporte->banco)->nombre_banco ?? 'Cuenta no especificada' }}
                                                                         </span>
                                                                     </div>
@@ -1976,45 +2160,45 @@
                                                             </td>
 
                                                             {{-- 3. Detalle y Tipo de Pago --}}
-                                                            <td class="py-3">
-                                                                <div class="d-flex flex-column justify-content-center h-100">
-                                                                    <span class="fw-semibold text-dark mb-1">
+                                                            <td class="px-3 py-3">
+                                                                <div class="d-flex flex-column gap-1 align-items-start">
+                                                                    <span class="text-secondary fw-medium" style="font-size: 0.72rem;">
                                                                         Cuota {{ $soporte->numero_cuota }}
                                                                     </span>
-                                                                    <span class="badge bg-light text-muted border text-start d-inline-block text-truncate" style="max-width: 140px; font-size: 0.65rem;" title="{{ $soporte->tipo_pago ?? 'Abono / Pago' }}">
+                                                                    <span class="badge rounded-pill border text-truncate" style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; padding: 0.15rem 0.5rem; font-size: 0.6rem; font-weight: 400; max-width: 120px;" title="{{ $soporte->tipo_pago ?? 'Abono / Pago' }}">
                                                                         {{ $soporte->tipo_pago ?? 'Abono regular' }}
                                                                     </span>
                                                                 </div>
                                                             </td>
 
                                                             {{-- 4. Usuario Responsable --}}
-                                                            <td class="py-3">
-                                                                <div class="d-flex align-items-center">
-                                                                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 text-secondary border shadow-sm" style="width: 26px; height: 26px;">
-                                                                        <i class="fas fa-user-astronaut" style="font-size: 0.6rem;"></i>
+                                                            <td class="px-3 py-3">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-circle d-flex justify-content-center align-items-center flex-shrink-0" style="width: 24px; height: 24px; background-color: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">
+                                                                        <i class="fas fa-user opacity-75" style="font-size: 0.55rem;"></i>
                                                                     </div>
-                                                                    <span class="text-muted fw-medium text-truncate" style="max-width: 120px; font-size: 0.75rem;" title="{{ optional($soporte->user)->name ?? 'Sistema / Externo' }}">
+                                                                    <span class="text-muted text-truncate" style="max-width: 110px; font-size: 0.72rem;" title="{{ optional($soporte->user)->name ?? 'Sistema / Externo' }}">
                                                                         {{ optional($soporte->user)->name ?? 'Sistema / Externo' }}
                                                                     </span>
                                                                 </div>
                                                             </td>
 
-                                                            {{-- 5. Monto Pagado (Alineado a la derecha, fuente resaltada) --}}
-                                                            <td class="py-3 text-end pe-4 align-middle">
-                                                                <span class="fw-bolder" style="font-size: 0.95rem; color: #0f172a; letter-spacing: -0.3px;">
+                                                            {{-- 5. Monto Pagado --}}
+                                                            <td class="px-3 py-3 text-end">
+                                                                <span class="fw-medium text-secondary" style="font-size: 0.8rem; letter-spacing: -0.2px;">
                                                                     ${{ number_format($soporte->monto_pagado, 0, ',', '.') }}
                                                                 </span>
                                                             </td>
 
                                                             {{-- 6. Acción: Botón AWS S3 --}}
-                                                            <td class="py-3 text-center pe-4">
+                                                            <td class="pe-4 ps-3 py-3 text-center">
                                                                 @if($soporte->url_archivo && $soporte->url_archivo !== '#')
-                                                                    <a href="{{ $soporte->url_archivo }}" target="_blank" class="btn btn-sm btn-primary shadow-sm hover-opacity rounded-pill px-3 py-1 fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">
-                                                                        <i class="fas fa-cloud-download-alt me-1"></i> VER
+                                                                    <a href="{{ $soporte->url_archivo }}" target="_blank" class="btn btn-sm btn-light border rounded-pill px-2.5 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center" style="font-size: 0.62rem; height: 22px; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;" onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;">
+                                                                        <i class="fas fa-cloud-download-alt me-1 text-primary opacity-75"></i> Ver
                                                                     </a>
                                                                 @else
-                                                                    <span class="badge bg-light text-muted border py-1 px-2 rounded-pill" style="font-size: 0.65rem;">
-                                                                        <i class="fas fa-eye-slash me-1"></i> No físico
+                                                                    <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #94a3b8; padding: 0.25rem 0.6rem; font-size: 0.6rem; font-weight: 400;">
+                                                                        Sin archivo
                                                                     </span>
                                                                 @endif
                                                             </td>
@@ -2026,12 +2210,11 @@
                                         </div>
                                     </div>
                                 @else
-                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
-                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-secondary rounded-circle mb-3" style="width: 80px; height: 80px;">
-                                            <i class="fas fa-folder-open fs-2 text-secondary opacity-50"></i>
-                                        </div>
-                                        <h6 class="fw-bolder text-dark mb-1">Cero soportes registrados</h6>
-                                        <p class="mb-0 fs-7 text-muted">Aún no se han procesado comprobantes físicos ni transferencias de esta operación en AWS S3.</p>
+                                    {{-- Empty State Suave --}}
+                                    <div class="text-center py-5 rounded" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-folder-open fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Cero Soportes Registrados</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">Aún no se han procesado comprobantes físicos ni transferencias de esta operación.</p>
                                     </div>
                                 @endif
 
@@ -2041,49 +2224,55 @@
                             {{-- ======================================================= --}}
 
                             {{-- ======================================================= --}}
-                            {{-- INICIO TAB 8: INTERACCIONES (CRM / CONTACTOS) --}}
+                            {{-- INICIO TAB 8: INTERACCIONES (CRM / CONTACTOS)           --}}
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="interacciones" role="tabpanel" aria-labelledby="interacciones-tab" tabindex="0">
 
+                                {{-- HEADER DE LA SECCIÓN (Minimalista y Suave) --}}
                                 <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                                     <div>
-                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Registro de Interacciones</h5>
-                                        <p class="text-muted fs-7 mb-0">Historial de llamadas, correos y gestiones realizadas con este cliente.</p>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Registro de Interacciones</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Historial de llamadas, correos y gestiones realizadas con este cliente.</p>
                                     </div>
                                     @if(isset($interacciones) && $interacciones->count() > 0)
-                                        <div class="bg-pastel-warning text-warning px-3 py-2 rounded-3 shadow-sm border border-warning border-opacity-25">
-                                            <span class="fs-7 fw-bold text-dark"><i class="fas fa-history me-1 text-warning"></i> {{ $interacciones->count() }} Gestiones</span>
-                                        </div>
+                                        {{-- Badge total interacciones estilo píldora minimalista --}}
+                                        <span class="badge rounded-pill d-inline-flex align-items-center gap-1 shadow-sm"
+                                            style="background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; padding: 0.4rem 0.8rem; font-size: 0.7rem; font-weight: 500;">
+                                            <i class="fas fa-history opacity-75"></i> {{ $interacciones->count() }} Gestiones
+                                        </span>
                                     @endif
                                 </div>
 
                                 @if(isset($interacciones) && $interacciones->count() > 0)
-                                    <div class="card border border-light shadow-sm rounded-4 overflow-hidden bg-white">
+                                    {{-- CONTENEDOR PRINCIPAL --}}
+                                    <div class="card border-0 shadow-sm mb-3" style="border-radius: 8px; overflow: hidden; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
                                         <div class="table-responsive">
-                                            {{-- Tabla estilo SaaS / Hoja de cálculo --}}
-                                            <table class="table table-hover align-middle mb-0 text-nowrap" style="font-size: 0.85rem;">
-                                                <thead class="bg-light" style="border-bottom: 2px solid #e2e8f0;">
+
+                                            <table class="table table-sm align-middle mb-0 text-nowrap" style="font-size: 0.72rem; border-collapse: separate; border-spacing: 0;">
+
+                                                {{-- Cabeceras de las Columnas --}}
+                                                <thead class="text-uppercase text-secondary" style="font-size: 0.6rem; letter-spacing: 0.3px; background-color: #f8fafc;">
                                                     <tr>
-                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Fecha & Canal</th>
-                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Asesor / Agente</th>
-                                                        <th class="py-3 px-3 text-secondary fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.8px;">Gestión & Resultado</th>
-                                                        <th class="py-3 px-4 text-secondary fw-bold text-uppercase w-50" style="font-size: 0.65rem; letter-spacing: 0.8px;">Notas / Observaciones</th>
+                                                        <th class="ps-4 pe-3 py-3 border-bottom fw-medium text-start" style="width: 20%; border-color: #e2e8f0 !important;">Fecha & Canal</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-start" style="width: 20%; border-color: #e2e8f0 !important;">Asesor / Agente</th>
+                                                        <th class="px-3 py-3 border-bottom fw-medium text-start" style="width: 25%; border-color: #e2e8f0 !important;">Gestión & Resultado</th>
+                                                        <th class="pe-4 ps-3 py-3 border-bottom fw-medium text-start" style="width: 35%; border-color: #e2e8f0 !important;">Notas / Observaciones</th>
                                                     </tr>
                                                 </thead>
+
                                                 <tbody class="border-top-0">
                                                     @foreach($interacciones as $interaccion)
-                                                        <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                        <tr class="border-bottom" style="border-color: #f1f5f9 !important; transition: background-color 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc';" onmouseout="this.style.backgroundColor='transparent';">
 
                                                             {{-- 1. Fecha y Canal --}}
-                                                            <td class="ps-4 py-3">
-                                                                <div class="d-flex flex-column">
-                                                                    <span class="fw-bolder text-dark mb-1 fs-7">
+                                                            <td class="ps-4 pe-3 py-3">
+                                                                <div class="d-flex flex-column gap-1">
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem; letter-spacing: 0.2px;">
                                                                         {{ $interaccion->interaction_date ? $interaccion->interaction_date->format('d M, Y - h:i A') : 'Sin fecha' }}
                                                                     </span>
-                                                                    <div class="d-flex align-items-center mt-1">
-                                                                        <span class="badge bg-pastel-primary text-primary border border-primary border-opacity-25 py-1 px-2" style="font-size: 0.60rem;">
-                                                                            <i class="fas fa-link me-1"></i>
-                                                                            {{-- Nota: Ajusta 'nombre' por el atributo real de tu modelo IntChannel si es diferente --}}
+                                                                    <div>
+                                                                        <span class="badge rounded-pill d-inline-flex align-items-center gap-1" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 0.2rem 0.5rem; font-size: 0.6rem; font-weight: 400;">
+                                                                            <i class="fas fa-link opacity-75"></i>
                                                                             {{ optional($interaccion->channel)->nombre ?? 'Canal Estándar' }}
                                                                         </span>
                                                                     </div>
@@ -2091,18 +2280,18 @@
                                                             </td>
 
                                                             {{-- 2. Agente / Asesor --}}
-                                                            <td class="py-3">
-                                                                <div class="d-flex align-items-center">
-                                                                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center me-2 text-secondary border shadow-sm" style="width: 32px; height: 32px;">
-                                                                        <i class="fas fa-headset" style="font-size: 0.75rem;"></i>
+                                                            <td class="px-3 py-3">
+                                                                <div class="d-flex align-items-center gap-2">
+                                                                    <div class="rounded-circle d-flex justify-content-center align-items-center flex-shrink-0" style="width: 28px; height: 28px; background-color: #f8fafc; border: 1px solid #e2e8f0; color: #64748b;">
+                                                                        <i class="fas fa-headset opacity-75" style="font-size: 0.65rem;"></i>
                                                                     </div>
                                                                     <div class="d-flex flex-column">
-                                                                        <span class="text-dark fw-bold text-truncate" style="max-width: 150px; font-size: 0.75rem;" title="{{ optional($interaccion->agent)->name ?? 'No asignado' }}">
+                                                                        <span class="text-secondary fw-medium text-truncate" style="max-width: 140px; font-size: 0.75rem;" title="{{ optional($interaccion->agent)->name ?? 'No asignado' }}">
                                                                             {{ optional($interaccion->agent)->name ?? 'No asignado' }}
                                                                         </span>
                                                                         @if($interaccion->duration)
-                                                                            <span class="text-muted" style="font-size: 0.65rem;">
-                                                                                <i class="far fa-clock me-1"></i>{{ $interaccion->duration }} min
+                                                                            <span class="text-muted d-flex align-items-center gap-1" style="font-size: 0.65rem;">
+                                                                                <i class="far fa-clock opacity-50"></i>{{ $interaccion->duration }} min
                                                                             </span>
                                                                         @endif
                                                                     </div>
@@ -2110,25 +2299,27 @@
                                                             </td>
 
                                                             {{-- 3. Tipo de Gestión y Resultado (Outcome) --}}
-                                                            <td class="py-3">
-                                                                <div class="d-flex flex-column gap-1">
-                                                                    <span class="text-dark fw-semibold" style="font-size: 0.75rem;">
+                                                            <td class="px-3 py-3">
+                                                                <div class="d-flex flex-column gap-1 align-items-start">
+                                                                    <span class="text-secondary fw-medium text-truncate" style="font-size: 0.75rem; max-width: 180px;" title="{{ optional($interaccion->type)->nombre ?? 'Gestión General' }}">
                                                                         {{ optional($interaccion->type)->nombre ?? 'Gestión General' }}
                                                                     </span>
-                                                                    <span class="badge bg-light text-muted border text-start d-inline-block text-truncate" style="max-width: 160px; font-size: 0.65rem;" title="{{ optional($interaccion->outcomeRelation)->nombre ?? 'Sin estado' }}">
-                                                                        <i class="fas fa-check-double me-1"></i> {{ optional($interaccion->outcomeRelation)->nombre ?? 'Pendiente / Sin estado' }}
+                                                                    <span class="badge rounded-pill border d-inline-flex align-items-center gap-1 text-truncate"
+                                                                        style="background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important; padding: 0.2rem 0.5rem; font-size: 0.6rem; font-weight: 400; max-width: 180px;"
+                                                                        title="{{ optional($interaccion->outcomeRelation)->nombre ?? 'Sin estado' }}">
+                                                                        <i class="fas fa-check-double opacity-50"></i> {{ optional($interaccion->outcomeRelation)->nombre ?? 'Pendiente / Sin estado' }}
                                                                     </span>
                                                                 </div>
                                                             </td>
 
-                                                            {{-- 4. Notas (Con text-wrap para que se pueda leer el comentario) --}}
-                                                            <td class="py-3 pe-4 text-wrap" style="min-width: 250px;">
+                                                            {{-- 4. Notas (Con text-wrap para legibilidad) --}}
+                                                            <td class="pe-4 ps-3 py-3 text-wrap" style="min-width: 250px;">
                                                                 @if($interaccion->notes)
-                                                                    <p class="mb-0 text-muted" style="font-size: 0.75rem; line-height: 1.4;">
+                                                                    <p class="mb-0 text-muted" style="font-size: 0.7rem; line-height: 1.5;">
                                                                         {{ $interaccion->notes }}
                                                                     </p>
                                                                 @else
-                                                                    <span class="text-black-50 fst-italic" style="font-size: 0.70rem;">Sin observaciones adicionales...</span>
+                                                                    <span class="text-muted opacity-50 fst-italic" style="font-size: 0.7rem;">Sin observaciones...</span>
                                                                 @endif
                                                             </td>
 
@@ -2139,12 +2330,11 @@
                                         </div>
                                     </div>
                                 @else
-                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
-                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-warning rounded-circle mb-3" style="width: 80px; height: 80px;">
-                                            <i class="fas fa-headset fs-2 text-warning opacity-75"></i>
-                                        </div>
-                                        <h6 class="fw-bolder text-dark mb-1">Sin historial de contacto</h6>
-                                        <p class="mb-0 fs-7 text-muted">Aún no se han registrado interacciones, llamadas o seguimientos con este cliente.</p>
+                                    {{-- Empty State Suave --}}
+                                    <div class="text-center py-5 rounded" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-headset fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Sin Historial de Contacto</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">Aún no se han registrado interacciones, llamadas o seguimientos con este cliente.</p>
                                     </div>
                                 @endif
 
@@ -2158,63 +2348,115 @@
                             {{-- ======================================================= --}}
                             <div class="tab-pane fade" id="documentos" role="tabpanel" aria-labelledby="documentos-tab" tabindex="0">
 
+                                {{-- HEADER DE LA SECCIÓN (Minimalista y Suave) --}}
                                 <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                                     <div>
-                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Gestión Documental</h5>
-                                        <p class="text-muted fs-7 mb-0">Estado de soportes de afiliación y ubicación en archivo ECM/Físico.</p>
+                                        <h5 class="fw-medium text-secondary mb-1" style="font-size: 1rem; letter-spacing: -0.2px;">Gestión Documental</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.75rem;">Estado de soportes de afiliación y ubicación en archivo ECM/Físico.</p>
                                     </div>
                                     @if(isset($documentosAsociado) && $documentosAsociado->ubicacion_ecm_link)
-                                        <a href="{{ $documentosAsociado->ubicacion_ecm_link }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center">
-                                            <i class="fas fa-cloud me-2"></i> Abrir Carpeta ECM
+                                        {{-- Botón Estilo Píldora (Igual al "Agregar") --}}
+                                        <a href="{{ $documentosAsociado->ubicacion_ecm_link }}"
+                                        target="_blank"
+                                        class="btn btn-light border rounded-pill px-3 py-0 text-muted shadow-none text-decoration-none d-inline-flex align-items-center"
+                                        style="font-size: 0.7rem; height: 26px; transition: all 0.2s ease;"
+                                        onmouseover="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7'; this.style.borderColor='#bae6fd' !important;"
+                                        onmouseout="this.style.backgroundColor='#f8fafc'; this.style.color='#6c757d'; this.style.borderColor='#cbd5e1' !important;">
+                                            <i class="fas fa-cloud me-2 text-primary opacity-75"></i> Abrir ECM
                                         </a>
                                     @endif
                                 </div>
 
                                 @if(isset($documentosAsociado))
-                                    <div class="row g-4 px-2">
+                                    <div class="row g-3 px-2">
+
                                         {{-- TARJETA 1: Checklist de Soportes --}}
                                         <div class="col-md-7">
-                                            <div class="card border border-light shadow-sm rounded-4 h-100 bg-white">
-                                                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
-                                                    <h6 class="fw-bold text-dark"><i class="fas fa-clipboard-check text-success me-2"></i> Soportes Radicados</h6>
+                                            <div class="card border-0 shadow-sm h-100" style="border-radius: 8px; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
+
+                                                <div class="card-header bg-white border-bottom pt-3 pb-2 px-4" style="border-color: #f8fafc !important;">
+                                                    <span class="fw-medium text-secondary" style="font-size: 0.8rem;">
+                                                        <i class="fas fa-clipboard-check text-success opacity-75 me-2"></i> Soportes Radicados
+                                                    </span>
                                                 </div>
-                                                <div class="card-body px-4">
-                                                    <div class="row">
+
+                                                <div class="card-body px-4 py-3">
+                                                    <div class="row g-3">
+
+                                                        {{-- Columna Izquierda Checklist --}}
                                                         <div class="col-sm-6">
-                                                            <ul class="list-unstyled mb-0 fs-7">
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_formulario_afiliacion ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_formulario_afiliacion ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Formulario Afiliación</span>
-                                                                </li>
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_autorizacion_datos ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_autorizacion_datos ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Autorización Datos</span>
-                                                                </li>
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_cedula_pastor ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_cedula_pastor ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Cédula Asociado</span>
-                                                                </li>
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_licencia_pastoral ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_licencia_pastoral ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Licencia</span>
-                                                                </li>
-                                                            </ul>
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_formulario_afiliacion)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Formulario Afiliación</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Formulario Afiliación</span>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_autorizacion_datos)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Autorización Datos</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Autorización Datos</span>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_cedula_pastor)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Cédula Asociado</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Cédula Asociado</span>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom border-sm-0" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_licencia_pastoral)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Licencia</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Licencia</span>
+                                                                @endif
+                                                            </div>
                                                         </div>
+
+                                                        {{-- Columna Derecha Checklist --}}
                                                         <div class="col-sm-6">
-                                                            <ul class="list-unstyled mb-0 fs-7">
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_cedula_esposa ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_cedula_esposa ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Cédula Esposa</span>
-                                                                </li>
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_registro_matrimonio ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_registro_matrimonio ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Reg. Matrimonio</span>
-                                                                </li>
-                                                                <li class="mb-3 d-flex align-items-center">
-                                                                    <i class="fas {{ $documentosAsociado->doc_id_hijos ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
-                                                                    <span class="{{ $documentosAsociado->doc_id_hijos ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">IDs Hijos</span>
-                                                                </li>
-                                                            </ul>
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_cedula_esposa)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Cédula Esposa</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Cédula Esposa</span>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="d-flex align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                                @if($documentosAsociado->doc_registro_matrimonio)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">Reg. Matrimonio</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">Reg. Matrimonio</span>
+                                                                @endif
+                                                            </div>
+
+                                                            <div class="d-flex align-items-center gap-2 mb-0 pb-0">
+                                                                @if($documentosAsociado->doc_id_hijos)
+                                                                    <i class="fas fa-check-circle text-success opacity-75" style="font-size: 0.85rem;"></i>
+                                                                    <span class="fw-medium text-secondary" style="font-size: 0.75rem;">IDs Hijos</span>
+                                                                @else
+                                                                    <i class="fas fa-circle text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                                                    <span class="text-muted text-decoration-line-through opacity-75" style="font-size: 0.75rem;">IDs Hijos</span>
+                                                                @endif
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2223,43 +2465,50 @@
 
                                         {{-- TARJETA 2: Archivo Físico y Metadatos --}}
                                         <div class="col-md-5">
-                                            <div class="card border border-light shadow-sm rounded-4 h-100 bg-white">
-                                                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
-                                                    <h6 class="fw-bold text-dark"><i class="fas fa-archive text-secondary me-2"></i> Archivo Físico</h6>
+                                            <div class="card border-0 shadow-sm h-100" style="border-radius: 8px; background-color: #ffffff; border: 1px solid #f1f5f9 !important;">
+
+                                                <div class="card-header bg-white border-bottom pt-3 pb-2 px-4" style="border-color: #f8fafc !important;">
+                                                    <span class="fw-medium text-secondary" style="font-size: 0.8rem;">
+                                                        <i class="fas fa-archive text-secondary opacity-75 me-2"></i> Archivo Físico
+                                                    </span>
                                                 </div>
-                                                <div class="card-body px-4">
-                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                                        <span class="text-muted fs-7">Carpeta:</span>
-                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->ubicacion_carpeta ?? 'N/A' }}</span>
+
+                                                <div class="card-body px-4 py-3">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Carpeta:</span>
+                                                        <span class="fw-medium text-secondary" style="font-size: 0.75rem;">{{ $documentosAsociado->ubicacion_carpeta ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                                        <span class="text-muted fs-7">Caja:</span>
-                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->numero_caja ?? 'N/A' }}</span>
+
+                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Caja:</span>
+                                                        <span class="fw-medium text-secondary" style="font-size: 0.75rem;">{{ $documentosAsociado->numero_caja ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
-                                                        <span class="text-muted fs-7">Folios:</span>
-                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->cantidad_folios ?? '0' }}</span>
+
+                                                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom" style="border-color: #f8fafc !important;">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Folios:</span>
+                                                        <span class="fw-medium text-secondary" style="font-size: 0.75rem;">{{ $documentosAsociado->cantidad_folios ?? '0' }}</span>
                                                     </div>
-                                                    <div class="d-flex justify-content-between">
-                                                        <span class="text-muted fs-7">Digitalizado:</span>
+
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <span class="text-muted" style="font-size: 0.75rem;">Digitalizado:</span>
                                                         @if($documentosAsociado->escaneado)
-                                                            <span class="badge bg-pastel-success text-success border border-success border-opacity-25 fs-8">Sí</span>
+                                                            <span class="badge rounded-pill" style="background-color: #d1fae5; color: #047857; padding: 0.25rem 0.6rem; font-size: 0.65rem; font-weight: 500;">Sí</span>
                                                         @else
-                                                            <span class="badge bg-light text-muted border fs-8">Pendiente</span>
+                                                            <span class="badge rounded-pill border" style="background-color: #f8fafc; color: #94a3b8; padding: 0.25rem 0.6rem; font-size: 0.65rem; font-weight: 400;">Pendiente</span>
                                                         @endif
                                                     </div>
                                                 </div>
+
                                             </div>
                                         </div>
                                     </div>
+
                                 @else
-                                    {{-- Estado Vacío si no se encuentra el Asociado --}}
-                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
-                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-secondary rounded-circle mb-3" style="width: 80px; height: 80px;">
-                                            <i class="fas fa-folder-open fs-2 text-secondary opacity-75"></i>
-                                        </div>
-                                        <h6 class="fw-bolder text-dark mb-1">Sin expediente documental</h6>
-                                        <p class="mb-0 fs-7 text-muted">No se encontró una ficha de asociado (MaeAsociado) vinculada a esta cédula.</p>
+                                    {{-- Empty State Suave (Al mismo estilo del ERP) --}}
+                                    <div class="text-center py-5 rounded" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                                        <i class="fas fa-folder-open fs-3 text-secondary mb-3 opacity-25"></i>
+                                        <h6 class="fw-medium text-secondary mb-1" style="font-size: 0.85rem;">Sin Expediente Documental</h6>
+                                        <p class="mb-0 text-muted" style="font-size: 0.75rem;">No se encontró una ficha de asociado vinculada a esta cédula.</p>
                                     </div>
                                 @endif
 
