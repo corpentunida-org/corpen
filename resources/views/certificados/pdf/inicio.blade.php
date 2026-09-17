@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Certificado Informativo - CORPENTUNIDA</title>
+    <title>Certificado Para Postulación - CORPENTUNIDA</title>
     <style>
         /* 1. CONFIGURACIÓN DE PÁGINA Y MÁRGENES */
         @page { margin: 4cm 2cm 3.5cm 2cm; }
@@ -47,10 +47,11 @@
         }
         .subtitle {
             font-size: 10pt;
-            color: #64748b;
+            color: #0284c7; /* Azul corporativo destacado */
+            font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            border-bottom: 1px solid #cbd5e1;
+            border-bottom: 2px solid #0284c7;
             padding-bottom: 8px;
             margin-bottom: 25px;
             width: 80%;
@@ -118,16 +119,16 @@
     <div class="footer">
         <span class="page-number"></span>
     </div>
-
+    <br><br>
     <div class="header">
-        <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br>- CORPENTUNIDA -</div>
-        <div class="subtitle">Certificado de Comportamiento e Información de Cartera</div>
+        <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br></div>
+        <div class="subtitle">Certificado Para Postulación</div>
     </div>
 
     <div class="content">
         El presente documento certifica que el(la) asociado(a) <strong>{{ strtoupper($operacion->tercero->nom_ter ?? 'N/A') }} {{ strtoupper($operacion->tercero->apl1 ?? '') }} {{ strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
         identificado(a) con cédula de ciudadanía No. <strong>{{ $operacion->tercero->cod_ter ?? 'N/A' }}</strong>,
-        registra el siguiente comportamiento histórico y estado en sus obligaciones financieras con la Asociación:
+        se encuentra vinculado(a) a la Asociación y registra el estado actual de sus compromisos para fines de postulación:
     </div>
 
     @php
@@ -153,7 +154,6 @@
                         $peorMora = $grupoLineas->max('dias_mora_automaticos');
                         $esAlDia = $peorMora <= 0;
 
-                        // Buscamos la fecha de vencimiento más representativa o la última del grupo
                         $ultimaLinea = $grupoLineas->sortByDesc('created_at')->first();
                         $fechaVencimiento = $ultimaLinea && $ultimaLinea->fecha_venci
                             ? \Carbon\Carbon::parse($ultimaLinea->fecha_venci)->format('d/m/Y')
@@ -164,7 +164,7 @@
                         <td class="text-center">{{ $fechaVencimiento }}</td>
                         <td class="text-center">
                             <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                {{ $esAlDia ? 'PENDIENTE' : "EN MORA ($peorMora días)" }}
+                                {{ $esAlDia ? 'AL DÍA' : "EN MORA ($peorMora días)" }}
                             </span>
                         </td>
                     </tr>
@@ -192,9 +192,9 @@
         <tr>
             <td style="padding: 0;">
                 <div class="content" style="font-size: 9pt; color: #64748b; margin-bottom: 40px;">
-                    Este documento es de carácter informativo. Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
+                    Este certificado se expide a solicitud del interesado para fines de postulación, a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
                 </div>
-
+                <br>
                 <table width="250px">
                     <tr>
                         <td style="border-top: 1px solid #334155; text-align: center; padding-top: 5px;">

@@ -179,12 +179,12 @@
     <div class="footer">
         <span class="page-number"></span>
     </div>
-    <br>
+    <br><br>
     <div class="header">
-        <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br>- CORPENTUNIDA -</div>
+        <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br></div>
         <div class="subtitle">Estado de Cuenta de Cartera Detallado</div>
     </div>
-    <br>
+    <br><br>
     <div class="content">
         El presente documento certifica que el(la) asociado(a) <strong>{{ strtoupper($operacion->tercero->nom_ter ?? '') }} {{ strtoupper($operacion->tercero->apl1 ?? '') }} {{ strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
         identificado(a) con cédula de ciudadanía No. <strong>{{ $operacion->tercero->cod_ter ?? 'N/A' }}</strong>,
@@ -226,7 +226,7 @@
                             // Validación del Estado API para determinar si está pagado
                             $estadoApiVal = $linea->estadoApi;
                             $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
-                            $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'PAGO');
+                            $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'CANCELADO');
 
                             // Si está pagado por API, se considera al día automáticamente
                             $esAlDia = ($diasMora <= 0) || $esPago;
@@ -276,7 +276,7 @@
                             <td class="text-center">
                                 @if($tieneEstadoApi)
                                     <span class="badge-api-pago" title="Valor: {{ $estadoApiVal }}">
-                                        {{ $estadoApiVal == '1' ? 'PAGO' : strtoupper($estadoApiVal) }}
+                                        {{ $estadoApiVal == '1' ? 'CANCELADO' : strtoupper($estadoApiVal) }}
                                     </span>
                                 @else
                                     <span class="badge-api-falta">PENDIENTE POR CANCELAR</span>
@@ -325,7 +325,7 @@
                     Este documento es de carácter informativo y refleja el saldo de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
                     Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
                 </div>
-                <br>
+                <br><br>
                 <table width="250px">
                     <tr>
                         <td style="border-top: 2px solid #0f172a; text-align: center; padding-top: 6px;">
