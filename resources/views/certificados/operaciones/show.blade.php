@@ -66,7 +66,7 @@
 
                 {{-- Título y Radicado Integrados --}}
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h1 class="fw-medium text-secondary m-0" style="font-size: 1.15rem; letter-spacing: -0.3px;">Operación</h1>
+                    <h1 class="fw-medium text-secondary m-0" style="font-size: 1.15rem; letter-spacing: -0.3px;">Resumen de Cartera y Certificados del Asociado</h1>
                     <span class="badge rounded-pill d-inline-flex align-items-center shadow-none" style="background-color: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; padding: 0.25rem 0.7rem; font-size: 0.75rem; font-weight: 500; letter-spacing: -0.2px;">
                         # {{ $operacion->numero_radicado }}
                     </span>
