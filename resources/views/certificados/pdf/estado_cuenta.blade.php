@@ -222,22 +222,43 @@
                             $subtotalLinea += $valorCuota;
 
                             $diasMora = (int) $linea->dias_mora_automaticos;
-                            $esAlDia = $diasMora <= 0;
+
+                            // Validación del Estado API para determinar si está pagado
+                            $estadoApiVal = $linea->estadoApi;
+                            $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
+                            $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'PAGO');
+
+                            // Si está pagado por API, se considera al día automáticamente
+                            $esAlDia = ($diasMora <= 0) || $esPago;
 
                             $fechaVencimiento = $factura && $factura->fecha_venci
                                 ? \Carbon\Carbon::parse($factura->fecha_venci)->format('d/m/Y')
                                 : 'N/A';
 
-                            // Validación del Estado API
-                            $estadoApiVal = $linea->estadoApi;
-                            $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
+                            // Lógica para cuota o formato mes-año en seguros/cuentas por cobrar
+                            $esSeguro = stripos($nombreLinea, 'SEGURO') !== false;
+                            $cuotaOriginal = $factura->cuota ?? null;
+
+                            if ($esSeguro || empty($cuotaOriginal) || $cuotaOriginal === 'N/A') {
+                                if ($factura && $factura->fecha_venci) {
+                                    $fechaVenc = \Carbon\Carbon::parse($factura->fecha_venci);
+                                    $meses = [1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR', 5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AGO', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC'];
+                                    $mesAbrev = $meses[$fechaVenc->month] ?? '';
+                                    $anio2Digitos = $fechaVenc->format('y');
+                                    $cuotaMostrar = "{$mesAbrev}-{$anio2Digitos}";
+                                } else {
+                                    $cuotaMostrar = 'N/A';
+                                }
+                            } else {
+                                $cuotaMostrar = $cuotaOriginal;
+                            }
                         @endphp
                         <tr>
                             <td class="text-center font-monospace" style="font-weight: bold; color: #0f172a;">#{{ $linea->id_factura ?? ($factura->id_factura ?? 'N/A') }}</td>
-                            <td class="text-center" style="font-weight: 600;">{{ $factura->cuota ?? 'N/A' }}</td>
+                            <td class="text-center" style="font-weight: 600;">{{ $cuotaMostrar }}</td>
                             <td class="text-center">{{ $fechaVencimiento }}</td>
                             <td class="text-center">
-                                @if($diasMora > 0)
+                                @if($diasMora > 0 && !$esPago)
                                     <span style="color: #b91c1c; font-weight: bold; font-size: 8.5pt;">{{ $diasMora }}</span>
                                 @else
                                     <span style="color: #64748b;">0</span>
@@ -245,7 +266,11 @@
                             </td>
                             <td class="text-center">
                                 <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                    {{ $esAlDia ? 'PENDIENTE' : 'EN MORA' }}
+                                    @if($esPago)
+                                        AL DÍA
+                                    @else
+                                        {{ $esAlDia ? '-' : 'EN MORA' }}
+                                    @endif
                                 </span>
                             </td>
                             <td class="text-center">
@@ -254,7 +279,7 @@
                                         {{ $estadoApiVal == '1' ? 'PAGO' : strtoupper($estadoApiVal) }}
                                     </span>
                                 @else
-                                    <span class="badge-api-falta">FALTA POR PAGAR</span>
+                                    <span class="badge-api-falta">PENDIENTE POR CANCELAR</span>
                                 @endif
                             </td>
                             <td class="text-right" style="font-weight: bold; color: #0f172a;">${{ number_format($valorCuota, 2, ',', '.') }}</td>

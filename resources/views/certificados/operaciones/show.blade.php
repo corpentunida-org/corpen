@@ -522,127 +522,149 @@
             <div class="col-xl-8 col-lg-7">
                 <div class="card card-custom shadow-sm border-0 h-100">
 
-                    {{-- ESTILOS PARA LA BARRA DE DESPLAZAMIENTO (Scrollbar) --}}
+                    {{-- ESTILOS DE BARRA Y PESTAÑAS MINIMALISTAS --}}
                     <style>
-                        /* Habilita una barra delgada en Firefox */
                         .tabs-scrollable {
                             scrollbar-width: thin;
-                            scrollbar-color: #cbd5e1 transparent;
+                            scrollbar-color: #e2e8f0 transparent;
                         }
-                        /* Estilos para navegadores basados en WebKit (Chrome, Edge, Safari) */
                         .tabs-scrollable::-webkit-scrollbar {
-                            height: 6px; /* Altura de la barra horizontal */
+                            height: 4px;
                         }
                         .tabs-scrollable::-webkit-scrollbar-track {
-                            background: #f8f9fa; /* Color del canal por donde se mueve */
-                            border-radius: 10px;
+                            background: transparent;
                         }
                         .tabs-scrollable::-webkit-scrollbar-thumb {
-                            background-color: #cbd5e1; /* Color de la barrita */
+                            background-color: #cbd5e1;
                             border-radius: 10px;
                         }
                         .tabs-scrollable::-webkit-scrollbar-thumb:hover {
-                            background-color: #94a3b8; /* Color cuando pasas el mouse */
+                            background-color: #94a3b8;
+                        }
+
+                        .nav-tabs-custom .nav-link {
+                            border: none !important;
+                            color: #64748b;
+                            font-size: 0.76rem;
+                            font-weight: 500;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 8px;
+                            transition: all 0.2s ease;
+                            background-color: transparent;
+                            white-space: nowrap;
+                        }
+                        .nav-tabs-custom .nav-link:hover {
+                            color: #0f172a;
+                            background-color: #f8fafc;
+                        }
+                        .nav-tabs-custom .nav-link.active {
+                            color: #0f172a !important;
+                            background-color: #f1f5f9 !important;
+                            font-weight: 600;
                         }
                     </style>
 
                     {{-- CABECERA: TABS DE NAVEGACIÓN --}}
-                    <div class="card-header bg-white pt-3 pb-0 border-bottom px-4" style="border-radius: 20px 20px 0 0;">
-                        <!--
-                            CAMBIOS:
-                            1. Se eliminó style="scrollbar-width: none;"
-                            2. Se agregó la clase 'tabs-scrollable' para aplicar el diseño superior
-                            3. Se agregó 'pb-2' (padding-bottom) para que la barra no pise el borde activo de las pestañas
-                        -->
-                        <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto tabs-scrollable pb-2" id="operacionTabs" role="tablist">
+                    <div class="card-header bg-white pt-2.5 pb-2 border-bottom px-3 px-md-4" style="border-radius: 16px 16px 0 0; border-color: #eaeeed !important;">
+                        <ul class="nav nav-tabs nav-tabs-custom border-0 d-flex flex-nowrap overflow-auto tabs-scrollable gap-1 align-items-center" id="operacionTabs" role="tablist">
 
-                            <!-- Parámetros -->
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link d-flex align-items-center" id="parametros-tab" data-bs-toggle="tab" data-bs-target="#parametros" type="button" role="tab">
-                                    <span class="bg-pastel-secondary text-dark rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-cog fs-8"></i>
-                                    </span>
-                                    Parámetros
-                                </button>
-                            </li>
-
-                            <!-- Líneas -->
+                            {{-- Líneas --}}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active d-flex align-items-center" id="lineas-tab" data-bs-toggle="tab" data-bs-target="#lineas" type="button" role="tab">
-                                    <span class="bg-pastel-primary text-primary rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-sitemap fs-8"></i>
+                                    <span class="bg-pastel-primary text-primary rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-sitemap"></i>
                                     </span>
                                     Líneas
                                 </button>
                             </li>
 
-                            <!-- Alertas -->
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link d-flex align-items-center" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button" role="tab">
-                                    <span class="bg-pastel-warning text-warning rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-bell fs-8"></i>
-                                    </span>
-                                    Alertas
-                                </button>
-                            </li>
-
-                            <!-- Historial / Estado -->
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link d-flex align-items-center" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
-                                    <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-history fs-8"></i>
-                                    </span>
-                                    Historial
-                                </button>
-                            </li>
-
-                            <!-- Certificados -->
+                            {{-- Certificados --}}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link d-flex align-items-center" id="certificados-tab" data-bs-toggle="tab" data-bs-target="#certificados" type="button" role="tab">
-                                    <span class="bg-pastel-danger text-danger rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-file-pdf fs-8"></i>
+                                    <span class="bg-pastel-danger text-danger rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-file-pdf"></i>
                                     </span>
                                     Certificados
                                 </button>
                             </li>
 
-                            <!-- Gráficos -->
+                            {{-- Documentos --}}
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link d-flex align-items-center" id="graficos-tab" data-bs-toggle="tab" data-bs-target="#graficos" type="button" role="tab">
-                                    <span class="bg-pastel-info text-info rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-chart-pie fs-8"></i>
+                                <button class="nav-link d-flex align-items-center" id="documentos-tab" data-bs-toggle="tab" data-bs-target="#documentos" type="button" role="tab">
+                                    <span class="bg-pastel-primary text-primary rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-folder-open"></i>
                                     </span>
-                                    Gráficos
+                                    Documentos
                                 </button>
                             </li>
 
-                            <!-- Operarios -->
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link d-flex align-items-center" id="operarios-tab" data-bs-toggle="tab" data-bs-target="#operarios" type="button" role="tab">
-                                    <span class="bg-pastel-success text-success rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-users-cog fs-8"></i>
-                                    </span>
-                                    Operarios
-                                </button>
-                            </li>
-
-                            <!-- Soportes -->
+                            {{-- Soportes --}}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link d-flex align-items-center" id="soportes-tab" data-bs-toggle="tab" data-bs-target="#soportes" type="button" role="tab">
-                                    <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-paperclip fs-8"></i>
+                                    <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-paperclip"></i>
                                     </span>
                                     Soportes
                                 </button>
                             </li>
 
-                            <!-- Interacciones -->
+                            {{-- Interacciones --}}
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link d-flex align-items-center" id="interacciones-tab" data-bs-toggle="tab" data-bs-target="#interacciones" type="button" role="tab">
-                                    <span class="bg-pastel-warning text-warning rounded-circle d-inline-flex justify-content-center align-items-center me-2" style="width: 30px; height: 30px;">
-                                        <i class="fas fa-headset fs-8"></i>
+                                    <span class="bg-pastel-warning text-warning rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-headset"></i>
                                     </span>
                                     Interacciones
+                                </button>
+                            </li>
+
+                            {{-- Alertas --}}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button" role="tab">
+                                    <span class="bg-pastel-warning text-warning rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-bell"></i>
+                                    </span>
+                                    Alertas
+                                </button>
+                            </li>
+
+                            {{-- Historial --}}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab">
+                                    <span class="bg-pastel-secondary text-secondary rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-history"></i>
+                                    </span>
+                                    Historial
+                                </button>
+                            </li>
+
+                            {{-- Gráficos --}}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="graficos-tab" data-bs-toggle="tab" data-bs-target="#graficos" type="button" role="tab">
+                                    <span class="bg-pastel-info text-info rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-chart-pie"></i>
+                                    </span>
+                                    Gráficos
+                                </button>
+                            </li>
+
+                            {{-- Parámetros --}}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="parametros-tab" data-bs-toggle="tab" data-bs-target="#parametros" type="button" role="tab">
+                                    <span class="bg-pastel-secondary text-dark rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-cog"></i>
+                                    </span>
+                                    Parámetros
+                                </button>
+                            </li>
+
+                            {{-- Operarios --}}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link d-flex align-items-center" id="operarios-tab" data-bs-toggle="tab" data-bs-target="#operarios" type="button" role="tab">
+                                    <span class="bg-pastel-success text-success rounded-circle d-inline-flex justify-content-center align-items-center me-1.5 flex-shrink-0" style="width: 24px; height: 24px; font-size: 0.65rem;">
+                                        <i class="fas fa-users-cog"></i>
+                                    </span>
+                                    Operarios
                                 </button>
                             </li>
 
@@ -1210,37 +1232,60 @@
                                                         $lineasEditor = $registro->lineasEditor;
                                                     @endphp
 
-                                                    {{-- Fila Agrupadora (Botón Colapsable del Certificado) --}}
-                                                    <thead class="bg-light">
+                                                   {{-- Fila Agrupadora (Ultra Minimalista, Suave al Ojo y Simétrica) --}}
+                                                    <thead class="bg-white">
                                                         <tr>
-                                                            <th class="p-0 border-bottom-0">
-                                                                <button class="btn btn-light w-100 d-flex justify-content-between align-items-center rounded-0 px-3 py-2 shadow-none border-0 text-start collapsed"
+                                                            <th class="p-0 border-0">
+                                                                <button class="btn w-100 text-decoration-none px-3 py-1.5 border-bottom shadow-none collapsed transition-all"
                                                                         type="button"
                                                                         data-bs-toggle="collapse"
                                                                         data-bs-target="#collapseCertificado-{{ $certId }}"
                                                                         aria-expanded="false"
                                                                         aria-controls="collapseCertificado-{{ $certId }}"
-                                                                        style="background-color: #f8f9fa;">
+                                                                        style="background-color: #f8fafc; border-color: #f1f5f9 !important;">
 
-                                                                    <div class="d-flex align-items-center gap-2">
-                                                                        <i class="fas fa-chevron-down text-secondary" style="font-size: 0.7rem;"></i>
-                                                                        <i class="fas fa-file-pdf text-danger" style="font-size: 1rem;"></i>
-                                                                        <span class="fw-bold text-dark" style="font-size: 0.85rem;">{{ $tipo->nombre ?? 'Documento ' . $certId }}</span>
+                                                                    {{-- Contenedor simétrico con tipografía natural (suave a la vista) --}}
+                                                                    <div class="row align-items-center mx-0 text-start" style="font-size: 0.72rem;">
 
-                                                                        @if($registro->es_lote)
-                                                                            <span class="badge bg-pastel-primary text-primary px-2 py-1 rounded-1" style="font-size: 0.65rem;"><i class="fas fa-layer-group me-1"></i> Lote API-{{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }}</span>
-                                                                        @else
-                                                                            <span class="badge bg-pastel-secondary text-dark px-2 py-1 rounded-1" style="font-size: 0.65rem;"><i class="fas fa-user me-1"></i> Individual</span>
-                                                                        @endif
-                                                                    </div>
+                                                                        {{-- Columna 1: Icono y Título en formato natural (no mayúscula forzada) --}}
+                                                                        <div class="col-12 col-md-5 d-flex align-items-center gap-2 py-1">
+                                                                            <div class="rounded-circle d-flex align-items-center justify-content-center bg-white border shadow-sm flex-shrink-0" style="width: 24px; height: 24px; border-color: #e2e8f0 !important;">
+                                                                                <i class="fas fa-file-pdf text-danger" style="font-size: 0.65rem;"></i>
+                                                                            </div>
+                                                                            <span class="fw-semibold text-secondary text-truncate" style="letter-spacing: -0.1px;">
+                                                                                {{ Str::title(strtolower($tipo->nombre ?? 'Documento ' . $certId)) }}
+                                                                            </span>
+                                                                        </div>
 
-                                                                    <div class="d-flex align-items-center gap-3 fw-normal text-muted" style="font-size: 0.7rem;">
-                                                                        <span><i class="far fa-clock me-1"></i> {{ $registro->created_at ? $registro->created_at->format('d/m/Y h:i A') : 'N/A' }}</span>
-                                                                        <span class="border-start border-secondary ps-3">
-                                                                            <i class="fas fa-user-circle me-1 opacity-75"></i>
-                                                                            <strong class="text-dark">{{ $registro->nombre_user ?? 'Sistema' }}</strong>
-                                                                            <span class="fst-italic opacity-75">{{ $registro->cargo_user ?? '' }}</span>
-                                                                        </span>
+                                                                        {{-- Columna 2: Lote / Tipo (Pastel muy suave) --}}
+                                                                        <div class="col-6 col-md-2 py-1">
+                                                                            @if($registro->es_lote)
+                                                                                <span class="badge px-2 py-0.5 rounded-pill fw-medium border" style="font-size: 0.6rem; background-color: #f1f5f9; color: #475569; border-color: #e2e8f0 !important;">
+                                                                                    <i class="fas fa-layer-group me-1 text-muted"></i> Lote: {{ str_pad($registro->numero_bloque, 4, '0', STR_PAD_LEFT) }}
+                                                                                </span>
+                                                                            @else
+                                                                                <span class="badge px-2 py-0.5 rounded-pill fw-medium border" style="font-size: 0.6rem; background-color: #f8fafc; color: #64748b; border-color: #e2e8f0 !important;">
+                                                                                    <i class="fas fa-user me-1 text-muted"></i> Individual
+                                                                                </span>
+                                                                            @endif
+                                                                        </div>
+
+                                                                        {{-- Columna 3: Fecha y Hora (Discreta) --}}
+                                                                        <div class="col-6 col-md-3 py-1 text-muted" style="font-size: 0.68rem;">
+                                                                            <div class="d-flex align-items-center gap-1">
+                                                                                <i class="far fa-clock text-muted opacity-75" style="font-size: 0.6rem;"></i>
+                                                                                <span>{{ $registro->created_at ? $registro->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {{-- Columna 4: Usuario discreto + Flecha suave --}}
+                                                                        <div class="col-12 col-md-2 py-1 d-flex align-items-center justify-content-between justify-content-md-end gap-2">
+                                                                            <span class="text-muted text-truncate" style="font-size: 0.68rem;" title="{{ $registro->nombre_user ?? 'Sistema' }}">
+                                                                                <i class="fas fa-user-circle me-1 opacity-50"></i>{{ Str::before($registro->nombre_user ?? 'Sistema', ' ') }}
+                                                                            </span>
+                                                                            <i class="fas fa-chevron-down text-muted opacity-50" style="font-size: 0.6rem; transition: transform 0.2s ease;"></i>
+                                                                        </div>
+
                                                                     </div>
                                                                 </button>
                                                             </th>
@@ -1249,174 +1294,168 @@
 
                                                     {{-- Cuerpo del Certificado (Controles, PDF y Editor en linea) --}}
                                                     {{-- ATRIBUTO data-bs-parent AGREGADO AQUÍ PARA CERRAR LOS DEMÁS --}}
-                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" data-bs-parent="#acordeonCertificados" style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+                                                    <tbody id="collapseCertificado-{{ $certId }}" class="collapse border-bottom" data-bs-parent="#acordeonCertificados" style="border-bottom-width: 1px !important; border-color: #f1f5f9 !important;">
                                                         <tr>
-                                                            <td class="p-3 bg-white">
+                                                            <td class="p-2 p-md-3 bg-white border-0" style="max-width: 0; width: 100%;">
 
                                                                 @php
-                                                                    // 1. Variables dinámicas usando las relaciones reales del modelo $operacion->tercero
-                                                                    $telefonoDestino = $operacion->tercero->tel ?? '0000000000'; // Sin el '57', se le añade abajo
+                                                                    $telefonoDestino = $operacion->tercero->tel ?? '0000000000';
                                                                     $nombreCliente   = $operacion->tercero->nom_ter ?? 'Nombre del Cliente';
                                                                     $numeroCredito   = $operacion->numero_radicado ?? $operacion->id;
                                                                     $remitente1      = Auth::user()->name ?? 'Asesor';
                                                                     $remitente2      = 'SIA Cartera';
 
-                                                                    // 2. Generar la URL absoluta del PDF
                                                                     $urlPdf = route('certificados.operaciones.pdf_individual', [
                                                                         'id'      => $operacion->id,
                                                                         'tipo_id' => $tipo->id ?? null,
                                                                         'hash'    => $hashActual
                                                                     ]);
 
-                                                                    // 3. Construir el texto del mensaje (usando \n para los saltos de línea)
                                                                     $mensajeTexto = "Dios lo bendiga Hermano: \n*{$nombreCliente}*\nAdjunto encontrará el reporte de su estado de cuenta del crédito {$numeroCredito}\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n\nQuedo atento a cualquier comentario o sugerencia que desee compartir.\n\n*Gracias por su atención.*\nCordialmente;\n_{$remitente1}_\n_{$remitente2}_\n\n*Nota:* Si tiene problemas con el enlace adjunto, contáctenos por este medio.\n\n*Adjunto Documento:* \n{$urlPdf}";
 
-                                                                    // 4. Armar el enlace final codificando el texto
                                                                     $linkWhatsapp = "https://api.whatsapp.com/send?phone=57{$telefonoDestino}&text=" . urlencode($mensajeTexto);
                                                                 @endphp
 
-                                                                {{-- Controles (Botones alternar PDF/Editor y Versiones) --}}
-                                                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pb-3 border-bottom border-dashed">
-                                                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase mb-2 mb-md-0"><i class="fas fa-sliders-h me-2"></i> Controles del Documento</h6>
+                                                                {{-- HEADER: Jerarquía Limpia y Suave al Ojo (Sin Negritas Pesadas) --}}
+                                                                <div class="d-flex flex-wrap align-items-center justify-content-between bg-white border rounded-3 p-2.5 mb-2.5 shadow-sm gap-2.5 w-100" style="border-color: #eaeeed !important;">
 
-                                                                    <div class="d-flex align-items-center gap-3">
+                                                                    {{-- Lado Izquierdo: Contexto amigable --}}
+                                                                    <div class="d-flex align-items-center gap-2.5">
+                                                                        <div class="rounded-circle d-flex justify-content-center align-items-center flex-shrink-0" style="width: 34px; height: 34px; background-color: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;">
+                                                                            <i class="fas fa-file-invoice" style="font-size: 0.85rem;"></i>
+                                                                        </div>
+                                                                        <div>
+                                                                            <div class="text-dark fw-medium" style="font-size: 0.8rem; letter-spacing: -0.1px;">Documento en Gestión</div>
+                                                                            <div class="text-muted" style="font-size: 0.68rem;">Visualiza, edita los datos o notifica por WhatsApp</div>
+                                                                        </div>
+                                                                    </div>
 
-                                                                        {{-- BOTÓN DE WHATSAPP INTEGRADO AQUÍ --}}
-                                                                        <a href="{{ $linkWhatsapp }}" target="_blank" class="btn btn-sm btn-success rounded-1 px-3 fw-bold shadow-sm d-flex align-items-center" title="Enviar PDF por WhatsApp">
-                                                                            <i class="fab fa-whatsapp me-2 fs-6"></i> Enviar por WhatsApp
-                                                                        </a>
+                                                                    {{-- Lado Derecho: Controles compactos y suaves --}}
+                                                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                                                        <div class="d-flex bg-light p-0.5 rounded-pill border" style="border-color: #e2e8f0 !important;">
+                                                                            <button type="button" class="btn btn-sm btn-dark rounded-pill fw-medium border-0 px-2.5 py-1" style="font-size: 0.7rem;" id="btnModePdf_{{ $certId }}" onclick="toggleMode('pdf', '{{ $certId }}')">
+                                                                                Ver PDF
+                                                                            </button>
+                                                                            <button type="button" class="btn btn-sm text-secondary rounded-pill fw-medium border-0 px-2.5 py-1 bg-transparent" style="font-size: 0.7rem;" id="btnModeData_{{ $certId }}" onclick="toggleMode('data', '{{ $certId }}')">
+                                                                                Datos
+                                                                            </button>
+                                                                        </div>
 
                                                                         @if($versionesDeEsteTipo->count() > 1)
-                                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-1 px-3 fw-bold" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
-                                                                                <i class="fas fa-history me-1"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
+                                                                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5 py-1 fw-medium bg-white shadow-sm" style="font-size: 0.7rem; color: #475569; border-color: #cbd5e1;" data-bs-toggle="modal" data-bs-target="#modalVersiones_{{ $certId }}">
+                                                                                <i class="fas fa-history me-1 opacity-75"></i> Versiones ({{ $versionesDeEsteTipo->count() }})
                                                                             </button>
                                                                         @endif
 
-                                                                        <div class="btn-group shadow-sm bg-light border rounded-1 p-1">
-                                                                            <button type="button" class="btn btn-sm btn-danger px-3 active fw-bold border-0" style="border-radius: 4px;" id="btnModePdf_{{ $certId }}" onclick="toggleMode('pdf', '{{ $certId }}')">
-                                                                                <i class="fas fa-file-pdf me-1"></i> PDF
-                                                                            </button>
-                                                                            <button type="button" class="btn btn-sm btn-light text-success px-3 fw-bold border-0" style="border-radius: 4px;" id="btnModeData_{{ $certId }}" onclick="toggleMode('data', '{{ $certId }}')">
-                                                                                <i class="fas fa-table me-1"></i> Editor de Datos
-                                                                            </button>
-                                                                        </div>
+                                                                        <a href="{{ $linkWhatsapp }}" target="_blank" class="btn btn-sm rounded-pill px-2.5 py-1 fw-medium d-flex align-items-center shadow-sm" style="font-size: 0.7rem; background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
+                                                                            <i class="fab fa-whatsapp me-1" style="font-size: 0.75rem;"></i> Enviar
+                                                                        </a>
                                                                     </div>
                                                                 </div>
 
-                                                                {{-- VISOR PDF (Iframe al controlador Laravel) --}}
-                                                                <div id="pdfViewerContainer_{{ $certId }}" class="border rounded-2 overflow-hidden shadow-sm bg-light" style="height: 650px;">
-                                                                    <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null, 'hash' => $hashActual]) }}" width="100%" height="100%" frameborder="0" style="background-color: #f8fafc;"></iframe>
+                                                                {{-- CONTENEDOR 1: VISOR PDF --}}
+                                                                <div id="pdfViewerContainer_{{ $certId }}" class="border rounded-3 overflow-hidden shadow-sm mb-2 w-100" style="height: 60vh; min-height: 350px; background-color: #f8fafc; border-color: #eaeeed !important;">
+                                                                    <iframe src="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $tipo->id ?? null, 'hash' => $hashActual]) }}" width="100%" height="100%" frameborder="0"></iframe>
                                                                 </div>
 
-                                                                {{-- EDITOR DE DATOS (Estilo Excel Integrado Avanzado para guardar en base de datos) --}}
-                                                                <div id="dataEditorContainer_{{ $certId }}" class="d-none">
+                                                                {{-- CONTENEDOR 2: EDITOR DE DATOS --}}
+                                                                <div id="dataEditorContainer_{{ $certId }}" class="d-none w-100">
                                                                     <form id="formEditor_{{ $certId }}" action="{{ route('certificados.operaciones.actualizar_lineas', $operacion->id) }}" method="POST">
                                                                         @csrf @method('PUT')
                                                                         <input type="hidden" name="tipo_certificado_id" value="{{ $tipo->id ?? '' }}">
+                                                                        <input type="hidden" name="dias_gracia_lote" id="input_dias_gracia_{{ $certId }}" value="">
 
-                                                                        {{-- NUEVA ALERTA Y BOTÓN DE PARÁMETROS --}}
-                                                                        <div class="alert bg-pastel-primary border-0 rounded-3 d-flex justify-content-between align-items-center py-2 px-3 mb-3">
-                                                                            <div class="text-dark" style="font-size: 0.85rem;">
-                                                                                <i class="fas fa-info-circle text-primary me-2"></i> Las columnas resaltadas con el icono <i class="fas fa-pen text-primary mx-1"></i> son editables.
+                                                                        {{-- Info Bar Suave (Sin negritas pesadas) --}}
+                                                                        <div class="d-flex justify-content-between align-items-center rounded-pill py-1.5 px-3 mb-2.5 shadow-sm w-100" style="background-color: #f8fafc; border: 1px solid #eaeeed;">
+                                                                            <div class="d-flex align-items-center text-secondary" style="font-size: 0.72rem;">
+                                                                                <i class="fas fa-pen-nib me-2 text-muted"></i> Zona de edición habilitada (Modifica los campos necesarios)
                                                                             </div>
-
-                                                                            <button type="button" class="btn btn-sm btn-white border shadow-sm text-primary fw-bold" data-bs-toggle="modal" data-bs-target="#modalParametros_{{ $certId }}">
-                                                                                <i class="fas fa-sliders-h me-1"></i> Parámetros de Regla
+                                                                            <button type="button" class="btn btn-sm bg-white border fw-medium rounded-pill px-2.5 py-0.5 shadow-sm text-secondary" style="font-size: 0.68rem; border-color: #e2e8f0 !important;" data-bs-toggle="modal" data-bs-target="#modalParametros_{{ $certId }}">
+                                                                                <i class="fas fa-sliders-h me-1 text-muted"></i> Días de Gracia
                                                                             </button>
                                                                         </div>
 
-                                                                        {{-- INPUT OCULTO PARA LOS DÍAS DE GRACIA (Se llena desde el modal) --}}
-                                                                        <input type="hidden" name="dias_gracia_lote" id="input_dias_gracia_{{ $certId }}" value="">
+                                                                        {{-- Tabla Ultra Minimalista con Tonalidad Clara en Zona Editable --}}
+                                                                        <div class="table-responsive border shadow-sm rounded-3 mb-3 bg-white w-100" style="border-color: #eaeeed !important;">
+                                                                            <table class="table table-borderless align-middle mb-0" style="font-size: 0.72rem; width: 100%;">
 
-                                                                        <div class="table-responsive border rounded-2 shadow-sm mb-3">
-                                                                            <table class="table table-sm table-bordered table-hover align-middle mb-0" style="font-size: 0.75rem; min-width: 1600px;">
-                                                                                <thead class="text-muted text-uppercase" style="font-size: 0.65rem; background-color: #f1f5f9;">
-                                                                                    <tr>
-                                                                                        {{-- SECCIÓN INFO ERP (Read-Only) --}}
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 5%;">Lote</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Factura</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 4%;">Cuota</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Pagaré</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-end" style="width: 7%;">Valor $</th>
+                                                                                <thead>
+                                                                                    <tr style="border-bottom: 2px solid #eaeeed; background-color: #f8fafc;">
+                                                                                        {{-- Solo Lectura (Tipografía suave, sin uppercase recargado) --}}
+                                                                                        <th class="py-2 px-3 fw-medium text-secondary text-nowrap" style="font-size: 0.68rem;">Factura</th>
+                                                                                        <th class="py-2 px-2 fw-medium text-center text-secondary text-nowrap" style="font-size: 0.68rem;">Cuota</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-end text-secondary text-nowrap" style="font-size: 0.68rem;">Valor</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-center text-secondary text-nowrap" style="font-size: 0.68rem;">Comprobante</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-center text-secondary text-nowrap" style="font-size: 0.68rem;">Estado</th>
+                                                                                        <th class="py-2 px-3 fw-medium border-end text-secondary text-nowrap" style="font-size: 0.68rem;">Cuenta</th>
 
-                                                                                        {{-- NUEVA COLUMNA COMPROBANTE --}}
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Comprobante</th>
-
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center" style="width: 7%;">Estado ERP</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-secondary text-center border-end" style="width: 7%;">Cuenta</th>
-
-                                                                                        {{-- SECCIÓN EDITABLE (Inputs form elements) --}}
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Calificación</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 9%;"><i class="fas fa-pen me-1"></i> Estado SIA</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Estado API</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 6%;"><i class="fas fa-pen me-1"></i> Mora</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Vencimiento</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Último Rec.</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary text-center bg-white" style="width: 8%;"><i class="fas fa-pen me-1"></i> Procesado</th>
-                                                                                        <th class="px-2 py-2 border-bottom text-primary bg-white" style="width: 12%;"><i class="fas fa-pen me-1"></i> Observación</th>
+                                                                                        {{-- Zona Editable (Tonalidad pasteles sutiles #eef2f6) --}}
+                                                                                        <th class="py-2 px-3 fw-medium text-center text-dark text-nowrap border-start" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 130px;">Calif.</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 120px;">Est. SIA</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 120px;">Est. API</th>
+                                                                                        <th class="py-2 px-2 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 80px;">Mora</th>
+                                                                                        <th class="py-2 px-2 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 120px;">Vence</th>
+                                                                                        <th class="py-2 px-2 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 120px;">Últ. Rec.</th>
+                                                                                        <th class="py-2 px-2 fw-medium text-center text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 120px;">Procesado</th>
+                                                                                        <th class="py-2 px-3 fw-medium text-start text-dark text-nowrap" style="background-color: #eef2f6; font-size: 0.68rem; min-width: 150px;">Nota</th>
                                                                                     </tr>
                                                                                 </thead>
-                                                                                <tbody style="border-bottom-width: 2px !important; border-color: var(--c-border) !important;">
+
+                                                                                <tbody>
                                                                                     @forelse($lineasEditor as $linea)
-                                                                                        <tr class="bg-white">
+                                                                                        <tr class="border-bottom" style="border-color: #f1f5f9 !important;">
+                                                                                            {{-- LECTURA --}}
+                                                                                            <td class="px-3 py-2 bg-white text-nowrap">
+                                                                                                <div class="fw-medium text-dark" style="font-family: monospace; font-size: 0.75rem;">#{{ $linea->id_factura }}</div>
+                                                                                                <div class="text-muted" style="font-size: 0.62rem;">Lote: {{ str_pad($linea->numero_bloque, 4, '0', STR_PAD_LEFT) }}</div>
+                                                                                            </td>
+                                                                                            <td class="px-2 py-2 text-center text-secondary bg-white text-nowrap" style="font-size: 0.72rem;">{{ $linea->factura?->cuota ?? '-' }}</td>
+                                                                                            <td class="px-3 py-2 text-end text-dark bg-white text-nowrap" style="font-size: 0.72rem;">${{ isset($linea->factura?->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
 
-                                                                                            {{-- COLUMNAS INFORMATIVAS (Fondo Gris Claro) --}}
-                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">API-{{ str_pad($linea->numero_bloque, 4, '0', STR_PAD_LEFT) }}</td>
-                                                                                            <td class="px-2 py-1 text-center fw-bold text-dark" style="background-color: #f8fafc; font-family: monospace;">#{{ $linea->id_factura }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted fw-bold" style="background-color: #f8fafc;">{{ $linea->factura?->cuota ?? '-' }}</td>
-                                                                                            <td class="px-2 py-1 text-center text-muted" style="background-color: #f8fafc; font-size: 0.7rem;">{{ $linea->factura?->pagare ?? 'S/N' }}</td>
-                                                                                            <td class="px-2 py-1 text-end fw-bold" style="background-color: #f8fafc; color: #047857;">${{ isset($linea->factura?->valor) ? number_format((float)$linea->factura->valor, 0, ',', '.') : '0' }}</td>
-
-                                                                                            {{-- NUEVA CELDA COMPROBANTE --}}
-                                                                                            <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
+                                                                                            <td class="px-3 py-2 text-center bg-white text-nowrap">
                                                                                                 @if($linea->factura?->comprobantePago)
-                                                                                                    <a href="{{ $linea->factura->comprobantePago->url_archivo }}" target="_blank" class="badge bg-success text-white text-decoration-none d-inline-flex align-items-center gap-1 shadow-sm" title="Ver Archivo: {{ $linea->factura->comprobantePago->nombre_archivo_simple }}">
-                                                                                                        <i class="fas fa-file-invoice-dollar"></i> Pagado
+                                                                                                    <a href="{{ $linea->factura->comprobantePago->url_archivo }}" target="_blank" class="badge text-decoration-none rounded-pill px-2 py-0.5 fw-normal" style="background-color: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 0.62rem;">Pagado</a>
+                                                                                                @else
+                                                                                                    <a href="{{ route('interactions.create') }}" target="_blank" class="btn btn-sm btn-light border rounded-pill px-2 py-0 text-muted shadow-none text-decoration-none" style="font-size: 0.62rem;">
+                                                                                                        <i class="fas fa-plus me-1 text-primary"></i> Agregar
                                                                                                     </a>
-                                                                                                    <div class="mt-1" style="font-size: 0.6rem; color: #6c757d; font-weight: 600;">
-                                                                                                        ${{ number_format((float)$linea->factura->comprobantePago->monto_pagado, 0) }}
-                                                                                                    </div>
-                                                                                                @else
-                                                                                                    <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">Sin registro</span>
                                                                                                 @endif
                                                                                             </td>
 
-                                                                                            <td class="px-2 py-1 text-center" style="background-color: #f8fafc;">
+                                                                                            <td class="px-3 py-2 text-center bg-white text-nowrap">
                                                                                                 @if($linea->factura?->estado == 'PROCESADO')
-                                                                                                    <span class="text-success fw-bold" style="font-size: 0.65rem;"><i class="fas fa-check"></i> PROCESADO</span>
+                                                                                                    <span class="text-success" style="font-size: 0.62rem;">PROCESADO</span>
                                                                                                 @elseif($linea->factura?->anular == 1)
-                                                                                                    <span class="text-danger fw-bold" style="font-size: 0.65rem;"><i class="fas fa-ban"></i> ANULADO</span>
+                                                                                                    <span class="text-danger" style="font-size: 0.62rem;">ANULADO</span>
                                                                                                 @else
-                                                                                                    <span class="text-secondary fw-semibold" style="font-size: 0.65rem;"><i class="fas fa-hourglass-half"></i> PENDIENTE</span>
+                                                                                                    <span class="text-muted" style="font-size: 0.62rem;">PENDIENTE</span>
                                                                                                 @endif
                                                                                             </td>
 
-                                                                                            <td class="px-2 py-1 text-center text-muted border-end" style="background-color: #f8fafc;">
-                                                                                                <span class="d-block fw-bold text-dark" style="font-size: 0.75rem;">{{ $linea->id_car_sia_lineas }}</span>
-                                                                                                <span style="font-size: 0.65rem;" title="Nombre de la línea">
-                                                                                                    {{ $linea->factura?->lineaSia?->nombre ?? 'Sin descripción' }}
-                                                                                                </span>
+                                                                                            <td class="px-3 py-2 border-end bg-white">
+                                                                                                <div class="text-dark text-nowrap" style="font-size: 0.68rem;">{{ $linea->id_car_sia_lineas }}</div>
+                                                                                                <div class="text-muted text-truncate" style="font-size: 0.62rem; max-width: 130px;" title="{{ $linea->factura?->lineaSia?->nombre ?? 'N/A' }}">
+                                                                                                    {{ $linea->factura?->lineaSia?->nombre ?? 'N/A' }}
+                                                                                                </div>
                                                                                             </td>
-                                                                                            {{-- COLUMNAS EDITABLES (Celdas tipo Excel sin bordes internos) --}}
 
-                                                                                            {{-- 1. Calificación --}}
-                                                                                            <td class="p-0 align-middle position-relative">
-                                                                                                <div class="d-flex align-items-center h-100">
-                                                                                                    <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" onchange="this.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
+                                                                                            {{-- EDITABLE (#eef2f6) --}}
+                                                                                            <td class="p-0 align-middle text-nowrap border-start" style="background-color: #eef2f6; min-width: 130px;">
+                                                                                                <div class="d-flex align-items-center justify-content-between px-2 py-1">
+                                                                                                    <select name="lineas[{{ $linea->id }}][calificacion]" class="form-select form-select-sm border-0 shadow-none bg-transparent px-1 text-center {{ $linea->calificacion == 'Bueno' ? 'text-success' : ($linea->calificacion == 'Regular' ? 'text-warning' : 'text-danger') }}" style="font-size: 0.72rem;" onchange="this.className = 'form-select form-select-sm border-0 shadow-none bg-transparent px-1 text-center ' + (this.value == 'Bueno' ? 'text-success' : (this.value == 'Regular' ? 'text-warning' : 'text-danger'))">
                                                                                                         <option class="text-dark" value="Bueno" {{ $linea->calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
                                                                                                         <option class="text-dark" value="Regular" {{ $linea->calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
                                                                                                         <option class="text-dark" value="Irregular" {{ $linea->calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
                                                                                                     </select>
-                                                                                                    <!-- BOTÓN DE RADIOGRAFÍA -->
-                                                                                                    <button type="button" class="btn btn-sm text-primary p-1 me-1 shadow-none bg-pastel-primary rounded-1" data-bs-toggle="modal" data-bs-target="#modalExplicacion-{{ $linea->id }}" title="Ver Radiografía del Cálculo">
-                                                                                                        <i class="fas fa-microscope"></i>
+                                                                                                    <button type="button" class="btn btn-sm text-secondary p-1 ms-1 border-0 bg-white rounded-circle shadow-sm d-flex align-items-center justify-content-center flex-shrink-0" data-bs-toggle="modal" data-bs-target="#modalExplicacion-{{ $linea->id }}" title="Ver Radiografía del Cálculo" style="width: 24px; height: 24px;">
+                                                                                                        <i class="fas fa-microscope text-primary" style="font-size: 0.65rem;"></i>
                                                                                                     </button>
                                                                                                 </div>
                                                                                             </td>
 
-                                                                                            {{-- 2. Estado SIA --}}
-                                                                                            <td class="p-0 align-middle border-start border-end">
-                                                                                                <select name="lineas[{{ $linea->id }}][id_car_sia_estados]" class="form-select form-select-sm border-0 shadow-none text-center text-muted fw-semibold w-100 rounded-0 bg-transparent py-1">
+                                                                                            {{-- ESTADO SIA --}}
+                                                                                            <td class="p-0 align-middle text-nowrap" style="background-color: #eef2f6; min-width: 120px;">
+                                                                                                <select name="lineas[{{ $linea->id }}][id_car_sia_estados]" class="form-select form-select-sm border-0 shadow-none text-dark bg-transparent px-2 py-1 text-center" style="font-size: 0.72rem;">
                                                                                                     <option value="">Seleccione...</option>
                                                                                                     @foreach($estados as $est)
                                                                                                         <option value="{{ $est->id }}" {{ $linea->id_car_sia_estados == $est->id ? 'selected' : '' }}>{{ $est->nombre }}</option>
@@ -1424,89 +1463,87 @@
                                                                                                 </select>
                                                                                             </td>
 
-                                                                                            {{-- 3. Estado API (Actualización inmediata por Factura y Bloque) --}}
-                                                                                            <td class="p-0 align-middle border-start border-end">
-                                                                                                <select name="lineas[{{ $linea->id }}][estadoApi]"
-                                                                                                        class="form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 {{ $linea->estadoApi == 1 ? 'text-success fw-bold' : 'text-muted' }}"
-                                                                                                        onchange="actualizarEstadoApiDirecto(this, '{{ $linea->id_factura }}', '{{ $linea->numero_bloque }}')">
-                                                                                                    <option value="" {{ is_null($linea->estadoApi) || $linea->estadoApi === '' ? 'selected' : '' }}>No Pago</option>
-                                                                                                    <option value="1" {{ $linea->estadoApi == 1 ? 'selected' : '' }}>Pago</option>
+                                                                                            {{-- ESTADO API --}}
+                                                                                            <td class="p-0 align-middle text-nowrap" style="background-color: #eef2f6; min-width: 120px;">
+                                                                                                <select name="lineas[{{ $linea->id }}][estadoApi]" class="form-select form-select-sm border-0 shadow-none bg-transparent px-2 py-1 text-center {{ $linea->estadoApi == 1 ? 'text-success' : 'text-muted' }}" style="font-size: 0.72rem;" onchange="actualizarEstadoApiDirecto(this, '{{ $linea->id_factura }}', '{{ $linea->numero_bloque }}')">
+                                                                                                    <option value="" class="text-center" {{ is_null($linea->estadoApi) || $linea->estadoApi === '' ? 'selected' : '' }}>No Pago</option>
+                                                                                                    <option value="1" class="text-center" {{ $linea->estadoApi == 1 ? 'selected' : '' }}>Pago</option>
                                                                                                 </select>
                                                                                             </td>
 
-                                                                                            {{-- 4. Días de Mora Automáticos --}}
-                                                                                            <td class="p-0 align-middle">
-                                                                                                <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="form-control form-control-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 {{ $linea->dias_mora_automaticos < 0 ? 'text-danger' : 'text-dark' }}" value="{{ $linea->dias_mora_automaticos }}" required>
+                                                                                            <td class="p-0 align-middle text-nowrap px-1" style="background-color: #eef2f6;">
+                                                                                                <input type="number" name="lineas[{{ $linea->id }}][dias_mora_automaticos]" class="form-control form-control-sm border-0 shadow-none text-center bg-transparent px-2 py-1 {{ $linea->dias_mora_automaticos < 0 ? 'text-danger' : 'text-dark' }}" value="{{ $linea->dias_mora_automaticos }}" style="font-size: 0.72rem; width: 70px;">
                                                                                             </td>
 
-                                                                                            {{-- 5. Fecha Vencimiento --}}
-                                                                                            <td class="p-0 align-middle border-start">
-                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}">
+                                                                                            <td class="p-0 align-middle text-nowrap px-1" style="background-color: #eef2f6;">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_venci]" class="form-control form-control-sm border-0 shadow-none text-center bg-transparent text-secondary px-1 py-1" value="{{ $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '' }}" style="font-size: 0.72rem;">
                                                                                             </td>
 
-                                                                                            {{-- 6. Fecha Último Recordatorio --}}
-                                                                                            <td class="p-0 align-middle border-start">
-                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d') : '' }}">
+                                                                                            <td class="p-0 align-middle text-nowrap px-1" style="background-color: #eef2f6;">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 shadow-none text-center bg-transparent text-secondary px-1 py-1" value="{{ $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d') : '' }}" style="font-size: 0.72rem;">
                                                                                             </td>
 
-                                                                                            {{-- 7. Procesado En --}}
-                                                                                            <td class="p-0 align-middle border-start">
-                                                                                                <input type="date" name="lineas[{{ $linea->id }}][procesado_en]" class="form-control form-control-sm border-0 shadow-none text-center w-100 rounded-0 bg-transparent text-muted py-1" value="{{ $linea->procesado_en ? \Carbon\Carbon::parse($linea->procesado_en)->format('Y-m-d') : '' }}">
+                                                                                            <td class="p-0 align-middle text-nowrap px-1" style="background-color: #eef2f6;">
+                                                                                                <input type="date" name="lineas[{{ $linea->id }}][procesado_en]" class="form-control form-control-sm border-0 shadow-none text-center bg-transparent text-secondary px-1 py-1" value="{{ $linea->procesado_en ? \Carbon\Carbon::parse($linea->procesado_en)->format('Y-m-d') : '' }}" style="font-size: 0.72rem;">
                                                                                             </td>
 
-                                                                                            {{-- 8. Observación --}}
-                                                                                            <td class="p-0 align-middle border-start">
-                                                                                                <input type="text" name="lineas[{{ $linea->id }}][observacion]" class="form-control form-control-sm border-0 shadow-none w-100 rounded-0 bg-transparent py-1 px-2" value="{{ $linea->observacion }}" placeholder="...">
+                                                                                            {{-- NOTA / OBSERVACIÓN --}}
+                                                                                            <td class="p-0 align-middle px-1" style="background-color: #eef2f6; min-width: 150px;">
+                                                                                                <input type="text"
+                                                                                                    name="lineas[{{ $linea->id }}][observacion]"
+                                                                                                    class="form-control form-control-sm border-0 shadow-none bg-transparent text-dark px-2 py-1 text-truncate"
+                                                                                                    value="{{ $linea->observacion }}"
+                                                                                                    title="{{ $linea->observacion }}"
+                                                                                                    placeholder="Escribe nota..."
+                                                                                                    style="font-size: 0.72rem;">
                                                                                             </td>
-
                                                                                         </tr>
                                                                                     @empty
-                                                                                        {{-- Ajustado colspan a 16 por la nueva columna --}}
-                                                                                        <tr><td colspan="16" class="text-center py-4 text-muted"><i class="fas fa-info-circle me-2"></i> No hay líneas procesadas para editar en esta versión.</td></tr>
+                                                                                        <tr>
+                                                                                            <td colspan="14" class="text-center py-4 text-muted bg-white">
+                                                                                                <p class="fs-7 mb-0">Sin líneas editables.</p>
+                                                                                            </td>
+                                                                                        </tr>
                                                                                     @endforelse
                                                                                 </tbody>
                                                                             </table>
                                                                         </div>
 
+                                                                        {{-- Botón Guardar --}}
                                                                         @if($lineasEditor->count() > 0)
-                                                                            <div class="text-end">
-                                                                                <button type="button" class="btn btn-success btn-sm rounded-1 px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalConfirmSave_{{ $certId }}">
-                                                                                    <i class="fas fa-save me-1"></i> Guardar Nueva Versión
+                                                                            <div class="d-flex justify-content-end mt-2">
+                                                                                <button type="button" class="btn btn-dark rounded-pill px-4 py-1.5 fw-medium shadow-sm" style="font-size: 0.75rem;" data-bs-toggle="modal" data-bs-target="#modalConfirmSave_{{ $certId }}">
+                                                                                    <i class="fas fa-save me-1 opacity-75"></i> Guardar Versión
                                                                                 </button>
                                                                             </div>
                                                                         @endif
                                                                     </form>
 
-                                                                    {{-- MODAL: PARÁMETROS / DÍAS DE GRACIA --}}
+                                                                    {{-- MODAL PARÁMETROS --}}
                                                                     <div class="modal fade" id="modalParametros_{{ $certId }}" tabindex="-1" aria-hidden="true">
                                                                         <div class="modal-dialog modal-dialog-centered modal-sm">
-                                                                            <div class="modal-content border-0 shadow-lg rounded-4">
-                                                                                <div class="modal-header border-0 pb-0 pt-4 px-4">
-                                                                                    <h6 class="fw-bold mb-0 text-primary"><i class="fas fa-sliders-h me-2"></i> Excepción de Regla</h6>
-                                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                                                                                </div>
-                                                                                <div class="modal-body p-4">
-                                                                                    <label class="form-label text-muted fw-bold" style="font-size: 0.8rem;">Días de Gracia a aplicar al lote:</label>
-                                                                                    <div class="input-group">
-                                                                                        <input type="number" class="form-control" id="modal_input_gracia_{{ $certId }}" placeholder="Ej: 15" min="0">
-                                                                                        <span class="input-group-text bg-light text-muted">Días</span>
+                                                                            <div class="modal-content border-0 shadow rounded-4">
+                                                                                <div class="modal-body p-4 text-center">
+                                                                                    <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 40px; height: 40px; background-color: #f1f5f9; color: #64748b;">
+                                                                                        <i class="fas fa-sliders-h"></i>
                                                                                     </div>
-                                                                                    <div class="form-text mt-2" style="font-size: 0.75rem;">
-                                                                                        Este valor se inyectará en la metadata de todas las líneas al guardar la nueva versión, sin alterar las demás reglas.
+                                                                                    <h6 class="fw-semibold text-dark mb-1" style="font-size: 0.9rem;">Días de Gracia</h6>
+                                                                                    <p class="text-muted" style="font-size: 0.72rem;">Aplica días extra a este lote.</p>
+
+                                                                                    <input type="number" class="form-control border text-center fw-medium text-dark rounded-3 mb-3 shadow-none" style="background-color: #f8fafc;" id="modal_input_gracia_{{ $certId }}" placeholder="0">
+
+                                                                                    <div class="d-flex gap-2">
+                                                                                        <button type="button" class="btn btn-light rounded-pill w-50 fw-medium border" style="font-size: 0.75rem;" data-bs-dismiss="modal">Cancelar</button>
+                                                                                        <button type="button" class="btn btn-dark rounded-pill w-50 fw-medium" style="font-size: 0.75rem;" onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;" data-bs-dismiss="modal">
+                                                                                            Aplicar
+                                                                                        </button>
                                                                                     </div>
-                                                                                </div>
-                                                                                <div class="modal-footer border-0 bg-light rounded-bottom-4">
-                                                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-4"
-                                                                                            onclick="document.getElementById('input_dias_gracia_{{ $certId }}').value = document.getElementById('modal_input_gracia_{{ $certId }}').value;"
-                                                                                            data-bs-dismiss="modal">
-                                                                                        Aplicar Parámetro
-                                                                                    </button>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
 
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     </tbody>
@@ -2116,6 +2153,120 @@
                             {{-- FIN TAB 8 --}}
                             {{-- ======================================================= --}}
 
+                            {{-- ======================================================= --}}
+                            {{-- INICIO TAB 9: DOCUMENTOS (ECM Y FÍSICOS)                --}}
+                            {{-- ======================================================= --}}
+                            <div class="tab-pane fade" id="documentos" role="tabpanel" aria-labelledby="documentos-tab" tabindex="0">
+
+                                <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                                    <div>
+                                        <h5 class="fw-bolder text-dark mb-1" style="letter-spacing: -0.5px;">Gestión Documental</h5>
+                                        <p class="text-muted fs-7 mb-0">Estado de soportes de afiliación y ubicación en archivo ECM/Físico.</p>
+                                    </div>
+                                    @if(isset($documentosAsociado) && $documentosAsociado->ubicacion_ecm_link)
+                                        <a href="{{ $documentosAsociado->ubicacion_ecm_link }}" target="_blank" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm d-flex align-items-center">
+                                            <i class="fas fa-cloud me-2"></i> Abrir Carpeta ECM
+                                        </a>
+                                    @endif
+                                </div>
+
+                                @if(isset($documentosAsociado))
+                                    <div class="row g-4 px-2">
+                                        {{-- TARJETA 1: Checklist de Soportes --}}
+                                        <div class="col-md-7">
+                                            <div class="card border border-light shadow-sm rounded-4 h-100 bg-white">
+                                                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
+                                                    <h6 class="fw-bold text-dark"><i class="fas fa-clipboard-check text-success me-2"></i> Soportes Radicados</h6>
+                                                </div>
+                                                <div class="card-body px-4">
+                                                    <div class="row">
+                                                        <div class="col-sm-6">
+                                                            <ul class="list-unstyled mb-0 fs-7">
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_formulario_afiliacion ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_formulario_afiliacion ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Formulario Afiliación</span>
+                                                                </li>
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_autorizacion_datos ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_autorizacion_datos ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Autorización Datos</span>
+                                                                </li>
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_cedula_pastor ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_cedula_pastor ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Cédula Asociado</span>
+                                                                </li>
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_licencia_pastoral ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_licencia_pastoral ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Licencia</span>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                        <div class="col-sm-6">
+                                                            <ul class="list-unstyled mb-0 fs-7">
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_cedula_esposa ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_cedula_esposa ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Cédula Esposa</span>
+                                                                </li>
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_registro_matrimonio ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_registro_matrimonio ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">Reg. Matrimonio</span>
+                                                                </li>
+                                                                <li class="mb-3 d-flex align-items-center">
+                                                                    <i class="fas {{ $documentosAsociado->doc_id_hijos ? 'fa-check-circle text-success' : 'fa-times-circle text-danger opacity-50' }} me-2 fs-6"></i>
+                                                                    <span class="{{ $documentosAsociado->doc_id_hijos ? 'text-dark fw-medium' : 'text-muted text-decoration-line-through' }}">IDs Hijos</span>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- TARJETA 2: Archivo Físico y Metadatos --}}
+                                        <div class="col-md-5">
+                                            <div class="card border border-light shadow-sm rounded-4 h-100 bg-white">
+                                                <div class="card-header bg-transparent border-bottom-0 pt-4 pb-0 px-4">
+                                                    <h6 class="fw-bold text-dark"><i class="fas fa-archive text-secondary me-2"></i> Archivo Físico</h6>
+                                                </div>
+                                                <div class="card-body px-4">
+                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                                        <span class="text-muted fs-7">Carpeta:</span>
+                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->ubicacion_carpeta ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                                        <span class="text-muted fs-7">Caja:</span>
+                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->numero_caja ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                                                        <span class="text-muted fs-7">Folios:</span>
+                                                        <span class="fw-bold text-dark fs-7">{{ $documentosAsociado->cantidad_folios ?? '0' }}</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between">
+                                                        <span class="text-muted fs-7">Digitalizado:</span>
+                                                        @if($documentosAsociado->escaneado)
+                                                            <span class="badge bg-pastel-success text-success border border-success border-opacity-25 fs-8">Sí</span>
+                                                        @else
+                                                            <span class="badge bg-light text-muted border fs-8">Pendiente</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    {{-- Estado Vacío si no se encuentra el Asociado --}}
+                                    <div class="text-center py-5 bg-white rounded-4 shadow-sm border border-light">
+                                        <div class="d-inline-flex justify-content-center align-items-center bg-pastel-secondary rounded-circle mb-3" style="width: 80px; height: 80px;">
+                                            <i class="fas fa-folder-open fs-2 text-secondary opacity-75"></i>
+                                        </div>
+                                        <h6 class="fw-bolder text-dark mb-1">Sin expediente documental</h6>
+                                        <p class="mb-0 fs-7 text-muted">No se encontró una ficha de asociado (MaeAsociado) vinculada a esta cédula.</p>
+                                    </div>
+                                @endif
+
+                            </div>
+                            {{-- ======================================================= --}}
+                            {{-- FIN TAB 9 --}}
+                            {{-- ======================================================= --}}
                         </div>
                     </div>
                 </div>
@@ -2610,9 +2761,59 @@
         function actualizarEstadoApiDirecto(selectElement, idFactura, numeroBloque) {
             const nuevoEstado = selectElement.value;
 
+            // Encontramos la fila (tr) actual de la tabla para manipular sus campos visualmente
+            const fila = selectElement.closest('tr');
+
             // Cambiar visualmente el estilo de forma inmediata mientras responde el servidor
             if (nuevoEstado == '1') {
                 selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 text-success';
+
+                if (fila) {
+                    // 1. Poner el campo de Mora en 0 automáticamente
+                    const inputMora = fila.querySelector('input[name*="[dias_mora_automaticos]"]');
+                    if (inputMora) {
+                        inputMora.value = 0;
+                        inputMora.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+
+                    // 2. Cambiar la Calificación a "Bueno" automáticamente
+                    const selectCalificacion = fila.querySelector('select[name*="[calificacion]"]');
+                    if (selectCalificacion) {
+                        selectCalificacion.value = 'Bueno';
+                        // Actualizamos su clase de color a verde (text-success)
+                        selectCalificacion.className = 'form-select form-select-sm border-0 shadow-none bg-transparent px-1 text-center text-success';
+                        selectCalificacion.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+
+                    // 3. Poner la fecha actual en Últ. Rec. (fecha_ultimo_recordatorio)
+                    const inputUltRec = fila.querySelector('input[name*="[fecha_ultimo_recordatorio]"]');
+                    if (inputUltRec) {
+                        const hoy = new Date();
+                        const anio = hoy.getFullYear();
+                        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                        const dia = String(hoy.getDate()).padStart(2, '0');
+                        inputUltRec.value = `${anio}-${mes}-${dia}`;
+                    }
+
+                    // 4. Construir la observación en el último campo de la fila
+                    const inputObservacion = fila.querySelector('input[name*="[observacion]"]');
+                    if (inputObservacion) {
+                        const fechaActualFormateada = new Date().toLocaleDateString();
+                        let textoActual = inputObservacion.value.trim();
+                        const mensajePago = `Pago registrado el ${fechaActualFormateada}. Calificado como Bueno, mora ajustada a 0.`;
+
+                        // Si ya tenía texto, lo acumulamos ordenadamente; si está vacío, colocamos el mensaje directo
+                        if (textoActual !== '' && !textoActual.includes('Pago registrado')) {
+                            inputObservacion.value = textoActual + " - " + mensajePago;
+                        } else if (textoActual === '') {
+                            inputObservacion.value = mensajePago;
+                        }
+
+                        // Actualizamos el title para que se visualice completo al pasar el mouse
+                        inputObservacion.setAttribute('title', inputObservacion.value);
+                    }
+                }
+
             } else {
                 selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 text-muted';
             }
