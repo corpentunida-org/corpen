@@ -48,9 +48,11 @@
     <div class="app-container py-4">
 
         {{-- ======================================================= --}}
-        {{-- ENCABEZADO DE LA VISTA: OPERACIÓN                       --}}
+        {{-- ENCABEZADO DE LA VISTA: OPERACIÓN Y BÚSQUEDA INTERACTIVA --}}
         {{-- ======================================================= --}}
-        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 px-2">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-4 px-2 gap-3">
+
+            {{-- Título y Volver --}}
             <div>
                 {{-- Enlace Volver Minimalista --}}
                 <a href="{{ route('certificados.operaciones.index') }}"
@@ -72,6 +74,29 @@
                     </span>
                 </div>
             </div>
+
+            {{-- Buscador Rápido por Asociado (Integrado y Mejorado) --}}
+            <div style="min-width: 300px; max-width: 380px;" class="w-100">
+                <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="p-1 rounded-pill bg-white border shadow-none d-flex align-items-center gap-1" style="border-color: #e2e8f0 !important; transition: all 0.2s ease;" onfocusin="this.style.borderColor='#bae6fd';" onfocusout="this.style.borderColor='#e2e8f0';">
+                    <input type="hidden" name="bloque" value="{{ $operacion->numero_bloque ?? request('bloque') }}">
+
+                    <div class="input-group input-group-sm flex-grow-1 bg-transparent border-0 overflow-hidden ps-2">
+                        <span class="input-group-text bg-transparent border-0 text-muted pe-1 ps-0"><i class="fas fa-search" style="font-size: 0.75rem;"></i></span>
+                        <input type="text" name="buscar" class="form-control border-0 shadow-none ps-1 text-secondary" placeholder="Buscar CC o NIT..." value="{{ request('buscar') }}" style="font-size: 0.75rem; background: transparent;">
+                    </div>
+
+                    <button type="submit" class="btn btn-sm rounded-pill px-3 py-1 text-primary fw-medium border shadow-none d-inline-flex align-items-center flex-shrink-0" style="font-size: 0.7rem; height: 30px; background-color: #f0f9ff; border-color: #bae6fd !important; transition: all 0.2s ease;" onmouseover="this.style.backgroundColor='#0284c7'; this.style.color='#ffffff';" onmouseout="this.style.backgroundColor='#f0f9ff'; this.style.color='#0284c7';">
+                        Buscar
+                    </button>
+
+                    @if(request('anio') || request('buscar'))
+                        <a href="{{ route('certificados.operaciones.index', ['bloque' => $operacion->numero_bloque ?? request('bloque')]) }}" class="btn btn-sm btn-light border rounded-circle d-flex align-items-center justify-content-center shadow-none flex-shrink-0" style="width: 30px; height: 30px; border-color: #cbd5e1 !important;" title="Limpiar Filtros">
+                            <i class="fas fa-times text-danger" style="font-size: 0.7rem;"></i>
+                        </a>
+                    @endif
+                </form>
+            </div>
+
         </div>
         <!-- ========================================== -->
         <!-- ALERTAS DE SESIÓN (Éxito / Error)          -->
