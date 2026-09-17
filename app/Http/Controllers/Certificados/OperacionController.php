@@ -236,6 +236,13 @@ class OperacionController extends Controller
             ->get();
             // ==============================================================================
 
+            // ==============================================================================
+            // NUEVO: EXTRAER LOS DOCUMENTOS (ANEXOS Y ECM) DEL ASOCIADO
+            // Llaves de cruce: MaeAsociado (cedula) -> Operacion (id_tercero)
+            // ==============================================================================
+            $documentosAsociado = \App\Models\Asociado\MaeAsociado::where('cedula', $operacion->id_tercero)->first();
+            // ==============================================================================
+
             // --- LÓGICA DE BLADE TRASLADADA (Tab 1: Líneas y Facturas) ---
             $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
                 return $item->lineaSia->nombre
@@ -463,10 +470,10 @@ class OperacionController extends Controller
                 ->unique('hash_certificado'); // Agrupamos por hash para traer solo un registro por versión
             // ==============================================================================
 
-            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $soportes E $interacciones AQUÍ)
+            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $soportes, $interacciones Y $documentosAsociado AQUÍ)
             return view('certificados.operaciones.show', compact(
                 'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
-                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero', 'soportes', 'interacciones'
+                'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero', 'soportes', 'interacciones', 'documentosAsociado'
             ));
 
         } catch (\Exception $e) {

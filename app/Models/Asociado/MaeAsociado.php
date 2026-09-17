@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Demografia\Ciudad;
 use App\Models\Maestras\MaeDistritos;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Certificados\CarSiaApi;
 
 class MaeAsociado extends Model
 {
     use HasFactory;
-    
+
     public $skipTerceroSync = false;
 
     /**
@@ -31,7 +33,7 @@ class MaeAsociado extends Model
         // GESTIÓN DE ARCHIVO FÍSICO
         // ---------------------------------------------------------
         'radicado',
-        
+
         // ---------------------------------------------------------
         // DATOS DE IDENTIDAD Y DEMOGRÁFICOS
         // ---------------------------------------------------------
@@ -42,29 +44,29 @@ class MaeAsociado extends Model
         'apellido2',  //en MaeTerceros se llama apl2
         'fecha_nacimiento', //en MaeTerceros se llama fec_nac
         'lugar_expedicion_cedula', //en MaeTerceros se llama lugar_expcc
-        'fecha_expedicion', //en MaeTerceros se llama fec_expcc   
+        'fecha_expedicion', //en MaeTerceros se llama fec_expcc
         'estado_civil', //en MaeTerceros se llama est_civil
-        
+
         // ---------------------------------------------------------
         // DATOS DE CONTACTO
         // ---------------------------------------------------------
         'correo_pastor', //en MaeTerceros se llama email
-        'celular_pastor', //en MaeTerceros se llama tel 
-        'whatsapp', //en MaeTerceros se llama cel 
-        
+        'celular_pastor', //en MaeTerceros se llama tel
+        'whatsapp', //en MaeTerceros se llama cel
+
         // ---------------------------------------------------------
         // INFORMACIÓN MINISTERIAL Y CORPORATIVA
         // ---------------------------------------------------------
         'fecha_afiliacion', //en MaeTerceros se llama fec_afiliacion
         'distrito_actual', //en MaeTerceros se llama cod_dist
-        'ciudad_distrito', 
-        'direccion_distrito', 
+        'ciudad_distrito',
+        'direccion_distrito',
         'estado_pastor',
         'especificacion',
         'licencia',
         'pais',
         'iglesia_actual', //en MaeTerceros se llama congrega
-        
+
         // ---------------------------------------------------------
         // INFORMACIÓN FAMILIAR (CÓNYUGE)
         // ---------------------------------------------------------
@@ -72,7 +74,7 @@ class MaeAsociado extends Model
         'nombre_esposa', //en MaeTerceros se llama nom_conyug
         'correo_esposa', //en MaeTerceros se llama mail_conyu
         'celular_esposa', //en MaeTerceros se llama tel1
-        
+
         // ---------------------------------------------------------
         // SOPORTES DOCUMENTALES (ANEXOS)
         // ---------------------------------------------------------
@@ -83,7 +85,7 @@ class MaeAsociado extends Model
         'doc_licencia_pastoral',
         'doc_registro_matrimonio',
         'doc_id_hijos',
-        
+
         // ---------------------------------------------------------
         // GESTIÓN DE ARCHIVO DIGITAL (ECM)
         // ---------------------------------------------------------
@@ -91,7 +93,7 @@ class MaeAsociado extends Model
         'cargado_ecm',
         'ubicacion_ecm_link',
         'validado_archivo',
-        
+
         // ---------------------------------------------------------
         // GESTIÓN DE ARCHIVO FÍSICO (COMPLEMENTO)
         // ---------------------------------------------------------
@@ -102,12 +104,12 @@ class MaeAsociado extends Model
         'estado_conservacion',
         'custodia_actual',
         'observaciones_archivo',
-        
+
         // ---------------------------------------------------------
         // METADATOS Y AUDITORÍA
         // ---------------------------------------------------------
         'observaciones_generales',
-        'estado', 
+        'estado',
     ];
 
     /**
@@ -122,12 +124,12 @@ class MaeAsociado extends Model
         'fecha_expedicion'      => 'date',
         'fecha_afiliacion'      => 'date',
         'fecha_ingreso_archivo' => 'date',
-        
+
         // Casteo a booleanos lógicos (true/false en vez de 1/0)
         'escaneado'             => 'boolean',
         'cargado_ecm'           => 'boolean',
         'validado_archivo'      => 'boolean',
-        
+
         // Casteo a enteros
         'cantidad_folios'       => 'integer',
     ];
@@ -180,12 +182,12 @@ class MaeAsociado extends Model
             // ---------------------------------------------------------
             // INFORMACIÓN MINISTERIAL Y CORPORATIVA
             // ---------------------------------------------------------
-            $tercero->fec_minis    = $asociado->fecha_afiliacion; 
+            $tercero->fec_minis    = $asociado->fecha_afiliacion;
             $tercero->cod_dist     = $asociado->distrito_actual ?? '';  // Mapeado a 'cod_dist'
-            
+
             // SOLUCIÓN AL ERROR SQL: Cortamos el texto de la iglesia a un máximo de 30 caracteres
             // para que encaje perfectamente en la tabla MaeTerceros sin causar colapsos.
-            $tercero->congrega     = substr($asociado->iglesia_actual ?? '', 0, 10);   
+            $tercero->congrega     = substr($asociado->iglesia_actual ?? '', 0, 10);
 
             // ---------------------------------------------------------
             // INFORMACIÓN FAMILIAR (CÓNYUGE)
@@ -242,7 +244,7 @@ class MaeAsociado extends Model
 
     /**
      * Relación: Un asociado pertenece a una ciudad.
-     * * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * * @return BelongsTo
      */
     public function ciudad()
     {
@@ -252,11 +254,18 @@ class MaeAsociado extends Model
 
     /**
      * Relación: Un asociado pertenece a un distrito.
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return BelongsTo
      */
     public function distrito()
     {
         // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
         return $this->belongsTo(MaeDistritos::class, 'distrito_actual', 'COD_DIST');
+    }
+    /**
+     * Relación: Un asociado puede tener múltiples registros en la API de Cartera SIA.
+     */
+    public function registrosSiaApi()
+    {
+        return $this->hasMany(CarSiaApi::class, 'cedula', 'tercero');
     }
 }
