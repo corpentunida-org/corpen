@@ -11,6 +11,7 @@ use App\Models\Archivo\GdoCargo;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -45,13 +46,26 @@ class User extends Authenticatable
     use Notifiable;
     //use TwoFactorAuthenticatable;
     use HasRoles;
+    // "Eliminar" un usuario es soft-delete: hay más de una decena de tablas (Auditoria,
+    // res_reservas, interactions, scp_soportes, wor_tasks, UserSesion, model_has_permissions...)
+    // que referencian users.id sin llave foránea real — un borrado físico las dejaría huérfanas.
+    use SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
-    protected $fillable = ['name', 'email', 'password', 'nid', 'fecha_nacimiento', 'type'];
+    protected $fillable = [
+        'name', 'email', 'password', 'nid', 'fecha_nacimiento', 'type', 'cargo', 'telefono',
+        'bloqueado', 'debe_cambiar_password',
+    ];
+
+    protected $casts = [
+        'bloqueado' => 'boolean',
+        'debe_cambiar_password' => 'boolean',
+        'fecha_nacimiento' => 'date',
+    ];
 
     public function roles()
     {

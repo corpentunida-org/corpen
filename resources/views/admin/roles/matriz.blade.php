@@ -97,35 +97,46 @@
                                 @csrf
                                 @method('PUT')
 
-                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-white p-4 rounded-4 border border-light-subtle shadow-sm mb-3">
+                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-white p-4 rounded-4 border border-light-subtle shadow-sm mb-3 gap-3">
                                     <div>
                                         <h6 class="fw-bold text-dark mb-1">Todos los permisos del sistema</h6>
                                         <p class="fs-13 text-muted mb-0">Marca o desmarca los que este rol debe tener, sin importar quién los haya creado.</p>
                                     </div>
-                                    <button type="submit" class="ui-btn-primary mt-3 mt-sm-0 shadow-sm">
-                                        <i class="bi bi-save me-2"></i> Actualizar Permisos
-                                    </button>
+                                    <div class="d-flex gap-2 align-items-center flex-shrink-0">
+                                        <div class="input-group input-group-sm" style="max-width: 220px;">
+                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                                            <input type="text" class="form-control border-start-0" placeholder="Buscar permiso..."
+                                                   oninput="filtrarPermisosMatriz({{ $i }}, this.value)">
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisosMatriz({{ $i }}, true)">Marcar todos</button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisosMatriz({{ $i }}, false)">Ninguno</button>
+                                        <button type="submit" class="ui-btn-primary text-nowrap shadow-sm">
+                                            <i class="bi bi-save me-2"></i> Actualizar
+                                        </button>
+                                    </div>
                                 </div>
 
-                                @foreach ($permisosPorModulo as $modulo => $permisosDelModulo)
-                                    <div class="modulo-titulo">{{ $modulo }}</div>
-                                    <div class="row g-3">
-                                        @foreach ($permisosDelModulo as $permiso)
-                                            <div class="col-lg-6 col-xl-4">
-                                                <div class="ui-card p-3 h-100 border-0">
-                                                    <div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">
-                                                        <label class="form-check-label user-select-none text-truncate pe-3" for="mchk-{{ $i }}-{{ $permiso->id }}">
-                                                            {{ $permiso->name }}
-                                                        </label>
-                                                        <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                            class="form-check-input flex-shrink-0 m-0" id="mchk-{{ $i }}-{{ $permiso->id }}"
-                                                            @if (in_array($permiso->id, $idsAsignados)) checked @endif>
+                                <div id="mmatriz-{{ $i }}">
+                                    @foreach ($permisosPorModulo as $modulo => $permisosDelModulo)
+                                        <div class="modulo-titulo modulo-item-{{ $i }}" data-nombre="{{ strtolower($modulo) }}">{{ $modulo }}</div>
+                                        <div class="row g-3 modulo-grupo-{{ $i }}" data-modulo="{{ strtolower($modulo) }}">
+                                            @foreach ($permisosDelModulo as $permiso)
+                                                <div class="col-lg-6 col-xl-4 permiso-item-{{ $i }}" data-nombre="{{ strtolower($permiso->name) }}">
+                                                    <div class="ui-card p-3 h-100 border-0">
+                                                        <div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">
+                                                            <label class="form-check-label user-select-none text-truncate pe-3" for="mchk-{{ $i }}-{{ $permiso->id }}">
+                                                                {{ $permiso->name }}
+                                                            </label>
+                                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
+                                                                class="form-check-input flex-shrink-0 m-0" id="mchk-{{ $i }}-{{ $permiso->id }}"
+                                                                @if (in_array($permiso->id, $idsAsignados)) checked @endif>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endforeach
+                                            @endforeach
+                                        </div>
+                                    @endforeach
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -133,4 +144,36 @@
             @endforeach
         </div>
     </div>
+
+    <script>
+        // Filtra por nombre de permiso O de módulo dentro de la matriz de UN rol — el módulo
+        // solo se oculta si ninguno de sus permisos coincide con la búsqueda.
+        function filtrarPermisosMatriz(i, texto) {
+            const termino = texto.trim().toLowerCase();
+            document.querySelectorAll('.modulo-grupo-' + i).forEach(function (grupo) {
+                let visibles = 0;
+                grupo.querySelectorAll('.permiso-item-' + i).forEach(function (item) {
+                    const coincide = item.dataset.nombre.includes(termino) || grupo.dataset.modulo.includes(termino);
+                    item.classList.toggle('d-none', !coincide);
+                    if (coincide) visibles++;
+                });
+                grupo.classList.toggle('d-none', visibles === 0);
+                const titulo = grupo.previousElementSibling;
+                if (titulo && titulo.classList.contains('modulo-item-' + i)) {
+                    titulo.classList.toggle('d-none', visibles === 0);
+                }
+            });
+        }
+
+        // Marca/desmarca solo los permisos actualmente visibles (respeta el filtro de búsqueda),
+        // así "Marcar todos" después de buscar "reservas" no toca el resto de módulos.
+        function marcarPermisosMatriz(i, estado) {
+            document.querySelectorAll('#mmatriz-' + i + ' .permiso-item-' + i).forEach(function (item) {
+                if (!item.classList.contains('d-none')) {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = estado;
+                }
+            });
+        }
+    </script>
 </x-base-layout>

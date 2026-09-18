@@ -18,21 +18,48 @@ class MaeCongregacionController extends Controller
      * Display a listing of the resource.
      * INICIO
      */
+    /**
+     * Antes solo había un buscador genérico que probaba el término contra
+     * MaeCongregaciones.pastor — pero esa columna guarda la CÉDULA del pastor (texto legado),
+     * no su nombre, así que buscar "Pérez" nunca encontraba nada aunque Pérez fuera el titular
+     * real. Se agregan 3 filtros propios (nombre, código, pastor) y el de pastor busca por
+     * cédula Y por nombre real, cruzando contra MaeTerceros vía la relación maeTercero()
+     * (congrega = codigo), que es la fuente de verdad actual del titular.
+     */
     public function index(Request $request)
     {
-        $query = MaeCongregacion::query()->with('maeClaseCongregacion');
-        $busqueda = trim($request->input('search'));
+        $query = MaeCongregacion::query()->with(['maeClaseCongregacion', 'maeTercero']);
 
-        if (!empty($busqueda)) {
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('nombre', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('codigo', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('municipio', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('pastor', 'LIKE', "%{$busqueda}%");
+        if ($request->filled('nombre')) {
+            $query->where('nombre', 'LIKE', '%' . $request->input('nombre') . '%');
+        }
+
+        if ($request->filled('codigo')) {
+            $query->where('codigo', 'LIKE', '%' . $request->input('codigo') . '%');
+        }
+
+        if ($request->filled('pastor')) {
+            $pastor = $request->input('pastor');
+
+            // orWhereHas() aquí generaba un subquery DEPENDIENTE (una vuelta a MaeTerceros por
+            // CADA congregación, ~6.559 veces) que MySQL no resuelve con el índice de
+            // 'congrega' cuando se combina con el LIKE — se confirmó con EXPLAIN: type=ALL,
+            // ~160 millones de comparaciones, la pantalla se colgaba varios minutos. En vez de
+            // eso, se busca en MaeTerceros UNA sola vez (sin correlación) y se filtra
+            // MaeCongregaciones por los códigos resultantes con un IN, que sí usa el índice.
+            $codigosConPastorCoincidente = MaeTerceros::where('nom_ter', 'LIKE', "%{$pastor}%")
+                ->orWhere('cod_ter', 'LIKE', "%{$pastor}%")
+                ->pluck('congrega')
+                ->filter()
+                ->unique();
+
+            $query->where(function ($q) use ($pastor, $codigosConPastorCoincidente) {
+                $q->where('pastor', 'LIKE', "%{$pastor}%")
+                    ->orWhereIn('codigo', $codigosConPastorCoincidente);
             });
         }
 
-        $congregaciones = $query->orderBy('codigo', 'desc')->paginate(10);
+        $congregaciones = $query->orderBy('codigo', 'desc')->paginate(10)->withQueryString();
 
         return view('maestras.congregaciones.index', compact('congregaciones'));
     }
@@ -112,11 +139,23 @@ class MaeCongregacionController extends Controller
             return redirect()->back()->withInput()->with('error', $error);
         }
 
+        // 'pastorAnterior' ya NO se recibe del formulario (antes era un campo libre editable a
+        // mano, sin relación real con quién fue el pastor antes — cualquiera podía escribir
+        // cualquier cédula ahí). Ahora se calcula solo: si el titular ('pastor') realmente
+        // cambia en este guardado, el que se está reemplazando pasa a 'pastorAnterior'. Si el
+        // titular no cambia, 'pastorAnterior' se deja tal como está.
+        $pastorAnterior = $congregacion->pastorAnterior;
+        $tituarActual = trim((string) $congregacion->pastor);
+        $tituarNuevo = trim((string) $request->pastor);
+        if ($tituarActual !== '' && $tituarActual !== $tituarNuevo) {
+            $pastorAnterior = $tituarActual;
+        }
+
         // Se actualiza la congregación directamente con los datos del request.
         $congregacion->update([
             'nombre' => strtoupper($request->nombre),
             'pastor' => $request->pastor,
-            'pastorAnterior' => $request->pastorAnterior,
+            'pastorAnterior' => $pastorAnterior,
             'estado' => $request->estado,
             'clase' => $request->clase,
             'municipio' => $request->municipio,

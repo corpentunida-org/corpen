@@ -367,209 +367,64 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="ui-form-label">Teléfono de Contacto</label>
-                                    <input type="text" class="ui-input" value="+01 (375) 2589 645" placeholder="+00 (000) 0000 000">
+                                    <input type="text" class="ui-input" value="{{ old('telefono', $user->telefono) }}" name="telefono" placeholder="+00 (000) 0000 000">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="ui-form-label">Actualizar Contraseña</label>
+                                    <label class="ui-form-label">Fecha de Registro</label>
+                                    <input type="text" class="ui-input" value="{{ $user->created_at?->format('d/m/Y H:i') ?? 'No disponible' }}" disabled>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="ui-form-label">Asignar Contraseña</label>
                                     <input type="password" class="ui-input" name="pass" placeholder="Dejar en blanco para mantener actual">
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tarjeta: Asignar Nuevo Rol -->
-                    <div class="ui-card mb-4">
-                        <div class="card-body p-3 p-md-4">
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="ui-icon-box ui-pastel-blue me-3" style="width: 38px; height: 38px; font-size: 1rem;">
-                                    <i class="bi bi-plus-lg"></i>
-                                </div>
-                                <div>
-                                    <h6 class="fw-bold text-dark mb-0 fs-15">Vincular Perfil Adicional</h6>
-                                    <p class="text-muted fs-13 mb-0 mt-1">Expande los privilegios operativos del usuario.</p>
-                                </div>
-                            </div>
-                            
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <select class="form-select ui-input cursor-pointer" name="rolnuevo">
-                                        <option value="" disabled selected>Seleccione un perfil de la lista...</option>
-                                        @foreach ($roles as $rol)
-                                            <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
-                                                {{ strtoupper($rol->name) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Encabezado Matriz de Roles -->
-                    <div class="d-flex justify-content-between align-items-end mb-3 mt-4 px-1">
-                        <div>
-                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-sliders me-2 text-primary"></i>Roles Activos & Permisos</h6>
-                            <p class="text-muted fs-13 mb-0">Personaliza los permisos dentro de cada rol asignado.</p>
-                        </div>
-                        <span class="badge ui-pastel-purple rounded-pill px-3 py-2 fs-12 shadow-sm border border-light">
-                            {{ count($user->actions) }} Rol(es) Activo(s)
-                        </span>
-                    </div>
-
-                    <!-- Acordeón de Permisos -->
-                    <div class="accordion ui-accordion mb-4" id="accordionRolesPermissions">
-                        @forelse ($user->actions as $index => $rol)
-                            <div class="accordion-item shadow-sm">
-                                <h2 class="accordion-header" id="heading-{{ $index }}">
-                                    <button class="accordion-button {{ $index === 0 ? '' : 'collapsed' }}" 
-                                            type="button" data-bs-toggle="collapse" 
-                                            data-bs-target="#collapse-{{ $index }}" 
-                                            aria-expanded="{{ $index === 0 ? 'true' : 'false' }}">
-                                        <i class="bi bi-shield-check text-success me-3 fs-5"></i> 
-                                        PERFIL: {{ strtoupper($rol->role->name) }}
-                                    </button>
-                                </h2>
-                                <div id="collapse-{{ $index }}"
-                                     class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}"
-                                     data-bs-parent="#accordionRolesPermissions">
-                                    <div class="accordion-body p-3 p-md-4 bg-light">
-
-                                        @php $permisosDelRol = $permisosPorRol->get($rol->role_id) ?? collect(); @endphp
-
-                                        @if ($permisosDelRol->isEmpty())
-                                            <div class="alert alert-warning d-flex align-items-start gap-2 mb-0" role="alert">
-                                                <i class="bi bi-exclamation-triangle-fill mt-1"></i>
-                                                <div class="fs-13 mb-0">
-                                                    Este perfil no tiene ningún permiso configurado todavía — contacta a sistemas para
-                                                    que lo vincule antes de poder activarle accesos a este usuario aquí.
-                                                </div>
-                                            </div>
-                                        @else
-                                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-3 pb-3 border-bottom border-light-subtle">
-                                                <h6 class="fw-bold text-dark fs-14 mb-0">Matriz de Configuración</h6>
-                                                <div class="d-flex gap-2 align-items-center">
-                                                    <div class="input-group input-group-sm" style="max-width: 220px;">
-                                                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                                                        <input type="text" class="form-control border-start-0" placeholder="Buscar permiso..."
-                                                               oninput="filtrarPermisos({{ $index }}, this.value)">
-                                                    </div>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisos({{ $index }}, true)">Marcar todos</button>
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisos({{ $index }}, false)">Ninguno</button>
-                                                </div>
-                                            </div>
-
-                                            <div class="row g-3" id="matriz-{{ $index }}">
-                                                @foreach ($permisosDelRol as $permiso)
-                                                    <div class="col-lg-6 col-xl-4 permiso-item" data-nombre="{{ strtolower($permiso->name) }}">
-                                                        <div class="form-check form-switch ui-switch d-flex align-items-center">
-                                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                                class="form-check-input flex-shrink-0" id="perm_{{ $rol->role_id }}_{{ $permiso->id }}"
-                                                                @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
-                                                            <label class="form-check-label user-select-none text-truncate" for="perm_{{ $rol->role_id }}_{{ $permiso->id }}" style="font-size: 0.85rem;" title="{{ $permiso->name }}">
-                                                                {{ $permiso->name }}
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            <p class="text-muted fs-13 mb-0 mt-2 d-none" id="sin-resultados-{{ $index }}">Ningún permiso coincide con la búsqueda.</p>
-                                        @endif
-
+                                <div class="col-md-6 d-flex align-items-end">
+                                    <div class="form-check ui-switch">
+                                        <input type="checkbox" class="form-check-input" id="forzar_cambio_password" name="forzar_cambio_password" value="1">
+                                        <label class="form-check-label" for="forzar_cambio_password">
+                                            Forzar cambio de contraseña en el próximo inicio de sesión
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-                        @empty
-                            <div class="ui-card p-4 text-center bg-white shadow-sm border-dashed">
-                                <div class="ui-icon-box bg-light text-muted mx-auto mb-2" style="width: 50px; height: 50px; font-size: 1.5rem;">
-                                    <i class="bi bi-inbox"></i>
-                                </div>
-                                <h6 class="fw-bold text-dark">Sin Roles Asignados</h6>
-                                <p class="text-muted fs-13 mb-0">Este usuario no cuenta con perfiles operativos activos.</p>
-                            </div>
-                        @endforelse
-                    </div>
-
-                    <!-- Botonera de Guardado: sticky al fondo de la ventana, siempre visible aunque la
-                         matriz de permisos crezca mucho — antes había que volver a subir/bajar toda la
-                         página para guardar. -->
-                    <div class="ui-card p-3 p-md-4 mb-4 shadow" style="position: sticky; bottom: 1rem; z-index: 20;">
-                        <div class="d-flex flex-column flex-sm-row justify-content-end align-items-center gap-3">
-                            <button type="submit" class="ui-btn-primary w-100 w-sm-auto">
-                                <i class="bi bi-save me-2"></i> Guardar Cambios
-                            </button>
                         </div>
                     </div>
+
+                    @include('admin.users.partials.matriz-roles-permisos')
                 </form>
 
-                <!-- Tarjeta: Copiar Perfil de Otro Usuario -->
-                <div class="ui-card mb-4">
-                    <div class="card-body p-3 p-md-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="ui-icon-box ui-pastel-amber me-3" style="width: 38px; height: 38px; font-size: 1rem;">
-                                <i class="bi bi-copy"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold text-dark mb-0 fs-15">Copiar Perfil de Otro Usuario</h6>
-                                <p class="text-muted fs-13 mb-0 mt-1">
-                                    Suma a este usuario los perfiles y permisos que ya tiene un compañero de referencia,
-                                    sin quitarle nada de lo que ya tiene.
-                                </p>
-                            </div>
-                        </div>
+                @include('admin.users.partials.copiar-perfil')
 
-                        <form method="POST" action="{{ route('admin.users.copiar-permisos', $user) }}"
-                              onsubmit="return confirm('¿Copiar el acceso de este usuario? Se sumarán sus perfiles y permisos a los que ya tiene {{ $user->name }}, sin quitar nada.');">
-                            @csrf
-                            <div class="row g-2">
-                                <div class="col-md-8">
-                                    <select class="form-select ui-input cursor-pointer" name="usuario_referencia_id" required>
-                                        <option value="" disabled selected>Seleccione un usuario de referencia...</option>
-                                        @foreach ($usuarios as $otro)
-                                            <option value="{{ $otro->id }}">{{ $otro->name }} ({{ $otro->email }})</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <button type="submit" class="btn btn-outline-primary w-100 fw-semibold">
-                                        <i class="bi bi-copy me-1"></i> Copiar acceso
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                @include('admin.users.partials.revocar-perfil')
 
-                <!-- Zona de Peligro -->
-                <div class="ui-danger-zone shadow-sm" id="cardAddPermisos">
+                <!-- Zona de Peligro: Acceso -->
+                <div class="ui-danger-zone shadow-sm mt-4">
                     <div class="row align-items-center">
                         <div class="col-lg-6 mb-3 mb-lg-0">
                             <h6 class="fw-bold text-danger mb-1">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>Revocar Perfil
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {{ $user->bloqueado ? 'Cuenta Bloqueada' : 'Bloquear o Eliminar Cuenta' }}
                             </h6>
                             <p class="text-danger opacity-75 fs-13 mb-0 pe-md-3">
-                                Acción irreversible. El usuario perderá acceso a los módulos de inmediato.
+                                Bloquear impide el inicio de sesión sin borrar nada — reversible en cualquier momento.
+                                Eliminar es más drástico: el usuario deja de aparecer en el listado.
                             </p>
                         </div>
-                        
-                        <div class="col-lg-6 border-start border-danger border-opacity-25 ps-lg-3">
-                            <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}" id="formAddPermiso" novalidate>
+
+                        <div class="col-lg-6 border-start border-danger border-opacity-25 ps-lg-3 d-flex flex-column flex-sm-row gap-2">
+                            <form method="POST" action="{{ route($user->bloqueado ? 'admin.users.desbloquear' : 'admin.users.bloquear', $user->id) }}">
+                                @csrf
+                                <button type="submit" class="btn {{ $user->bloqueado ? 'btn-outline-success' : 'btn-outline-danger' }} w-100 fw-semibold">
+                                    <i class="bi bi-{{ $user->bloqueado ? 'unlock' : 'lock' }} me-1"></i>
+                                    {{ $user->bloqueado ? 'Desbloquear' : 'Bloquear' }}
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}"
+                                onsubmit="return confirm('¿Eliminar a {{ addslashes($user->name) }}? Podrá restaurarse solo desde la base de datos.');">
                                 @csrf
                                 @method('DELETE')
-                                
-                                <div class="d-flex flex-column flex-sm-row gap-2 mt-1">
-                                    <select class="form-select flex-grow-1 border-danger border-opacity-50 text-danger bg-white shadow-none fs-14" name="rol" required>
-                                        <option value="" disabled selected>Seleccione rol a revocar...</option>
-                                        @foreach ($user->actions as $rol)
-                                            <option value="{{ $rol->role_id }}">
-                                                {{ strtoupper($rol->role->name) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    
-                                    <button class="ui-btn-danger text-nowrap fs-14" data-bs-toggle="tooltip" title="Revocar acceso" type="submit">
-                                        <i class="bi bi-trash3-fill"></i>
-                                    </button>
-                                </div>
+                                <button type="submit" class="ui-btn-danger w-100 fw-semibold">
+                                    <i class="bi bi-trash3-fill me-1"></i> Eliminar
+                                </button>
                             </form>
                         </div>
                     </div>

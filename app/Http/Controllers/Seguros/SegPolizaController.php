@@ -60,7 +60,7 @@ class SegPolizaController extends Controller
         $controllerapi = new ComaeTerController();
         $terapi = $controllerapi->show($request->tercedula);
         if ($terapi->getStatusCode() === 404) {
-            return redirect()->route('seguros.poliza.create')->with('error', 'La cédula ingresada no coincide con ningún documento en SiaSoft');
+            return redirect()->route('seguros.poliza.create')->with('error', 'Tercero no encontrado en la base de datos Siasoft.');
         } else {
             $tercero = SegTercero::create([
                 'cedula' => $request->tercedula,

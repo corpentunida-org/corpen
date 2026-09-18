@@ -208,7 +208,7 @@ class ComaeExCliController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
         if (!$pastor->successful() || !isset($pastor->json()['name'])) {
-            return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en SiaSoft.');
+            return redirect()->back()->with('error', 'Tercero no encontrado en la base de datos Siasoft.');
         }
 
         try {
