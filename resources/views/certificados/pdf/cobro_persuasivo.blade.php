@@ -181,30 +181,6 @@
             font-size: 7pt;
         }
 
-        /* Subtotales con jerarquía intermedia clara */
-        .tr-subtotal td {
-            font-weight: bold;
-            background-color: #f1f5f9;
-            color: #0f172a;
-            border-top: 2px solid #64748b;
-            border-bottom: 2px solid #64748b;
-            padding: 7px 6px;
-            font-size: 9pt;
-        }
-
-        /* Caja de Total General con impacto visual definitivo */
-        .total-box {
-            display: inline-block;
-            background-color: #0f172a;
-            color: #ffffff;
-            padding: 10px 18px;
-            font-size: 11pt;
-            font-weight: bold;
-            border-radius: 6px;
-            letter-spacing: 0.5px;
-            border: 1px solid #334155;
-        }
-
         .legal-notice {
             font-size: 8.5pt;
             color: #475569;
@@ -239,11 +215,11 @@
     <div class="footer">
         <span class="page-number"></span>
     </div>
-
+    <br><br>
     <!-- ENCABEZADO -->
     <div class="header">
         <div class="org-title">
-            ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br>- CORPENTUNIDA -
+            ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br>
         </div>
         <div class="doc-title">
             Certificado de Compromisos Activos
@@ -259,55 +235,79 @@
     </div>
 
     @php
-        $lineasAgrupadas = $lineas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'LÍNEA NO ESPECIFICADA');
-        $granTotalDeuda = 0;
+        // 1. Ordenamos la colección por fecha de vencimiento (de la más antigua a la más reciente)
+        $lineasOrdenadas = $lineas->sortBy(function($linea) {
+            return $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
+        });
+
+        // 2. Agrupamos las líneas que ya vienen ordenadas
+        $lineasAgrupadas = $lineasOrdenadas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'LÍNEA NO ESPECIFICADA');
     @endphp
 
     <!-- TABLAS DE OBLIGACIONES -->
     @forelse($lineasAgrupadas as $nombreLinea => $grupoLineas)
-        @php $subtotalLinea = 0; @endphp
 
         <table class="table-detalles">
             <thead>
                 <!-- TÍTULO DE LA LÍNEA INTEGRADO -->
                 <tr class="title-row">
-                    <th colspan="7">{{ mb_strtoupper($nombreLinea, 'UTF-8') }}</th>
+                    <th colspan="6">{{ mb_strtoupper($nombreLinea, 'UTF-8') }}</th>
                 </tr>
                 <!-- ENCABEZADOS DE COLUMNA -->
                 <tr class="header-row">
-                    <th width="14%">Factura</th>
-                    <th width="8%">Cuota</th>
-                    <th width="18%">Vencimiento</th>
+                    <th width="18%">Factura</th>
+                    <th width="10%">Cuota</th>
+                    <th width="22%">Vencimiento</th>
                     <th width="10%">Mora</th>
-                    <th width="16%">Estado Mora</th>
-                    <th width="16%">Estado API</th>
-                    <th width="18%" class="text-right">Valor</th>
+                    <th width="20%">Estado Mora</th>
+                    <th width="20%">Estado API</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($grupoLineas as $linea)
                     @php
                         $factura = $linea->factura;
-                        $valorCuota = $factura ? (float) $factura->valor : 0;
-                        $subtotalLinea += $valorCuota;
-
                         $diasMora = (int) $linea->dias_mora_automaticos;
-                        $esAlDia = $diasMora <= 0;
 
-                        $fechaVencimiento = $factura && $factura->fecha_venci
-                            ? \Carbon\Carbon::parse($factura->fecha_venci)->format('d/m/Y')
-                            : 'N/A';
-
-                        // Validación del Estado API
+                        // Validación del Estado API para determinar si está pagado
                         $estadoApiVal = $linea->estadoApi;
                         $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
+                        $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'CANCELADO');
+
+                        // Si está pagado por API, se considera al día automáticamente
+                        $esAlDia = ($diasMora <= 0) || $esPago;
+
+                        // Priorizamos la fecha editada en el modelo línea sobre la API cruda
+                        $fechaVencReal = $linea->fecha_venci ?? optional($factura)->fecha_venci;
+
+                        $fechaVencimiento = $fechaVencReal
+                            ? \Carbon\Carbon::parse($fechaVencReal)->format('d/m/Y')
+                            : 'N/A';
+
+                        // Lógica para cuota o formato mes-año en seguros/cuentas por cobrar
+                        $esSeguro = stripos($nombreLinea, 'SEGURO') !== false;
+                        $cuotaOriginal = $factura->cuota ?? null;
+
+                        if ($esSeguro || empty($cuotaOriginal) || $cuotaOriginal === 'N/A') {
+                            if ($fechaVencReal) {
+                                $fechaVenc = \Carbon\Carbon::parse($fechaVencReal);
+                                $meses = [1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR', 5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AGO', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC'];
+                                $mesAbrev = $meses[$fechaVenc->month] ?? '';
+                                $anio2Digitos = $fechaVenc->format('y');
+                                $cuotaMostrar = "{$mesAbrev}-{$anio2Digitos}";
+                            } else {
+                                $cuotaMostrar = 'N/A';
+                            }
+                        } else {
+                            $cuotaMostrar = $cuotaOriginal;
+                        }
                     @endphp
                     <tr>
                         <td style="font-family: monospace; font-weight: bold; color: #0f172a;">#{{ $linea->id_factura ?? ($factura->id ?? 'N/A') }}</td>
-                        <td style="font-weight: 600;">{{ $factura->cuota ?? 'N/A' }}</td>
+                        <td style="font-weight: 600;">{{ $cuotaMostrar }}</td>
                         <td>{{ $fechaVencimiento }}</td>
                         <td>
-                            @if($diasMora > 0)
+                            @if($diasMora > 0 && !$esPago)
                                 <span style="color: #b91c1c; font-weight: bold; font-size: 8.5pt;">{{ $diasMora }}</span>
                             @else
                                 <span style="color: #64748b;">0</span>
@@ -315,31 +315,26 @@
                         </td>
                         <td>
                             <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                {{ $esAlDia ? 'PENDIENTE' : 'EN MORA' }}
+                                @if($esPago)
+                                    AL DÍA
+                                @else
+                                    {{ $esAlDia ? '-' : 'EN MORA' }}
+                                @endif
                             </span>
                         </td>
                         <td>
                             @if($tieneEstadoApi)
-                                <span class="badge-api-pago">
-                                    {{ $estadoApiVal == '1' ? 'PAGO' : strtoupper($estadoApiVal) }}
+                                <span class="badge-api-pago" title="Valor: {{ $estadoApiVal }}">
+                                    {{ $estadoApiVal == '1' ? 'CANCELADO' : strtoupper($estadoApiVal) }}
                                 </span>
                             @else
                                 <span class="badge-api-falta">FALTA POR PAGAR</span>
                             @endif
                         </td>
-                        <td class="text-right" style="font-weight: bold; color: #0f172a;">${{ number_format($valorCuota, 2, ',', '.') }}</td>
                     </tr>
                 @endforeach
             </tbody>
-            <tfoot>
-                <tr class="tr-subtotal">
-                    <td colspan="6" class="text-right">SUBTOTAL {{ mb_strtoupper($nombreLinea, 'UTF-8') }}:</td>
-                    <td class="text-right" style="color: #0f172a; font-size: 9.5pt;">${{ number_format($subtotalLinea, 2, ',', '.') }}</td>
-                </tr>
-            </tfoot>
         </table>
-
-        @php $granTotalDeuda += $subtotalLinea; @endphp
 
     @empty
         <div style="text-align: center; padding: 20px; background-color: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; font-weight: bold; color: #64748b; margin-bottom: 20px;">
@@ -347,29 +342,16 @@
         </div>
     @endforelse
 
-    <!-- BLOQUE FINAL: TOTAL Y FIRMA -->
+    <!-- BLOQUE FINAL: FIRMA -->
     <table width="100%" style="page-break-inside: avoid; border-collapse: collapse; margin-top: 10px;">
         <tr>
             <td style="padding: 0;">
-
-                @if($granTotalDeuda > 0)
-                    <table width="100%" style="margin-bottom: 15px;">
-                        <tr>
-                            <td width="30%"></td>
-                            <td width="70%" align="right">
-                                <div class="total-box">
-                                    TOTAL COMPROMISOS ACTIVOS: ${{ number_format($granTotalDeuda, 2, ',', '.') }}
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                @endif
 
                 <div class="legal-notice">
                     Este documento certifica las obligaciones financieras activas registradas en nuestro sistema al momento de su expedición.<br>
                     Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
                 </div>
-
+                <br><br>
                 <table class="signature-table">
                     <tr>
                         <td class="signature-cell">

@@ -112,4 +112,18 @@ class CarSiaApi extends Model
         // Casteamos (int) para que el "15" (VARCHAR) se convierta en 15 (INT) y crucen perfecto.
         return $this->comprobantesBase->firstWhere('numero_cuota', (int) $this->cuota);
     }
+    /*
+    |--------------------------------------------------------------------------
+    | RELACIONES CON ASOCIADO (CRM / DOCUMENTOS)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Relación: Trae los documentos y datos del asociado usando el número de cédula.
+     */
+    public function asociado()
+    {
+        // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
+        return $this->belongsTo(\App\Models\Asociado\MaeAsociado::class, 'tercero', 'cedula');
+    }
 }
