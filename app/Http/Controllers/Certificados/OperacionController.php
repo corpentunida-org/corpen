@@ -243,29 +243,55 @@ class OperacionController extends Controller
             $documentosAsociado = \App\Models\Asociado\MaeAsociado::where('cedula', $operacion->id_tercero)->first();
             // ==============================================================================
 
-            // --- LÓGICA DE BLADE TRASLADADA (Tab 1: Líneas y Facturas) ---
-            $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
-                return $item->lineaSia->nombre
-                    ?? $item->nombre_cuenta
-                    ?? $item->cuenta
+            // ==============================================================================
+            // NUEVA LÓGICA: EXTRAER LAS LÍNEAS DEL ÚLTIMO HASH (Modelo Editado)
+            // ==============================================================================
+            $ultimoHash = $operacion->lineas->first()->hash_certificado ?? null;
+
+            $lineas = collect();
+            if ($ultimoHash) {
+                $lineas = $operacion->lineas
+                    ->where('hash_certificado', $ultimoHash)
+                    ->unique('id_factura');
+            } else {
+                $lineas = $operacion->lineas->unique('id_factura');
+            }
+            // ==============================================================================
+
+            // --- LÓGICA DE BLADE TRASLADADA Y ACTUALIZADA (Tab 1: Líneas y Facturas) ---
+            // AHORA USA $lineas EN LUGAR DE $registrosCrudos PARA PRIORIZAR LOS DATOS EDITADOS
+            $lineasAgrupadas = $lineas->groupBy(function($linea) {
+                return $linea->lineaSia->nombre
+                    ?? optional($linea->factura)->nombre_cuenta
+                    ?? optional($linea->factura)->cuenta
                     ?? 'Línea Desconocida';
-            })->map(function($facturas) {
-                $totalLinea = $facturas->sum('valor');
-                $facturasOrdenadas = $facturas->sortBy('cuota')->map(function($factura) {
-                    if ($factura->fecha_venci) {
-                        $fechaV = \Carbon\Carbon::parse($factura->fecha_venci);
-                        $factura->diasMoraCalculados = now()->diffInDays($fechaV, false);
-                        $factura->fechaVFormateada = $fechaV->format('d/m/Y');
-                    } else {
-                        $factura->diasMoraCalculados = 0;
-                        $factura->fechaVFormateada = null;
-                    }
-                    return $factura;
+            })->map(function($grupoLineas) {
+                // Sumamos el total usando la relación con la factura cruda
+                $totalLinea = $grupoLineas->sum(function($linea) {
+                    return optional($linea->factura)->valor ?? 0;
                 });
+
+                $lineasOrdenadas = $grupoLineas->sortBy(function($linea) {
+                    return optional($linea->factura)->cuota;
+                })->map(function($linea) {
+                    // Priorizamos la fecha del modelo editable, con fallback a la API cruda
+                    $fechaVencReal = $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
+
+                    if ($fechaVencReal) {
+                        $fechaV = \Carbon\Carbon::parse($fechaVencReal);
+                        $linea->diasMoraCalculados = now()->diffInDays($fechaV, false);
+                        $linea->fechaVFormateada = $fechaV->format('d/m/Y');
+                    } else {
+                        $linea->diasMoraCalculados = 0;
+                        $linea->fechaVFormateada = null;
+                    }
+                    return $linea; // Devolvemos la instancia del modelo CarSiaOperacionLinea
+                });
+
                 return [
                     'total' => $totalLinea,
-                    'count' => $facturas->count(),
-                    'facturas' => $facturasOrdenadas
+                    'count' => $grupoLineas->count(),
+                    'facturas' => $lineasOrdenadas
                 ];
             });
 
@@ -470,9 +496,9 @@ class OperacionController extends Controller
                 ->unique('hash_certificado'); // Agrupamos por hash para traer solo un registro por versión
             // ==============================================================================
 
-            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $soportes, $interacciones Y $documentosAsociado AQUÍ)
+            // 3. ENVIAR LAS VARIABLES AL COMPACT (AGREGAMOS $lineas AQUÍ TAMBIÉN)
             return view('certificados.operaciones.show', compact(
-                'operacion', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
+                'operacion', 'lineas', 'lineasUnicas', 'historialEstados', 'historialTipos', 'historialAlertas', 'estados', 'tipos', 'tiposAlerta', 'lineasAgrupadas', 'logsAuditoria', 'operariosData', 'operacionesConfiguradas', 'configuracionesBase',
                 'distritos', 'maeTipos', 'congregaciones','tiposCertificados', 'operacionesDelTercero', 'certificadosGlobalesTercero', 'soportes', 'interacciones', 'documentosAsociado'
             ));
 

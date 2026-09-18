@@ -151,12 +151,31 @@
             <tbody>
                 @forelse($lineasAgrupadas as $nombreLinea => $grupoLineas)
                     @php
-                        $peorMora = $grupoLineas->max('dias_mora_automaticos');
+                        // ==============================================================================
+                        // NUEVO: Calculamos la mora excluyendo facturas que ya tienen estado "CANCELADO" en la API
+                        // ==============================================================================
+                        $peorMora = 0;
+                        foreach($grupoLineas as $l) {
+                            $mora = (int) $l->dias_mora_automaticos;
+                            $esPago = (!is_null($l->estadoApi) && trim($l->estadoApi) !== '') && ($l->estadoApi == '1' || strtoupper(trim($l->estadoApi)) === 'CANCELADO');
+                            if (!$esPago && $mora > $peorMora) {
+                                $peorMora = $mora;
+                            }
+                        }
                         $esAlDia = $peorMora <= 0;
 
                         $ultimaLinea = $grupoLineas->sortByDesc('created_at')->first();
-                        $fechaVencimiento = $ultimaLinea && $ultimaLinea->fecha_venci
-                            ? \Carbon\Carbon::parse($ultimaLinea->fecha_venci)->format('d/m/Y')
+
+                        // ==============================================================================
+                        // NUEVO: Priorizamos la fecha editada en el modelo línea sobre la API cruda
+                        // ==============================================================================
+                        $fechaVencReal = null;
+                        if ($ultimaLinea) {
+                            $fechaVencReal = $ultimaLinea->fecha_venci ?? optional($ultimaLinea->factura)->fecha_venci;
+                        }
+
+                        $fechaVencimiento = $fechaVencReal
+                            ? \Carbon\Carbon::parse($fechaVencReal)->format('d/m/Y')
                             : 'N/A';
                     @endphp
                     <tr>
@@ -164,7 +183,7 @@
                         <td class="text-center">{{ $fechaVencimiento }}</td>
                         <td class="text-center">
                             <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                {{ $esAlDia ? 'AL DÍA' : "EN MORA ($peorMora días)" }}
+                                {{ $esAlDia ? 'AL DÍA' : "EN MORA"}}
                             </span>
                         </td>
                     </tr>

@@ -235,7 +235,13 @@
     </div>
 
     @php
-        $lineasAgrupadas = $lineas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'LÍNEA NO ESPECIFICADA');
+        // 1. Ordenamos la colección por fecha de vencimiento (de la más antigua a la más reciente)
+        $lineasOrdenadas = $lineas->sortBy(function($linea) {
+            return $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
+        });
+
+        // 2. Agrupamos las líneas que ya vienen ordenadas
+        $lineasAgrupadas = $lineasOrdenadas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'LÍNEA NO ESPECIFICADA');
     @endphp
 
     <!-- TABLAS DE OBLIGACIONES -->
@@ -271,8 +277,11 @@
                         // Si está pagado por API, se considera al día automáticamente
                         $esAlDia = ($diasMora <= 0) || $esPago;
 
-                        $fechaVencimiento = $factura && $factura->fecha_venci
-                            ? \Carbon\Carbon::parse($factura->fecha_venci)->format('d/m/Y')
+                        // Priorizamos la fecha editada en el modelo línea sobre la API cruda
+                        $fechaVencReal = $linea->fecha_venci ?? optional($factura)->fecha_venci;
+
+                        $fechaVencimiento = $fechaVencReal
+                            ? \Carbon\Carbon::parse($fechaVencReal)->format('d/m/Y')
                             : 'N/A';
 
                         // Lógica para cuota o formato mes-año en seguros/cuentas por cobrar
@@ -280,8 +289,8 @@
                         $cuotaOriginal = $factura->cuota ?? null;
 
                         if ($esSeguro || empty($cuotaOriginal) || $cuotaOriginal === 'N/A') {
-                            if ($factura && $factura->fecha_venci) {
-                                $fechaVenc = \Carbon\Carbon::parse($factura->fecha_venci);
+                            if ($fechaVencReal) {
+                                $fechaVenc = \Carbon\Carbon::parse($fechaVencReal);
                                 $meses = [1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR', 5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AGO', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC'];
                                 $mesAbrev = $meses[$fechaVenc->month] ?? '';
                                 $anio2Digitos = $fechaVenc->format('y');
