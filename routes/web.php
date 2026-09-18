@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\CanDirect;
+use App\Http\Controllers\Auth\ForzarCambioPasswordController;
+use App\Http\Controllers\Admin\ImpersonarController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionsController;
@@ -205,6 +207,25 @@ Route::resource('users', UserController::class)
     ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
 Route::post('users/{user}/copiar-permisos', [UserController::class, 'copiarPermisos'])
     ->name('admin.users.copiar-permisos')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/bloquear', [UserController::class, 'bloquear'])
+    ->name('admin.users.bloquear')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/desbloquear', [UserController::class, 'desbloquear'])
+    ->name('admin.users.desbloquear')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/impersonar', [ImpersonarController::class, 'iniciar'])
+    ->name('admin.impersonar.iniciar')->middleware(['auth', 'candirect:admin.users.index']);
+// Sin candirect: mientras se está "viendo como", el usuario autenticado es el asociado (no
+// tiene ese permiso) — la validez de volver se controla por la presencia de
+// session('impersonador_id'), no por un permiso.
+Route::post('impersonar/salir', [ImpersonarController::class, 'detener'])
+    ->name('admin.impersonar.detener')->middleware(['auth']);
+
+// Pantalla obligatoria cuando un admin marcó "forzar cambio de contraseña" desde Gestión de
+// Usuarios (ver App\Http\Middleware\ForzarCambioPassword) — cualquier usuario autenticado
+// puede caer aquí, sin permiso especial, no depende de candirect.
+Route::middleware('auth')->group(function () {
+    Route::get('password/forzar', [ForzarCambioPasswordController::class, 'edit'])->name('password.forzar');
+    Route::post('password/forzar', [ForzarCambioPasswordController::class, 'update'])->name('password.forzar.store');
+});
 
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')

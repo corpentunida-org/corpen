@@ -10,6 +10,7 @@ use App\Imports\ExcelExport;
 use App\Models\Asociado\MaeAsociado;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\TitularRetiro;
+use App\Models\User;
 use App\Services\Exequial\ExequialApiException;
 use App\Services\Exequial\ExequialApiService;
 use App\Services\Integraciones\CorpentunidaCrmService;
@@ -29,6 +30,18 @@ class RetiroTitularController extends Controller
     {
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, $area);
+    }
+
+    /**
+     * Un titular retirado no debería poder seguir entrando al portal de Reservas con esa misma
+     * cédula (users.nid) — antes el retiro solo tocaba el sistema externo y ComaeExCli, dejando
+     * la cuenta de acceso intacta. No todo titular tiene cuenta de portal (se omite en silencio
+     * si no existe), y esto no toca congrega/cod_dist ni nada de Maestra de Terceros — solo el
+     * acceso.
+     */
+    private function sincronizarBloqueoDePortal(string $cedula, bool $bloquear): void
+    {
+        User::where('nid', $cedula)->update(['bloqueado' => $bloquear]);
     }
 
     /**
@@ -95,6 +108,7 @@ class RetiroTitularController extends Controller
         }
 
         $titularLocal->update(['estado' => false]);
+        $this->sincronizarBloqueoDePortal($cedula, true);
 
         // Retirarse del plan de Exequiales no tiene por qué implicar un retiro pastoral —
         // son cosas distintas — así que solo se toca MaeAsociado si el usuario lo marca
@@ -173,6 +187,7 @@ class RetiroTitularController extends Controller
         }
 
         $titularLocal->update(['estado' => true]);
+        $this->sincronizarBloqueoDePortal($cedula, false);
 
         $retiroVigente->update([
             'fecha_reafiliacion' => now()->toDateString(),

@@ -84,11 +84,13 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">CC Pastor Anterior</label>
 
-                            <input type="number" class="form-control" name="pastorAnterior" id="cedulaPastorAnterior"
-                                value="{{ old('pastorAnterior', $congregacion->pastorAnterior) }}"> <br>
+                            <input type="text" class="form-control bg-light-subtle" id="cedulaPastorAnterior"
+                                value="{{ $congregacion->pastorAnterior ?: 'Sin pastor anterior registrado' }}" disabled> <br>
 
                             <input type="text" class="form-control" id="nombrePastorAnterior"
                                 value="{{ $pastorAnteriorSeleccionado?->nom_ter ?? 'No encontrado' }}" disabled>
+
+                            <small class="text-muted">Se llena solo cuando cambias el pastor actual — no se edita a mano.</small>
                         </div>
 
                         <div class="col-md-4 mb-3">

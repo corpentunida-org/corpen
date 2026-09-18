@@ -37,6 +37,33 @@ class Empleado extends Model
         'observaciones',
     ];
 
+    /**
+     * Antes un colaborador podía quedar 'inactivo' o 'retirado' (ver
+     * ContratoController::sincronizarEstadoColaborador()) sin que su cuenta de acceso
+     * (App\Models\User, enlazada por correo_corporativo) se enterara — seguía pudiendo
+     * iniciar sesión con normalidad. Cualquier cambio de estado, venga de donde venga
+     * (retiro definitivo, vencimiento de contrato, reactivación), sincroniza el bloqueo real
+     * del login — no solo el caso de "retiro definitivo" a mano.
+     */
+    protected static function booted(): void
+    {
+        static::updated(function (Empleado $empleado) {
+            if ($empleado->wasChanged('estado')) {
+                $empleado->sincronizarBloqueoDeUsuario();
+            }
+        });
+    }
+
+    public function sincronizarBloqueoDeUsuario(): void
+    {
+        $user = $this->user;
+        if (!$user) {
+            return;
+        }
+
+        $user->update(['bloqueado' => $this->estado !== 'activo']);
+    }
+
     protected $casts = [
         'fecha_retiro' => 'date',
     ];

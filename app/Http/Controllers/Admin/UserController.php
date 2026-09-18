@@ -23,17 +23,48 @@ class UserController extends Controller
         $auditoriaController->create($accion, "ADMINISTRACIÓN");
     }
 
-    public function index()
+    /**
+     * Antes solo mostraba empleados (type=null) — los 1.101 usuarios "ASOCIADO" (nacidos del
+     * autorregistro del portal de Reservas) no tenían NINGUNA pantalla admin donde verse, ni
+     * fecha de registro, ni forma de bloquearlos o eliminarlos. Un mismo listado con pestañas
+     * cubre ambos grupos; "asociados" pagina porque son >1000 filas.
+     */
+    public function index(Request $request)
     {
-        $users = User::where('type', null)->get();
-        //$users = User::where('type', null)->paginate(5);
-        return view('admin.users.index', compact('users'));
+        $tipo = $request->input('tipo') === 'asociados' ? 'asociados' : 'empleados';
+        $busqueda = trim((string) $request->input('buscar', ''));
+
+        $query = User::query()->when(
+            $tipo === 'asociados',
+            fn ($q) => $q->where('type', 'ASOCIADO'),
+            fn ($q) => $q->whereNull('type'),
+        );
+
+        if ($busqueda !== '') {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('name', 'like', "%{$busqueda}%")
+                    ->orWhere('email', 'like', "%{$busqueda}%")
+                    ->orWhere('nid', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+
+        $totalEmpleados = User::whereNull('type')->count();
+        $totalAsociados = User::where('type', 'ASOCIADO')->count();
+
+        return view('admin.users.index', compact('users', 'tipo', 'busqueda', 'totalEmpleados', 'totalAsociados'));
     }
 
-
-    
     public function edit(User $user)
     {
+        // Antes se asumía que un asociado nunca tiene roles/permisos (es un perfil de
+        // autoservicio del portal de Reservas, no un colaborador interno) y se le mostraba una
+        // vista sin matriz de permisos. Resultó ser falso: hay asociados con permisos directos y
+        // roles asignados de verdad (ej. gestión de Reservas) que quedaban invisibles e
+        // imposibles de tocar desde aquí. La matriz de roles/permisos ahora se calcula y se
+        // muestra igual para los dos tipos — solo cambia la plantilla (edit vs edit-asociado)
+        // por los campos de identidad que sí son distintos.
         $roles = Role::all();
         $user->load('actions.role', 'permissions');
         // Por usuario_id, no por nombre: el nombre guardado en Auditoria es el que tenía el
@@ -63,11 +94,16 @@ class UserController extends Controller
             ->pluck('permission_id')
             ->toArray();
 
-        // Para "Copiar perfil": lista de otros usuarios de los que se puede clonar acceso.
-        $usuarios = User::where('type', null)
+        // Para "Copiar perfil": lista de otros usuarios del MISMO tipo de los que se puede
+        // clonar acceso (un rol de empleado no tiene sentido copiado a un asociado y viceversa).
+        $usuarios = User::where('type', $user->type)
             ->where('id', '!=', $user->id)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
+
+        if ($user->type === 'ASOCIADO') {
+            return view('admin.users.edit-asociado', compact('user', 'roles', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
+        }
 
         return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
     }
@@ -162,17 +198,55 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if ($user->type === 'ASOCIADO') {
+            return $this->updateAsociado($request, $user);
+        }
+
         $update = [];
         if(strtoupper($request->input('name'))!== $user->name){
             $update['name'] = strtoupper($request->input('name'));
         }
+        // El campo de correo sí está en el formulario (Datos Personales) pero nunca se
+        // procesaba aquí — se editaba en pantalla y se descartaba en silencio al guardar.
+        if ($request->filled('email') && $request->input('email') !== $user->email) {
+            $request->validate(['email' => ['email', 'max:255', 'unique:users,email,' . $user->id]]);
+            $update['email'] = $request->input('email');
+        }
+        if ($request->input('telefono') != null && $request->input('telefono') !== $user->telefono) {
+            $update['telefono'] = $request->input('telefono');
+        }
         if ($request->input('pass') != null) {
             $update['password'] = bcrypt($request->input('pass'));
+            // Solo tiene sentido junto con una contraseña nueva — si no se está cambiando la
+            // clave en este guardado, la casilla no debería poder tocar la marca existente.
+            $update['debe_cambiar_password'] = $request->boolean('forzar_cambio_password');
         }
         if(!empty($update)){
             $user->update($update);
             $this->auditoria('Se actualizó el usuario ' . $user->id);
-        }        
+        }
+
+        $this->sincronizarRolesYPermisos($request, $user);
+
+        return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    private function permisos_rol($role)
+    {
+        //$permisos = Permisos::where('role_id', $role)->get();
+        $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
+        return $permisos;
+    }
+
+    /**
+     * Compartido entre update() (empleado) y updateAsociado(): antes esta lógica solo corría
+     * para empleados porque se asumía que ningún asociado tenía roles/permisos — hay casos
+     * reales que lo contradicen (ver docblock de edit()), así que ahora aplica igual a ambos.
+     * 'rolnuevo' es opcional aquí (el select del formulario no siempre trae una opción
+     * seleccionable si el usuario no tenía ningún rol previo).
+     */
+    private function sincronizarRolesYPermisos(Request $request, User $user): void
+    {
         $currentPermissions = $user->permissions()->pluck('id')->toArray();
         $permissions = $request->input('permissions', []);
         $permissionsToAdd = array_diff($permissions, $currentPermissions);
@@ -185,13 +259,14 @@ class UserController extends Controller
         if (!empty($permissionsToRemove)) {
             $user->permissions()->detach($permissionsToRemove);
         }
-        if (!Action::where('user_id', $user->id)
+
+        if ($request->filled('rolnuevo') && !Action::where('user_id', $user->id)
            ->where('role_id', $request->rolnuevo)
-           ->exists()) {        
+           ->exists()) {
             Action::create([
                 'user_id' => $user->id,
                 'role_id' => $request->rolnuevo,
-            ]); 
+            ]);
             $permisos_rol = $this->permisos_rol($request->rolnuevo);
             foreach ($permisos_rol as $p) {
                 DB::table('model_has_permissions')->insert([
@@ -202,14 +277,87 @@ class UserController extends Controller
             }
             $this->auditoria('Se agregó el rol id ' . $request->rolnuevo . " al usuario " . $user->id);
         }
+    }
+
+    /**
+     * Actualización del perfil de un ASOCIADO: los campos de identidad son más simples que los
+     * de empleado (sin cargo/áreas/etc.), pero SÍ puede tener roles/permisos reales que
+     * administrar (ver docblock de edit()) — por eso también llama a
+     * sincronizarRolesYPermisos().
+     */
+    public function updateAsociado(Request $request, User $user)
+    {
+        abort_unless($user->type === 'ASOCIADO', 404);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'telefono' => ['nullable', 'string', 'max:14'],
+            'pass' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $update = [
+            'name' => strtoupper($validated['name']),
+            'email' => $validated['email'],
+            'telefono' => $validated['telefono'] ?? null,
+        ];
+
+        if (!empty($validated['pass'])) {
+            $update['password'] = bcrypt($validated['pass']);
+            $update['debe_cambiar_password'] = $request->boolean('forzar_cambio_password');
+        }
+
+        $user->update($update);
+        $this->auditoria('Se actualizó el usuario (asociado) ' . $user->id);
+
+        $this->sincronizarRolesYPermisos($request, $user);
+
         return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
     }
 
-    private function permisos_rol($role)
+    /**
+     * Bloquear/desbloquear: impide o restaura el login sin borrar nada (ver
+     * Fortify::authenticateUsing en FortifyServiceProvider, que es quien realmente hace cumplir
+     * esta marca al iniciar sesión). Antes no existía ninguna forma de restringir acceso a un
+     * usuario sin eliminarlo por completo.
+     */
+    public function bloquear(User $user)
     {
-        //$permisos = Permisos::where('role_id', $role)->get();
-        $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
-        return $permisos;
+        $user->update(['bloqueado' => true]);
+        $this->auditoria("Se bloqueó el acceso del usuario {$user->name} (#{$user->id})");
+
+        return back()->with('success', "{$user->name} fue bloqueado. Ya no podrá iniciar sesión.");
+    }
+
+    public function desbloquear(User $user)
+    {
+        $user->update(['bloqueado' => false]);
+        $this->auditoria("Se desbloqueó el acceso del usuario {$user->name} (#{$user->id})");
+
+        return back()->with('success', "{$user->name} fue desbloqueado.");
+    }
+
+    /**
+     * "Eliminar" es soft-delete (ver migración 2026_09_16_160000 y SoftDeletes en el modelo
+     * User) — placeholder de destroy() nunca había existido, aunque la ruta ya estaba
+     * registrada por Route::resource(): visitarla antes tiraba un error de método no definido.
+     */
+    public function destroy(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No puedes eliminar tu propia cuenta.');
+        }
+
+        if ($this->tieneHistorial($user)) {
+            return back()->with('error', "{$user->name} tiene actividad registrada en el sistema (auditoría, gestiones, reservas u otros módulos) y no se puede eliminar por trazabilidad. Usa \"Bloquear\" en su lugar.");
+        }
+
+        $nombre = $user->name;
+        $user->delete();
+        $this->auditoria("Se eliminó el usuario {$nombre} (#{$user->id})");
+
+        return redirect()->route('admin.users.index', ['tipo' => $user->type === 'ASOCIADO' ? 'asociados' : 'empleados'])
+            ->with('success', "{$nombre} fue eliminado.");
     }
 
     public function show(Request $request)
@@ -287,6 +435,30 @@ class UserController extends Controller
     public function validarAsociadoCreate()
     {
         return view('auth.validarAsociado');
+    }
+
+    /**
+     * Mismas fuentes de "actividad real" que ya usa InformeUsoController para saber quién usa la
+     * app — reutilizadas aquí para decidir si un usuario puede eliminarse. Si tiene cualquier
+     * rastro en alguna de estas tablas, eliminarlo (aunque sea soft-delete) rompería
+     * trazabilidad real: gestiones de cartera, reservas hechas, tickets de soporte, tareas de
+     * proyectos, etc. — se bloquea la acción y se sugiere bloquear el acceso en su lugar.
+     */
+    private function tieneHistorial(User $user): bool
+    {
+        $id = $user->id;
+
+        return DB::table('Auditoria')->where('usuario_id', $id)->exists()
+            || DB::table('sesiones_usuario')->where('user_id', $id)->exists()
+            || DB::table('res_reservas')->where('user_id', $id)->exists()
+            || DB::table('interactions')->where('agent_id', $id)->exists()
+            || DB::table('car_comprobantes_pagos')->where('id_user', $id)->exists()
+            || DB::table('car_sia_operaciones_logs')->where('id_user', $id)->exists()
+            || DB::table('scp_soportes')->where('id_users', $id)->exists()
+            || DB::table('scp_observaciones')->where('id_users', $id)->exists()
+            || DB::table('wor_tasks')->where('user_id', $id)->exists()
+            || DB::table('wor_task_comments')->where('user_id', $id)->exists()
+            || DB::table('wor_task_histories')->where('cambiado_por', $id)->exists();
     }
 
 

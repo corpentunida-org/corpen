@@ -189,14 +189,14 @@
                         <p class="text-muted fs-14 mb-0">Gestione los accesos y perfiles corporativos del sistema.</p>
                     </div>
                 </div>
-                
+
                 <div class="d-flex align-items-center gap-3">
                     <div class="d-none d-sm-flex align-items-center gap-2 border-end pe-3 border-light-subtle">
                         <a href="javascript:location.reload();" class="text-muted text-decoration-none px-2 py-1 bg-light rounded" data-bs-toggle="tooltip" title="Actualizar Datos">
                             <i class="bi bi-arrow-clockwise"></i>
                         </a>
                     </div>
-                    
+
                     <a class="ui-btn-create text-decoration-none" href="{{ route('admin.users.create') }}">
                         <i class="bi bi-plus-circle"></i>
                         <span>Crear Usuario</span>
@@ -205,16 +205,44 @@
             </div>
 
             <div class="card-body p-4 p-md-5">
+                <!-- Pestañas Empleados / Asociados -->
+                <ul class="nav nav-pills mb-4 gap-2">
+                    <li class="nav-item">
+                        <a class="nav-link {{ $tipo === 'empleados' ? 'active' : '' }}" href="{{ route('admin.users.index', ['tipo' => 'empleados']) }}">
+                            <i class="bi bi-briefcase me-1"></i> Empleados
+                            <span class="badge bg-white text-dark ms-1">{{ $totalEmpleados }}</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ $tipo === 'asociados' ? 'active' : '' }}" href="{{ route('admin.users.index', ['tipo' => 'asociados']) }}">
+                            <i class="bi bi-person-heart me-1"></i> Asociados
+                            <span class="badge bg-white text-dark ms-1">{{ $totalAsociados }}</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <form method="GET" action="{{ route('admin.users.index') }}" class="mb-4">
+                    <input type="hidden" name="tipo" value="{{ $tipo }}">
+                    <div class="input-group" style="max-width: 380px;">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input type="text" name="buscar" class="form-control" placeholder="Buscar por nombre, correo o cédula..." value="{{ $busqueda }}">
+                        <button type="submit" class="btn btn-outline-secondary">Buscar</button>
+                    </div>
+                </form>
+
                 <div class="table-responsive overflow-visible">
-                    <table class="table align-middle w-100" id="projectList">
+                    <table class="table align-middle w-100" id="tablaUsuarios">
                         <thead>
                             <tr>
                                 <th>Información del Usuario</th>
-                                <th class="text-end text-md-center" style="width: 100px;">Acción</th>
+                                <th>Cédula</th>
+                                <th>Fecha de Registro</th>
+                                <th>Estado</th>
+                                <th class="text-end text-md-center" style="width: 160px;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($users as $user)
+                            @forelse ($users as $user)
                                 <tr>
                                     <td>
                                         <div class="d-flex align-items-center">
@@ -237,11 +265,25 @@
                                                     {{ strtoupper($user->name) }}
                                                 </a>
                                                 <div class="d-flex align-items-center text-muted fs-13">
-                                                    <i class="bi bi-envelope me-2 opacity-75"></i> 
+                                                    <i class="bi bi-envelope me-2 opacity-75"></i>
                                                     {{ strtolower($user->email) }}
                                                 </div>
                                             </div>
                                         </div>
+                                    </td>
+                                    <td class="text-muted">{{ $user->nid ?: '—' }}</td>
+                                    <td class="text-muted">{{ $user->created_at?->format('d/m/Y') ?? '—' }}</td>
+                                    <td>
+                                        @if ($user->bloqueado)
+                                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Bloqueado</span>
+                                        @else
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle">Activo</span>
+                                        @endif
+                                        @if ($user->debe_cambiar_password)
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle" data-bs-toggle="tooltip" title="Debe cambiar su contraseña en el próximo inicio de sesión">
+                                                <i class="bi bi-key"></i>
+                                            </span>
+                                        @endif
                                     </td>
 
                                     <td class="text-end text-md-center">
@@ -254,15 +296,38 @@
                                             <a href="{{ route('admin.users.edit', $user->id) }}" class="ui-btn-action" data-bs-toggle="tooltip" title="Administrar Usuario">
                                                 <i class="bi bi-arrow-right"></i>
                                             </a>
+                                            <form method="POST" action="{{ route($user->bloqueado ? 'admin.users.desbloquear' : 'admin.users.bloquear', $user->id) }}" class="d-inline">
+                                                @csrf
+                                                <button type="submit" class="ui-btn-action" data-bs-toggle="tooltip" title="{{ $user->bloqueado ? 'Desbloquear' : 'Bloquear' }}">
+                                                    <i class="bi bi-{{ $user->bloqueado ? 'unlock' : 'lock' }}"></i>
+                                                </button>
+                                            </form>
+                                            <form method="POST" action="{{ route('admin.users.destroy', $user->id) }}" class="d-inline"
+                                                onsubmit="return confirm('¿Eliminar a {{ addslashes($user->name) }}? Podrá restaurarse solo desde la base de datos.');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="ui-btn-action text-danger" data-bs-toggle="tooltip" title="Eliminar">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">No hay usuarios para mostrar.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
+                @if ($users->hasPages())
+                    <div class="mt-4">
+                        {{ $users->links() }}
+                    </div>
+                @endif
             </div>
-            
+
         </div>
     </div>
 
