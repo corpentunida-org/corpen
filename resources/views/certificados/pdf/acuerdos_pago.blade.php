@@ -36,7 +36,14 @@
     </div>
 
     @php
-        $lineasAgrupadas = $lineas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'Línea Desconocida');
+        // ==============================================================================
+        // NUEVO: Agrupación robusta usando el modelo editado y fallback a la API
+        // ==============================================================================
+        $lineasAgrupadas = $lineas->groupBy(function($linea) {
+            return $linea->lineaSia->nombre
+                ?? optional($linea->factura)->nombre_cuenta
+                ?? 'Línea Desconocida';
+        });
     @endphp
 
     <table class="obligaciones-table">
