@@ -25,8 +25,10 @@ class RoleController extends Controller
 
     public function index()
     {
-        $roles = Role::with(['permissions', 'permissionsRole'])->get();
-        return view('admin.roles.index', compact('roles'));
+        // La antigua pantalla de Gestión de Roles se unificó en la Matriz de Permisos (crear perfil,
+        // crear permiso y asignar permisos, todo en un solo lugar). Se conserva la ruta por los enlaces y
+        // permisos existentes (admin.roles.index).
+        return redirect()->route('admin.roles.matriz');
     }
 
     /**

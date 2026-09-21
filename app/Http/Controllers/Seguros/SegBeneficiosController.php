@@ -133,7 +133,7 @@ class SegBeneficiosController extends Controller
                 ]);
             }
             if ($beneficio) {
-                $accion = 'add beneficio a ' . $request->aseguradoId . ' por valor de ' . $request->valorbene;
+                $accion = 'add beneficio a ' . \App\Http\Controllers\AuditoriaController::refTercero($request->aseguradoId) . ' por valor de ' . $request->valorbene;
                 $this->auditoria($accion);
                 return redirect()->back()->with('success', 'Se agrego correctamente el beneficio.');
             }
@@ -204,7 +204,7 @@ class SegBeneficiosController extends Controller
             $titularpol->update([
                 'valorpagaraseguradora' => $titularpol->valorpagaraseguradora + $beneficio->valorDescuento,
             ]);
-            $this->auditoria("Eliminar beneficio a " . $beneficio->cedulaAsegurado);
+            $this->auditoria("Eliminar beneficio a " . \App\Http\Controllers\AuditoriaController::refTercero($beneficio->cedulaAsegurado));
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio.');
         } elseif ($request->opcdestroy == 'grupo') {
             $grupo = SegBeneficios::where('observaciones', $beneficio->observaciones)->get();

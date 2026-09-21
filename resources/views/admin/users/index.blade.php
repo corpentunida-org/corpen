@@ -171,7 +171,7 @@
         <!-- BOTÓN DE VOLVER AL INDEX (Con margen reducido para matar el espacio en blanco) -->
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
             <div class="d-flex align-items-center gap-4">
-                <a href="{{ route('admin.roles.index') }}" class="ui-nav-item mb-0">
+                <a href="{{ route('admin.roles.matriz') }}" class="ui-nav-item mb-0">
                     <i class="bi bi-shield-check fs-6 me-2"></i> Ver Roles y Permisos
                 </a>
             </div>

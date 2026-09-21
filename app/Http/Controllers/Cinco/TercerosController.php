@@ -94,7 +94,7 @@ class TercerosController extends Controller
             'fec_aport' => $request->input('Fec_Aport'),
         ]);
 
-        $accion = 'Actualizar fechas terceros ' . $id->cod_ter;
+        $accion = 'Actualizar fechas terceros ' . \App\Http\Controllers\AuditoriaController::refTercero($id->cod_ter);
         $this->auditoria($accion);
         return redirect()->back()->with('success', 'Registro actualizado correctamente.');
     }

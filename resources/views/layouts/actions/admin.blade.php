@@ -8,7 +8,7 @@
         <li class="nxl-item"><a class="nxl-link" href="{{ route('admin.users.index') }}">Usuarios</a></li>
         @endcandirect
         @candirect('admin.roles.index')
-        <li class="nxl-item"><a href="{{ route('admin.roles.index') }}" class="nxl-link">Roles y Permisos</a></li>
+        <li class="nxl-item"><a href="{{ route('admin.roles.matriz') }}" class="nxl-link">Roles y Permisos</a></li>
         @endcandirect
         @candirect('admin.auditoria.index')
         <li class="nxl-item"><a href="{{ route('admin.auditoria.index') }}" class="nxl-link">Auditoria</a></li>

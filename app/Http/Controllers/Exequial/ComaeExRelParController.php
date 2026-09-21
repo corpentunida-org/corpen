@@ -85,7 +85,7 @@ class ComaeExRelParController extends Controller
                 'estado' => true,
                 'cod_cli' => $request->cedulaAsociado,
             ]);
-            $accion = 'add beneficiario ' . $request->documentid;
+            $accion = 'add beneficiario ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentid, trim($request->apellidos . ' ' . $request->nombres)) . ' del titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaAsociado);
             $this->auditoria($accion, 'EXEQUIALES');
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
             return redirect()->to($url)->with('success', 'Beneficiario agregado exitosamente');
@@ -117,7 +117,7 @@ class ComaeExRelParController extends Controller
                 'cod_par' => $request->parentesco,
                 'fec_nac' => $request->fechaNacimiento,
             ]);
-            $accion = 'update beneficiario ' . $request->cedula;
+            $accion = 'update beneficiario ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedula, $request->names) . ' del titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentid);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->to($url)->with('success', 'Beneficiario actualizado exitosamente');
         } else {
@@ -141,7 +141,7 @@ class ComaeExRelParController extends Controller
             ComaeExRelPar::where('cedula', $request->cedula)->update([
                 'estado' => false,
             ]);
-            $accion = 'delete beneficiario ' . $request->beneid;
+            $accion = 'delete beneficiario ' . \App\Http\Controllers\AuditoriaController::refTercero($request->beneid) . ' del titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentid);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->to($url)->with('success', 'Beneficiario eliminado exitosamente');
         } else {

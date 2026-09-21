@@ -228,7 +228,7 @@
                 <a href="{{ route('admin.users.index') }}" class="ui-back-link mb-0">
                     <i class="bi bi-people fs-6 me-2"></i> Volver al listado de usuarios
                 </a>
-                <a href="{{ route('admin.roles.index') }}" class="ui-nav-item mb-0">
+                <a href="{{ route('admin.roles.matriz') }}" class="ui-nav-item mb-0">
                     <i class="bi bi-shield-check fs-6 me-2"></i> Ver Roles y Permisos
                 </a>
             </div>

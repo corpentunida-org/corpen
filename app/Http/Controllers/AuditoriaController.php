@@ -27,6 +27,22 @@ class AuditoriaController extends Controller
         return trim($u->name) . ' (' . ($u->nid ? 'C.C. ' . $u->nid : $u->email) . ')';
     }
 
+    /**
+     * Tercero (titular, beneficiario, asegurado, cliente…) por nombre y cédula: "NOMBRE (C.C. 123)".
+     * El nombre sale de MaeTerceros; si no está allí se usa `$nombre` (el que trae el formulario) y,
+     * si tampoco hay, solo "C.C. 123".
+     */
+    public static function refTercero($cedula, ?string $nombre = null): string
+    {
+        $cedula = trim((string) $cedula);
+        if ($cedula === '') {
+            return 'tercero sin cédula';
+        }
+        $nombreTercero = \Illuminate\Support\Facades\DB::table('MaeTerceros')->where('cod_ter', $cedula)->value('nom_ter');
+        $nombre = trim((string) ($nombreTercero ?: $nombre));
+        return ($nombre !== '' ? mb_strtoupper($nombre) . ' ' : '') . '(C.C. ' . $cedula . ')';
+    }
+
     /** Colaborador de Recursos Humanos (Sgrh): su cédula es el cod_ter del empleado. */
     public static function refColaborador($empleadoOId): string
     {

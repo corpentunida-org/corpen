@@ -209,7 +209,7 @@ class EmpleadoController extends Controller
 
             if ($tipoEmpleadoId !== null) {
                 MaeTerceros::where('cod_ter', $empleado->cod_ter)->update(['tip_prv' => $tipoEmpleadoId]);
-                $this->auditoria("Clasificación 'Empleado' aplicada en MaeTerceros para cod_ter {$empleado->cod_ter} (marcada explícitamente en el alta)");
+                $this->auditoria("Clasificación 'Empleado' aplicada en MaeTerceros para " . \App\Http\Controllers\AuditoriaController::refTercero($empleado->cod_ter) . " (marcada explícitamente en el alta)");
             }
         }
 
@@ -539,7 +539,7 @@ class EmpleadoController extends Controller
 
         $tercero->update($validated);
 
-        $this->auditoria("Actualización de datos personales del tercero cod_ter {$tercero->cod_ter} desde el módulo SGRH");
+        $this->auditoria("Actualización de datos personales del tercero " . \App\Http\Controllers\AuditoriaController::refTercero($tercero->cod_ter) . " desde el módulo SGRH");
 
         return redirect()->back()->with('success', 'Datos del tercero actualizados correctamente.');
     }

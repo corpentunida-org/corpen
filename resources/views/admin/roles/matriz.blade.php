@@ -52,9 +52,7 @@
 
     <div class="container-fluid px-0 pb-5">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-            <a href="{{ route('admin.roles.index') }}" class="text-decoration-none">
-                <i class="bi bi-arrow-left me-2"></i> Volver a Gestión de Roles
-            </a>
+            <span></span>
             <a href="{{ route('admin.guia.permisos') }}" class="btn btn-sm btn-outline-primary">
                 <i class="bi bi-signpost-split me-1"></i> Guía paso a paso
             </a>
@@ -103,6 +101,55 @@
             </div>
         </div>
 
+        <div class="ui-card mb-4" id="cardNuevoPermiso">
+            <div class="p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-key me-2 text-primary"></i>Crear permiso nuevo</h6>
+                        <p class="text-muted fs-13 mb-0">Formato <code>modulo.recurso.accion</code> en minúsculas. Queda asignado al perfil que elijas y luego lo marcas en los demás. <a href="{{ route('admin.guia.permisos') }}" target="_blank">Ver guía</a></p>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formNuevoPermiso">
+                        <i class="bi bi-plus-lg me-1"></i> Nuevo permiso
+                    </button>
+                </div>
+                <div class="collapse {{ $errors->has('permisoName') || $errors->has('permisoRol') ? 'show' : '' }}" id="formNuevoPermiso">
+                    <form method="POST" action="{{ route('admin.permisos.store') }}" class="row g-3 align-items-end mt-1">
+                        @csrf
+                        <div class="col-md-5">
+                            <label class="form-label fs-13 fw-semibold">Nombre del permiso <span class="text-danger">*</span></label>
+                            <input type="text" name="permisoName" value="{{ old('permisoName') }}" maxlength="100" required
+                                   class="form-control font-monospace @error('permisoName') is-invalid @enderror" placeholder="cartera.morosos.generarcarta">
+                            @error('permisoName') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fs-13 fw-semibold">Asignar al perfil <span class="text-danger">*</span></label>
+                            <select name="permisoRol" required class="form-select @error('permisoRol') is-invalid @enderror">
+                                <option value="" disabled @selected(!old('permisoRol'))>Seleccione...</option>
+                                @foreach ($roles as $r)
+                                    <option value="{{ $r->id }}" @selected(old('permisoRol') == $r->id)>{{ strtoupper($r->name) }}</option>
+                                @endforeach
+                            </select>
+                            @error('permisoRol') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear permiso</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui-card mb-3 p-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="input-group" style="max-width: 460px;">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="search" id="buscarPerfil" class="form-control" placeholder="Buscar perfil o permiso (ej. cartera, seguros.poliza)..." autocomplete="off">
+                </div>
+                <span class="text-muted fs-13" id="contadorPerfiles">{{ count($roles) }} perfiles</span>
+            </div>
+            <div class="text-muted fs-12 mt-1">Encuentra un perfil por su nombre, o los perfiles que tienen un permiso (escribe al menos 3 letras del permiso).</div>
+        </div>
+
         <div class="accordion ui-accordion mb-5" id="accordionMatriz">
             @foreach ($roles as $i => $rol)
                 @php
@@ -111,7 +158,7 @@
                     $totalPermisos = $permisosPorModulo->flatten()->count();
                 @endphp
                 @php $abrir = (int) request('rol') === (int) $rol->id; @endphp
-                <div class="accordion-item shadow-sm" id="rol-{{ $rol->id }}">
+                <div class="accordion-item shadow-sm perfil-item" id="rol-{{ $rol->id }}" data-nombre="{{ strtolower($rol->name) }}" data-permisos="{{ strtolower($rol->permissions->pluck('name')->implode('|')) }}">
                     <h2 class="accordion-header" id="mheading-{{ $i }}">
                         <button class="accordion-button {{ $abrir ? '' : 'collapsed' }} d-flex justify-content-between align-items-center"
                                 type="button" data-bs-toggle="collapse" data-bs-target="#mcollapse-{{ $i }}" aria-expanded="{{ $abrir ? 'true' : 'false' }}">
@@ -171,6 +218,24 @@
     <script>
         // Catálogo único de permisos por módulo: [[modulo, [[id, nombre], ...]], ...]
         const CATALOGO_PERMISOS = {!! $catalogoJson !!};
+
+        // Buscador de perfiles: por nombre del perfil o por permisos que tiene asignados.
+        (function () {
+            const caja = document.getElementById('buscarPerfil');
+            const contador = document.getElementById('contadorPerfiles');
+            if (!caja) return;
+            const items = Array.from(document.querySelectorAll('#accordionMatriz .perfil-item'));
+            caja.addEventListener('input', function () {
+                const t = caja.value.trim().toLowerCase();
+                let visibles = 0;
+                items.forEach(function (it) {
+                    const coincide = !t || it.dataset.nombre.includes(t) || (t.length >= 3 && it.dataset.permisos.includes(t));
+                    it.classList.toggle('d-none', !coincide);
+                    if (coincide) visibles++;
+                });
+                contador.textContent = t ? visibles + ' de ' + items.length + ' perfiles' : items.length + ' perfiles';
+            });
+        })();
 
         function escaparHtml(t) {
             return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

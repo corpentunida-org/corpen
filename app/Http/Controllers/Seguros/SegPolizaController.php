@@ -111,8 +111,8 @@ class SegPolizaController extends Controller
                 ]);
             }*/
 
-            $this->auditoria('TERCERO CREAD0 ID ' . $tercero->cedula);
-            $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
+            $this->auditoria('TERCERO CREADO ' . \App\Http\Controllers\AuditoriaController::refTercero($tercero->cedula));
+            $this->auditoria('ASEGURADO CREADO ' . \App\Http\Controllers\AuditoriaController::refTercero($asegurado->cedula));
             $this->auditoria('POLIZA CREADA ID ' . $poliza->id);
 
             return redirect()

@@ -250,7 +250,7 @@ class ComaeExCliController extends Controller
                     . 'misma cédula — ya existe allá y quedaría duplicado. Contacta a Sistemas para sincronizarlo.'
                 );
             }
-            $accion = 'add titular ' . $request->documentId;
+            $accion = 'add titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentId, trim($request->names ?? ($request->apellidos . ' ' . $request->nombres)));
             $this->auditoria($accion, 'EXEQUIALES');
             // Antes usaba $request->cedulaAsociado, un campo que este formulario nunca envía
             // (ver resources/views/exequial/asociados/create.blade.php) — la redirección
@@ -289,7 +289,7 @@ class ComaeExCliController extends Controller
                 'benef' => $request->observation,
                 'estado' => true,
             ]);
-            $accion = 'update titular ' . $request->documentid;
+            $accion = 'update titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentid);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {

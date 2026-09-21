@@ -127,7 +127,7 @@ class RetiroTitularController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        $this->auditoria('retiro de titular ' . $cedula, 'EXEQUIALES');
+        $this->auditoria('retiro de titular ' . \App\Http\Controllers\AuditoriaController::refTercero($cedula), 'EXEQUIALES');
 
         // "Mejor esfuerzo": si el CRM Corpentunida no está disponible o mal
         // configurado, el retiro en siasoft y local ya quedó hecho — no se
@@ -195,7 +195,7 @@ class RetiroTitularController extends Controller
             'reafiliado_por' => auth()->id(),
         ]);
 
-        $this->auditoria('reafiliación de titular ' . $cedula, 'EXEQUIALES');
+        $this->auditoria('reafiliación de titular ' . \App\Http\Controllers\AuditoriaController::refTercero($cedula), 'EXEQUIALES');
 
         if (!$this->crm->actualizarEstadoTercero($cedula, true)) {
             session()->flash('warning', 'El titular se reafilió correctamente, pero no se pudo sincronizar el estado con el CRM Corpentunida. Actualízalo allí manualmente.');
@@ -212,7 +212,7 @@ class RetiroTitularController extends Controller
             'reportado_por' => auth()->id(),
         ]);
 
-        $this->auditoria('marcar reportado al aliado el retiro de ' . $retiro->cod_cli, 'EXEQUIALES');
+        $this->auditoria('marcar reportado al aliado el retiro de ' . \App\Http\Controllers\AuditoriaController::refTercero($retiro->cod_cli), 'EXEQUIALES');
 
         return redirect()->back()->with('success', 'Marcado como reportado al aliado comercial.');
     }

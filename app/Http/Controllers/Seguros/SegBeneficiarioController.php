@@ -77,7 +77,7 @@ class SegBeneficiarioController extends Controller
 
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($beneficiariocreate) {
-            $accion = "add beneficiario  " . $request->cedula . " novedad id " . $novedad->id;
+            $accion = "add beneficiario " . \App\Http\Controllers\AuditoriaController::refTercero($request->cedula, $request->nombre ?? null) . " novedad id " . $novedad->id;
             $this->auditoria($accion);
             return redirect()->to($url)->with('success', 'Debe aprobar el ingreso del beneficiario en el módulo de novedades.');
         }else{
@@ -118,7 +118,7 @@ class SegBeneficiarioController extends Controller
             'telefono' => $request->input('telefono'),
             'correo' => $request->input('correo'),
         ]);
-        $accion = "actualizar a " . $request->cedulaFallecido;
+        $accion = "actualizar a " . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaFallecido);
         $this->auditoria($accion);
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->aseguradoId;
         return redirect()->to($url)->with('success', 'Beneficiario actualizado correctamente');
@@ -130,7 +130,7 @@ class SegBeneficiarioController extends Controller
     public function destroy(SegBeneficiario $beneficiario)
     {
         SegBeneficiario::where('id', $beneficiario->id)->update(['activo' => 0]);
-        $this->auditoria("BENEFICIARIO ELIMINADO CEDULA" . $beneficiario->cedula);
+        $this->auditoria("BENEFICIARIO ELIMINADO " . \App\Http\Controllers\AuditoriaController::refTercero($beneficiario->cedula, $beneficiario->nombre ?? null));
         return redirect()->back()->with('success', 'Beneficiario eliminado correctamente.');
     }
 }
