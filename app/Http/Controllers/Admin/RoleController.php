@@ -12,13 +12,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
+use App\Services\Admin\PermisosPorRolService;
 
 class RoleController extends Controller
 {   
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "ADMINISTRACIÓN");
+        // La columna de auditoría admite 255 caracteres: un texto más largo haría fallar toda la operación.
+        $auditoriaController->create(mb_substr($accion, 0, 250), "ADMINISTRACIÓN");
     }
 
     public function index()
@@ -38,22 +40,37 @@ class RoleController extends Controller
     {
         $roles = Role::with('permissions')->orderBy('name')->get();
 
-        $permisosPorModulo = Permission::orderBy('name')->get()
+        $permisosPorModulo = Permission::where("name", "!=", "")->orderBy('name')->get()
             ->groupBy(fn($permiso) => explode('.', $permiso->name)[0] ?? 'otros');
 
         return view('admin.roles.matriz', compact('roles', 'permisosPorModulo'));
     }
 
+    public function guia()
+    {
+        return view('admin.roles.guia');
+    }
+
     public function store(Request $request)
     {
-        $role = Role::create([
-            'name' => strtolower($request->input('namerole')),
-            'guard_name' => 'web',
-        ]);
-        if (!$role) {
-            return redirect()->back()->with('error', 'No se pudo crear el rol');
-        }
-        return redirect()->back()->with('success', 'Rol creado con éxito');
+        $request->merge(['namerole' => mb_strtolower(trim((string) $request->input('namerole')))]);
+        $request->validate(
+            ['namerole' => ['required', 'string', 'max:100', 'unique:roles,name']],
+            [
+                'namerole.required' => 'Escribe el nombre del perfil.',
+                'namerole.unique' => 'Ya existe un perfil con ese nombre.',
+                'namerole.max' => 'El nombre del perfil es demasiado largo (máximo 100 caracteres).',
+            ]
+        );
+
+        $role = Role::create(['name' => $request->input('namerole'), 'guard_name' => 'web']);
+        $this->auditoria("Se creó el perfil (rol) " . $role->name);
+
+        // El perfil nace sin permisos: se lleva a la Matriz con el perfil ya desplegado para
+        // que se le asignen ahí.
+        return redirect()
+            ->route('admin.roles.matriz', ['rol' => $role->id])
+            ->with('success', 'Perfil "' . strtoupper($role->name) . '" creado. Marca abajo los permisos que debe tener.');
     }
 
     public function destroy(Request $request, $idUser)
@@ -64,13 +81,24 @@ class RoleController extends Controller
             return redirect()->back()->with('error', 'Usuario no encontrado');
         }
         DB::table('actions')->where('user_id', $user->id)->where('role_id', $request->rol)->delete();
+        // Los permisos del usuario provienen de sus roles: al quitar el rol se le quitan también
+        // los permisos que solo ese rol le daba.
+        app(PermisosPorRolService::class)->sincronizarUsuario($user->id);
         $this->auditoria("Se eliminó rol ". $role->name ." al usuario " . $user->email);
         return redirect()->back()->with('success', 'Rol eliminado correctamente');
     }
 
     public function update(Request $request, Role $role)
     {
-        //$role = Role::find($request->input('roleid'));
+        // Solo la Matriz de Permisos envía la lista COMPLETA de permisos del rol. La pantalla
+        // legado (/roles) solo lista los permisos "propios" de cada rol y enviaba un subconjunto —
+        // como este método quita todo lo que no venga en la lista, guardar desde allá borraba los
+        // demás permisos del rol (y ahora, por la sincronización, también los de todos sus usuarios).
+        if (!$request->boolean('desde_matriz')) {
+            return redirect()->route('admin.roles.matriz')
+                ->with('error', 'Los permisos de un rol se editan únicamente desde la Matriz de Permisos.');
+        }
+
         $currentPermissions = $role->permissions()->pluck('id')->toArray();
         $permissions = $request->input('permissions', []);
         $permissionsToAdd = array_diff($permissions, $currentPermissions);
@@ -89,6 +117,11 @@ class RoleController extends Controller
         // can()/@can hasta que la caché expira sola (hasta 24h por defecto).
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        return redirect()->back()->with('success', 'Permisos actualizados al rol correctamente.');
+        // Los permisos de cada usuario provienen de sus roles: se recalculan para TODOS los que
+        // tienen este rol (ver PermisosPorRolService).
+        $resumen = app(PermisosPorRolService::class)->sincronizarRol($role->id);
+        $this->auditoria("Matriz: permisos del rol {$role->name} actualizados; {$resumen['usuarios']} usuario(s) sincronizados (+{$resumen['agregados']} / -{$resumen['quitados']})");
+
+        return redirect()->back()->with('success', "Permisos actualizados al rol. Se aplicaron a {$resumen['usuarios']} usuario(s) con este rol.");
     }
 }

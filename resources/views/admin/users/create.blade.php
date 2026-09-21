@@ -35,7 +35,7 @@
 
                             <div id="contenedor-roles">
                                 <div class="mb-4 rol-row">
-                                    <label class="form-label">Asignar Rol<span class="text-danger">*</span></label>
+                                    <label class="form-label">Perfil (uno solo por usuario)<span class="text-danger">*</span></label>
                                     <select class="form-control" name="rol[]">
                                         @foreach ($roles as $rol)
                                             <option value="{{ $rol->id }}">

@@ -55,6 +55,9 @@
             <a href="{{ route('admin.roles.index') }}" class="text-decoration-none">
                 <i class="bi bi-arrow-left me-2"></i> Volver a Gestión de Roles
             </a>
+            <a href="{{ route('admin.guia.permisos') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-signpost-split me-1"></i> Guía paso a paso
+            </a>
         </div>
 
         <div class="ui-banner mb-4 text-white">
@@ -65,9 +68,39 @@
                 <h2 class="fw-bolder mb-0 fs-2">Matriz de Permisos</h2>
             </div>
             <p class="mb-0 fs-15 opacity-75 fw-medium ms-1">
-                A diferencia de "Gestión de Roles", aquí cada rol muestra <strong>todos</strong> los permisos del
-                sistema (agrupados por módulo), no solo los que fueron creados directamente para ese rol.
+                Aquí se definen los permisos de cada perfil (área/grupo). <strong>Cada persona tiene un solo perfil y sus permisos
+                y menús (<code>menu.*</code>) provienen únicamente de él</strong>: al guardar un rol, el cambio se aplica de inmediato a
+                todos los usuarios que lo tienen. Cada rol muestra <strong>todos</strong> los permisos del
+                sistema (agrupados por módulo), no solo los creados para ese rol.
             </p>
+        </div>
+
+        <div class="ui-card mb-4" id="cardNuevoPerfil">
+            <div class="p-3 p-md-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Crear perfil nuevo</h6>
+                        <p class="text-muted fs-13 mb-0">Un perfil agrupa permisos. Se crea vacío y aquí mismo le asignas los permisos.</p>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formNuevoPerfil">
+                        <i class="bi bi-plus-lg me-1"></i> Nuevo perfil
+                    </button>
+                </div>
+                <div class="collapse {{ request()->boolean('nuevo') || $errors->has('namerole') ? 'show' : '' }}" id="formNuevoPerfil">
+                    <form method="POST" action="{{ route('admin.roles.store') }}" class="row g-3 align-items-end mt-1">
+                        @csrf
+                        <div class="col-md-8">
+                            <label class="form-label fs-13 fw-semibold">Nombre del perfil <span class="text-danger">*</span></label>
+                            <input type="text" name="namerole" value="{{ old('namerole') }}" maxlength="100" required
+                                   class="form-control @error('namerole') is-invalid @enderror" placeholder="Ej. Analista Financiero, Soporte...">
+                            @error('namerole') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear perfil</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <div class="accordion ui-accordion mb-5" id="accordionMatriz">
@@ -77,10 +110,11 @@
                     $totalAsignados = count($idsAsignados);
                     $totalPermisos = $permisosPorModulo->flatten()->count();
                 @endphp
-                <div class="accordion-item shadow-sm">
+                @php $abrir = (int) request('rol') === (int) $rol->id; @endphp
+                <div class="accordion-item shadow-sm" id="rol-{{ $rol->id }}">
                     <h2 class="accordion-header" id="mheading-{{ $i }}">
-                        <button class="accordion-button collapsed d-flex justify-content-between align-items-center"
-                                type="button" data-bs-toggle="collapse" data-bs-target="#mcollapse-{{ $i }}" aria-expanded="false">
+                        <button class="accordion-button {{ $abrir ? '' : 'collapsed' }} d-flex justify-content-between align-items-center"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#mcollapse-{{ $i }}" aria-expanded="{{ $abrir ? 'true' : 'false' }}">
                             <div class="d-flex align-items-center w-100 pe-3">
                                 <i class="bi bi-shield-check text-indigo me-3 fs-4" style="color: #6366f1;"></i>
                                 <span>{{ strtoupper($rol->name) }}</span>
@@ -91,19 +125,20 @@
                         </button>
                     </h2>
 
-                    <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse" data-bs-parent="#accordionMatriz">
+                    <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse {{ $abrir ? 'show' : '' }}" data-bs-parent="#accordionMatriz">
                         <div class="accordion-body p-4 p-md-5 bg-light">
                             <form action="{{ route('admin.roles.update', $rol->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
+                                <input type="hidden" name="desde_matriz" value="1">
 
-                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-white p-4 rounded-4 border border-light-subtle shadow-sm mb-3 gap-3">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center bg-white p-3 p-md-4 rounded-4 border border-light-subtle shadow-sm mb-3 gap-3">
                                     <div>
                                         <h6 class="fw-bold text-dark mb-1">Todos los permisos del sistema</h6>
                                         <p class="fs-13 text-muted mb-0">Marca o desmarca los que este rol debe tener, sin importar quién los haya creado.</p>
                                     </div>
-                                    <div class="d-flex gap-2 align-items-center flex-shrink-0">
-                                        <div class="input-group input-group-sm" style="max-width: 220px;">
+                                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                                        <div class="input-group input-group-sm w-100" style="max-width: 220px; min-width: 160px;">
                                             <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                                             <input type="text" class="form-control border-start-0" placeholder="Buscar permiso..."
                                                    oninput="filtrarPermisosMatriz({{ $i }}, this.value)">
@@ -116,27 +151,9 @@
                                     </div>
                                 </div>
 
-                                <div id="mmatriz-{{ $i }}">
-                                    @foreach ($permisosPorModulo as $modulo => $permisosDelModulo)
-                                        <div class="modulo-titulo modulo-item-{{ $i }}" data-nombre="{{ strtolower($modulo) }}">{{ $modulo }}</div>
-                                        <div class="row g-3 modulo-grupo-{{ $i }}" data-modulo="{{ strtolower($modulo) }}">
-                                            @foreach ($permisosDelModulo as $permiso)
-                                                <div class="col-lg-6 col-xl-4 permiso-item-{{ $i }}" data-nombre="{{ strtolower($permiso->name) }}">
-                                                    <div class="ui-card p-3 h-100 border-0">
-                                                        <div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">
-                                                            <label class="form-check-label user-select-none text-truncate pe-3" for="mchk-{{ $i }}-{{ $permiso->id }}">
-                                                                {{ $permiso->name }}
-                                                            </label>
-                                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                                class="form-check-input flex-shrink-0 m-0" id="mchk-{{ $i }}-{{ $permiso->id }}"
-                                                                @if (in_array($permiso->id, $idsAsignados)) checked @endif>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endforeach
-                                </div>
+                                {{-- La cuadrícula se dibuja al desplegar el perfil (ver construirMatriz): pintar los 25
+                                     perfiles x todos los permisos pesaba >5 MB de HTML, inusable en celular. --}}
+                                <div id="mmatriz-{{ $i }}" data-asignados="{{ json_encode($idsAsignados) }}"></div>
                             </form>
                         </div>
                     </div>
@@ -145,7 +162,57 @@
         </div>
     </div>
 
+    @php
+        $catalogoJson = json_encode(
+            $permisosPorModulo->map(fn ($ps, $modulo) => [$modulo, $ps->map(fn ($p) => [$p->id, $p->name])->values()])->values(),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        );
+    @endphp
     <script>
+        // Catálogo único de permisos por módulo: [[modulo, [[id, nombre], ...]], ...]
+        const CATALOGO_PERMISOS = {!! $catalogoJson !!};
+
+        function escaparHtml(t) {
+            return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // Dibuja (una sola vez) la cuadrícula de permisos del perfil i con sus interruptores.
+        function construirMatriz(i) {
+            const cont = document.getElementById('mmatriz-' + i);
+            if (!cont || cont.dataset.construida) return;
+            const asignados = new Set(JSON.parse(cont.dataset.asignados || '[]'));
+            let html = '';
+            CATALOGO_PERMISOS.forEach(function ([modulo, permisos]) {
+                const mod = escaparHtml(modulo), modLower = escaparHtml(String(modulo).toLowerCase());
+                html += '<div class="modulo-titulo modulo-item-' + i + '" data-nombre="' + modLower + '">' + mod + '</div>'
+                     + '<div class="row g-3 modulo-grupo-' + i + '" data-modulo="' + modLower + '">';
+                permisos.forEach(function ([id, nombre]) {
+                    const n = escaparHtml(nombre);
+                    html += '<div class="col-lg-6 col-xl-4 permiso-item-' + i + '" data-nombre="' + escaparHtml(nombre.toLowerCase()) + '">'
+                         + '<div class="ui-card p-3 h-100 border-0"><div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">'
+                         + '<label class="form-check-label user-select-none text-truncate pe-3" for="mchk-' + i + '-' + id + '">' + n + '</label>'
+                         + '<input type="checkbox" name="permissions[]" value="' + id + '" class="form-check-input flex-shrink-0 m-0" id="mchk-' + i + '-' + id + '"'
+                         + (asignados.has(id) ? ' checked' : '') + '></div></div></div>';
+                });
+                html += '</div>';
+            });
+            cont.innerHTML = html;
+            cont.dataset.construida = '1';
+        }
+
+        document.querySelectorAll('#accordionMatriz .accordion-collapse').forEach(function (panel) {
+            const i = panel.id.replace('mcollapse-', '');
+            panel.addEventListener('show.bs.collapse', function () { construirMatriz(i); });
+            if (panel.classList.contains('show')) construirMatriz(i);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const nuevo = document.querySelector('#formNuevoPerfil.show');
+            if (nuevo) { nuevo.scrollIntoView({ block: 'center' }); return; }
+            const abierto = document.querySelector('#accordionMatriz .accordion-collapse.show');
+            if (abierto) abierto.closest('.accordion-item').scrollIntoView({ block: 'start' });
+        });
+
         // Filtra por nombre de permiso O de módulo dentro de la matriz de UN rol — el módulo
         // solo se oculta si ninguno de sus permisos coincide con la búsqueda.
         function filtrarPermisosMatriz(i, texto) {

@@ -194,7 +194,7 @@
                             </div>
                             <div>
                                 <h5 class="fw-bold text-dark mb-0 fs-16">Registrar Nuevo Permiso</h5>
-                                <p class="text-muted fs-13 mb-0 mt-1">Crea una regla técnica y asígnala a un rol existente.</p>
+                                <p class="text-muted fs-13 mb-0 mt-1">Crea una regla técnica y asígnala a un perfil. Luego se ajusta en la Matriz de Permisos.</p>
                             </div>
                         </div>
                         <button type="button" class="btn-close btn-cerrar-form shadow-none" aria-label="Cerrar"></button>
@@ -208,7 +208,8 @@
                             <div class="row align-items-end g-4">
                                 <div class="col-md-5">
                                     <label class="ui-form-label">Clave Técnica (Nomenclatura) <span class="text-danger">*</span></label>
-                                    <input type="text" class="ui-input text-uppercase font-monospace text-primary" name="permisoName" placeholder="MODULO.ACCION" required>
+                                    <input type="text" class="ui-input font-monospace text-primary" name="permisoName" placeholder="modulo.recurso.accion (ej. cartera.morosos.generarcarta)" value="{{ old('permisoName') }}" pattern="[a-z][a-z0-9_]*(\.[a-z0-9_]+){1,3}" title="Minúsculas, formato modulo.recurso.accion" required>
+                                    <div class="form-text fs-12">Minúsculas, sin espacios ni tildes. <a href="{{ route('admin.guia.permisos') }}" target="_blank">Ver guía paso a paso</a></div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="ui-form-label">Asignar al Rol <span class="text-danger">*</span></label>
@@ -278,9 +279,11 @@
                                         <h6 class="fw-bold text-dark mb-1">Matriz de Autorización</h6>
                                         <p class="fs-13 text-muted mb-0">Enciende o apaga los módulos a los que este rol tiene acceso.</p>
                                     </div>
-                                    <button type="submit" class="ui-btn-primary mt-3 mt-sm-0 shadow-sm">
-                                        <i class="bi bi-save me-2"></i> Actualizar Permisos
-                                    </button>
+                                    {{-- Guardar desde aquí borraba los permisos del rol que no aparecen en esta
+                                         lista (solo muestra los "propios"). La edición vive en la Matriz. --}}
+                                    <a href="{{ route('admin.roles.matriz') }}" class="ui-btn-primary mt-3 mt-sm-0 shadow-sm text-decoration-none">
+                                        <i class="bi bi-grid-3x3-gap me-2"></i> Editar en la Matriz de Permisos
+                                    </a>
                                 </div>
 
                                 <div class="row g-4">
