@@ -45,7 +45,17 @@ class RoleController extends Controller
         $permisosPorModulo = Permission::where("name", "!=", "")->orderBy('name')->get()
             ->groupBy(fn($permiso) => explode('.', $permiso->name)[0] ?? 'otros');
 
-        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo'));
+        // Áreas: un perfil cuyo nombre empieza por el de otro más corto pertenece a esa área
+        // (asociadosadmon -> asociado, carteraadmon -> cartera). Los demás quedan solos.
+        $nombres = $roles->map(fn ($r) => mb_strtolower($r->name));
+        $areaDe = fn (string $n) => $nombres->filter(fn ($b) => mb_strlen($b) >= 4 && str_starts_with($n, $b))
+            ->sortBy(fn ($b) => mb_strlen($b))->first() ?? $n;
+        $grupos = $roles->groupBy(fn ($r) => $areaDe(mb_strtolower($r->name)))
+            ->map(fn ($rs, $area) => ['area' => $area, 'roles' => $rs->values()])
+            ->sortKeys()->values();
+        $indice = $roles->values()->pluck('id')->flip(); // id de perfil -> índice único (ids HTML)
+
+        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo', 'grupos', 'indice'));
     }
 
     public function guia()

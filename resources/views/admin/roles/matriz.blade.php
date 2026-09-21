@@ -143,68 +143,46 @@
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <div class="input-group" style="max-width: 460px;">
                     <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                    <input type="search" id="buscarPerfil" class="form-control" placeholder="Buscar perfil o permiso (ej. cartera, seguros.poliza)..." autocomplete="off">
+                    <input type="search" id="buscarPerfil" class="form-control" placeholder="Buscar área o perfil (ej. asociado, cartera)..." autocomplete="off">
                 </div>
                 <span class="text-muted fs-13" id="contadorPerfiles">{{ count($roles) }} perfiles</span>
             </div>
-            <div class="text-muted fs-12 mt-1">Encuentra un perfil por su nombre, o los perfiles que tienen un permiso (escribe al menos 3 letras del permiso).</div>
+            <div class="text-muted fs-12 mt-1">Busca por área o por perfil. Al desplegar un perfil, ahí mismo tiene su propio buscador de permisos.</div>
         </div>
 
         <div class="accordion ui-accordion mb-5" id="accordionMatriz">
-            @foreach ($roles as $i => $rol)
-                @php
-                    $idsAsignados = $rol->permissions->pluck('id')->toArray();
-                    $totalAsignados = count($idsAsignados);
-                    $totalPermisos = $permisosPorModulo->flatten()->count();
-                @endphp
-                @php $abrir = (int) request('rol') === (int) $rol->id; @endphp
-                <div class="accordion-item shadow-sm perfil-item" id="rol-{{ $rol->id }}" data-nombre="{{ strtolower($rol->name) }}" data-permisos="{{ strtolower($rol->permissions->pluck('name')->implode('|')) }}">
-                    <h2 class="accordion-header" id="mheading-{{ $i }}">
-                        <button class="accordion-button {{ $abrir ? '' : 'collapsed' }} d-flex justify-content-between align-items-center"
-                                type="button" data-bs-toggle="collapse" data-bs-target="#mcollapse-{{ $i }}" aria-expanded="{{ $abrir ? 'true' : 'false' }}">
-                            <div class="d-flex align-items-center w-100 pe-3">
-                                <i class="bi bi-shield-check text-indigo me-3 fs-4" style="color: #6366f1;"></i>
-                                <span>{{ strtoupper($rol->name) }}</span>
-                                <span class="ms-auto badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fw-medium fs-12">
-                                    {{ $totalAsignados }} / {{ $totalPermisos }} permisos
-                                </span>
-                            </div>
-                        </button>
-                    </h2>
-
-                    <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse {{ $abrir ? 'show' : '' }}" data-bs-parent="#accordionMatriz">
-                        <div class="accordion-body p-4 p-md-5 bg-light">
-                            <form action="{{ route('admin.roles.update', $rol->id) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <input type="hidden" name="desde_matriz" value="1">
-
-                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center bg-white p-3 p-md-4 rounded-4 border border-light-subtle shadow-sm mb-3 gap-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1">Todos los permisos del sistema</h6>
-                                        <p class="fs-13 text-muted mb-0">Marca o desmarca los que este rol debe tener, sin importar quién los haya creado.</p>
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <div class="input-group input-group-sm w-100" style="max-width: 220px; min-width: 160px;">
-                                            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                                            <input type="text" class="form-control border-start-0" placeholder="Buscar permiso..."
-                                                   oninput="filtrarPermisosMatriz({{ $i }}, this.value)">
-                                        </div>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisosMatriz({{ $i }}, true)">Marcar todos</button>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary text-nowrap" onclick="marcarPermisosMatriz({{ $i }}, false)">Ninguno</button>
-                                        <button type="submit" class="ui-btn-primary text-nowrap shadow-sm">
-                                            <i class="bi bi-save me-2"></i> Actualizar
-                                        </button>
-                                    </div>
+            @foreach ($grupos as $g)
+                @if (count($g['roles']) > 1)
+                    @php
+                        $ga = $loop->index;
+                        $abrirArea = $g['roles']->contains(fn ($r) => (int) request('rol') === (int) $r->id);
+                    @endphp
+                    <div class="accordion-item shadow-sm area-item" data-nombre="{{ $g['area'] }}">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button {{ $abrirArea ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#acollapse-{{ $ga }}" aria-expanded="{{ $abrirArea ? 'true' : 'false' }}">
+                                <div class="d-flex align-items-center w-100 pe-3">
+                                    <i class="bi bi-diagram-3 me-3 fs-4" style="color: #0ea5e9;"></i>
+                                    <span>ÁREA {{ strtoupper($g['area']) }}</span>
+                                    <span class="ms-auto badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fw-medium fs-12">
+                                        {{ count($g['roles']) }} perfiles: {{ $g['roles']->map(fn ($r) => strtoupper($r->name))->implode(', ') }}
+                                    </span>
                                 </div>
-
-                                {{-- La cuadrícula se dibuja al desplegar el perfil (ver construirMatriz): pintar los 25
-                                     perfiles x todos los permisos pesaba >5 MB de HTML, inusable en celular. --}}
-                                <div id="mmatriz-{{ $i }}" data-asignados="{{ json_encode($idsAsignados) }}"></div>
-                            </form>
+                            </button>
+                        </h2>
+                        <div id="acollapse-{{ $ga }}" class="accordion-collapse collapse {{ $abrirArea ? 'show' : '' }}">
+                            <div class="accordion-body p-3 p-md-4 bg-light">
+                                <div class="accordion ui-accordion">
+                                    @foreach ($g['roles'] as $rol)
+                                        @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => null])
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    @include('admin.roles.partials.matriz-perfil', ['rol' => $g['roles'][0], 'i' => $indice[$g['roles'][0]->id], 'parent' => '#accordionMatriz'])
+                @endif
             @endforeach
         </div>
     </div>
@@ -225,13 +203,24 @@
             const contador = document.getElementById('contadorPerfiles');
             if (!caja) return;
             const items = Array.from(document.querySelectorAll('#accordionMatriz .perfil-item'));
+            const areas = Array.from(document.querySelectorAll('#accordionMatriz .area-item'));
             caja.addEventListener('input', function () {
                 const t = caja.value.trim().toLowerCase();
                 let visibles = 0;
                 items.forEach(function (it) {
-                    const coincide = !t || it.dataset.nombre.includes(t) || (t.length >= 3 && it.dataset.permisos.includes(t));
+                    const area = it.closest('.area-item');
+                    const coincide = !t || (area && area.dataset.nombre.includes(t)) || it.dataset.nombre.includes(t);
                     it.classList.toggle('d-none', !coincide);
                     if (coincide) visibles++;
+                });
+                // Un área se muestra si alguno de sus perfiles coincide, y se despliega para verlos.
+                areas.forEach(function (a) {
+                    const hay = a.querySelector('.perfil-item:not(.d-none)') !== null;
+                    a.classList.toggle('d-none', !hay);
+                    if (t && hay) {
+                        a.querySelector(':scope > .accordion-collapse').classList.add('show');
+                        a.querySelector(':scope > .accordion-header .accordion-button').classList.remove('collapsed');
+                    }
                 });
                 contador.textContent = t ? visibles + ' de ' + items.length + ' perfiles' : items.length + ' perfiles';
             });
@@ -265,7 +254,7 @@
             cont.dataset.construida = '1';
         }
 
-        document.querySelectorAll('#accordionMatriz .accordion-collapse').forEach(function (panel) {
+        document.querySelectorAll('#accordionMatriz [id^="mcollapse-"]').forEach(function (panel) {
             const i = panel.id.replace('mcollapse-', '');
             panel.addEventListener('show.bs.collapse', function () { construirMatriz(i); });
             if (panel.classList.contains('show')) construirMatriz(i);
@@ -274,7 +263,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             const nuevo = document.querySelector('#formNuevoPerfil.show');
             if (nuevo) { nuevo.scrollIntoView({ block: 'center' }); return; }
-            const abierto = document.querySelector('#accordionMatriz .accordion-collapse.show');
+            const abierto = document.querySelector('#accordionMatriz [id^="mcollapse-"].show');
             if (abierto) abierto.closest('.accordion-item').scrollIntoView({ block: 'start' });
         });
 
