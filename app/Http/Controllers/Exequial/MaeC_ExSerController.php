@@ -167,7 +167,7 @@ class MaeC_ExSerController extends Controller
                 'telefonoContacto2' => $request->telefonoContacto2,
                 'genero' => $request->genero,
             ]);
-            $accion = 'prestar servicio a ' . $request->cedulaFallecido;
+            $accion = 'prestar servicio a ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaFallecido);
             $this->auditoria($accion, 'EXEQUIALES');
 
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaTitular;
@@ -243,7 +243,7 @@ class MaeC_ExSerController extends Controller
             'municipio' => $request->municipioid,
         ]);
         if ($updated > 0) {
-            $accion = 'actualizar prestar servicio a ' . $request->cedulaFallecido;
+            $accion = 'actualizar prestar servicio a ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaFallecido);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->route('exequial.prestarServicio.index')->with('success', 'Registro actualizado exitosamente');
         } else {

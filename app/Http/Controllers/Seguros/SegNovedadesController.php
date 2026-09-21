@@ -132,7 +132,7 @@ class SegNovedadesController extends Controller
         // 7. LÓGICA SEGÚN EL TIPO DE NOVEDAD
 
         if ($request->tipoNovedad === '1') {
-            $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado . ' novedad ID ' . $novedad->id;
+            $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . \App\Http\Controllers\AuditoriaController::refTercero($request->asegurado) . ' novedad ID ' . $novedad->id;
         } elseif ($request->tipoNovedad === '2') {
             /*$controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
@@ -206,7 +206,7 @@ class SegNovedadesController extends Controller
                     ]);
                 }
             }
-            $accion = 'TERCERO CREAD0 ID ' . $terceroontable->cod_ter . ' para la novedad ID ' . $novedad->id;
+            $accion = 'TERCERO CREADO ' . \App\Http\Controllers\AuditoriaController::refTercero($terceroontable->cod_ter) . ' para la novedad ID ' . $novedad->id;
         }
         // 8. REGISTRO DE AUDITORÍA GLOBAL Y REDIRECCIÓN
         $this->auditoria($accion);

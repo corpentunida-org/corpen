@@ -50,6 +50,11 @@ class UserController extends Controller
             });
         }
 
+        // Empleados: se muestra su perfil y área, se cargan de una vez para no consultar por fila.
+        if ($tipo === 'empleados') {
+            $query->with('actions.role');
+        }
+
         $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
 
         $totalEmpleados = User::whereNull('type')->count();

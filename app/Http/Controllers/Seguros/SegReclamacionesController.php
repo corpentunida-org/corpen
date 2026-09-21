@@ -158,7 +158,7 @@ class SegReclamacionesController extends Controller
 
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($reclamacion && $cambioEstado) {
-            $accion = 'add nueva reclamacion  ' . $request->asegurado;
+            $accion = 'add nueva reclamacion ' . \App\Http\Controllers\AuditoriaController::refTercero($request->asegurado);
             $this->auditoria($accion);
             return redirect()->to($url)->with('success', 'Proceso de reclamación añadido exitosamente.');
         } else {
