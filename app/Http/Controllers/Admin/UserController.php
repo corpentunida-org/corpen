@@ -14,13 +14,15 @@ use Spatie\Permission\Models\Role;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use App\Services\Admin\PermisosPorRolService;
 
 class UserController extends Controller
 {
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "ADMINISTRACIÓN");
+        // La columna de auditoría admite 255 caracteres: un texto más largo haría fallar toda la operación.
+        $auditoriaController->create(mb_substr($accion, 0, 250), "ADMINISTRACIÓN");
     }
 
     /**
@@ -101,18 +103,27 @@ class UserController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
+        // Perfiles de cada usuario de referencia (una sola consulta): la pantalla avisa cuáles
+        // se asignarían antes de copiar.
+        $rolesPorUsuario = DB::table('actions')
+            ->join('roles', 'roles.id', '=', 'actions.role_id')
+            ->whereIn('actions.user_id', $usuarios->pluck('id'))
+            ->orderBy('roles.name')
+            ->get(['actions.user_id', 'roles.id as role_id', 'roles.name'])
+            ->groupBy('user_id')
+            ->map(fn ($rs) => $rs->map(fn ($r) => ['id' => $r->role_id, 'name' => strtoupper($r->name)])->values());
+
         if ($user->type === 'ASOCIADO') {
-            return view('admin.users.edit-asociado', compact('user', 'roles', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
+            return view('admin.users.edit-asociado', compact('user', 'roles', 'permisosPorRol', 'permisosAsignados', 'usuarios', 'rolesPorUsuario'));
         }
 
-        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios', 'rolesPorUsuario'));
     }
 
     /**
-     * "Copiar perfil": suma al usuario editado los perfiles (roles) y permisos directos que ya
-     * tiene un usuario de referencia — no quita nada de lo que el usuario editado ya tenía. Útil
-     * para replicar el acceso de un compañero con el mismo cargo en vez de armarlo permiso por
-     * permiso.
+     * "Copiar perfil": asigna al usuario editado el MISMO perfil que tiene un usuario de referencia
+     * (ej. un compañero del área). Un usuario tiene un solo perfil, así que reemplaza el que
+     * tuviera; los permisos y menús llegan solos desde el perfil.
      */
     public function copiarPermisos(Request $request, User $user)
     {
@@ -130,27 +141,26 @@ class UserController extends Controller
 
         $origen = User::with('actions')->findOrFail($request->usuario_referencia_id);
 
-        $rolesActuales = $user->actions()->pluck('role_id');
-        $rolesNuevos = $origen->actions->pluck('role_id')->diff($rolesActuales)->unique();
-        foreach ($rolesNuevos as $roleId) {
-            Action::create(['user_id' => $user->id, 'role_id' => $roleId]);
+        // Regla: un solo perfil por usuario. Solo se puede copiar de alguien que tenga
+        // exactamente uno (los casos antiguos con varios se deben resolver a mano).
+        $rolesOrigen = $origen->actions->pluck('role_id')->unique()->values();
+        if ($rolesOrigen->count() !== 1) {
+            return back()->with('error', $rolesOrigen->isEmpty()
+                ? "{$origen->name} no tiene ningún perfil asignado, no hay nada que copiar."
+                : "{$origen->name} tiene varios perfiles (caso antiguo) y cada usuario debe tener uno solo. Elige otro compañero o asigna el perfil manualmente.");
         }
 
-        $permisosActuales = DB::table('model_has_permissions')->where('model_id', $user->id)->pluck('permission_id');
-        $permisosOrigen = DB::table('model_has_permissions')->where('model_id', $origen->id)->pluck('permission_id');
-        $permisosNuevos = $permisosOrigen->diff($permisosActuales)->unique();
-        foreach ($permisosNuevos as $permissionId) {
-            DB::table('model_has_permissions')->insert([
-                'permission_id' => $permissionId,
-                'model_type' => 'App\Models\User',
-                'model_id' => $user->id,
-            ]);
-        }
+        $roleId = (int) $rolesOrigen->first();
+        $nombrePerfil = strtoupper(Role::find($roleId)->name);
+        $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, $roleId);
 
-        $this->auditoria("Se copiaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) de {$origen->name} (#{$origen->id}) al usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se copió el perfil {$nombrePerfil} de " . \App\Http\Controllers\AuditoriaController::refUsuario($origen) . " al usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user)
+            . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
 
         return redirect()->route('admin.users.edit', $user->id)
-            ->with('success', "Se agregaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) nuevos, copiados de {$origen->name}.");
+            ->with('success', "Se asignó el perfil {$nombrePerfil}, copiado de {$origen->name}."
+                . ($reemplazados ? ' Reemplazó: ' . strtoupper(implode(', ', $reemplazados)) . '.' : '')
+                . ' Sus permisos se aplicaron automáticamente.');
     }
 
     public function create()
@@ -171,27 +181,16 @@ class UserController extends Controller
             'email' => $request['email'],
             'password' => bcrypt($request['pass']),
         ]);
-        $roles = $request->input('rol');
-        foreach ($roles as $role) {
-            Action::create([
-                'user_email' => $user->email,
-                'user_id' => $user->id,
-                'role_id' => $role,
-            ]);
-            $permisos_rol = $this->permisos_rol($role);
-            foreach ($permisos_rol as $p) {
-                DB::table('model_has_permissions')->insert([
-                    'permission_id' => $p->permission_id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $user->id,
-                ]);
-            }
+        // Un solo perfil por usuario (si llegara una lista, se toma el primero).
+        $rol = collect((array) $request->input('rol', []))->filter()->first();
+        if ($rol && Role::whereKey($rol)->exists()) {
+            app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, (int) $rol);
         }
         if (!$user) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
         $emailuser = explode('@', $user->email);
-        $accion = "add usuario app  " . $emailuser[0];
+        $accion = "add usuario app " . \App\Http\Controllers\AuditoriaController::refUsuario($user);
         $this->auditoria($accion);
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
@@ -223,7 +222,7 @@ class UserController extends Controller
         }
         if(!empty($update)){
             $user->update($update);
-            $this->auditoria('Se actualizó el usuario ' . $user->id);
+            $this->auditoria('Se actualizó el usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
         }
 
         $this->sincronizarRolesYPermisos($request, $user);
@@ -239,44 +238,25 @@ class UserController extends Controller
     }
 
     /**
-     * Compartido entre update() (empleado) y updateAsociado(): antes esta lógica solo corría
-     * para empleados porque se asumía que ningún asociado tenía roles/permisos — hay casos
-     * reales que lo contradicen (ver docblock de edit()), así que ahora aplica igual a ambos.
-     * 'rolnuevo' es opcional aquí (el select del formulario no siempre trae una opción
-     * seleccionable si el usuario no tenía ningún rol previo).
+     * Compartido entre update() (empleado) y updateAsociado(). Los permisos ya NO se asignan por
+     * persona: provienen únicamente de los roles (perfiles/grupos) que la persona tiene, y esos
+     * roles se editan en la Matriz de Permisos. Aquí solo se puede VINCULAR un rol; cualquier
+     * 'permissions[]' que llegue en el request se ignora a propósito (aunque alguien arme el POST
+     * a mano). Después se recalcula model_has_permissions desde los roles (PermisosPorRolService).
+     * 'rolnuevo' es opcional (el select no siempre trae una opción seleccionable si el usuario no
+     * tenía ningún rol previo).
      */
     private function sincronizarRolesYPermisos(Request $request, User $user): void
     {
-        $currentPermissions = $user->permissions()->pluck('id')->toArray();
-        $permissions = $request->input('permissions', []);
-        $permissionsToAdd = array_diff($permissions, $currentPermissions);
-        $permissionsToRemove = array_diff($currentPermissions, $permissions);
-        if (!empty($permissionsToAdd)) {
-            $user->permissions()->attach($permissionsToAdd, [
-                'model_type' => 'App\Models\User'
-            ]);
-        }
-        if (!empty($permissionsToRemove)) {
-            $user->permissions()->detach($permissionsToRemove);
+        // Un solo perfil por usuario: asignar uno REEMPLAZA el que tuviera.
+        if ($request->filled('rolnuevo') && Role::whereKey($request->rolnuevo)->exists()) {
+            $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, (int) $request->rolnuevo);
+            $this->auditoria('Se asignó el perfil ' . strtoupper(Role::find($request->rolnuevo)->name) . ' al usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user)
+                . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
+            return;
         }
 
-        if ($request->filled('rolnuevo') && !Action::where('user_id', $user->id)
-           ->where('role_id', $request->rolnuevo)
-           ->exists()) {
-            Action::create([
-                'user_id' => $user->id,
-                'role_id' => $request->rolnuevo,
-            ]);
-            $permisos_rol = $this->permisos_rol($request->rolnuevo);
-            foreach ($permisos_rol as $p) {
-                DB::table('model_has_permissions')->insert([
-                    'permission_id' => $p->permission_id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $user->id,
-                ]);
-            }
-            $this->auditoria('Se agregó el rol id ' . $request->rolnuevo . " al usuario " . $user->id);
-        }
+        app(PermisosPorRolService::class)->sincronizarUsuario($user->id);
     }
 
     /**
@@ -308,7 +288,7 @@ class UserController extends Controller
         }
 
         $user->update($update);
-        $this->auditoria('Se actualizó el usuario (asociado) ' . $user->id);
+        $this->auditoria('Se actualizó el usuario (asociado) ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         $this->sincronizarRolesYPermisos($request, $user);
 
@@ -324,7 +304,7 @@ class UserController extends Controller
     public function bloquear(User $user)
     {
         $user->update(['bloqueado' => true]);
-        $this->auditoria("Se bloqueó el acceso del usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se bloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return back()->with('success', "{$user->name} fue bloqueado. Ya no podrá iniciar sesión.");
     }
@@ -332,7 +312,7 @@ class UserController extends Controller
     public function desbloquear(User $user)
     {
         $user->update(['bloqueado' => false]);
-        $this->auditoria("Se desbloqueó el acceso del usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se desbloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return back()->with('success', "{$user->name} fue desbloqueado.");
     }
@@ -354,7 +334,7 @@ class UserController extends Controller
 
         $nombre = $user->name;
         $user->delete();
-        $this->auditoria("Se eliminó el usuario {$nombre} (#{$user->id})");
+        $this->auditoria("Se eliminó el usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return redirect()->route('admin.users.index', ['tipo' => $user->type === 'ASOCIADO' ? 'asociados' : 'empleados'])
             ->with('success', "{$nombre} fue eliminado.");

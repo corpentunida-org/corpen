@@ -95,7 +95,7 @@ class VacacionSolicitudController extends Controller
             'observaciones' => $validated['observaciones'] ?? null,
         ]);
 
-        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} creada por colaborador #{$empleado->id} ({$fechaInicio->format('d/m/Y')} a {$fechaFin->format('d/m/Y')})");
+        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} creada por colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . " ({$fechaInicio->format('d/m/Y')} a {$fechaFin->format('d/m/Y')})");
 
         $this->notificarNuevaSolicitud($solicitud);
 
@@ -172,7 +172,7 @@ class VacacionSolicitudController extends Controller
             return back()->with('error', 'Esta solicitud ya había sido resuelta por otra persona.');
         }
 
-        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} aprobada por usuario #" . Auth::id() . " como {$rol}");
+        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} aprobada por usuario " . \App\Http\Controllers\AuditoriaController::refUsuario(Auth::id()) . " como {$rol}");
 
         $this->notificarResolucion($solicitud->fresh());
 
@@ -200,7 +200,7 @@ class VacacionSolicitudController extends Controller
             return back()->with('error', 'Esta solicitud ya había sido resuelta por otra persona.');
         }
 
-        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} rechazada por usuario #" . Auth::id() . " como {$rol}: {$validated['motivo_rechazo']}");
+        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} rechazada por usuario " . \App\Http\Controllers\AuditoriaController::refUsuario(Auth::id()) . " como {$rol}: {$validated['motivo_rechazo']}");
 
         $this->notificarResolucion($solicitud->fresh());
 
@@ -225,7 +225,7 @@ class VacacionSolicitudController extends Controller
 
         $solicitud->update(['estado' => 'cancelada']);
 
-        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} cancelada por el propio colaborador #{$empleado->id}");
+        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} cancelada por el propio colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id));
 
         return back()->with('success', 'Solicitud cancelada.');
     }
@@ -239,7 +239,7 @@ class VacacionSolicitudController extends Controller
         $empleadoId = $solicitud->empleado_id;
         $solicitud->delete();
 
-        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} eliminada (colaborador #{$empleadoId})");
+        $this->auditoria("Solicitud de vacaciones #{$solicitud->id} eliminada (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleadoId) . ")");
 
         return back()->with('success', 'Solicitud eliminada.');
     }

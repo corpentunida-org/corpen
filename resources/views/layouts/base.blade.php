@@ -193,9 +193,7 @@
                             <li class="nxl-item nxl-caption">
                                 <label>Menu</label>
                             </li>
-                            @foreach (auth()->user()->actions as $action)
-                                @include('layouts.actions.' . $action->role->name)
-                            @endforeach
+                            @include('layouts.partials.menu-modulos')
                             
                         </ul>
                     </div>

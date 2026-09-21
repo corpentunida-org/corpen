@@ -199,7 +199,7 @@ class EmpleadoController extends Controller
 
         $empleado = Empleado::create($datos);
 
-        $this->auditoria("Alta de colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
+        $this->auditoria("Alta de colaborador C.C. {$empleado->cod_ter}");
 
         // Opt-in explícito: solo se toca MaeTerceros.tip_prv si el usuario marcó la casilla
         // en el formulario. Nunca se sobrescribe en automático (podría borrar otra
@@ -265,7 +265,7 @@ class EmpleadoController extends Controller
 
         $empleado->update($datos);
 
-        $this->auditoria("Actualización de datos del colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
+        $this->auditoria("Actualización de datos del colaborador C.C. {$empleado->cod_ter}");
 
         return redirect()->route('sgrh.empleado.index')
             ->with('success', 'Colaborador actualizado correctamente.');

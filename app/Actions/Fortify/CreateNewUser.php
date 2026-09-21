@@ -80,6 +80,10 @@ class CreateNewUser implements CreatesNewUsers
             $action->role_id = '13';
             $action->save();
 
+            // El rol Asociado por sí solo no da acceso: `candirect` mira model_has_permissions.
+            // Sin esto, un asociado recién registrado quedaba sin ningún permiso de Reservas.
+            app(\App\Services\Admin\PermisosPorRolService::class)->sincronizarUsuario($user->id);
+
             return $user;
         } else {
             return User::create([
