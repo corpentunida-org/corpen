@@ -45,17 +45,14 @@ class RoleController extends Controller
         $permisosPorModulo = Permission::where("name", "!=", "")->orderBy('name')->get()
             ->groupBy(fn($permiso) => explode('.', $permiso->name)[0] ?? 'otros');
 
-        // Áreas: un perfil cuyo nombre empieza por el de otro más corto pertenece a esa área
-        // (asociadosadmon -> asociado, carteraadmon -> cartera). Los demás quedan solos.
-        $nombres = $roles->map(fn ($r) => mb_strtolower($r->name));
-        $areaDe = fn (string $n) => $nombres->filter(fn ($b) => mb_strlen($b) >= 4 && str_starts_with($n, $b))
-            ->sortBy(fn ($b) => mb_strlen($b))->first() ?? $n;
-        $grupos = $roles->groupBy(fn ($r) => $areaDe(mb_strtolower($r->name)))
+        // Áreas: columna roles.area (editable en cada perfil); sin área, el perfil queda solo.
+        $grupos = $roles->groupBy(fn ($r) => mb_strtolower($r->area ?: $r->name))
             ->map(fn ($rs, $area) => ['area' => $area, 'roles' => $rs->values()])
             ->sortKeys()->values();
+        $areas = $roles->map(fn ($r) => mb_strtolower($r->area ?: $r->name))->unique()->sort()->values();
         $indice = $roles->values()->pluck('id')->flip(); // id de perfil -> índice único (ids HTML)
 
-        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo', 'grupos', 'indice'));
+        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo', 'grupos', 'indice', 'areas'));
     }
 
     public function guia()
@@ -65,9 +62,12 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
-        $request->merge(['namerole' => mb_strtolower(trim((string) $request->input('namerole')))]);
+        $request->merge([
+            'namerole' => mb_strtolower(trim((string) $request->input('namerole'))),
+            'area' => mb_strtolower(trim((string) $request->input('area'))),
+        ]);
         $request->validate(
-            ['namerole' => ['required', 'string', 'max:100', 'unique:roles,name']],
+            ['namerole' => ['required', 'string', 'max:100', 'unique:roles,name'], 'area' => ['nullable', 'string', 'max:60']],
             [
                 'namerole.required' => 'Escribe el nombre del perfil.',
                 'namerole.unique' => 'Ya existe un perfil con ese nombre.',
@@ -75,7 +75,12 @@ class RoleController extends Controller
             ]
         );
 
-        $role = Role::create(['name' => $request->input('namerole'), 'guard_name' => 'web']);
+        // Sin área indicada, el perfil queda en su propia área (se puede cambiar luego en la Matriz).
+        $role = Role::create([
+            'name' => $request->input('namerole'),
+            'area' => $request->input('area') ?: $request->input('namerole'),
+            'guard_name' => 'web',
+        ]);
         $this->auditoria("Se creó el perfil (rol) " . $role->name);
 
         // El perfil nace sin permisos: se lleva a la Matriz con el perfil ya desplegado para
@@ -83,6 +88,20 @@ class RoleController extends Controller
         return redirect()
             ->route('admin.roles.matriz', ['rol' => $role->id])
             ->with('success', 'Perfil "' . strtoupper($role->name) . '" creado. Marca abajo los permisos que debe tener.');
+    }
+
+    /** Cambia el área a la que pertenece un perfil (solo agrupa en la Matriz; no cambia permisos). */
+    public function actualizarArea(Request $request, Role $role)
+    {
+        $request->merge(['area' => mb_strtolower(trim((string) $request->input('area')))]);
+        $request->validate(['area' => ['required', 'string', 'max:60']], ['area.required' => 'Escribe el área del perfil.', 'area.max' => 'El área es demasiado larga (máximo 60 caracteres).']);
+
+        $anterior = $role->area ?: $role->name;
+        $role->update(['area' => $request->input('area')]);
+        $this->auditoria("Perfil {$role->name}: área cambiada de {$anterior} a {$role->area}");
+
+        return redirect()->route('admin.roles.matriz', ['rol' => $role->id])
+            ->with('success', 'Área del perfil ' . strtoupper($role->name) . ' actualizada a ' . strtoupper($role->area) . '.');
     }
 
     public function destroy(Request $request, $idUser)

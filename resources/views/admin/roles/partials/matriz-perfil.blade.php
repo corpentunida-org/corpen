@@ -21,6 +21,17 @@
 
                     <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse {{ $abrir ? 'show' : '' }}" @if ($parent) data-bs-parent="{{ $parent }}" @endif>
                         <div class="accordion-body p-4 p-md-5 bg-light">
+                            <form action="{{ route('admin.roles.area', $rol->id) }}" method="POST" class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                                @csrf
+                                @method('PUT')
+                                <div>
+                                    <label class="form-label fs-12 fw-semibold mb-1">Área de este perfil</label>
+                                    <input type="text" name="area" value="{{ $rol->area ?: $rol->name }}" maxlength="60" list="listaAreas" required
+                                           class="form-control form-control-sm" style="min-width: 220px;">
+                                </div>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-diagram-3 me-1"></i> Guardar área</button>
+                                <span class="text-muted fs-12">Solo agrupa perfiles en la Matriz; no cambia permisos.</span>
+                            </form>
                             <form action="{{ route('admin.roles.update', $rol->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')

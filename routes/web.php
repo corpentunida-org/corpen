@@ -242,6 +242,9 @@ Route::get('informe-uso/pdf', [InformeUsoController::class, 'exportarPdf'])
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
     ->middleware(['auth']);
+Route::put('roles/{role}/area', [RoleController::class, 'actualizarArea'])
+    ->name('admin.roles.area')
+    ->middleware(['auth']);
 Route::get('guia-permisos', [RoleController::class, 'guia'])
     ->name('admin.guia.permisos')
     ->middleware(['auth']);

@@ -87,13 +87,19 @@
                 <div class="collapse {{ request()->boolean('nuevo') || $errors->has('namerole') ? 'show' : '' }}" id="formNuevoPerfil">
                     <form method="POST" action="{{ route('admin.roles.store') }}" class="row g-3 align-items-end mt-1">
                         @csrf
-                        <div class="col-md-8">
+                        <div class="col-md-5">
                             <label class="form-label fs-13 fw-semibold">Nombre del perfil <span class="text-danger">*</span></label>
                             <input type="text" name="namerole" value="{{ old('namerole') }}" maxlength="100" required
                                    class="form-control @error('namerole') is-invalid @enderror" placeholder="Ej. Analista Financiero, Soporte...">
                             @error('namerole') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-4">
+                            <label class="form-label fs-13 fw-semibold">Área <span class="text-muted fw-normal">(opcional)</span></label>
+                            <input type="text" name="area" value="{{ old('area') }}" maxlength="60" list="listaAreas"
+                                   class="form-control @error('area') is-invalid @enderror" placeholder="Ej. cartera, asociado…">
+                            @error('area') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+                        <div class="col-md-3">
                             <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear perfil</button>
                         </div>
                     </form>
@@ -138,6 +144,10 @@
                 </div>
             </div>
         </div>
+
+        <datalist id="listaAreas">
+            @foreach ($areas as $a) <option value="{{ $a }}"> @endforeach
+        </datalist>
 
         <div class="ui-card mb-3 p-3">
             <div class="d-flex flex-wrap align-items-center gap-2">
