@@ -93,12 +93,12 @@
             border-radius: 6px; letter-spacing: 0.5px; border: 1px solid #334155;
         }
 
-        /* 6. ESTILOS MANUAL PRO */
+        /* 6. ESTILOS MANUAL PRO (Se eliminó el page-break-inside: avoid general) */
         .manual-pro {
             background-color: #f8fafc; border: 1px solid #cbd5e1;
             border-top: 4px solid #0284c7; border-radius: 6px;
             padding: 16px 20px; margin-top: 20px; margin-bottom: 25px;
-            page-break-inside: avoid; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }
         .manual-header {
             font-size: 11pt; color: #0f172a; font-weight: bold; margin-bottom: 12px;
@@ -122,6 +122,23 @@
             background-color: #0f172a; color: #ffffff !important; text-decoration: none;
             padding: 3px 8px; border-radius: 4px; font-size: 8pt; font-weight: bold; display: inline-block;
         }
+
+        /* 7. NUEVAS CLASES PARA OPCIONES DE PAGO */
+        .opcion-pago-title {
+            font-size: 9.5pt; color: #0284c7; font-weight: bold; margin-top: 15px; margin-bottom: 8px;
+            background-color: #e0f2fe; padding: 5px 10px; border-left: 4px solid #0284c7;
+            border-radius: 0 4px 4px 0;
+        }
+        .img-banco {
+            width: 100%; max-width: 320px; /* Reducido de 480px para que sea más pequeña */
+            border: 1px solid #cbd5e1; border-radius: 4px;
+            margin-top: 4px; /* Margen superior más compacto */
+            display: block; margin-left: auto; margin-right: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 8. CLASES UTILITARIAS PARA CONTROL DE SALTOS */
+        .evitar-salto { page-break-inside: avoid; }
     </style>
 </head>
 <body>
@@ -146,13 +163,10 @@
     </div>
 
     @php
-        // 1. Ordenamos la colección por fecha de vencimiento (del más antiguo al más reciente)
-        // Usamos una función para tomar la fecha de la línea, o de la factura en caso de que la línea no la tenga.
         $lineasOrdenadas = $lineas->sortBy(function($linea) {
             return $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
         });
 
-        // 2. Agrupamos las líneas que ya vienen ordenadas
         $lineasAgrupadas = $lineasOrdenadas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'Línea Desconocida');
 
         $granTotalDeuda = 0;
@@ -184,13 +198,10 @@
                             $subtotalLinea += $valorCuota;
 
                             $diasMora = (int) $linea->dias_mora_automaticos;
-
                             $estadoApiVal = $linea->estadoApi;
                             $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
                             $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'CANCELADO');
-
                             $esAlDia = ($diasMora <= 0) || $esPago;
-
                             $fechaVencReal = $linea->fecha_venci ?? optional($factura)->fecha_venci;
 
                             $fechaVencimiento = $fechaVencReal
@@ -214,13 +225,11 @@
                                 $cuotaMostrar = $cuotaOriginal;
                             }
 
-                            // Referencia para copiar y mostrar
                             $referenciaPago = $linea->id_factura ?? ($factura->id_factura ?? 'N/A');
                         @endphp
                         <tr>
                             <td class="text-center font-monospace" style="font-weight: bold;">
                                 @if(!$esPago && $referenciaPago !== 'N/A')
-                                    <!-- ENLACE CON COPIA AL PORTAPAPELES (onclick) -->
                                     <a href="https://www.avalpaycenter.com/wps/portal/portal-de-pagos/web/pagos-aval/resultado-busqueda/realizar-pago-facturadores?idConv=00010645&origen=buscar"
                                        target="_blank"
                                        onclick="navigator.clipboard.writeText('{{ $referenciaPago }}');"
@@ -243,11 +252,7 @@
                             </td>
                             <td class="text-center">
                                 <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
-                                    @if($esPago)
-                                        AL DÍA
-                                    @else
-                                        {{ $esAlDia ? '-' : 'EN MORA' }}
-                                    @endif
+                                    @if($esPago) AL DÍA @else {{ $esAlDia ? '-' : 'EN MORA' }} @endif
                                 </span>
                             </td>
                             <td class="text-center">
@@ -280,74 +285,103 @@
         </div>
     @endforelse
 
-    {{-- BLOQUE DE CIERRE: Estructura blindada contra saltos de página --}}
-    <table width="100%" style="page-break-inside: avoid; margin-top: 10px; border-collapse: collapse;">
-        <tr>
-            <td style="padding: 0;">
+    {{-- BLOQUES FINALES DIVIDIDOS PARA EVITAR SALTOS EN BLANCO --}}
 
-                @if($granTotalDeuda > 0)
-                    <table width="100%" style="margin-bottom: 15px; border-collapse: collapse;">
-                        <tr>
-                            <td width="30%"></td>
-                            <td width="70%" align="right">
-                                <div class="total-box">
-                                    TOTAL DEUDA CONSOLIDADA: ${{ number_format($granTotalDeuda, 2, ',', '.') }}
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
-                @endif
-
-                <!-- MANUAL DE PAGO PRO INTEGRADO -->
-                <div class="manual-pro">
-                    <div class="manual-header">
-                        Guía Rápida de Pagos y Validación en Línea
+    @if($granTotalDeuda > 0)
+        <table width="100%" class="evitar-salto" style="margin-bottom: 15px; border-collapse: collapse;">
+            <tr>
+                <td width="30%"></td>
+                <td width="70%" align="right">
+                    <div class="total-box">
+                        TOTAL DEUDA CONSOLIDADA: ${{ number_format($granTotalDeuda, 2, ',', '.') }}
                     </div>
-                    <table class="step-table">
-                        <tr>
-                            <td class="step-num-container"><span class="step-num">1</span></td>
-                            <td class="step-text">
-                                <strong>Inicie su pago:</strong> Haga clic en el número de factura subrayado en la tabla superior o ingrese al portal oficial <hr> <a href="https://corpentunida.org.co/" target="_blank" class="btn-portal">corpentunida.org.co</a>.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="step-num-container"><span class="step-num">2</span></td>
-                            <td class="step-text">
-                                <strong>Valide el destinatario:</strong> Asegúrese de que el portal de AvalPay Center indique el servicio correcto: <span class="highlight-box">Corpentunida Nit 8605094515</span>.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="step-num-container"><span class="step-num">3</span></td>
-                            <td class="step-text">
-                                <strong>Identifique su obligación:</strong> En el campo <strong>Número referencia de pago *</strong>, pegue o digite exactamente el número de la factura. <br><em>(Si hizo clic en la tabla, el número ya está copiado).</em>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="step-num-container"><span class="step-num">4</span></td>
-                            <td class="step-text">
-                                <strong>Confirme y pague:</strong> El sistema validará la estructura y desplegará automáticamente el <strong>Valor a pagar</strong> y las <strong>Fechas límite</strong>. Proceda con su medio de pago preferido.
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+                </td>
+            </tr>
+        </table>
+    @endif
 
-                <div class="content" style="font-size: 8.5pt; color: #475569; margin-bottom: 25px; line-height: 1.4;">
-                    Este documento es de carácter informativo y refleja el saldo de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
-                    Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
-                </div>
-                <br><br>
-                <table width="250px" style="border-collapse: collapse;">
-                    <tr>
-                        <td style="border-top: 2px solid #0f172a; text-align: center; padding-top: 6px;">
-                            <strong style="color: #0f172a; font-size: 9.5pt;">Área de Cartera</strong><br>
-                            <span style="font-size: 8.5pt; color: #475569; font-weight: bold;">CORPENTUNIDA</span>
-                        </td>
-                    </tr>
-                </table>
+    <div class="manual-pro">
+        <div class="manual-header">
+            Guía Rápida de Pagos
+        </div>
 
-            </td>
-        </tr>
-    </table>
+        <div class="evitar-salto">
+            <div class="opcion-pago-title">Opción 1: Pago en Línea (AvalPay Center)</div>
+            <table class="step-table">
+                <tr>
+                    <td class="step-num-container"><span class="step-num">1</span></td>
+                    <td class="step-text">
+                        <strong>Inicie su pago:</strong> Haga clic en el número de factura subrayado en la tabla superior o ingrese al portal oficial <hr> <a href="https://corpentunida.org.co/" target="_blank" class="btn-portal">corpentunida.org.co</a>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">2</span></td>
+                    <td class="step-text">
+                        <strong>Valide el destinatario:</strong> Asegúrese de que el portal de AvalPay Center indique el servicio correcto: <span class="highlight-box">Corpentunida Nit 8605094515</span>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">3</span></td>
+                    <td class="step-text">
+                        <strong>Identifique su obligación:</strong> En el campo <strong>Número referencia de pago *</strong>, pegue o digite exactamente el número de la factura.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">4</span></td>
+                    <td class="step-text">
+                        <strong>Confirme y pague:</strong> El sistema validará la estructura y desplegará automáticamente el <strong>Valor a pagar</strong> y las <strong>Fechas límite</strong>.
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="evitar-salto">
+            <div class="opcion-pago-title">Opción 2: Consignación Presencial (Banco de Bogotá)</div>
+            <table class="step-table">
+                <tr>
+                    <td class="step-num-container"><span class="step-num">1</span></td>
+                    <td class="step-text">
+                        <strong>Solicite el formato:</strong> Pida un "Comprobante de Pago Universal Individual" en cualquier sucursal del Banco de Bogotá.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">2</span></td>
+                    <td class="step-text">
+                        <strong>Diligencie los datos de la cuenta:</strong> Marque la casilla de <strong>Cuenta Corriente</strong> e ingrese el número <strong>019134618</strong>. En el nombre del convenio, escriba: <strong>ASOCIACIÓN GREMIAL DE MINISTROS IPUC</strong>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">3</span></td>
+                    <td class="step-text">
+                        <strong>Referencias de pago vitales:</strong><br>
+                        • <strong>Referencia 1:</strong> Escriba el NÚMERO DE CÉDULA PASTOR.<br>
+                        • <strong>Referencia 2:</strong> Escriba el NÚMERO REFERENCIA DE PAGO (Número de la factura).
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="evitar-salto" style="text-align: center; margin-top: 10px;">
+            <img src="{{ resource_path('views/certificados/pdf/model_pago.png') }}" class="img-banco" alt="Modelo Consignación Banco de Bogotá">
+        </div>
+    </div>
+
+    <div class="evitar-salto">
+        <br><br><br><br><br><br><br>
+        <div class="content" style="font-size: 8.5pt; color: #475569; margin-bottom: 25px; line-height: 1.4;">
+            Este documento es de carácter informativo y refleja el saldo de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
+            Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
+        </div>
+        <br><br><br>
+        <table width="250px" style="border-collapse: collapse;">
+            <tr>
+                <td style="border-top: 2px solid #0f172a; text-align: center; padding-top: 6px;">
+                    <strong style="color: #0f172a; font-size: 9.5pt;">Área de Cartera</strong><br>
+                    <span style="font-size: 8.5pt; color: #475569; font-weight: bold;">CORPENTUNIDA</span>
+                </td>
+            </tr>
+        </table>
+    </div>
 
 </body>
 </html>
