@@ -245,11 +245,17 @@ Route::resource('roles', RoleController::class)
 Route::post('roles-areas', [RoleController::class, 'crearArea'])
     ->name('admin.roles.areas.crear')
     ->middleware(['auth']);
+Route::post('roles-areas/{id}/perfiles', [RoleController::class, 'agregarPerfilesArea'])
+    ->name('admin.roles.areas.perfiles')
+    ->middleware(['auth']);
 Route::put('roles-areas/{id}', [RoleController::class, 'renombrarArea'])
     ->name('admin.roles.areas.renombrar')
     ->middleware(['auth']);
 Route::delete('roles-areas/{id}', [RoleController::class, 'eliminarArea'])
     ->name('admin.roles.areas.eliminar')
+    ->middleware(['auth']);
+Route::get('roles/{role}/usuarios', [RoleController::class, 'usuariosDePerfil'])
+    ->name('admin.roles.usuarios')
     ->middleware(['auth']);
 Route::put('roles/{role}/nombre', [RoleController::class, 'renombrar'])
     ->name('admin.roles.nombre')

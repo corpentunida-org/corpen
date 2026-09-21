@@ -78,15 +78,15 @@
                 <div class="ui-card h-100" id="cardNuevaArea">
                     <div class="p-3 p-md-4">
                         <h6 class="fw-bold text-dark mb-1"><i class="bi bi-diagram-3 me-2 text-primary"></i>Crear área nueva</h6>
-                        <p class="text-muted fs-13">Una área agrupa los perfiles de un mismo equipo (ej. Cartera, Asociado). Se crea vacía y luego le agregas perfiles.</p>
-                        <form method="POST" action="{{ route('admin.roles.areas.crear') }}" class="d-flex flex-wrap gap-2">
+                        <p class="text-muted fs-13">Una área agrupa los perfiles de un mismo equipo (ej. Cartera, Asociado, Admin). Se crea vacía y luego le agregas perfiles.</p>
+                        <form method="POST" action="{{ route('admin.roles.areas.crear') }}">
                             @csrf
-                            <div class="flex-grow-1">
-                                <input type="text" name="area" value="{{ old('area') }}" maxlength="60" required
-                                       class="form-control @error('area') is-invalid @enderror" placeholder="Nombre del área">
-                                @error('area') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                            <button type="submit" class="ui-btn-primary"><i class="bi bi-plus-lg"></i> Crear área</button>
+                            <input type="text" name="area" value="{{ old('area') }}" maxlength="60" required
+                                   class="form-control mb-2 @error('area') is-invalid @enderror" placeholder="Nombre del área">
+                            @error('area') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
+                            <label class="form-label fs-12 fw-semibold mb-1">Agregar perfiles a la nueva área <span class="text-muted fw-normal">(opcional — solo perfiles sin área)</span></label>
+                            @include('admin.roles.partials.selector-perfiles', ['perfiles' => $sinArea])
+                            <button type="submit" class="ui-btn-primary mt-2"><i class="bi bi-plus-lg"></i> Crear área</button>
                         </form>
                     </div>
                 </div>
@@ -110,7 +110,7 @@
                             <div class="col-md-4">
                                 <label class="form-label fs-12 fw-semibold mb-1">Dentro del área</label>
                                 <select name="area" class="form-select">
-                                    <option value="">(una área propia con su nombre)</option>
+                                    <option value="">(sin área)</option>
                                     @foreach ($areas as $a) <option value="{{ $a }}" @selected(old('area', request('nuevaen')) === $a)>{{ strtoupper($a) }}</option> @endforeach
                                 </select>
                             </div>
@@ -166,15 +166,6 @@
                                         <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Guardar nombre</button>
                                     </form>
                                 @endif
-                                <form action="{{ route('admin.roles.store') }}" method="POST" class="d-flex flex-wrap align-items-end gap-2">
-                                    @csrf
-                                    <input type="hidden" name="area" value="{{ $g['area'] }}">
-                                    <div>
-                                        <label class="form-label fs-12 fw-semibold mb-1">Agregar un perfil a esta área</label>
-                                        <input type="text" name="namerole" maxlength="100" required placeholder="Nombre del perfil nuevo" class="form-control form-control-sm" style="min-width: 220px;">
-                                    </div>
-                                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i> Agregar perfil</button>
-                                </form>
                                 @if ($g['id'] && count($g['roles']) === 0)
                                     <form action="{{ route('admin.roles.areas.eliminar', $g['id']) }}" method="POST" class="ms-auto"
                                           onsubmit="return confirm('¿Eliminar el área {{ strtoupper($g['area']) }}? Está vacía.');">
@@ -184,11 +175,35 @@
                                     </form>
                                 @endif
                             </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-lg-7">
+                                    <div class="bg-white border rounded-3 p-3 h-100">
+                                        <div class="fw-semibold fs-13 mb-2"><i class="bi bi-plus-circle me-1 text-primary"></i>Agregar perfiles existentes a esta área</div>
+                                        <form action="{{ route('admin.roles.areas.perfiles', $g['id'] ?? 0) }}" method="POST">
+                                            @csrf
+                                            @include('admin.roles.partials.selector-perfiles', ['perfiles' => $sinArea])
+                                            <button type="submit" class="btn btn-sm btn-primary mt-2" @disabled(!$g['id'] || $sinArea->isEmpty())><i class="bi bi-plus-lg me-1"></i> Agregar seleccionados</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="col-lg-5">
+                                    <div class="bg-white border rounded-3 p-3 h-100">
+                                        <div class="fw-semibold fs-13 mb-2"><i class="bi bi-file-earmark-plus me-1 text-primary"></i>O crear un perfil nuevo aquí</div>
+                                        <form action="{{ route('admin.roles.store') }}" method="POST" class="d-flex flex-column gap-2">
+                                            @csrf
+                                            <input type="hidden" name="area" value="{{ $g['area'] }}">
+                                            <input type="text" name="namerole" maxlength="100" required placeholder="Nombre del perfil nuevo" class="form-control form-control-sm">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i> Crear y agregar</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                             @if (count($g['roles']))
                                 <div class="accordion ui-accordion">
                                     @foreach ($g['roles'] as $rol)
                                         @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => null])
                                     @endforeach
+
                                 </div>
                             @else
                                 <p class="text-muted fs-13 mb-0">Esta área aún no tiene perfiles. Agrega el primero arriba.</p>
@@ -197,6 +212,16 @@
                     </div>
                 </div>
             @endforeach
+
+            @if ($sinArea->count())
+                <div class="text-uppercase text-muted fw-bold fs-12 mt-4 mb-2 px-1" id="tituloSinArea">
+                    <i class="bi bi-shield-check me-1"></i> Perfiles sin área ({{ $sinArea->count() }})
+                    <span class="text-lowercase fw-normal">— asígnales un área desde el selector de cada perfil</span>
+                </div>
+                @foreach ($sinArea as $rol)
+                    @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => '#accordionMatriz'])
+                @endforeach
+            @endif
         </div>
     </div>
 
@@ -236,9 +261,92 @@
                         a.querySelector(':scope > .accordion-header .accordion-button').classList.remove('collapsed');
                     }
                 });
+                const titulo = document.getElementById('tituloSinArea');
+                if (titulo) titulo.classList.toggle('d-none', !!t && !items.some(function (it) { return !it.closest('.area-item') && !it.classList.contains('d-none'); }));
                 contador.textContent = t ? visibles + ' de ' + items.length + ' perfiles' : items.length + ' perfiles';
             });
         })();
+
+        // Filtra la lista de perfiles sin área de un selector (por nombre).
+        function filtrarSelectorPerfiles(input) {
+            const t = input.value.trim().toLowerCase();
+            const cont = input.closest('.selector-perfiles');
+            let visibles = 0;
+            cont.querySelectorAll('.item-sin-area').forEach(function (it) {
+                const ok = !t || it.dataset.nombre.includes(t);
+                it.classList.toggle('d-none', !ok);
+                if (ok) visibles++;
+            });
+            const vacio = cont.querySelector('.sin-resultados');
+            if (vacio) vacio.classList.toggle('d-none', visibles > 0 || !cont.querySelector('.item-sin-area'));
+        }
+
+        // Despliega/oculta la lista de perfiles sin área de un selector.
+        function alternarSelectorPerfiles(boton) {
+            const panel = boton.closest('.selector-perfiles').querySelector('.panel-selector');
+            const abierto = panel.classList.toggle('d-none') === false;
+            boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            boton.querySelector('.bi').className = 'bi ' + (abierto ? 'bi-chevron-up' : 'bi-chevron-down');
+            if (abierto) { const b = panel.querySelector('input[type=search]'); if (b) b.focus(); }
+        }
+
+        // Muestra en el botón cuántos perfiles hay marcados.
+        function actualizarConteoSelector(casilla) {
+            const cont = casilla.closest('.selector-perfiles');
+            const marcados = Array.from(cont.querySelectorAll('input[name="perfiles[]"]:checked')).map(function (c) { return c.closest('label').innerText.trim(); });
+            cont.querySelector('.etiqueta-selector').textContent = marcados.length
+                ? marcados.length + ' seleccionado(s): ' + marcados.join(', ')
+                : 'Seleccionar perfiles sin área…';
+        }
+
+        // Lista de usuarios de un perfil: se pide al servidor al desplegar (asociado tiene >1000), con
+        // búsqueda y "Cargar más".
+        function alternarUsuariosPerfil(boton) {
+            const panel = boton.closest('.accordion-body').querySelector('.panel-usuarios');
+            const abierto = panel.classList.toggle('d-none') === false;
+            boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            if (abierto && !panel.dataset.iniciado) {
+                panel.dataset.iniciado = '1';
+                panel.dataset.url = boton.dataset.url;
+                const caja = panel.querySelector('.buscar-usuarios');
+                let temporizador;
+                caja.addEventListener('input', function () { clearTimeout(temporizador); temporizador = setTimeout(function () { cargarUsuariosPerfil(panel, true); }, 300); });
+                panel.querySelector('.mas-usuarios').addEventListener('click', function () { cargarUsuariosPerfil(panel, false); });
+                cargarUsuariosPerfil(panel, true);
+            }
+        }
+
+        function cargarUsuariosPerfil(panel, reiniciar) {
+            const cuerpo = panel.querySelector('.lista-usuarios');
+            const mensaje = panel.querySelector('.mensaje-usuarios');
+            const mas = panel.querySelector('.mas-usuarios');
+            if (reiniciar) { panel.dataset.pagina = '0'; cuerpo.innerHTML = ''; }
+            const pagina = parseInt(panel.dataset.pagina || '0', 10) + 1;
+            const token = String(Date.now()); panel.dataset.token = token;
+            mensaje.textContent = 'Cargando…'; mensaje.classList.remove('d-none'); mas.classList.add('d-none');
+            const q = encodeURIComponent(panel.querySelector('.buscar-usuarios').value.trim());
+            fetch(panel.dataset.url + '?page=' + pagina + '&buscar=' + q, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+                .then(function (d) {
+                    if (panel.dataset.token !== token) return; // llegó una respuesta vieja
+                    d.usuarios.forEach(function (u) {
+                        const tr = document.createElement('tr');
+                        const nombre = document.createElement('td');
+                        const a = document.createElement('a'); a.href = u.url; a.textContent = u.nombre; a.target = '_blank';
+                        nombre.appendChild(a);
+                        if (u.bloqueado) { const b = document.createElement('span'); b.className = 'badge bg-danger-subtle text-danger ms-2'; b.textContent = 'bloqueado'; nombre.appendChild(b); }
+                        [u.cedula ? 'C.C. ' + u.cedula : '—', u.correo, u.tipo].forEach(function (txt) { const td = document.createElement('td'); td.textContent = txt; tr.appendChild(td); });
+                        tr.insertBefore(nombre, tr.firstChild);
+                        cuerpo.appendChild(tr);
+                    });
+                    panel.dataset.pagina = String(pagina);
+                    panel.querySelector('.total-usuarios').textContent = '(' + d.total + ')';
+                    mensaje.textContent = d.total === 0 ? 'Ningún usuario coincide.' : '';
+                    mensaje.classList.toggle('d-none', d.total !== 0);
+                    mas.classList.toggle('d-none', !d.hay_mas);
+                })
+                .catch(function () { mensaje.textContent = 'No se pudo cargar la lista de usuarios. Intenta de nuevo.'; mensaje.classList.remove('d-none'); });
+        }
 
         function escaparHtml(t) {
             return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

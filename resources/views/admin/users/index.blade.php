@@ -236,6 +236,10 @@
                             <tr>
                                 <th>Información del Usuario</th>
                                 <th>Cédula</th>
+                                @if ($tipo === 'empleados')
+                                    <th>Perfil</th>
+                                    <th>Área</th>
+                                @endif
                                 <th>Fecha de Registro</th>
                                 <th>Estado</th>
                                 <th class="text-end text-md-center" style="width: 160px;">Acción</th>
@@ -272,6 +276,20 @@
                                         </div>
                                     </td>
                                     <td class="text-muted">{{ $user->nid ?: '—' }}</td>
+                                    @if ($tipo === 'empleados')
+                                        @php $perfiles = $user->actions->map(fn ($a) => $a->role)->filter(); @endphp
+                                        <td>
+                                            @forelse ($perfiles as $rol)
+                                                <span class="badge bg-primary-subtle text-primary border me-1 mb-1">{{ strtoupper($rol->name) }}</span>
+                                            @empty
+                                                <span class="text-muted">Sin perfil</span>
+                                            @endforelse
+                                        </td>
+                                        <td class="text-muted">
+                                            @php $areas = $perfiles->pluck('area')->filter()->unique(); @endphp
+                                            {{ $areas->isNotEmpty() ? strtoupper($areas->implode(', ')) : '—' }}
+                                        </td>
+                                    @endif
                                     <td class="text-muted">{{ $user->created_at?->format('d/m/Y') ?? '—' }}</td>
                                     <td>
                                         @if ($user->bloqueado)
@@ -315,7 +333,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">No hay usuarios para mostrar.</td>
+                                    <td colspan="{{ $tipo === 'empleados' ? 7 : 5 }}" class="text-center text-muted py-4">No hay usuarios para mostrar.</td>
                                 </tr>
                             @endforelse
                         </tbody>
