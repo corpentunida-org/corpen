@@ -27,7 +27,7 @@ class DependienteController extends Controller
 
         $dependiente = Dependiente::create($validated);
 
-        $this->auditoria("Dependiente económico agregado a colaborador #{$empleado->id}: {$dependiente->nombre_completo}");
+        $this->auditoria("Dependiente económico agregado a colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . ": {$dependiente->nombre_completo}");
 
         return redirect()->route('sgrh.empleado.edit', $empleado)->with('success', 'Dependiente agregado correctamente.');
     }
@@ -38,7 +38,7 @@ class DependienteController extends Controller
 
         $dependiente->update($validated);
 
-        $this->auditoria("Dependiente económico #{$dependiente->id} actualizado (colaborador #{$dependiente->empleado_id})");
+        $this->auditoria("Dependiente económico #{$dependiente->id} actualizado (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($dependiente->empleado_id) . ")");
 
         return redirect()->route('sgrh.empleado.edit', $dependiente->empleado_id)->with('success', 'Dependiente actualizado correctamente.');
     }
@@ -49,7 +49,7 @@ class DependienteController extends Controller
         $nombre = $dependiente->nombre_completo;
         $dependiente->delete();
 
-        $this->auditoria("Dependiente económico eliminado (colaborador #{$empleadoId}): {$nombre}");
+        $this->auditoria("Dependiente económico eliminado (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleadoId) . "): {$nombre}");
 
         return redirect()->route('sgrh.empleado.edit', $empleadoId)->with('success', 'Dependiente eliminado correctamente.');
     }

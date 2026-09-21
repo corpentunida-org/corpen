@@ -39,7 +39,7 @@ class ImpersonarController extends Controller
             'impersonador_nombre' => $admin->name,
         ]);
 
-        $this->auditoria("Inició \"ver como\" el asociado {$user->name} #{$user->id} ({$user->email}) para soporte");
+        $this->auditoria("Inició \"ver como\" el asociado " . \App\Http\Controllers\AuditoriaController::refUsuario($user) . " para soporte");
 
         Auth::login($user);
 
@@ -67,7 +67,7 @@ class ImpersonarController extends Controller
         }
 
         Auth::login($admin);
-        $this->auditoria("Terminó \"ver como\" el asociado {$asociado->name} #{$asociado->id}");
+        $this->auditoria("Terminó \"ver como\" el asociado " . \App\Http\Controllers\AuditoriaController::refUsuario($asociado));
 
         return redirect()->route('admin.users.edit', $asociado->id)->with('success', 'Volviste a tu cuenta.');
     }

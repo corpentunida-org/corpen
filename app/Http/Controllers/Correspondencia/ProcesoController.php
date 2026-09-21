@@ -220,7 +220,7 @@ class ProcesoController extends Controller
             ]
         ]);
 
-        $this->auditoria('ASIGNAR/ACTIVAR USUARIO ID ' . $request->user_id . ' EN PROCESO ' . $proceso->id);
+        $this->auditoria('ASIGNAR/ACTIVAR USUARIO ' . \App\Http\Controllers\AuditoriaController::refUsuario($request->user_id) . ' EN PROCESO ' . $proceso->id);
 
         return back()->with('success', 'Responsable asignado y activado correctamente');
     }
@@ -238,7 +238,7 @@ class ProcesoController extends Controller
             'updated_at' => now()
         ]);
         
-        $this->auditoria('DESACTIVAR USUARIO ID ' . $user_id . ' DE PROCESO ' . $proceso_id);
+        $this->auditoria('DESACTIVAR USUARIO ' . \App\Http\Controllers\AuditoriaController::refUsuario($user_id) . ' DE PROCESO ' . $proceso_id);
         
         return back()->with('success', 'El responsable ha sido marcado como inactivo para este proceso');
     }

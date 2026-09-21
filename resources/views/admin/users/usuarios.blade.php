@@ -75,6 +75,9 @@
                                         </td>
                                         <td>
                                             {{ strtoupper($r->usuario) }}
+                                            @if (!empty($cedulas[$r->usuario_id]))
+                                                <div class="text-muted fs-12">C.C. {{ $cedulas[$r->usuario_id] }}</div>
+                                            @endif
                                         </td>
                                         <td>
                                             @if ( $r->area == 'EXEQUIALES')

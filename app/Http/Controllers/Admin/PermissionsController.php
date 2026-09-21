@@ -60,7 +60,8 @@ class PermissionsController extends Controller
         DB::table('role_has_permissions')->insertOrIgnore(['permission_id' => $permiso->id, 'role_id' => $request->permisoRol]);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         $resumen = app(PermisosPorRolService::class)->sincronizarRol((int) $request->permisoRol);
-        app(AuditoriaController::class)->create(mb_substr("Se creó el permiso {$permiso->name} y se asignó al perfil id {$request->permisoRol} ({$resumen['usuarios']} usuario(s))", 0, 250), 'ADMINISTRACIÓN');
+        $nombrePerfil = strtoupper((string) DB::table('roles')->where('id', $request->permisoRol)->value('name'));
+        app(AuditoriaController::class)->create(mb_substr("Se creó el permiso {$permiso->name} y se asignó al perfil {$nombrePerfil} ({$resumen['usuarios']} usuario(s))", 0, 250), 'ADMINISTRACIÓN');
 
         return redirect()
             ->route('admin.roles.matriz', ['rol' => $request->permisoRol])

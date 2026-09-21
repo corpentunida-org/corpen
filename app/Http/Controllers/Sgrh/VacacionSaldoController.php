@@ -85,7 +85,7 @@ class VacacionSaldoController extends Controller
             'user_id' => Auth::id(),
         ]);
 
-        $this->auditoria("Ajuste manual de saldo de vacaciones: {$validated['dias']} días para colaborador #{$empleado->id} ({$validated['motivo']})");
+        $this->auditoria("Ajuste manual de saldo de vacaciones: {$validated['dias']} días para colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . " ({$validated['motivo']})");
 
         return back()->with('success', 'Ajuste de saldo registrado correctamente.');
     }

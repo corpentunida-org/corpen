@@ -154,7 +154,7 @@ class UserController extends Controller
         $nombrePerfil = strtoupper(Role::find($roleId)->name);
         $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, $roleId);
 
-        $this->auditoria("Se copió el perfil {$nombrePerfil} de {$origen->name} (#{$origen->id}) al usuario {$user->name} (#{$user->id})"
+        $this->auditoria("Se copió el perfil {$nombrePerfil} de " . \App\Http\Controllers\AuditoriaController::refUsuario($origen) . " al usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user)
             . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
 
         return redirect()->route('admin.users.edit', $user->id)
@@ -190,7 +190,7 @@ class UserController extends Controller
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
         $emailuser = explode('@', $user->email);
-        $accion = "add usuario app  " . $emailuser[0];
+        $accion = "add usuario app " . \App\Http\Controllers\AuditoriaController::refUsuario($user);
         $this->auditoria($accion);
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
@@ -222,7 +222,7 @@ class UserController extends Controller
         }
         if(!empty($update)){
             $user->update($update);
-            $this->auditoria('Se actualizó el usuario ' . $user->id);
+            $this->auditoria('Se actualizó el usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
         }
 
         $this->sincronizarRolesYPermisos($request, $user);
@@ -251,7 +251,7 @@ class UserController extends Controller
         // Un solo perfil por usuario: asignar uno REEMPLAZA el que tuviera.
         if ($request->filled('rolnuevo') && Role::whereKey($request->rolnuevo)->exists()) {
             $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, (int) $request->rolnuevo);
-            $this->auditoria('Se asignó el perfil id ' . $request->rolnuevo . ' al usuario ' . $user->id
+            $this->auditoria('Se asignó el perfil ' . strtoupper(Role::find($request->rolnuevo)->name) . ' al usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user)
                 . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
             return;
         }
@@ -288,7 +288,7 @@ class UserController extends Controller
         }
 
         $user->update($update);
-        $this->auditoria('Se actualizó el usuario (asociado) ' . $user->id);
+        $this->auditoria('Se actualizó el usuario (asociado) ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         $this->sincronizarRolesYPermisos($request, $user);
 
@@ -304,7 +304,7 @@ class UserController extends Controller
     public function bloquear(User $user)
     {
         $user->update(['bloqueado' => true]);
-        $this->auditoria("Se bloqueó el acceso del usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se bloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return back()->with('success', "{$user->name} fue bloqueado. Ya no podrá iniciar sesión.");
     }
@@ -312,7 +312,7 @@ class UserController extends Controller
     public function desbloquear(User $user)
     {
         $user->update(['bloqueado' => false]);
-        $this->auditoria("Se desbloqueó el acceso del usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se desbloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return back()->with('success', "{$user->name} fue desbloqueado.");
     }
@@ -334,7 +334,7 @@ class UserController extends Controller
 
         $nombre = $user->name;
         $user->delete();
-        $this->auditoria("Se eliminó el usuario {$nombre} (#{$user->id})");
+        $this->auditoria("Se eliminó el usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
 
         return redirect()->route('admin.users.index', ['tipo' => $user->type === 'ASOCIADO' ? 'asociados' : 'empleados'])
             ->with('success', "{$nombre} fue eliminado.");

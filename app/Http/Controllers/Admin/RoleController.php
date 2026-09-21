@@ -84,7 +84,7 @@ class RoleController extends Controller
         // Los permisos del usuario provienen de sus roles: al quitar el rol se le quitan también
         // los permisos que solo ese rol le daba.
         app(PermisosPorRolService::class)->sincronizarUsuario($user->id);
-        $this->auditoria("Se eliminó rol ". $role->name ." al usuario " . $user->email);
+        $this->auditoria("Se eliminó rol ". $role->name ." al usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
         return redirect()->back()->with('success', 'Rol eliminado correctamente');
     }
 

@@ -14,6 +14,27 @@ class AuditoriaController extends Controller
     // funcionario. Se marca aparte en el filtro para no confundirla con actividad de negocio.
     private const USUARIO_ID_SISTEMAS = 4;
 
+    /**
+     * Cómo nombrar a una persona en el texto de la auditoría: por CÉDULA, nunca por el id interno
+     * de la tabla (que no significa nada para quien lee el registro). Sin cédula cae al correo.
+     */
+    public static function refUsuario($usuarioOId): string
+    {
+        $u = $usuarioOId instanceof \App\Models\User ? $usuarioOId : \App\Models\User::withTrashed()->find($usuarioOId);
+        if (!$u) {
+            return 'usuario sin registro';
+        }
+        return trim($u->name) . ' (' . ($u->nid ? 'C.C. ' . $u->nid : $u->email) . ')';
+    }
+
+    /** Colaborador de Recursos Humanos (Sgrh): su cédula es el cod_ter del empleado. */
+    public static function refColaborador($empleadoOId): string
+    {
+        $codTer = $empleadoOId instanceof \App\Models\Sgrh\Empleado
+            ? $empleadoOId->cod_ter
+            : \Illuminate\Support\Facades\DB::table('sgrh_empleados')->where('id', $empleadoOId)->value('cod_ter');
+        return $codTer ? 'C.C. ' . $codTer : 'colaborador sin cédula';
+    }
     public function create($action,$area){
         $now = Carbon::now();
         auditoria::create([
@@ -54,6 +75,9 @@ class AuditoriaController extends Controller
             ->sortBy('label');
         $areas = auditoria::select('area')->distinct()->orderBy('area')->pluck('area');
 
-        return view('admin.users.usuarios', compact('registros', 'usuarios', 'areas'));
+        // Cédula de quien hizo cada acción (una sola consulta para la página).
+        $cedulas = \App\Models\User::withTrashed()->whereIn('id', $registros->pluck('usuario_id')->unique())->pluck('nid', 'id');
+
+        return view('admin.users.usuarios', compact('registros', 'usuarios', 'areas', 'cedulas'));
     }
 }

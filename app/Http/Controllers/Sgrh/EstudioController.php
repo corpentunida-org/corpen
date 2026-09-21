@@ -46,7 +46,7 @@ class EstudioController extends Controller
 
         $estudio = Estudio::create($validated);
 
-        $this->auditoria("Estudio agregado al colaborador #{$empleado->id}: {$estudio->programa}");
+        $this->auditoria("Estudio agregado al colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . ": {$estudio->programa}");
 
         return redirect()->route('sgrh.empleado.edit', $empleado)->with('success', 'Estudio agregado correctamente.');
     }
@@ -57,7 +57,7 @@ class EstudioController extends Controller
 
         $estudio->update($validated);
 
-        $this->auditoria("Estudio #{$estudio->id} actualizado (colaborador #{$estudio->empleado_id})");
+        $this->auditoria("Estudio #{$estudio->id} actualizado (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($estudio->empleado_id) . ")");
 
         return redirect()->route('sgrh.empleado.edit', $estudio->empleado_id)->with('success', 'Estudio actualizado correctamente.');
     }
@@ -68,7 +68,7 @@ class EstudioController extends Controller
         $programa = $estudio->programa;
         $estudio->delete();
 
-        $this->auditoria("Estudio eliminado (colaborador #{$empleadoId}): {$programa}");
+        $this->auditoria("Estudio eliminado (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleadoId) . "): {$programa}");
 
         return redirect()->route('sgrh.empleado.edit', $empleadoId)->with('success', 'Estudio eliminado correctamente.');
     }
