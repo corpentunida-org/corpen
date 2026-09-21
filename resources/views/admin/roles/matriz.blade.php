@@ -73,82 +73,55 @@
             </p>
         </div>
 
-        <div class="ui-card mb-4" id="cardNuevoPerfil">
-            <div class="p-3 p-md-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <div>
-                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Crear perfil nuevo</h6>
-                        <p class="text-muted fs-13 mb-0">Un perfil agrupa permisos. Se crea vacío y aquí mismo le asignas los permisos.</p>
+        <div class="row g-3 mb-4">
+            <div class="col-lg-5">
+                <div class="ui-card h-100" id="cardNuevaArea">
+                    <div class="p-3 p-md-4">
+                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-diagram-3 me-2 text-primary"></i>Crear área nueva</h6>
+                        <p class="text-muted fs-13">Una área agrupa los perfiles de un mismo equipo (ej. Cartera, Asociado). Se crea vacía y luego le agregas perfiles.</p>
+                        <form method="POST" action="{{ route('admin.roles.areas.crear') }}" class="d-flex flex-wrap gap-2">
+                            @csrf
+                            <div class="flex-grow-1">
+                                <input type="text" name="area" value="{{ old('area') }}" maxlength="60" required
+                                       class="form-control @error('area') is-invalid @enderror" placeholder="Nombre del área">
+                                @error('area') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <button type="submit" class="ui-btn-primary"><i class="bi bi-plus-lg"></i> Crear área</button>
+                        </form>
                     </div>
-                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formNuevoPerfil">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo perfil
-                    </button>
                 </div>
-                <div class="collapse {{ request()->boolean('nuevo') || $errors->has('namerole') ? 'show' : '' }}" id="formNuevoPerfil">
-                    <form method="POST" action="{{ route('admin.roles.store') }}" class="row g-3 align-items-end mt-1">
-                        @csrf
-                        <div class="col-md-5">
-                            <label class="form-label fs-13 fw-semibold">Nombre del perfil <span class="text-danger">*</span></label>
-                            <input type="text" name="namerole" value="{{ old('namerole') }}" maxlength="100" required
-                                   class="form-control @error('namerole') is-invalid @enderror" placeholder="Ej. Analista Financiero, Soporte...">
-                            @error('namerole') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+            <div class="col-lg-7">
+                <div class="ui-card h-100" id="cardNuevoPerfil">
+                    <div class="p-3 p-md-4">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Crear perfil nuevo</h6>
+                            <a href="{{ route('admin.guia.permisos') }}" target="_blank" class="fs-13"><i class="bi bi-signpost-split me-1"></i>Guía: cómo crear un perfil</a>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fs-13 fw-semibold">Área <span class="text-muted fw-normal">(opcional)</span></label>
-                            <input type="text" name="area" value="{{ old('area') }}" maxlength="60" list="listaAreas"
-                                   class="form-control @error('area') is-invalid @enderror" placeholder="Ej. cartera, asociado…">
-                            @error('area') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear perfil</button>
-                        </div>
-                    </form>
+                        <p class="text-muted fs-13">Un perfil agrupa permisos y es lo único que se asigna a una persona. Se crea vacío y aquí mismo le marcas los permisos.</p>
+                        <form method="POST" action="{{ route('admin.roles.store') }}" class="row g-2 align-items-end">
+                            @csrf
+                            <div class="col-md-5">
+                                <label class="form-label fs-12 fw-semibold mb-1">Nombre del perfil <span class="text-danger">*</span></label>
+                                <input type="text" name="namerole" value="{{ old('namerole') }}" maxlength="100" required
+                                       class="form-control @error('namerole') is-invalid @enderror" placeholder="Ej. analista financiero">
+                                @error('namerole') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fs-12 fw-semibold mb-1">Dentro del área</label>
+                                <select name="area" class="form-select">
+                                    <option value="">(una área propia con su nombre)</option>
+                                    @foreach ($areas as $a) <option value="{{ $a }}" @selected(old('area', request('nuevaen')) === $a)>{{ strtoupper($a) }}</option> @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="ui-card mb-4" id="cardNuevoPermiso">
-            <div class="p-3 p-md-4">
-                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <div>
-                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-key me-2 text-primary"></i>Crear permiso nuevo</h6>
-                        <p class="text-muted fs-13 mb-0">Formato <code>modulo.recurso.accion</code> en minúsculas. Queda asignado al perfil que elijas y luego lo marcas en los demás. <a href="{{ route('admin.guia.permisos') }}" target="_blank">Ver guía</a></p>
-                    </div>
-                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#formNuevoPermiso">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo permiso
-                    </button>
-                </div>
-                <div class="collapse {{ $errors->has('permisoName') || $errors->has('permisoRol') ? 'show' : '' }}" id="formNuevoPermiso">
-                    <form method="POST" action="{{ route('admin.permisos.store') }}" class="row g-3 align-items-end mt-1">
-                        @csrf
-                        <div class="col-md-5">
-                            <label class="form-label fs-13 fw-semibold">Nombre del permiso <span class="text-danger">*</span></label>
-                            <input type="text" name="permisoName" value="{{ old('permisoName') }}" maxlength="100" required
-                                   class="form-control font-monospace @error('permisoName') is-invalid @enderror" placeholder="cartera.morosos.generarcarta">
-                            @error('permisoName') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label fs-13 fw-semibold">Asignar al perfil <span class="text-danger">*</span></label>
-                            <select name="permisoRol" required class="form-select @error('permisoRol') is-invalid @enderror">
-                                <option value="" disabled @selected(!old('permisoRol'))>Seleccione...</option>
-                                @foreach ($roles as $r)
-                                    <option value="{{ $r->id }}" @selected(old('permisoRol') == $r->id)>{{ strtoupper($r->name) }}</option>
-                                @endforeach
-                            </select>
-                            @error('permisoRol') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear permiso</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <datalist id="listaAreas">
-            @foreach ($areas as $a) <option value="{{ $a }}"> @endforeach
-        </datalist>
-
         <div class="ui-card mb-3 p-3">
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <div class="input-group" style="max-width: 460px;">
@@ -162,37 +135,67 @@
 
         <div class="accordion ui-accordion mb-5" id="accordionMatriz">
             @foreach ($grupos as $g)
-                @if (count($g['roles']) > 1)
-                    @php
-                        $ga = $loop->index;
-                        $abrirArea = $g['roles']->contains(fn ($r) => (int) request('rol') === (int) $r->id);
-                    @endphp
-                    <div class="accordion-item shadow-sm area-item" data-nombre="{{ $g['area'] }}">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button {{ $abrirArea ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#acollapse-{{ $ga }}" aria-expanded="{{ $abrirArea ? 'true' : 'false' }}">
-                                <div class="d-flex align-items-center w-100 pe-3">
-                                    <i class="bi bi-diagram-3 me-3 fs-4" style="color: #0ea5e9;"></i>
-                                    <span>ÁREA {{ strtoupper($g['area']) }}</span>
-                                    <span class="ms-auto badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fw-medium fs-12">
-                                        {{ count($g['roles']) }} perfiles: {{ $g['roles']->map(fn ($r) => strtoupper($r->name))->implode(', ') }}
-                                    </span>
-                                </div>
-                            </button>
-                        </h2>
-                        <div id="acollapse-{{ $ga }}" class="accordion-collapse collapse {{ $abrirArea ? 'show' : '' }}">
-                            <div class="accordion-body p-3 p-md-4 bg-light">
+                @php
+                    $ga = $loop->index;
+                    $abrirArea = request('area') === $g['area'] || $g['roles']->contains(fn ($r) => (int) request('rol') === (int) $r->id);
+                @endphp
+                <div class="accordion-item shadow-sm area-item" data-nombre="{{ $g['area'] }}" id="area-{{ $ga }}">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button {{ $abrirArea ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#acollapse-{{ $ga }}" aria-expanded="{{ $abrirArea ? 'true' : 'false' }}">
+                            <div class="d-flex align-items-center w-100 pe-3">
+                                <i class="bi bi-diagram-3 me-3 fs-4" style="color: #0ea5e9;"></i>
+                                <span>ÁREA {{ strtoupper($g['area']) }}</span>
+                                <span class="ms-auto badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fw-medium fs-12">
+                                    {{ count($g['roles']) }} {{ count($g['roles']) === 1 ? 'perfil' : 'perfiles' }}@if (count($g['roles'])): {{ $g['roles']->map(fn ($r) => strtoupper($r->name))->implode(', ') }}@endif
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="acollapse-{{ $ga }}" class="accordion-collapse collapse {{ $abrirArea ? 'show' : '' }}">
+                        <div class="accordion-body p-3 p-md-4 bg-light">
+                            <div class="d-flex flex-wrap align-items-end gap-3 mb-3 pb-3 border-bottom">
+                                @if ($g['id'])
+                                    <form action="{{ route('admin.roles.areas.renombrar', $g['id']) }}" method="POST" class="d-flex flex-wrap align-items-end gap-2">
+                                        @csrf
+                                        @method('PUT')
+                                        <div>
+                                            <label class="form-label fs-12 fw-semibold mb-1">Nombre del área</label>
+                                            <input type="text" name="area" value="{{ $g['area'] }}" maxlength="60" required class="form-control form-control-sm" style="min-width: 200px;">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Guardar nombre</button>
+                                    </form>
+                                @endif
+                                <form action="{{ route('admin.roles.store') }}" method="POST" class="d-flex flex-wrap align-items-end gap-2">
+                                    @csrf
+                                    <input type="hidden" name="area" value="{{ $g['area'] }}">
+                                    <div>
+                                        <label class="form-label fs-12 fw-semibold mb-1">Agregar un perfil a esta área</label>
+                                        <input type="text" name="namerole" maxlength="100" required placeholder="Nombre del perfil nuevo" class="form-control form-control-sm" style="min-width: 220px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i> Agregar perfil</button>
+                                </form>
+                                @if ($g['id'] && count($g['roles']) === 0)
+                                    <form action="{{ route('admin.roles.areas.eliminar', $g['id']) }}" method="POST" class="ms-auto"
+                                          onsubmit="return confirm('¿Eliminar el área {{ strtoupper($g['area']) }}? Está vacía.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> Eliminar área vacía</button>
+                                    </form>
+                                @endif
+                            </div>
+                            @if (count($g['roles']))
                                 <div class="accordion ui-accordion">
                                     @foreach ($g['roles'] as $rol)
                                         @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => null])
                                     @endforeach
                                 </div>
-                            </div>
+                            @else
+                                <p class="text-muted fs-13 mb-0">Esta área aún no tiene perfiles. Agrega el primero arriba.</p>
+                            @endif
                         </div>
                     </div>
-                @else
-                    @include('admin.roles.partials.matriz-perfil', ['rol' => $g['roles'][0], 'i' => $indice[$g['roles'][0]->id], 'parent' => '#accordionMatriz'])
-                @endif
+                </div>
             @endforeach
         </div>
     </div>
@@ -225,7 +228,8 @@
                 });
                 // Un área se muestra si alguno de sus perfiles coincide, y se despliega para verlos.
                 areas.forEach(function (a) {
-                    const hay = a.querySelector('.perfil-item:not(.d-none)') !== null;
+                    const vacia = a.querySelector('.perfil-item') === null;
+                    const hay = vacia ? (!t || a.dataset.nombre.includes(t)) : a.querySelector('.perfil-item:not(.d-none)') !== null;
                     a.classList.toggle('d-none', !hay);
                     if (t && hay) {
                         a.querySelector(':scope > .accordion-collapse').classList.add('show');

@@ -21,16 +21,47 @@
 
                     <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse {{ $abrir ? 'show' : '' }}" @if ($parent) data-bs-parent="{{ $parent }}" @endif>
                         <div class="accordion-body p-4 p-md-5 bg-light">
+                            @php
+                                $nUsuarios = (int) ($usuariosPorRol[$rol->id] ?? 0);
+                                $protegido = (int) $rol->id === 13 || strtolower($rol->name) === 'asociado';
+                            @endphp
+                            <div class="d-flex flex-wrap align-items-end gap-3 mb-3 pb-3 border-bottom">
+                                <form action="{{ route('admin.roles.nombre', $rol->id) }}" method="POST" class="d-flex flex-wrap align-items-end gap-2">
+                                    @csrf
+                                    @method('PUT')
+                                    <div>
+                                        <label class="form-label fs-12 fw-semibold mb-1">Nombre del perfil</label>
+                                        <input type="text" name="nombre" value="{{ $rol->name }}" maxlength="100" required class="form-control form-control-sm" style="min-width: 220px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Guardar nombre</button>
+                                </form>
+                                <div class="ms-auto d-flex align-items-center gap-2">
+                                    <span class="badge bg-light text-secondary border">{{ $nUsuarios }} usuario(s) con este perfil</span>
+                                    @if ($protegido)
+                                        <button type="button" class="btn btn-sm btn-outline-danger" disabled title="Lo usa el registro de asociados"><i class="bi bi-trash me-1"></i> Eliminar perfil</button>
+                                    @elseif ($nUsuarios > 0)
+                                        <button type="button" class="btn btn-sm btn-outline-danger" disabled title="Asigna otro perfil a esos usuarios primero"><i class="bi bi-trash me-1"></i> Eliminar perfil</button>
+                                    @else
+                                        <form action="{{ route('admin.roles.eliminar', $rol->id) }}" method="POST"
+                                              onsubmit="return confirm('¿Eliminar el perfil {{ strtoupper($rol->name) }}? Ningún usuario lo tiene asignado. Esta acción no se puede deshacer.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> Eliminar perfil</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
                             <form action="{{ route('admin.roles.area', $rol->id) }}" method="POST" class="d-flex flex-wrap align-items-end gap-2 mb-3">
                                 @csrf
                                 @method('PUT')
                                 <div>
                                     <label class="form-label fs-12 fw-semibold mb-1">Área de este perfil</label>
-                                    <input type="text" name="area" value="{{ $rol->area ?: $rol->name }}" maxlength="60" list="listaAreas" required
-                                           class="form-control form-control-sm" style="min-width: 220px;">
+                                    <select name="area" required class="form-select form-select-sm" style="min-width: 220px;">
+                                        @foreach ($areas as $a) <option value="{{ $a }}" @selected(strtolower($rol->area ?: $rol->name) === $a)>{{ strtoupper($a) }}</option> @endforeach
+                                    </select>
                                 </div>
                                 <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-diagram-3 me-1"></i> Guardar área</button>
-                                <span class="text-muted fs-12">Solo agrupa perfiles en la Matriz; no cambia permisos.</span>
+                                <span class="text-muted fs-12">Mueve el perfil a otra área; no cambia permisos.</span>
                             </form>
                             <form action="{{ route('admin.roles.update', $rol->id) }}" method="POST">
                                 @csrf

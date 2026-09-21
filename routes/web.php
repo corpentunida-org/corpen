@@ -242,6 +242,21 @@ Route::get('informe-uso/pdf', [InformeUsoController::class, 'exportarPdf'])
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
     ->middleware(['auth']);
+Route::post('roles-areas', [RoleController::class, 'crearArea'])
+    ->name('admin.roles.areas.crear')
+    ->middleware(['auth']);
+Route::put('roles-areas/{id}', [RoleController::class, 'renombrarArea'])
+    ->name('admin.roles.areas.renombrar')
+    ->middleware(['auth']);
+Route::delete('roles-areas/{id}', [RoleController::class, 'eliminarArea'])
+    ->name('admin.roles.areas.eliminar')
+    ->middleware(['auth']);
+Route::put('roles/{role}/nombre', [RoleController::class, 'renombrar'])
+    ->name('admin.roles.nombre')
+    ->middleware(['auth']);
+Route::delete('roles/{role}/perfil', [RoleController::class, 'eliminarPerfil'])
+    ->name('admin.roles.eliminar')
+    ->middleware(['auth']);
 Route::put('roles/{role}/area', [RoleController::class, 'actualizarArea'])
     ->name('admin.roles.area')
     ->middleware(['auth']);

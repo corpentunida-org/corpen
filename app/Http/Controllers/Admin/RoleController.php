@@ -45,14 +45,23 @@ class RoleController extends Controller
         $permisosPorModulo = Permission::where("name", "!=", "")->orderBy('name')->get()
             ->groupBy(fn($permiso) => explode('.', $permiso->name)[0] ?? 'otros');
 
-        // Áreas: columna roles.area (editable en cada perfil); sin área, el perfil queda solo.
-        $grupos = $roles->groupBy(fn ($r) => mb_strtolower($r->area ?: $r->name))
-            ->map(fn ($rs, $area) => ['area' => $area, 'roles' => $rs->values()])
-            ->sortKeys()->values();
-        $areas = $roles->map(fn ($r) => mb_strtolower($r->area ?: $r->name))->unique()->sort()->values();
+        // Áreas: tabla roles_areas (existen aunque no tengan perfiles) + la columna roles.area de cada perfil.
+        $nombresAreas = DB::table('roles_areas')->pluck('nombre')
+            ->merge($roles->map(fn ($r) => mb_strtolower($r->area ?: $r->name)))
+            ->map(fn ($n) => mb_strtolower($n))->unique()->sort()->values();
+        $idsAreas = DB::table('roles_areas')->pluck('id', 'nombre');
+        $grupos = $nombresAreas->map(fn ($area) => [
+            'area' => $area,
+            'id' => $idsAreas[$area] ?? null,
+            'roles' => $roles->filter(fn ($r) => mb_strtolower($r->area ?: $r->name) === $area)->values(),
+        ]);
+        $areas = $nombresAreas;
+        $usuariosPorRol = DB::table('actions')->join('users', 'users.id', '=', 'actions.user_id')
+            ->whereNull('users.deleted_at')->groupBy('actions.role_id')
+            ->select('actions.role_id', DB::raw('count(distinct actions.user_id) as n'))->pluck('n', 'role_id');
         $indice = $roles->values()->pluck('id')->flip(); // id de perfil -> índice único (ids HTML)
 
-        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo', 'grupos', 'indice', 'areas'));
+        return view('admin.roles.matriz', compact('roles', 'permisosPorModulo', 'grupos', 'indice', 'areas', 'usuariosPorRol'));
     }
 
     public function guia()
@@ -76,9 +85,11 @@ class RoleController extends Controller
         );
 
         // Sin área indicada, el perfil queda en su propia área (se puede cambiar luego en la Matriz).
+        $area = $request->input('area') ?: $request->input('namerole');
+        DB::table('roles_areas')->insertOrIgnore(['nombre' => $area, 'created_at' => now(), 'updated_at' => now()]);
         $role = Role::create([
             'name' => $request->input('namerole'),
-            'area' => $request->input('area') ?: $request->input('namerole'),
+            'area' => $area,
             'guard_name' => 'web',
         ]);
         $this->auditoria("Se creó el perfil (rol) " . $role->name);
@@ -97,11 +108,139 @@ class RoleController extends Controller
         $request->validate(['area' => ['required', 'string', 'max:60']], ['area.required' => 'Escribe el área del perfil.', 'area.max' => 'El área es demasiado larga (máximo 60 caracteres).']);
 
         $anterior = $role->area ?: $role->name;
+        DB::table('roles_areas')->insertOrIgnore(['nombre' => $request->input('area'), 'created_at' => now(), 'updated_at' => now()]);
         $role->update(['area' => $request->input('area')]);
         $this->auditoria("Perfil {$role->name}: área cambiada de {$anterior} a {$role->area}");
 
         return redirect()->route('admin.roles.matriz', ['rol' => $role->id])
             ->with('success', 'Área del perfil ' . strtoupper($role->name) . ' actualizada a ' . strtoupper($role->area) . '.');
+    }
+
+    /** Perfiles de los que dependen el código o el autorregistro: no se pueden eliminar. */
+    private function perfilProtegido(Role $role): bool
+    {
+        return (int) $role->id === 13 || mb_strtolower($role->name) === 'asociado';
+    }
+
+    /** Usuarios ACTIVOS (no eliminados) que tienen este perfil asignado. */
+    private function usuariosConPerfil(int $roleId)
+    {
+        return DB::table('actions')
+            ->join('users', 'users.id', '=', 'actions.user_id')
+            ->whereNull('users.deleted_at')
+            ->where('actions.role_id', $roleId)
+            ->select('users.id', 'users.name', 'users.nid', 'users.email')
+            ->distinct()->get();
+    }
+
+    public function renombrar(Request $request, Role $role)
+    {
+        $request->merge(['nombre' => mb_strtolower(trim((string) $request->input('nombre')))]);
+        $request->validate(
+            ['nombre' => ['required', 'string', 'max:100', 'unique:roles,name,' . $role->id]],
+            ['nombre.required' => 'Escribe el nombre del perfil.', 'nombre.unique' => 'Ya existe un perfil con ese nombre.', 'nombre.max' => 'El nombre es demasiado largo (máximo 100 caracteres).']
+        );
+
+        $anterior = $role->name;
+        if ($anterior === $request->input('nombre')) {
+            return redirect()->route('admin.roles.matriz', ['rol' => $role->id]);
+        }
+
+        // Si el perfil estaba solo en un área con su mismo nombre, el área lo sigue.
+        $areaPropia = mb_strtolower($role->area ?: $anterior) === mb_strtolower($anterior)
+            && !DB::table('roles')->where('id', '!=', $role->id)->whereRaw('lower(coalesce(area, name)) = ?', [mb_strtolower($anterior)])->exists();
+
+        $role->update(['name' => $request->input('nombre'), 'area' => $areaPropia ? $request->input('nombre') : $role->area]);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->auditoria("Perfil renombrado de {$anterior} a {$role->name}");
+
+        return redirect()->route('admin.roles.matriz', ['rol' => $role->id])
+            ->with('success', 'Perfil renombrado: ' . strtoupper($anterior) . ' → ' . strtoupper($role->name) . '.');
+    }
+
+    public function eliminarPerfil(Role $role)
+    {
+        $volver = redirect()->route('admin.roles.matriz', ['rol' => $role->id]);
+
+        if ($this->perfilProtegido($role)) {
+            return $volver->with('error', 'El perfil ' . strtoupper($role->name) . ' lo usa el registro de asociados y no se puede eliminar.');
+        }
+
+        $usuarios = $this->usuariosConPerfil($role->id);
+        if ($usuarios->isNotEmpty()) {
+            $lista = $usuarios->take(5)->map(fn ($u) => \App\Http\Controllers\AuditoriaController::refUsuario(User::find($u->id)))->implode('; ');
+            $mas = $usuarios->count() > 5 ? ' y ' . ($usuarios->count() - 5) . ' más' : '';
+            return $volver->with('error', 'No se puede eliminar el perfil ' . strtoupper($role->name) . ': lo tienen asignado ' . $usuarios->count() . ' usuario(s) (' . $lista . $mas . '). Asígnales otro perfil primero.');
+        }
+        if (DB::table('model_has_roles')->where('role_id', $role->id)->exists()) {
+            return $volver->with('error', 'No se puede eliminar el perfil ' . strtoupper($role->name) . ': aún está asignado a usuarios por el esquema de roles de Spatie.');
+        }
+
+        $nombre = $role->name;
+        $permisos = DB::table('role_has_permissions')->where('role_id', $role->id)->count();
+        DB::transaction(function () use ($role) {
+            DB::table('actions')->where('role_id', $role->id)->delete();               // solo quedan filas de usuarios ya eliminados
+            DB::table('role_has_permissions')->where('role_id', $role->id)->delete();
+            DB::table('permissions')->where('role_id', $role->id)->update(['role_id' => null]); // dueño legado
+            DB::table('roles')->where('id', $role->id)->delete();
+        });
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $this->auditoria("Perfil eliminado: {$nombre} (tenía {$permisos} permiso(s) y ningún usuario asignado)");
+
+        return redirect()->route('admin.roles.matriz')->with('success', 'Perfil ' . strtoupper($nombre) . ' eliminado.');
+    }
+
+    private function normalizarArea(Request $request, string $campo = 'area'): void
+    {
+        $request->merge([$campo => mb_strtolower(trim((string) $request->input($campo)))]);
+    }
+
+    public function crearArea(Request $request)
+    {
+        $this->normalizarArea($request);
+        $request->validate(
+            ['area' => ['required', 'string', 'max:60', 'unique:roles_areas,nombre']],
+            ['area.required' => 'Escribe el nombre del área.', 'area.unique' => 'Ya existe un área con ese nombre.', 'area.max' => 'El nombre del área es demasiado largo (máximo 60 caracteres).']
+        );
+        DB::table('roles_areas')->insert(['nombre' => $request->area, 'created_at' => now(), 'updated_at' => now()]);
+        $this->auditoria("Área creada: {$request->area}");
+
+        return redirect()->route('admin.roles.matriz', ['area' => $request->area])
+            ->with('success', 'Área ' . strtoupper($request->area) . ' creada. Agrégale perfiles desde su cabecera.');
+    }
+
+    public function renombrarArea(Request $request, int $id)
+    {
+        $actual = DB::table('roles_areas')->where('id', $id)->value('nombre');
+        abort_unless($actual, 404);
+        $this->normalizarArea($request);
+        $request->validate(
+            ['area' => ['required', 'string', 'max:60', 'unique:roles_areas,nombre,' . $id]],
+            ['area.required' => 'Escribe el nombre del área.', 'area.unique' => 'Ya existe un área con ese nombre.', 'area.max' => 'El nombre del área es demasiado largo (máximo 60 caracteres).']
+        );
+        DB::transaction(function () use ($id, $actual, $request) {
+            DB::table('roles_areas')->where('id', $id)->update(['nombre' => $request->area, 'updated_at' => now()]);
+            DB::table('roles')->whereRaw('lower(coalesce(area, name)) = ?', [$actual])->update(['area' => $request->area]);
+        });
+        $this->auditoria("Área renombrada de {$actual} a {$request->area}");
+
+        return redirect()->route('admin.roles.matriz', ['area' => $request->area])
+            ->with('success', 'Área renombrada: ' . strtoupper($actual) . ' → ' . strtoupper($request->area) . '.');
+    }
+
+    public function eliminarArea(int $id)
+    {
+        $nombre = DB::table('roles_areas')->where('id', $id)->value('nombre');
+        abort_unless($nombre, 404);
+        $perfiles = DB::table('roles')->whereRaw('lower(coalesce(area, name)) = ?', [$nombre])->pluck('name');
+        if ($perfiles->isNotEmpty()) {
+            return redirect()->route('admin.roles.matriz', ['area' => $nombre])
+                ->with('error', 'No se puede eliminar el área ' . strtoupper($nombre) . ': todavía tiene perfiles (' . strtoupper($perfiles->implode(', ')) . '). Muévelos a otra área o elimínalos primero.');
+        }
+        DB::table('roles_areas')->where('id', $id)->delete();
+        $this->auditoria("Área eliminada: {$nombre}");
+
+        return redirect()->route('admin.roles.matriz')->with('success', 'Área ' . strtoupper($nombre) . ' eliminada.');
     }
 
     public function destroy(Request $request, $idUser)
