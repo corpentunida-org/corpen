@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Action;
 use App\Models\auditoria;
 use App\Models\Permisos;
+use App\Models\Maestras\MaeTerceros;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -174,17 +175,53 @@ class UserController extends Controller
         return view('admin.users.create', compact('roles'));
     }
 
+    /**
+     * AJAX: confirma en vivo, mientras el admin escribe la cédula en "Crear Usuario", si esa
+     * cédula ya existe como tercero (y de quién es) — antes de llegar al submit.
+     */
+    public function buscarTerceroPorCedula(Request $request)
+    {
+        $cedula = trim((string) $request->query('cedula', ''));
+        if ($cedula === '') {
+            return response()->json(['encontrado' => false]);
+        }
+
+        $tercero = MaeTerceros::where('cod_ter', $cedula)->first(['cod_ter', 'nom_ter']);
+        $yaTieneUsuario = User::where('nid', $cedula)->exists();
+
+        return response()->json([
+            'encontrado' => (bool) $tercero,
+            'nombre' => $tercero->nom_ter ?? null,
+            'ya_tiene_usuario' => $yaTieneUsuario,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $users = User::paginate(4);
-        $existingUser = User::where('email', $request['email'])->first();
-        if ($existingUser) {
-            return redirect()->route('admin.users.index', compact('users'))->with('error', 'El correo ' . $request['email'] . ' ya está registrado');
-        }
+
+        // La cédula queda obligatoria y ligada a Terceros: antes esta pantalla no pedía cédula
+        // (así nacieron los 13+ empleados activos sin nid que encontramos esta sesión), y sin
+        // 'exists:MaeTerceros' se podía crear una cuenta para una cédula inventada o mal
+        // digitada, sin ningún tercero real detrás. unique:users,nid sin distinción de tipo:
+        // dos cuentas (asociado o no) con la misma cédula es exactamente lo que causó las 73
+        // cédulas duplicadas que se limpiaron este mismo mes.
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'pass' => ['required', 'string', 'min:8'],
+            'nid' => ['required', 'string', 'max:20', 'unique:users,nid', 'exists:MaeTerceros,cod_ter'],
+        ], [
+            'email.unique' => 'El correo ya está registrado.',
+            'nid.unique' => 'Ya existe un usuario con esta cédula.',
+            'nid.exists' => 'Esta cédula no está registrada en Terceros. Verifica el número, o créala primero en Maestras → Terceros.',
+        ]);
+
         $user = User::create([
-            'name' => strtoupper($request['name']),
-            'email' => $request['email'],
-            'password' => bcrypt($request['pass']),
+            'name' => strtoupper($request->input('name')),
+            'email' => $request->input('email'),
+            'nid' => $request->input('nid'),
+            'password' => bcrypt($request->input('pass')),
         ]);
         // Un solo perfil por usuario (si llegara una lista, se toma el primero).
         $rol = collect((array) $request->input('rol', []))->filter()->first();
