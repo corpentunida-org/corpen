@@ -785,6 +785,13 @@
                         $('#select_asignacion').select2('destroy');
                     }
                 });
+
+                // Si se llega desde "Gestionar" en Vencidos/Próximos (Listado de Interacciones),
+                // abre el formulario de seguimiento de una vez — sin este paso, el agente tenía
+                // que buscar el botón "Nuevo Seguimiento" tras llegar a la pantalla.
+                if (new URLSearchParams(window.location.search).get('seguimiento') === '1') {
+                    new bootstrap.Modal(document.getElementById('modalSeguimiento')).show();
+                }
             });
         });
     </script>

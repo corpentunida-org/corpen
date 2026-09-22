@@ -19,13 +19,20 @@
 
     @php
         // IDs para inicializar las tablas mediante AJAX
+        // Orden pedido: Vencidos abre por defecto (el primero es el que nace "show active" más
+        // abajo), luego Pendientes, Hoy, Próximos a vencer, Exitosos, y Todos al final (es la
+        // general, el catálogo completo sin filtrar).
         $tabs = [
-            'all' => 'tablaPrincipal',
-            'success' => 'tablaExitosos',
+            'overdue' => 'tablaVencidos',
             'pending' => 'tablaPendientes',
             'today' => 'tablaHoy',
-            'overdue' => 'tablaVencidos',
+            'upcoming' => 'tablaProximos',
+            'success' => 'tablaExitosos',
+            'all' => 'tablaPrincipal',
         ];
+        // Vencidos/Próximos muestran la agenda de seguimiento (a quién se le prometió qué y
+        // cuándo), no las columnas genéricas de canal/motivo — son la lista de trabajo del día.
+        $tabsConAgenda = ['overdue', 'upcoming'];
     @endphp
 
     {{-- Filtros: Solo Búsqueda y Rango de Fechas --}}
@@ -98,26 +105,18 @@
                 </div>
             </div>
             
+            {{-- Orden pedido: Vencidos primero (es lo mas urgente, abre aqui por defecto),
+                 Pendientes, Hoy, Proximos a vencer, Todos. Exitosos no se pidió en el orden — se
+                 deja al final en vez de quitarlo. --}}
             <ul class="nav nav-tabs mb-3 pastel-tabs" id="interactionTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link pastel-tab active" id="tab-all-tab" data-bs-toggle="tab"
-                        data-bs-target="#tab-all" type="button" role="tab" aria-controls="tab-all"
+                    <button class="nav-link pastel-tab active" id="tab-overdue-tab" data-bs-toggle="tab"
+                        data-bs-target="#tab-overdue" type="button" role="tab" aria-controls="tab-overdue"
                         aria-selected="true">
-                        <i class="feather-inbox me-2"></i>
-                        TODOS
-                        <span class="badge bg-soft-teal text-teal">
-                            {{ $stats['total'] }}
-                        </span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link pastel-tab" id="tab-success-tab" data-bs-toggle="tab"
-                        data-bs-target="#tab-success" type="button" role="tab" aria-controls="tab-success"
-                        aria-selected="false">
-                        <i class="feather-check-circle me-2"></i>
-                        EXITOSOS
-                        <span class="badge bg-soft-teal text-success">
-                            {{ $stats['successful'] }}
+                        <i class="feather-alert-triangle me-2"></i>
+                        VENCIDOS
+                        <span class="badge bg-soft-danger text-danger">
+                            {{ $stats['overdue'] ?? 0 }}
                         </span>
                     </button>
                 </li>
@@ -144,45 +143,134 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link pastel-tab" id="tab-overdue-tab" data-bs-toggle="tab"
-                        data-bs-target="#tab-overdue" type="button" role="tab" aria-controls="tab-overdue"
+                    <button class="nav-link pastel-tab" id="tab-upcoming-tab" data-bs-toggle="tab"
+                        data-bs-target="#tab-upcoming" type="button" role="tab" aria-controls="tab-upcoming"
                         aria-selected="false">
-                        <i class="feather-alert-triangle me-2"></i>
-                        VENCIDOS
-                        <span class="badge bg-soft-danger text-danger">
-                            {{ $stats['overdue'] ?? 0 }}
+                        <i class="feather-clock me-2"></i>
+                        PRÓXIMOS A VENCER
+                        <span class="badge bg-soft-info text-info">
+                            {{ $stats['upcoming'] ?? 0 }}
+                        </span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link pastel-tab" id="tab-success-tab" data-bs-toggle="tab"
+                        data-bs-target="#tab-success" type="button" role="tab" aria-controls="tab-success"
+                        aria-selected="false" title="Solo tus interacciones exitosas, sin importar tu permiso de 'ver todos'.">
+                        <i class="feather-check-circle me-2"></i>
+                        MIS EXITOSOS
+                        <span class="badge bg-soft-teal text-success">
+                            {{ $stats['successful'] }}
+                        </span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link pastel-tab" id="tab-all-tab" data-bs-toggle="tab"
+                        data-bs-target="#tab-all" type="button" role="tab" aria-controls="tab-all"
+                        aria-selected="false">
+                        <i class="feather-inbox me-2"></i>
+                        TODOS
+                        <span class="badge bg-soft-teal text-teal">
+                            {{ $stats['total'] }}
                         </span>
                     </button>
                 </li>
             </ul>
+            <p class="text-muted fs-13 mb-3 d-none d-md-block">
+                <i class="feather-info me-1"></i>"Vencidos" y "Próximos a vencer" son la agenda: a quién se le
+                prometió una próxima acción y cuándo — <strong>según la gestión más reciente</strong> de cada
+                interacción. "Próximos a vencer" mira los siguientes 3 días.
+            </p>
+
+            @candirect('interacciones.listado.todos')
+                {{-- Filtro por usuario/área: solo tiene sentido para quien puede ver el trabajo de
+                     otros — sin este permiso ya se ve únicamente lo propio, sin nada que elegir.
+                     Solo aplica a Vencidos/Pendientes (JS lo muestra/oculta según la pestaña). --}}
+                <div class="d-flex flex-wrap align-items-end gap-2 mb-3 d-none" id="filtroAgendaUsuarioArea">
+                    <div>
+                        <label class="form-label fw-semibold text-muted small mb-1">Usuario</label>
+                        <select class="form-select form-select-sm pastel-input" id="filterAgendaAgente" style="min-width: 200px;">
+                            <option value="">Todos</option>
+                            @foreach ($listAgentesAgenda as $agente)
+                                <option value="{{ $agente->id }}">{{ $agente->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label fw-semibold text-muted small mb-1">Área</label>
+                        <select class="form-select form-select-sm pastel-input" id="filterAgendaArea" style="min-width: 180px;">
+                            <option value="">Todas</option>
+                            @foreach ($listAreasAgenda as $area)
+                                <option value="{{ $area }}">{{ strtoupper($area) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="limpiarFiltroAgenda">
+                        <i class="feather-x me-1"></i>Quitar filtro
+                    </button>
+                </div>
+            @endcandirect
 
             {{-- Contenido limpio de las tablas (DataTables llenará los tbody mediante AJAX) --}}
             <div class="tab-content" id="interactionTabsContent">
                 @foreach ($tabs as $key => $tabId)
                     <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="tab-{{ $key }}" role="tabpanel">
+                        @if ($key === 'success')
+                            {{-- Filtro propio de Exitosos (independiente del filtro general de arriba):
+                                 son 18.000+ interacciones exitosas en todo el histórico, así que por
+                                 defecto muestra solo el último mes; "Ver todos" lo quita. --}}
+                            <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                                <div>
+                                    <label class="form-label fw-semibold text-muted small mb-1">Desde</label>
+                                    <input type="date" id="filterExitosoDesde" class="form-control form-control-sm pastel-input"
+                                           value="{{ now()->subDays(30)->format('Y-m-d') }}">
+                                </div>
+                                <div>
+                                    <label class="form-label fw-semibold text-muted small mb-1">Hasta</label>
+                                    <input type="date" id="filterExitosoHasta" class="form-control form-control-sm pastel-input"
+                                           value="{{ now()->format('Y-m-d') }}">
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="verTodosExitosos">
+                                    <i class="feather-list me-1"></i>Ver todos
+                                </button>
+                                <span class="text-muted fs-13" id="exitosoFiltroTexto">Mostrando el último mes.</span>
+                            </div>
+                        @endif
                         <div class="table-responsive">
                             <table class="table table-sm table-hover align-middle w-100" id="{{ $tabId }}">
                                 <thead class="table-light pastel-thead">
-                                    <tr>
-                                        <th class="py-2">ID</th>
-                                        <th class="py-2">Usuario</th>
-                                        <th class="py-2">Cliente</th>
-                                        <th class="py-2">Distrito</th>
-                                        <th class="py-2">Fecha</th>
-                                        <th class="py-2">Canal</th>
-                                        <th class="py-2">Tiempo</th>
-                                        <th class="py-2">Motivo</th>
-                                        <th class="py-2">Línea y Resultado</th>
-                                        {{-- Columnas ocultas para DataTables Excel Export --}}
-                                        <th class="d-none">Línea 1</th>
-                                        <th class="d-none">Línea 2</th>
-                                        <th class="d-none">Línea 3</th>
-                                        <th class="d-none">Línea 4</th>
-                                        <th class="d-none">Línea 5</th>
-                                        <th class="d-none">Resultado Export</th>
-                                        
-                                        <th class="py-2 text-end">Acciones</th>
-                                    </tr>
+                                    @if (in_array($key, $tabsConAgenda))
+                                        <tr>
+                                            <th class="py-2">ID</th>
+                                            <th class="py-2">Cliente</th>
+                                            <th class="py-2">Asignado a</th>
+                                            <th class="py-2">Próxima acción</th>
+                                            <th class="py-2">Programada para</th>
+                                            <th class="py-2">Notas</th>
+                                            <th class="py-2 text-end">Acciones</th>
+                                        </tr>
+                                    @else
+                                        <tr>
+                                            <th class="py-2">ID</th>
+                                            <th class="py-2">Usuario</th>
+                                            <th class="py-2">Cliente</th>
+                                            <th class="py-2">Distrito</th>
+                                            <th class="py-2">Fecha</th>
+                                            <th class="py-2">Canal</th>
+                                            <th class="py-2">Tiempo</th>
+                                            <th class="py-2">Motivo</th>
+                                            <th class="py-2">Línea y Resultado</th>
+                                            {{-- Columnas ocultas para DataTables Excel Export --}}
+                                            <th class="d-none">Línea 1</th>
+                                            <th class="d-none">Línea 2</th>
+                                            <th class="d-none">Línea 3</th>
+                                            <th class="d-none">Línea 4</th>
+                                            <th class="d-none">Línea 5</th>
+                                            <th class="d-none">Resultado Export</th>
+
+                                            <th class="py-2 text-end">Acciones</th>
+                                        </tr>
+                                    @endif
                                 </thead>
                                 <tbody>
                                     {{-- DataTables Server-Side AJAX insertará las filas aquí --}}
@@ -327,7 +415,69 @@
                     }
 
                     let fechaHoy = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
-                    
+                    let esAgenda = (tabType === 'overdue' || tabType === 'upcoming');
+
+                    // Vencidos/Próximos son la agenda de seguimiento: a quién se le prometió qué
+                    // y cuándo (ver InteractionController@index, bloque "proxima_*"). No tiene
+                    // sentido mostrarles canal/motivo/línea de crédito ahí — lo urgente es la fecha
+                    // y la nota, con acceso directo a registrar el siguiente seguimiento.
+                    let columnasAgenda = [
+                        {
+                            data: 'id',
+                            render: function(data, type, row) {
+                                return `<a class="interaction-id fw-bold text-decoration-none pastel-link"
+                                    href="#" data-id="${row.id}" data-fecha="${row.fecha}" data-cliente="${row.cliente_nombre}"
+                                    data-client-id="${row.cliente_cc}" data-agent="${row.agente}" data-motivo="${row.motivo}"
+                                    data-duracion="${row.duracion}" data-outcome="${row.resultado}" data-notas="${row.notas}"
+                                    data-linea="${row.linea_1 || '—'}" data-asignado="${row.asignado}" data-llamante-nombre="${row.llamante_nombre}"
+                                    data-llamante-cedula="${row.llamante_cedula}" data-llamante-celular="${row.llamante_celular}"
+                                    data-llamante-parentesco="${row.llamante_parentesco}">
+                                    #${row.id}
+                                </a>`;
+                            }
+                        },
+                        {
+                            data: 'cliente_nombre',
+                            render: function(data, type, row) {
+                                return `<span class="fw-semibold mb-1">${row.cliente_nombre}</span>
+                                        <p class="fs-12 fw-semibold mb-0">CC : ${row.cliente_cc}</p>`;
+                            }
+                        },
+                        { data: 'asignado', render: data => `<span class="small">${data}</span>` },
+                        {
+                            data: 'proxima_accion',
+                            render: data => data
+                                ? `<span class="badge bg-soft-secondary text-dark">${data}</span>`
+                                : '<span class="text-muted small">—</span>'
+                        },
+                        {
+                            data: 'proxima_fecha',
+                            render: function(data, type, row) {
+                                if (!data) return '<span class="text-muted small">—</span>';
+                                let color = row.proxima_vencida ? 'danger' : 'info';
+                                return `<span class="small d-block">${data}</span>
+                                        <span class="badge bg-soft-${color} text-${color}">${row.proxima_texto || ''}</span>`;
+                            }
+                        },
+                        {
+                            data: 'proxima_notas',
+                            render: data => `<span class="small text-truncate-2-lines d-block" style="max-width: 280px;">${data || 'Sin notas.'}</span>`
+                        },
+                        {
+                            data: null,
+                            orderable: false,
+                            className: 'text-end py-2',
+                            render: function(data, type, row) {
+                                let url = "{{ route('interactions.show', ':interaction') }}".replace(':interaction', row.id);
+                                return `<div class="btn-group btn-group-sm">
+                                            <a class="btn btn-sm btn-primary" title="Registrar seguimiento" href="${url}?seguimiento=1">
+                                                <i class="feather-check-circle me-1"></i>Gestionar
+                                            </a>
+                                        </div>`;
+                            }
+                        }
+                    ];
+
                     currentTable = $(tableId).DataTable({
                         serverSide: true,
                         processing: true,
@@ -336,12 +486,25 @@
                             url: window.location.pathname,
                             data: function(d) {
                                 d.tab = tabType;
-                                d.start_date = $('#filterFechaInicio').val();
-                                d.end_date = $('#filterFechaFin').val();
+                                // Exitosos tiene su propio rango de fechas (por defecto el último
+                                // mes), independiente del filtro general de arriba — así cambiar de
+                                // pestaña nunca filtra "Todos" o "Vencidos" por accidente.
+                                if (tabType === 'success') {
+                                    d.start_date = $('#filterExitosoDesde').val();
+                                    d.end_date = $('#filterExitosoHasta').val();
+                                } else {
+                                    d.start_date = $('#filterFechaInicio').val();
+                                    d.end_date = $('#filterFechaFin').val();
+                                }
+                                // Filtro por usuario/área: solo Vencidos y Pendientes.
+                                if (tabType === 'overdue' || tabType === 'pending') {
+                                    d.agent_id = $('#filterAgendaAgente').val();
+                                    d.area_id = $('#filterAgendaArea').val();
+                                }
                                 // d.search.value is handled by DataTables automatically
                             }
                         },
-                        columns: [
+                        columns: esAgenda ? columnasAgenda : [
                             { 
                                 data: 'id',
                                 render: function(data, type, row) {
@@ -421,7 +584,7 @@
                                 title: 'Reporte de Interacciones',
                                 filename: 'Reporte_Interacciones_' + fechaHoy,
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             },
                             {
@@ -432,7 +595,7 @@
                                 orientation: 'landscape',
                                 pageSize: 'LEGAL',
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             },
                             {
@@ -440,7 +603,7 @@
                                 className: 'buttons-csv',
                                 filename: 'Reporte_Interacciones_' + fechaHoy,
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             }
                         ],
@@ -451,8 +614,16 @@
                     });
                 }
 
-                // Inicializar primera tabla
-                setTimeout(() => initializeDataTable('#tablaPrincipal', 'all'), 300);
+                // Inicializar primera tabla (Vencidos: la pestaña que abre por defecto)
+                setTimeout(() => initializeDataTable('#tablaVencidos', 'overdue'), 300);
+
+                // El filtro por usuario/área solo aplica a Vencidos/Pendientes (si el usuario no
+                // tiene el permiso, ese bloque no se renderizó, el elemento no existe y esto
+                // simplemente no hace nada).
+                function toggleFiltroAgenda(tab) {
+                    $('#filtroAgendaUsuarioArea').toggleClass('d-none', tab !== 'overdue' && tab !== 'pending');
+                }
+                toggleFiltroAgenda('overdue'); // estado inicial: Vencidos abre activo
 
                 // Eventos de pestañas
                 document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function(tabElement) {
@@ -463,7 +634,19 @@
                         else if (targetPaneId === '#tab-pending') initializeDataTable('#tablaPendientes', 'pending');
                         else if (targetPaneId === '#tab-today') initializeDataTable('#tablaHoy', 'today');
                         else if (targetPaneId === '#tab-overdue') initializeDataTable('#tablaVencidos', 'overdue');
+                        else if (targetPaneId === '#tab-upcoming') initializeDataTable('#tablaProximos', 'upcoming');
+                        toggleFiltroAgenda(targetPaneId.replace('#tab-', ''));
                     });
+                });
+
+                // Cambiar usuario/área o "Quitar filtro" vuelve a pedir los datos de la tabla
+                // activa (currentTable.draw() relee los selects vía ajax.data de arriba).
+                $('#filterAgendaAgente, #filterAgendaArea').on('change', function () {
+                    if (currentTable) currentTable.draw();
+                });
+                $('#limpiarFiltroAgenda').on('click', function () {
+                    $('#filterAgendaAgente, #filterAgendaArea').val('');
+                    if (currentTable) currentTable.draw();
                 });
 
                 // Botones de filtro
@@ -471,6 +654,21 @@
                     if (currentTable) {
                         currentTable.search($('#filterSearch').val()).draw();
                     }
+                });
+
+                // Filtro propio de Exitosos: cambiar las fechas o pulsar "Ver todos" vuelve a
+                // pedir los datos (currentTable.draw() relee los inputs vía ajax.data de arriba).
+                // Solo importa mientras esa pestaña está activa, que es cuando estos campos son
+                // visibles/alcanzables.
+                $('#filterExitosoDesde, #filterExitosoHasta').on('change', function () {
+                    $('#exitosoFiltroTexto').text('Filtrado por fecha.');
+                    if (currentTable) currentTable.draw();
+                });
+                $('#verTodosExitosos').on('click', function () {
+                    $('#filterExitosoDesde').val('');
+                    $('#filterExitosoHasta').val('');
+                    $('#exitosoFiltroTexto').text('Mostrando todo el histórico.');
+                    if (currentTable) currentTable.draw();
                 });
 
                 $('#clearFilters').on('click', function() {

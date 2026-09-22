@@ -315,11 +315,21 @@ class RoleController extends Controller
     public function destroy(Request $request, $idUser)
     {
         $user = User::find($idUser);
-        $role = Role::find($request->rol);
         if (!$user) {
             return redirect()->back()->with('error', 'Usuario no encontrado');
         }
-        DB::table('actions')->where('user_id', $user->id)->where('role_id', $request->rol)->delete();
+
+        // El formulario de "Revocar Perfil" tenía novalidate y nada la reemplazaba: al pulsar
+        // Eliminar sin elegir un perfil, $request->rol llegaba vacío, Role::find(null) devolvía
+        // null y $role->name reventaba la página (Internal Server Error). Se valida antes de
+        // tocar nada, y de paso se confirma que el perfil sea uno que el usuario tenga hoy (no
+        // cualquier id).
+        $role = $request->filled('rol') ? Role::find($request->rol) : null;
+        if (!$role || !DB::table('actions')->where('user_id', $user->id)->where('role_id', $role->id)->exists()) {
+            return redirect()->back()->with('error', 'Selecciona el perfil que quieres revocar.');
+        }
+
+        DB::table('actions')->where('user_id', $user->id)->where('role_id', $role->id)->delete();
         // Los permisos del usuario provienen de sus roles: al quitar el rol se le quitan también
         // los permisos que solo ese rol le daba.
         app(PermisosPorRolService::class)->sincronizarUsuario($user->id);
