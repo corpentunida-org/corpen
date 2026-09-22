@@ -25,7 +25,11 @@
             'pending' => 'tablaPendientes',
             'today' => 'tablaHoy',
             'overdue' => 'tablaVencidos',
+            'upcoming' => 'tablaProximos',
         ];
+        // Vencidos/Próximos muestran la agenda de seguimiento (a quién se le prometió qué y
+        // cuándo), no las columnas genéricas de canal/motivo — son la lista de trabajo del día.
+        $tabsConAgenda = ['overdue', 'upcoming'];
     @endphp
 
     {{-- Filtros: Solo Búsqueda y Rango de Fechas --}}
@@ -154,7 +158,23 @@
                         </span>
                     </button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link pastel-tab" id="tab-upcoming-tab" data-bs-toggle="tab"
+                        data-bs-target="#tab-upcoming" type="button" role="tab" aria-controls="tab-upcoming"
+                        aria-selected="false">
+                        <i class="feather-clock me-2"></i>
+                        PRÓXIMOS
+                        <span class="badge bg-soft-info text-info">
+                            {{ $stats['upcoming'] ?? 0 }}
+                        </span>
+                    </button>
+                </li>
             </ul>
+            <p class="text-muted fs-13 mb-3 d-none d-md-block">
+                <i class="feather-info me-1"></i>"Vencidos" y "Próximos" son la agenda: a quién se le
+                prometió una próxima acción y cuándo — <strong>según la gestión más reciente</strong> de cada
+                interacción. "Próximos" mira los siguientes 7 días.
+            </p>
 
             {{-- Contenido limpio de las tablas (DataTables llenará los tbody mediante AJAX) --}}
             <div class="tab-content" id="interactionTabsContent">
@@ -163,26 +183,38 @@
                         <div class="table-responsive">
                             <table class="table table-sm table-hover align-middle w-100" id="{{ $tabId }}">
                                 <thead class="table-light pastel-thead">
-                                    <tr>
-                                        <th class="py-2">ID</th>
-                                        <th class="py-2">Usuario</th>
-                                        <th class="py-2">Cliente</th>
-                                        <th class="py-2">Distrito</th>
-                                        <th class="py-2">Fecha</th>
-                                        <th class="py-2">Canal</th>
-                                        <th class="py-2">Tiempo</th>
-                                        <th class="py-2">Motivo</th>
-                                        <th class="py-2">Línea y Resultado</th>
-                                        {{-- Columnas ocultas para DataTables Excel Export --}}
-                                        <th class="d-none">Línea 1</th>
-                                        <th class="d-none">Línea 2</th>
-                                        <th class="d-none">Línea 3</th>
-                                        <th class="d-none">Línea 4</th>
-                                        <th class="d-none">Línea 5</th>
-                                        <th class="d-none">Resultado Export</th>
-                                        
-                                        <th class="py-2 text-end">Acciones</th>
-                                    </tr>
+                                    @if (in_array($key, $tabsConAgenda))
+                                        <tr>
+                                            <th class="py-2">ID</th>
+                                            <th class="py-2">Cliente</th>
+                                            <th class="py-2">Asignado a</th>
+                                            <th class="py-2">Próxima acción</th>
+                                            <th class="py-2">Programada para</th>
+                                            <th class="py-2">Notas</th>
+                                            <th class="py-2 text-end">Acciones</th>
+                                        </tr>
+                                    @else
+                                        <tr>
+                                            <th class="py-2">ID</th>
+                                            <th class="py-2">Usuario</th>
+                                            <th class="py-2">Cliente</th>
+                                            <th class="py-2">Distrito</th>
+                                            <th class="py-2">Fecha</th>
+                                            <th class="py-2">Canal</th>
+                                            <th class="py-2">Tiempo</th>
+                                            <th class="py-2">Motivo</th>
+                                            <th class="py-2">Línea y Resultado</th>
+                                            {{-- Columnas ocultas para DataTables Excel Export --}}
+                                            <th class="d-none">Línea 1</th>
+                                            <th class="d-none">Línea 2</th>
+                                            <th class="d-none">Línea 3</th>
+                                            <th class="d-none">Línea 4</th>
+                                            <th class="d-none">Línea 5</th>
+                                            <th class="d-none">Resultado Export</th>
+
+                                            <th class="py-2 text-end">Acciones</th>
+                                        </tr>
+                                    @endif
                                 </thead>
                                 <tbody>
                                     {{-- DataTables Server-Side AJAX insertará las filas aquí --}}
@@ -327,7 +359,69 @@
                     }
 
                     let fechaHoy = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
-                    
+                    let esAgenda = (tabType === 'overdue' || tabType === 'upcoming');
+
+                    // Vencidos/Próximos son la agenda de seguimiento: a quién se le prometió qué
+                    // y cuándo (ver InteractionController@index, bloque "proxima_*"). No tiene
+                    // sentido mostrarles canal/motivo/línea de crédito ahí — lo urgente es la fecha
+                    // y la nota, con acceso directo a registrar el siguiente seguimiento.
+                    let columnasAgenda = [
+                        {
+                            data: 'id',
+                            render: function(data, type, row) {
+                                return `<a class="interaction-id fw-bold text-decoration-none pastel-link"
+                                    href="#" data-id="${row.id}" data-fecha="${row.fecha}" data-cliente="${row.cliente_nombre}"
+                                    data-client-id="${row.cliente_cc}" data-agent="${row.agente}" data-motivo="${row.motivo}"
+                                    data-duracion="${row.duracion}" data-outcome="${row.resultado}" data-notas="${row.notas}"
+                                    data-linea="${row.linea_1 || '—'}" data-asignado="${row.asignado}" data-llamante-nombre="${row.llamante_nombre}"
+                                    data-llamante-cedula="${row.llamante_cedula}" data-llamante-celular="${row.llamante_celular}"
+                                    data-llamante-parentesco="${row.llamante_parentesco}">
+                                    #${row.id}
+                                </a>`;
+                            }
+                        },
+                        {
+                            data: 'cliente_nombre',
+                            render: function(data, type, row) {
+                                return `<span class="fw-semibold mb-1">${row.cliente_nombre}</span>
+                                        <p class="fs-12 fw-semibold mb-0">CC : ${row.cliente_cc}</p>`;
+                            }
+                        },
+                        { data: 'asignado', render: data => `<span class="small">${data}</span>` },
+                        {
+                            data: 'proxima_accion',
+                            render: data => data
+                                ? `<span class="badge bg-soft-secondary text-dark">${data}</span>`
+                                : '<span class="text-muted small">—</span>'
+                        },
+                        {
+                            data: 'proxima_fecha',
+                            render: function(data, type, row) {
+                                if (!data) return '<span class="text-muted small">—</span>';
+                                let color = row.proxima_vencida ? 'danger' : 'info';
+                                return `<span class="small d-block">${data}</span>
+                                        <span class="badge bg-soft-${color} text-${color}">${row.proxima_texto || ''}</span>`;
+                            }
+                        },
+                        {
+                            data: 'proxima_notas',
+                            render: data => `<span class="small text-truncate-2-lines d-block" style="max-width: 280px;">${data || 'Sin notas.'}</span>`
+                        },
+                        {
+                            data: null,
+                            orderable: false,
+                            className: 'text-end py-2',
+                            render: function(data, type, row) {
+                                let url = "{{ route('interactions.show', ':interaction') }}".replace(':interaction', row.id);
+                                return `<div class="btn-group btn-group-sm">
+                                            <a class="btn btn-sm btn-primary" title="Registrar seguimiento" href="${url}?seguimiento=1">
+                                                <i class="feather-check-circle me-1"></i>Gestionar
+                                            </a>
+                                        </div>`;
+                            }
+                        }
+                    ];
+
                     currentTable = $(tableId).DataTable({
                         serverSide: true,
                         processing: true,
@@ -341,7 +435,7 @@
                                 // d.search.value is handled by DataTables automatically
                             }
                         },
-                        columns: [
+                        columns: esAgenda ? columnasAgenda : [
                             { 
                                 data: 'id',
                                 render: function(data, type, row) {
@@ -421,7 +515,7 @@
                                 title: 'Reporte de Interacciones',
                                 filename: 'Reporte_Interacciones_' + fechaHoy,
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             },
                             {
@@ -432,7 +526,7 @@
                                 orientation: 'landscape',
                                 pageSize: 'LEGAL',
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             },
                             {
@@ -440,7 +534,7 @@
                                 className: 'buttons-csv',
                                 filename: 'Reporte_Interacciones_' + fechaHoy,
                                 exportOptions: {
-                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
+                                    columns: esAgenda ? ':visible' : [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14]
                                 }
                             }
                         ],
@@ -463,6 +557,7 @@
                         else if (targetPaneId === '#tab-pending') initializeDataTable('#tablaPendientes', 'pending');
                         else if (targetPaneId === '#tab-today') initializeDataTable('#tablaHoy', 'today');
                         else if (targetPaneId === '#tab-overdue') initializeDataTable('#tablaVencidos', 'overdue');
+                        else if (targetPaneId === '#tab-upcoming') initializeDataTable('#tablaProximos', 'upcoming');
                     });
                 });
 
