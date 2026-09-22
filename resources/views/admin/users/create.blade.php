@@ -19,12 +19,6 @@
                             @csrf
                             @method('POST')
                             <div class="mb-4">
-                                <label class="form-label">Nombre y Apellidos<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control uppercase-input @error('name') is-invalid @enderror"
-                                       name="name" value="{{ old('name') }}" required>
-                                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                            </div>
-                            <div class="mb-4">
                                 <label class="form-label">Cédula<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control @error('nid') is-invalid @enderror" id="nidInput"
                                        name="nid" value="{{ old('nid') }}" inputmode="numeric" maxlength="20" required>
@@ -33,6 +27,14 @@
                                 @else
                                     <div class="form-text fs-13" id="nidFeedback"></div>
                                 @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Nombre y Apellidos<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control uppercase-input @error('name') is-invalid @enderror"
+                                       name="name" id="nameInput" value="{{ old('name') }}" readonly required
+                                       placeholder="Se completa al escribir una cédula válida...">
+                                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <div class="form-text fs-13">Viene de Terceros — no se escribe a mano.</div>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Correo corporativo<span class="text-danger">*</span></label>
@@ -84,6 +86,7 @@
                 clearTimeout(temporizadorNid);
                 const cedula = $(this).val().trim();
                 const feedback = $('#nidFeedback');
+                $('#nameInput').val(''); // el nombre se vuelve a llenar solo cuando la cédula confirme
                 if (cedula === '') { feedback.text(''); return; }
                 feedback.removeClass('text-success text-danger').addClass('text-muted').text('Verificando...');
                 temporizadorNid = setTimeout(function () {
@@ -96,6 +99,7 @@
                                 feedback.addClass('text-danger').text('✗ ' + r.nombre + ' — ya tiene un usuario con esta cédula.');
                             } else {
                                 feedback.addClass('text-success').text('✓ Coincide con: ' + r.nombre);
+                                $('#nameInput').val(r.nombre);
                             }
                         })
                         .fail(function () { feedback.removeClass('text-muted').addClass('text-danger').text('No se pudo verificar. Intenta de nuevo.'); });
