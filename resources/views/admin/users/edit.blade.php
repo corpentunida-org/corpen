@@ -358,8 +358,19 @@
                         <div class="card-body p-3 p-md-4">
                             <div class="row g-3">
                                 <div class="col-md-6">
+                                    <label class="ui-form-label">Cédula <span class="text-danger">*</span></label>
+                                    <input type="text" class="ui-input @error('nid') is-invalid @enderror" id="nidInput"
+                                           value="{{ old('nid', $user->nid) }}" name="nid" required inputmode="numeric" maxlength="20">
+                                    @error('nid')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @else
+                                        <div class="form-text fs-13" id="nidFeedback"></div>
+                                    @enderror
+                                </div>
+                                <div class="col-md-6">
                                     <label class="ui-form-label">Nombre Completo <span class="text-danger">*</span></label>
-                                    <input type="text" class="ui-input" value="{{ $user->name }}" name="name" required placeholder="Ej. Carlos Mendoza">
+                                    <input type="text" class="ui-input" value="{{ $user->name }}" name="name" id="nameInput" readonly required placeholder="Se completa según la cédula...">
+                                    <div class="form-text fs-13">Viene de Terceros — no se escribe a mano.</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="ui-form-label">Correo Electrónico <span class="text-danger">*</span></label>
@@ -436,6 +447,34 @@
 
     <script>
         $(document).ready(function() {
+            // Confirma en vivo si la cédula existe como tercero — mismo patrón que Crear Usuario.
+            // excluir_usuario_id: al editar, la cédula ya la tiene ESTE usuario, no cuenta como
+            // "ya tiene usuario" contra sí mismo.
+            let temporizadorNid;
+            $('#nidInput').on('input', function () {
+                clearTimeout(temporizadorNid);
+                const cedula = $(this).val().trim();
+                const feedback = $('#nidFeedback');
+                if (!feedback.length) return; // el campo tenía un error de validación, no hay feedback que llenar
+                if (cedula === '') { feedback.text(''); return; }
+                feedback.removeClass('text-success text-danger').addClass('text-muted').text('Verificando...');
+                temporizadorNid = setTimeout(function () {
+                    $.getJSON('{{ route('admin.users.buscar-tercero') }}', { cedula: cedula, excluir_usuario_id: {{ $user->id }} })
+                        .done(function (r) {
+                            feedback.removeClass('text-muted text-success text-danger');
+                            if (!r.encontrado) {
+                                feedback.addClass('text-danger').text('No se encontró esta cédula en Terceros.');
+                            } else if (r.ya_tiene_usuario) {
+                                feedback.addClass('text-danger').text('✗ ' + r.nombre + ' — ya tiene otro usuario con esta cédula.');
+                            } else {
+                                feedback.addClass('text-success').text('✓ Coincide con: ' + r.nombre);
+                                $('#nameInput').val(r.nombre);
+                            }
+                        })
+                        .fail(function () { feedback.removeClass('text-muted').addClass('text-danger').text('No se pudo verificar. Intenta de nuevo.'); });
+                }, 400);
+            });
+
             // Inicializar tooltips para el gráfico de actividad y botones
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {

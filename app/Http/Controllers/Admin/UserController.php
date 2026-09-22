@@ -187,13 +187,30 @@ class UserController extends Controller
         }
 
         $tercero = MaeTerceros::where('cod_ter', $cedula)->first(['cod_ter', 'nom_ter']);
-        $yaTieneUsuario = User::where('nid', $cedula)->exists();
+        // Al editar, excluir_usuario_id es el propio usuario: si no se excluye, la cédula que ya
+        // tiene ese mismo registro sale como "ya tiene usuario" al consultarla sobre sí misma.
+        $yaTieneUsuario = User::where('nid', $cedula)
+            ->when($request->filled('excluir_usuario_id'), fn ($q) => $q->where('id', '!=', $request->query('excluir_usuario_id')))
+            ->exists();
 
         return response()->json([
             'encontrado' => (bool) $tercero,
             'nombre' => $tercero->nom_ter ?? null,
             'ya_tiene_usuario' => $yaTieneUsuario,
         ]);
+    }
+
+    /**
+     * El nombre del usuario viene de Terceros, no de lo que se escriba en el formulario (evita
+     * que el nombre de la cuenta y el de Terceros queden distintos). Se usa en store() y en
+     * update(). Si el tercero existe pero no tiene nombre cargado (dato incompleto en Terceros),
+     * cae al nombre que trae el formulario en vez de guardar un usuario sin nombre.
+     */
+    private function nombreDesdeTercero(string $cedula, ?string $nombreFormulario): string
+    {
+        $nombreTercero = MaeTerceros::where('cod_ter', $cedula)->value('nom_ter');
+
+        return strtoupper(trim($nombreTercero ?: (string) $nombreFormulario));
     }
 
     public function store(Request $request)
@@ -218,7 +235,9 @@ class UserController extends Controller
         ]);
 
         $user = User::create([
-            'name' => strtoupper($request->input('name')),
+            // El nombre lo trae Terceros (nombreDesdeTercero), no lo que se haya escrito en el
+            // campo: evita que el nombre de la cuenta quede distinto al de Terceros.
+            'name' => $this->nombreDesdeTercero($request->input('nid'), $request->input('name')),
             'email' => $request->input('email'),
             'nid' => $request->input('nid'),
             'password' => bcrypt($request->input('pass')),
@@ -243,9 +262,23 @@ class UserController extends Controller
             return $this->updateAsociado($request, $user);
         }
 
+        // Cédula obligatoria y ligada a Terceros, igual que al crear: así se puede completar la
+        // de los empleados que quedaron sin ella (13 activos a la fecha), y el nombre pasa a
+        // venir de Terceros en vez de lo que se escriba en el campo.
+        $request->validate([
+            'nid' => ['required', 'string', 'max:20', 'unique:users,nid,' . $user->id, 'exists:MaeTerceros,cod_ter'],
+        ], [
+            'nid.unique' => 'Ya existe un usuario con esta cédula.',
+            'nid.exists' => 'Esta cédula no está registrada en Terceros. Verifica el número, o créala primero en Maestras → Terceros.',
+        ]);
+
         $update = [];
-        if(strtoupper($request->input('name'))!== $user->name){
-            $update['name'] = strtoupper($request->input('name'));
+        $nombreTercero = $this->nombreDesdeTercero($request->input('nid'), $request->input('name'));
+        if ($nombreTercero !== $user->name) {
+            $update['name'] = $nombreTercero;
+        }
+        if ($request->input('nid') !== $user->nid) {
+            $update['nid'] = $request->input('nid');
         }
         // El campo de correo sí está en el formulario (Datos Personales) pero nunca se
         // procesaba aquí — se editaba en pantalla y se descartaba en silencio al guardar.

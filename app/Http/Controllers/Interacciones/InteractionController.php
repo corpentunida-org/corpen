@@ -527,6 +527,24 @@ class InteractionController extends Controller
         return IntSeguimiento::whereIn('id', $ultimos)->whereNotNull('next_action_date');
     }
 
+    /**
+     * El área de un agente para Interacciones: la de su perfil (roles.area en la Matriz de
+     * Permisos), no la de Recursos Humanos (cargo/gdo_area) — esa depende de tener cédula y un
+     * cargo documentado, y hoy varios agentes activos no lo tienen (Magnolia Peña, por ejemplo).
+     * El perfil, en cambio, ya lo tiene asignado todo el que usa la aplicación.
+     * Requiere 'roles' precargado en el modelo (with('agent.roles')). Si el usuario aún tiene más
+     * de un perfil (caso legado, antes de "un perfil por usuario"), se prefiere uno que sí tenga
+     * área asignada en vez del primero al azar.
+     */
+    private function perfilPrincipal(?User $agente)
+    {
+        if (!$agente || !$agente->relationLoaded('roles')) {
+            return null;
+        }
+
+        return $agente->roles->sortByDesc(fn ($r) => $r->area ? 1 : 0)->first();
+    }
+
     /** "Vencido hace 3 días" / "Vence hoy" / "Vence en 2 días", para la lista de pendientes. */
     private function textoDiasRestantes(Carbon $fecha): string
     {
@@ -566,10 +584,17 @@ class InteractionController extends Controller
 
             $stats = (clone $baseQuery)->selectRaw('
                 COUNT(*) as total,
-                SUM(CASE WHEN outcome IN ('.implode(',', $successfulOutcomeIds ?: [0]).') THEN 1 ELSE 0 END) as successful,
                 SUM(CASE WHEN outcome IN ('.implode(',', $pendingOutcomeIds ?: [0]).') THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN DATE(interaction_date) = CURDATE() THEN 1 ELSE 0 END) as today
             ')->first()->toArray();
+
+            // Exitosos es SIEMPRE personal (lo que YO gestioné), sin importar el permiso "ver
+            // todos" — es un tablero de logro propio, no un listado general. El último mes por
+            // defecto, mismo criterio que usa la pestaña.
+            $stats['successful'] = Interaction::where('agent_id', Auth::id())
+                ->whereIn('outcome', $successfulOutcomeIds ?: [0])
+                ->whereBetween('interaction_date', [now()->subDays(30)->startOfDay(), now()->endOfDay()])
+                ->count();
 
             $abiertaScope = fn ($q) => $q->where('estado', '!=', 1)->orWhereNull('estado');
 
@@ -579,7 +604,7 @@ class InteractionController extends Controller
                 ->count();
 
             $stats['upcoming'] = (clone $baseQuery)
-                ->whereIn('id', (clone $this->ultimosSeguimientosPendientes())->whereBetween('next_action_date', [now(), now()->copy()->addDays(7)])->select('id_interaction'))
+                ->whereIn('id', (clone $this->ultimosSeguimientosPendientes())->whereBetween('next_action_date', [now(), now()->copy()->addDays(3)])->select('id_interaction'))
                 ->whereHas('outcomeRelation', $abiertaScope)
                 ->count();
         }
@@ -589,16 +614,37 @@ class InteractionController extends Controller
         $channels = Cache::remember('cat_channels', 86400, fn () => IntChannel::orderBy('name')->pluck('name', 'id'));
         $outcomes = Cache::remember('cat_outcomes', 86400, fn () => IntOutcome::orderBy('name')->pluck('name', 'id'));
 
+        // Para el filtro por usuario/área de Vencidos y Pendientes: solo tiene sentido para quien
+        // puede ver el trabajo de otros (interacciones.listado.todos) — sin ese permiso, $baseQuery
+        // ya lo deja viendo únicamente lo suyo. Se listan solo las personas con acceso al módulo
+        // (menu.interacciones), no los 1000+ usuarios del sistema.
+        // El área es la del PERFIL (roles.area, Matriz de Permisos), no la de RRHH (gdo_area):
+        // esa depende de tener cédula y cargo documentado, y no todos los agentes activos lo
+        // tienen todavía; el perfil ya lo tiene asignado todo el que usa la aplicación.
+        $listAgentesAgenda = collect();
+        $listAreasAgenda = collect();
+        if (!$request->ajax() && auth()->user()->hasDirectPermission('interacciones.listado.todos')) {
+            $listAgentesAgenda = User::whereHas('permissions', fn ($q) => $q->where('name', 'menu.interacciones'))
+                ->orderBy('name')->get(['id', 'name']);
+            $listAreasAgenda = DB::table('roles')->whereNotNull('area')->distinct()->orderBy('area')->pluck('area');
+        }
+
         // ==========================================
         // 3. RESPUESTA AJAX PARA DATATABLES (SERVER-SIDE)
         // ==========================================
         if ($request->ajax()) {
-            $query = Interaction::with(['client.distrito', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado']);
+            // (clone $baseQuery), no Interaction::query() nueva: $baseQuery ya trae la seguridad
+            // por agente (solo lo propio, sin el permiso "ver todos"). Antes esta tabla arrancaba
+            // de cero y no la heredaba — cualquiera con acceso al módulo veía TODAS las
+            // interacciones de TODOS los agentes en las 6 pestañas, tuviera o no el permiso.
+            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado']);
 
             // A) Filtro por pestaña activa
             $tab = $request->input('tab', 'all');
             if ($tab === 'success') {
-                $query->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1));
+                // Exitosos es siempre personal (ver comentario en $stats['successful']), incluso
+                // para quien sí tiene "ver todos los agentes".
+                $query->where('agent_id', Auth::id())->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1));
             } elseif ($tab === 'pending') {
                 $query->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'));
             } elseif ($tab === 'today') {
@@ -609,8 +655,21 @@ class InteractionController extends Controller
                 $query->whereIn('id', $this->ultimosSeguimientosPendientes()->where('next_action_date', '<', now())->select('id_interaction'))
                       ->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'));
             } elseif ($tab === 'upcoming') {
-                $query->whereIn('id', $this->ultimosSeguimientosPendientes()->whereBetween('next_action_date', [now(), now()->copy()->addDays(7)])->select('id_interaction'))
+                $query->whereIn('id', $this->ultimosSeguimientosPendientes()->whereBetween('next_action_date', [now(), now()->copy()->addDays(3)])->select('id_interaction'))
                       ->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'));
+            }
+
+            // A.1) Filtro por usuario o área — solo Vencidos y Pendientes. No hace falta
+            // comprobar aquí el permiso "ver todos": $baseQuery ya deja a quien no lo tiene
+            // viendo únicamente lo suyo, así que filtrar por OTRO agente simplemente no encuentra
+            // nada (no hay forma de que esto filtre de más).
+            if (in_array($tab, ['overdue', 'pending'], true)) {
+                if ($request->filled('agent_id')) {
+                    $query->where('agent_id', $request->input('agent_id'));
+                }
+                if ($request->filled('area_id')) {
+                    $query->whereHas('agent.roles', fn ($q) => $q->where('area', $request->input('area_id')));
+                }
             }
 
             // B) Filtros del usuario (Buscador general)
@@ -670,7 +729,9 @@ class InteractionController extends Controller
                     'cliente_cc' => $item->client_id ?? '—',
                     'distrito' => $item->client->distrito->NOM_DIST ?? '—',
                     'agente' => $item->agent->name ?? '—',
-                    'agente_area' => $item->agent->cargoRelation->gdoArea->nombre ?? '',
+                    'agente_area' => optional($this->perfilPrincipal($item->agent))->area
+                        ? strtoupper($this->perfilPrincipal($item->agent)->area)
+                        : optional($this->perfilPrincipal($item->agent))->name,
                     'agente_cargo' => $item->agent->cargoRelation->nombre_cargo ?? '',
                     'canal' => $item->channel->name ?? '—',
                     'motivo' => $item->type->name ?? 'N/A',
@@ -713,7 +774,7 @@ class InteractionController extends Controller
         }
 
         // 4. Si es la carga normal de la vista, YA NO ENVIAMOS $interactions NI $collectionsForTabs
-        return view('interactions.index', compact('stats', 'channels', 'outcomes'));
+        return view('interactions.index', compact('stats', 'channels', 'outcomes', 'listAgentesAgenda', 'listAreasAgenda'));
     }
 
     /**
