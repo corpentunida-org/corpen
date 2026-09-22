@@ -863,106 +863,119 @@ Route::prefix('interactions')
     ->middleware(['auth'])
     ->name('interactions.')
     ->group(function () {
-        // 📄 Página principal (lista de interacciones)
-        Route::get('/', [InteractionController::class, 'index'])->name('index');
+        // Antes solo exigían sesión iniciada (auth): cualquier usuario del sistema, sin
+        // importar su perfil, podía entrar por URL directa aunque no tuviera el módulo en su
+        // menú. menu.interacciones ya es el permiso que decide si alguien ve "Daytrack" en el
+        // menú (ver layouts/actions/interacciones.blade.php) — aquí se exige también para
+        // entrar a las pantallas, no solo para verlas listadas.
+        Route::middleware('candirect:menu.interacciones')->group(function () {
+            // 📄 Página principal (lista de interacciones)
+            Route::get('/', [InteractionController::class, 'index'])->name('index');
 
-        // 📊 Informe / Dashboard de interacciones
-        Route::get('/report', [InteractionController::class, 'report'])->name('report');
+            // 📊 Informe / Dashboard de interacciones
+            Route::get('/report', [InteractionController::class, 'report'])->name('report');
 
-        // 📄 NUEVO: Descargar/Ver PDF del Informe de interacciones
-        Route::get('/report/pdf', [InteractionController::class, 'reportPdf'])->name('report.pdf');
+            // 📄 NUEVO: Descargar/Ver PDF del Informe de interacciones
+            Route::get('/report/pdf', [InteractionController::class, 'reportPdf'])->name('report.pdf');
 
-        // ➕ Crear nueva interacción
-        Route::get('/create', [InteractionController::class, 'create'])->name('create');
-        Route::post('/', [InteractionController::class, 'store'])->name('store');
+            // ➕ Crear nueva interacción
+            Route::get('/create', [InteractionController::class, 'create'])->name('create');
+            Route::post('/', [InteractionController::class, 'store'])->name('store');
 
-        // 👁️ Mostrar detalle
-        Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
+            // 👁️ Mostrar detalle
+            Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
 
-        // 🚀 NUEVA RUTA PARA AJAX (Punto 3): Obtener seguimientos dinámicamente
-        Route::get('/{interaction}/seguimientos', [InteractionController::class, 'getSeguimientos'])->name('seguimientos.ajax');
+            // 🚀 NUEVA RUTA PARA AJAX (Punto 3): Obtener seguimientos dinámicamente
+            Route::get('/{interaction}/seguimientos', [InteractionController::class, 'getSeguimientos'])->name('seguimientos.ajax');
 
-        // ✏️ Editar / actualizar
-        Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
-        Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
+            // ✏️ Editar / actualizar
+            Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
+            Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
 
-        // 🗑️ Eliminar
-        Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
+            // 🗑️ Eliminar
+            Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
 
-        // 📎 Archivos adjuntos
-        Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
-        Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
+            // 📎 Archivos adjuntos
+            Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
+            Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 
-        // 📌 AJAX: Obtener datos del cliente por cod_ter
-        Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
+            // 📌 AJAX: Obtener datos del cliente por cod_ter
+            Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
 
-        // 📌 AJAX: Buscar clientes para Select2
-        Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
+            // 📌 AJAX: Buscar clientes para Select2
+            Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
 
-        // 🆕 NUEVA RUTA: Buscar usuarios para Select2 (Delegar a otro)
-        Route::get('/search-users', [InteractionController::class, 'searchUsers'])->name('searchUsers');
+            // 🆕 NUEVA RUTA: Buscar usuarios para Select2 (Delegar a otro)
+            Route::get('/search-users', [InteractionController::class, 'searchUsers'])->name('searchUsers');
 
-        // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
-        Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
+            // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
+            Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
 
-        // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
-        Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
+            // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
+            Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
 
-        // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
-        Route::prefix('channels')
-            ->name('channels.')
-            ->group(function () {
-                Route::get('/', [IntChannelController::class, 'index'])->name('index');
-                Route::get('/create', [IntChannelController::class, 'create'])->name('create');
-                Route::post('/', [IntChannelController::class, 'store'])->name('store');
-                Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
-                Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
-                Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
-                Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
-            });
+            // 🆕 RUTA DE SEGUIMIENTOS
+            Route::post('/seguimientos/store', [IntSeguimientoController::class, 'store'])->name('seguimientos.store');
+        });
 
-        // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
-        Route::prefix('types')
-            ->name('types.')
-            ->group(function () {
-                Route::get('/', [IntTypeController::class, 'index'])->name('index');
-                Route::get('/create', [IntTypeController::class, 'create'])->name('create');
-                Route::post('/', [IntTypeController::class, 'store'])->name('store');
-                Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
-                Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
-                Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
-                Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
-            });
+        // Catálogos del módulo (canales, tipos, resultados, próximas acciones): antes también
+        // solo exigían sesión iniciada. interacciones.parametros.index ya es el permiso que
+        // decide si alguien ve el submenú "Parámetros" — quien no lo tiene podía igual entrar
+        // por URL directa y, por ejemplo, cambiar qué resultado cuenta como "exitoso" para
+        // todos los agentes.
+        Route::middleware('candirect:interacciones.parametros.index')->group(function () {
+            // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
+            Route::prefix('channels')
+                ->name('channels.')
+                ->group(function () {
+                    Route::get('/', [IntChannelController::class, 'index'])->name('index');
+                    Route::get('/create', [IntChannelController::class, 'create'])->name('create');
+                    Route::post('/', [IntChannelController::class, 'store'])->name('store');
+                    Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
+                    Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
+                    Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
+                    Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+                });
 
-        // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
-        Route::prefix('outcomes')
-            ->name('outcomes.')
-            ->group(function () {
-                Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
-                Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
-                Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
-                Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
-                Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
-                Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
-                Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
-            });
+            // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
+            Route::prefix('types')
+                ->name('types.')
+                ->group(function () {
+                    Route::get('/', [IntTypeController::class, 'index'])->name('index');
+                    Route::get('/create', [IntTypeController::class, 'create'])->name('create');
+                    Route::post('/', [IntTypeController::class, 'store'])->name('store');
+                    Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
+                    Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
+                    Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
+                    Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+                });
 
-        // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
-        Route::prefix('next_actions')
-            ->name('next_actions.')
-            ->group(function () {
-                Route::get('/', [IntNextActionController::class, 'index'])->name('index');
-                Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
-                Route::post('/', [IntNextActionController::class, 'store'])->name('store');
-                Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
-                Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
-                Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
-                Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
-            });
+            // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
+            Route::prefix('outcomes')
+                ->name('outcomes.')
+                ->group(function () {
+                    Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
+                    Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
+                    Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
+                    Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
+                    Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
+                    Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
+                    Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+                });
 
-        // 🆕 RUTA DE SEGUIMIENTOS
-        // Se coloca aquí para que herede el middleware auth y el prefijo
-        Route::post('/seguimientos/store', [IntSeguimientoController::class, 'store'])->name('seguimientos.store');
+            // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
+            Route::prefix('next_actions')
+                ->name('next_actions.')
+                ->group(function () {
+                    Route::get('/', [IntNextActionController::class, 'index'])->name('index');
+                    Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
+                    Route::post('/', [IntNextActionController::class, 'store'])->name('store');
+                    Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
+                    Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
+                    Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
+                    Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
+                });
+        });
 
         // ==========================================================
         // 💬 NUEVO: MÓDULO DE CHAT / MENSAJERÍA (CASOS DE USO)
