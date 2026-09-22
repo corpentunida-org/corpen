@@ -182,34 +182,58 @@
                 interacción. "Próximos a vencer" mira los siguientes 3 días.
             </p>
 
-            @candirect('interacciones.listado.todos')
-                {{-- Filtro por usuario/área: solo tiene sentido para quien puede ver el trabajo de
-                     otros — sin este permiso ya se ve únicamente lo propio, sin nada que elegir.
-                     Solo aplica a Vencidos/Pendientes (JS lo muestra/oculta según la pestaña). --}}
+            @if ($puedeVerArea || $puedeVerTodos)
+                {{-- "Ver": por defecto SIEMPRE "Mis interacciones", sin importar el permiso — hay
+                     que elegir activamente ver más. Recarga la página con ?modo=... (conserva los
+                     demás parámetros de la URL que hubiera). --}}
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                    <span class="text-muted fs-13 fw-semibold">Ver:</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'propias'])) }}"
+                           class="btn {{ $modo === 'propias' ? 'btn-primary' : 'btn-outline-secondary' }}">Mis interacciones</a>
+                        @if ($puedeVerArea)
+                            <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'area'])) }}"
+                               class="btn {{ $modo === 'area' ? 'btn-primary' : 'btn-outline-secondary' }}">Mi área</a>
+                        @endif
+                        @if ($puedeVerTodos)
+                            <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'todos'])) }}"
+                               class="btn {{ $modo === 'todos' ? 'btn-primary' : 'btn-outline-secondary' }}">Todos</a>
+                        @endif
+                    </div>
+                </div>
+            @endif
+            <input type="hidden" id="modoActual" value="{{ $modo }}">
+
+            @if ($modo !== 'propias')
+                {{-- Filtro fino por usuario (y por área, solo en modo "Todos"): acota dentro de lo
+                     que "Ver" ya dejó visible. Aplica a Todos, Vencidos y Pendientes (JS lo
+                     muestra/oculta según la pestaña). --}}
                 <div class="d-flex flex-wrap align-items-end gap-2 mb-3 d-none" id="filtroAgendaUsuarioArea">
                     <div>
                         <label class="form-label fw-semibold text-muted small mb-1">Usuario</label>
                         <select class="form-select form-select-sm pastel-input" id="filterAgendaAgente" style="min-width: 200px;">
-                            <option value="">Todos</option>
+                            <option value="">{{ $modo === 'todos' ? 'Todos' : 'Toda mi área' }}</option>
                             @foreach ($listAgentesAgenda as $agente)
                                 <option value="{{ $agente->id }}">{{ $agente->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                        <label class="form-label fw-semibold text-muted small mb-1">Área</label>
-                        <select class="form-select form-select-sm pastel-input" id="filterAgendaArea" style="min-width: 180px;">
-                            <option value="">Todas</option>
-                            @foreach ($listAreasAgenda as $area)
-                                <option value="{{ $area }}">{{ strtoupper($area) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+                    @if ($modo === 'todos')
+                        <div>
+                            <label class="form-label fw-semibold text-muted small mb-1">Área</label>
+                            <select class="form-select form-select-sm pastel-input" id="filterAgendaArea" style="min-width: 180px;">
+                                <option value="">Todas</option>
+                                @foreach ($listAreasAgenda as $area)
+                                    <option value="{{ $area }}">{{ strtoupper($area) }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="limpiarFiltroAgenda">
                         <i class="feather-x me-1"></i>Quitar filtro
                     </button>
                 </div>
-            @endcandirect
+            @endif
 
             {{-- Contenido limpio de las tablas (DataTables llenará los tbody mediante AJAX) --}}
             <div class="tab-content" id="interactionTabsContent">
@@ -486,6 +510,10 @@
                             url: window.location.pathname,
                             data: function(d) {
                                 d.tab = tabType;
+                                // El modo ("propias"/"area"/"todos") elegido arriba en "Ver" —
+                                // el AJAX pega solo a window.location.pathname (sin query string),
+                                // así que sin esto cada pestaña volvería a "propias" sola.
+                                d.modo = $('#modoActual').val();
                                 // Exitosos tiene su propio rango de fechas (por defecto el último
                                 // mes), independiente del filtro general de arriba — así cambiar de
                                 // pestaña nunca filtra "Todos" o "Vencidos" por accidente.
@@ -496,8 +524,8 @@
                                     d.start_date = $('#filterFechaInicio').val();
                                     d.end_date = $('#filterFechaFin').val();
                                 }
-                                // Filtro por usuario/área: solo Vencidos y Pendientes.
-                                if (tabType === 'overdue' || tabType === 'pending') {
+                                // Filtro por usuario/área: Todos, Vencidos y Pendientes.
+                                if (tabType === 'overdue' || tabType === 'pending' || tabType === 'all') {
                                     d.agent_id = $('#filterAgendaAgente').val();
                                     d.area_id = $('#filterAgendaArea').val();
                                 }
@@ -617,11 +645,11 @@
                 // Inicializar primera tabla (Vencidos: la pestaña que abre por defecto)
                 setTimeout(() => initializeDataTable('#tablaVencidos', 'overdue'), 300);
 
-                // El filtro por usuario/área solo aplica a Vencidos/Pendientes (si el usuario no
-                // tiene el permiso, ese bloque no se renderizó, el elemento no existe y esto
-                // simplemente no hace nada).
+                // El filtro por usuario/área aplica a Todos, Vencidos y Pendientes (si el modo es
+                // "propias" o el usuario no tiene el permiso, ese bloque no se renderizó, el
+                // elemento no existe y esto simplemente no hace nada).
                 function toggleFiltroAgenda(tab) {
-                    $('#filtroAgendaUsuarioArea').toggleClass('d-none', tab !== 'overdue' && tab !== 'pending');
+                    $('#filtroAgendaUsuarioArea').toggleClass('d-none', !['overdue', 'pending', 'all'].includes(tab));
                 }
                 toggleFiltroAgenda('overdue'); // estado inicial: Vencidos abre activo
 

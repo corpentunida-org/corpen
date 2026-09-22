@@ -545,6 +545,20 @@ class InteractionController extends Controller
         return $agente->roles->sortByDesc(fn ($r) => $r->area ? 1 : 0)->first();
     }
 
+    /**
+     * El área del perfil de un usuario, consultada directa (sin depender de que 'roles' venga
+     * precargado) — para usarla en el alcance de seguridad de index(). Igual que
+     * perfilPrincipal(): si tiene más de un perfil (caso legado), prefiere uno con área asignada.
+     */
+    private function areaDelUsuario(int $userId): ?string
+    {
+        return DB::table('actions')
+            ->join('roles', 'roles.id', '=', 'actions.role_id')
+            ->where('actions.user_id', $userId)
+            ->orderByRaw('roles.area is null') // los que SÍ tienen área, primero
+            ->value('roles.area');
+    }
+
     /** "Vencido hace 3 días" / "Vence hoy" / "Vence en 2 días", para la lista de pendientes. */
     private function textoDiasRestantes(Carbon $fecha): string
     {
@@ -568,8 +582,32 @@ class InteractionController extends Controller
     {
         $baseQuery = Interaction::query();
 
-        // Seguridad de Agente
-        if (!auth()->user()->hasPermission('interacciones.listado.todos')) {
+        // Alcance en 3 niveles, elegido a propósito por la persona — nunca automático según su
+        // permiso: aunque tenga listado.area o listado.todos, por defecto ("propias", sin el
+        // parámetro modo) ve solo lo suyo. Para ver más tiene que elegirlo activamente arriba en
+        // la pantalla (ver $puedeVerArea/$puedeVerTodos más abajo, que gatillan ese control).
+        //  - modo=todos, con interacciones.listado.todos: sin restricción, cualquier área.
+        //  - modo=area, con listado.area (o listado.todos): solo agentes de SU MISMA área
+        //    (ej. segurosadmon ve el equipo de Seguros, no el de Cartera).
+        //  - modo=propias, o cualquier otro caso (incluido pedir un modo sin el permiso): solo lo
+        //    propio.
+        $modo = $request->input('modo', 'propias');
+        $puedeVerTodos = auth()->user()->hasDirectPermission('interacciones.listado.todos');
+        $puedeVerArea = $puedeVerTodos || auth()->user()->hasDirectPermission('interacciones.listado.area');
+        $miAreaParaFiltro = null;
+
+        if ($modo === 'todos' && $puedeVerTodos) {
+            // sin restricción
+        } elseif ($modo === 'area' && $puedeVerArea) {
+            $miAreaParaFiltro = $this->areaDelUsuario(Auth::id());
+            if ($miAreaParaFiltro) {
+                $idsDeMiArea = User::whereHas('roles', fn ($q) => $q->where('area', $miAreaParaFiltro))->pluck('id');
+                $baseQuery->where(fn ($q) => $q->whereIn('agent_id', $idsDeMiArea)->orWhereIn('id_user_asignacion', $idsDeMiArea));
+            } else {
+                // Su perfil no tiene área asignada en la Matriz: no hay "mi área" que ampliar.
+                $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
+            }
+        } else {
             $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
         }
 
@@ -614,19 +652,21 @@ class InteractionController extends Controller
         $channels = Cache::remember('cat_channels', 86400, fn () => IntChannel::orderBy('name')->pluck('name', 'id'));
         $outcomes = Cache::remember('cat_outcomes', 86400, fn () => IntOutcome::orderBy('name')->pluck('name', 'id'));
 
-        // Para el filtro por usuario/área de Vencidos y Pendientes: solo tiene sentido para quien
-        // puede ver el trabajo de otros (interacciones.listado.todos) — sin ese permiso, $baseQuery
-        // ya lo deja viendo únicamente lo suyo. Se listan solo las personas con acceso al módulo
-        // (menu.interacciones), no los 1000+ usuarios del sistema.
-        // El área es la del PERFIL (roles.area, Matriz de Permisos), no la de RRHH (gdo_area):
-        // esa depende de tener cédula y cargo documentado, y no todos los agentes activos lo
-        // tienen todavía; el perfil ya lo tiene asignado todo el que usa la aplicación.
+        // El filtro fino por usuario/área (Todos, Vencidos, Pendientes) solo tiene sentido cuando
+        // ya se eligió ver más de lo propio (modo=area o modo=todos) — en "propias" no hay nada
+        // que acotar. Con modo=area, "Usuario" se limita a su propia área y no hay selector de
+        // "Área" (solo tiene una); con modo=todos sí se ofrecen ambos.
         $listAgentesAgenda = collect();
         $listAreasAgenda = collect();
-        if (!$request->ajax() && auth()->user()->hasDirectPermission('interacciones.listado.todos')) {
+        if (!$request->ajax() && $modo !== 'propias') {
             $listAgentesAgenda = User::whereHas('permissions', fn ($q) => $q->where('name', 'menu.interacciones'))
+                ->when($modo === 'area', function ($q) use ($miAreaParaFiltro) {
+                    $q->whereHas('roles', fn ($q2) => $q2->where('area', $miAreaParaFiltro));
+                })
                 ->orderBy('name')->get(['id', 'name']);
-            $listAreasAgenda = DB::table('roles')->whereNotNull('area')->distinct()->orderBy('area')->pluck('area');
+            if ($modo === 'todos') {
+                $listAreasAgenda = DB::table('roles')->whereNotNull('area')->distinct()->orderBy('area')->pluck('area');
+            }
         }
 
         // ==========================================
@@ -659,11 +699,11 @@ class InteractionController extends Controller
                       ->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'));
             }
 
-            // A.1) Filtro por usuario o área — solo Vencidos y Pendientes. No hace falta
+            // A.1) Filtro por usuario o área — Todos, Vencidos y Pendientes. No hace falta
             // comprobar aquí el permiso "ver todos": $baseQuery ya deja a quien no lo tiene
             // viendo únicamente lo suyo, así que filtrar por OTRO agente simplemente no encuentra
             // nada (no hay forma de que esto filtre de más).
-            if (in_array($tab, ['overdue', 'pending'], true)) {
+            if (in_array($tab, ['overdue', 'pending', 'all'], true)) {
                 if ($request->filled('agent_id')) {
                     $query->where('agent_id', $request->input('agent_id'));
                 }
@@ -774,7 +814,7 @@ class InteractionController extends Controller
         }
 
         // 4. Si es la carga normal de la vista, YA NO ENVIAMOS $interactions NI $collectionsForTabs
-        return view('interactions.index', compact('stats', 'channels', 'outcomes', 'listAgentesAgenda', 'listAreasAgenda'));
+        return view('interactions.index', compact('stats', 'channels', 'outcomes', 'listAgentesAgenda', 'listAreasAgenda', 'modo', 'puedeVerArea', 'puedeVerTodos'));
     }
 
     /**
@@ -853,7 +893,10 @@ class InteractionController extends Controller
     {
         $interaction = new Interaction;
         $channels = IntChannel::all();
-        $types = IntType::all();
+        // Solo los tipos de SU área (+ los compartidos, area=null) — Cartera no debe ver los 30
+        // motivos pensados para Seguros de Vida, ni viceversa.
+        $miAreaTipos = $this->areaDelUsuario(Auth::id());
+        $types = IntType::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos))->orderBy('name')->get();
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
 
@@ -981,7 +1024,12 @@ class InteractionController extends Controller
     public function edit(Interaction $interaction)
     {
         $channels = IntChannel::all();
-        $types = IntType::all();
+        // Su área + compartidos, y siempre el tipo actual de la interacción aunque sea de otra
+        // área (ej. cambió de perfil desde que se creó) — si no, el formulario "pierde" el valor
+        // seleccionado.
+        $miAreaTipos = $this->areaDelUsuario(Auth::id());
+        $types = IntType::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos)->orWhere('id', $interaction->interaction_type))
+            ->orderBy('name')->get();
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
 
