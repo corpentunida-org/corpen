@@ -54,6 +54,9 @@
                     <thead class="bg-light-subtle">
                         <tr>
                             <th class="ps-4 py-3 border-0 text-uppercase fs-xs fw-bold text-muted" style="letter-spacing: 1px;">Nombre de Categoría</th>
+                            @if ($puedeElegirArea)
+                                <th class="border-0 text-uppercase fs-xs fw-bold text-muted">Área</th>
+                            @endif
                             <th class="text-center border-0 text-uppercase fs-xs fw-bold text-muted">Uso en Sistema</th>
                             <th class="text-end pe-4 border-0 text-uppercase fs-xs fw-bold text-muted">Acciones</th>
                         </tr>
@@ -73,6 +76,15 @@
                                         </div>
                                     </a>
                                 </td>
+                                @if ($puedeElegirArea)
+                                    <td>
+                                        @if ($type->area)
+                                            <span class="badge bg-soft-primary text-primary">{{ strtoupper($type->area) }}</span>
+                                        @else
+                                            <span class="badge bg-light text-muted border">Compartido</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="text-center">
                                     @if($type->interactions_count > 0)
                                         <div class="d-inline-flex align-items-center px-3 py-1 rounded-pill bg-dark text-white fs-xs fw-bold">
@@ -108,7 +120,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center py-5">
+                                <td colspan="{{ $puedeElegirArea ? 4 : 3 }}" class="text-center py-5">
                                     <div class="py-4">
                                         <img src="https://illustrations.popsy.co/gray/data-analysis.svg" alt="Empty" style="width: 180px;" class="mb-3 opacity-75">
                                         <h5 class="fw-bold text-dark">No hay tipos definidos</h5>

@@ -366,6 +366,14 @@
                                     @else
                                         <div class="form-text fs-13" id="nidFeedback"></div>
                                     @enderror
+                                    @can('sgrh.tercero.edit')
+                                        <a href="{{ $user->nid ? url('sgrh/terceros/' . $user->nid . '/edit') : '#' }}"
+                                           target="_blank" id="nidTerceroLink"
+                                           class="fs-13 mt-1 {{ $user->nid ? '' : 'd-none' }}"
+                                           style="display: {{ $user->nid ? 'block' : 'none' }};">
+                                            <i class="feather-external-link"></i> Actualizar en Terceros (RR. HH.)
+                                        </a>
+                                    @endcan
                                 </div>
                                 <div class="col-md-6">
                                     <label class="ui-form-label">Nombre Completo <span class="text-danger">*</span></label>
@@ -455,8 +463,9 @@
                 clearTimeout(temporizadorNid);
                 const cedula = $(this).val().trim();
                 const feedback = $('#nidFeedback');
+                const terceroLink = $('#nidTerceroLink');
                 if (!feedback.length) return; // el campo tenía un error de validación, no hay feedback que llenar
-                if (cedula === '') { feedback.text(''); return; }
+                if (cedula === '') { feedback.text(''); terceroLink.hide(); return; }
                 feedback.removeClass('text-success text-danger').addClass('text-muted').text('Verificando...');
                 temporizadorNid = setTimeout(function () {
                     $.getJSON('{{ route('admin.users.buscar-tercero') }}', { cedula: cedula, excluir_usuario_id: {{ $user->id }} })
@@ -464,11 +473,14 @@
                             feedback.removeClass('text-muted text-success text-danger');
                             if (!r.encontrado) {
                                 feedback.addClass('text-danger').text('No se encontró esta cédula en Terceros.');
+                                terceroLink.hide();
                             } else if (r.ya_tiene_usuario) {
                                 feedback.addClass('text-danger').text('✗ ' + r.nombre + ' — ya tiene otro usuario con esta cédula.');
+                                terceroLink.attr('href', '{{ url('sgrh/terceros') }}/' + encodeURIComponent(cedula) + '/edit').show();
                             } else {
                                 feedback.addClass('text-success').text('✓ Coincide con: ' + r.nombre);
                                 $('#nameInput').val(r.nombre);
+                                terceroLink.attr('href', '{{ url('sgrh/terceros') }}/' + encodeURIComponent(cedula) + '/edit').show();
                             }
                         })
                         .fail(function () { feedback.removeClass('text-muted').addClass('text-danger').text('No se pudo verificar. Intenta de nuevo.'); });
