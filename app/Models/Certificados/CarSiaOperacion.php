@@ -33,7 +33,7 @@ class CarSiaOperacion extends Model
         'numero_radicado',
         'numero_bloque',
         'id_tercero',
-        'metodo_creacion',
+        'metodo_creacion', //METODO DE CREACION: NULL=AUTOMATICO, 1=MANUAL
     ];
 
     // 3. Casteo de variables (Optimización de tipos)

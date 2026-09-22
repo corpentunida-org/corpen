@@ -1372,9 +1372,22 @@
                             <div class="tab-pane fade" id="certificados" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase"><i class="fas fa-file-pdf me-2"></i> Gestión de Certificados</h6>
-                                    <button type="button" class="btn bg-pastel-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTipo">
-                                        <i class="fas fa-file-pdf me-2 opacity-75"></i> Generar Certificado
-                                    </button>
+
+                                    {{-- Usamos un d-flex gap-2 para separar los botones si hay más de uno --}}
+                                    <div class="d-flex gap-2">
+                                        {{-- Botón "Certificados de Gestión" SIEMPRE VISIBLE --}}
+                                        {{-- Nota: Ajusta el data-bs-target al modal correcto que uses para este botón --}}
+                                        <button type="button" class="btn bg-pastel-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalGestion">
+                                            <i class="fas fa-file-signature me-2 opacity-75"></i> Certificados de Gestión
+                                        </button>
+
+                                        {{-- Botón "Certificados Generales" SOLO VISIBLE SI ES AUTOMÁTICO (NULL) --}}
+                                        @if(is_null($operacion->metodo_creacion))
+                                            <button type="button" class="btn bg-pastel-danger shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalTipo">
+                                                <i class="fas fa-file-pdf me-2 opacity-75"></i> Certificados Generales
+                                            </button>
+                                        @endif
+                                    </div>
                                 </div>
                                 @if($operacion->lineas && $operacion->lineas->count() > 0)
 

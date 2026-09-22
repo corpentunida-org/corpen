@@ -305,7 +305,7 @@ class OperacionController extends Controller
             $estados = CarSiaEstado::all();
             $tipos = CarSiaTipo::all();
             $tiposAlerta = CarSiaTipoAlerta::all();
-            $tiposCertificados = $tipos;
+            $tiposCertificados = $tipos->whereIn('id', [3, 4]); //Asigancion Tipo de Certificados del Show
 
             // --- LÓGICA DE BLADE TRASLADADA (Tab 3: Auditoría y Detalle Formateado) ---
             $logsAuditoria = CarSiaOperacionLog::with(['origenEvento', 'eventoAuditoria', 'usuario', 'usuario.cargoRelation'])
