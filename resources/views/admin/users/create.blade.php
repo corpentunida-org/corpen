@@ -27,6 +27,11 @@
                                 @else
                                     <div class="form-text fs-13" id="nidFeedback"></div>
                                 @enderror
+                                @can('sgrh.tercero.edit')
+                                    <a href="#" target="_blank" id="nidTerceroLink" class="fs-13 d-none">
+                                        <i class="feather-external-link"></i> Actualizar en Terceros (RR. HH.)
+                                    </a>
+                                @endcan
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Nombre y Apellidos<span class="text-danger">*</span></label>
@@ -87,19 +92,26 @@
                 const cedula = $(this).val().trim();
                 const feedback = $('#nidFeedback');
                 $('#nameInput').val(''); // el nombre se vuelve a llenar solo cuando la cédula confirme
+                $('#nidTerceroLink').addClass('d-none');
                 if (cedula === '') { feedback.text(''); return; }
                 feedback.removeClass('text-success text-danger').addClass('text-muted').text('Verificando...');
                 temporizadorNid = setTimeout(function () {
                     $.getJSON('{{ route('admin.users.buscar-tercero') }}', { cedula: cedula })
                         .done(function (r) {
                             feedback.removeClass('text-muted text-success text-danger');
+                            const terceroLink = $('#nidTerceroLink');
                             if (!r.encontrado) {
                                 feedback.addClass('text-danger').text('No se encontró esta cédula en Terceros.');
+                                terceroLink.addClass('d-none');
                             } else if (r.ya_tiene_usuario) {
                                 feedback.addClass('text-danger').text('✗ ' + r.nombre + ' — ya tiene un usuario con esta cédula.');
+                                terceroLink.attr('href', '{{ url('sgrh/terceros') }}/' + encodeURIComponent(cedula) + '/edit').removeClass('d-none');
                             } else {
                                 feedback.addClass('text-success').text('✓ Coincide con: ' + r.nombre);
                                 $('#nameInput').val(r.nombre);
+                                // se muestra siempre que la cédula sí exista en Terceros, así se puede
+                                // corregir algo (nombre mal escrito, datos desactualizados) sin salir de aquí
+                                terceroLink.attr('href', '{{ url('sgrh/terceros') }}/' + encodeURIComponent(cedula) + '/edit').removeClass('d-none');
                             }
                         })
                         .fail(function () { feedback.removeClass('text-muted').addClass('text-danger').text('No se pudo verificar. Intenta de nuevo.'); });
