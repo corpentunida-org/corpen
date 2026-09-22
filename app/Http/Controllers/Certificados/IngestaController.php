@@ -323,12 +323,22 @@ class IngestaController extends Controller
             'bloque_origen'      => 'required|integer',
         ]);
 
+        $bloqueOrigen = $request->bloque_origen;
+
+        // MEJORA 1: Atomic Lock de Caché para evitar CONCURRENCIA.
+        // Si el usuario hace doble clic, el segundo hilo rebotará de inmediato sin procesar.
+        $lock = Cache::lock("inyeccion_sia_bloque_{$bloqueOrigen}", 1200); // 20 minutos de candado
+
+        if (!$lock->get()) {
+            if ($request->ajax()) return response()->json(['error' => 'Ya hay un proceso procesando este lote. Espere un momento.'], 409);
+            return redirect()->back()->with('error', 'El lote ya se encuentra en proceso de inyección.');
+        }
+
         try {
             // Aumentamos los límites para procesos masivos
             ini_set('max_execution_time', 600);
             ini_set('memory_limit', '1024M');
 
-            $bloqueOrigen = $request->bloque_origen;
             $progresoToken = $request->input('progreso_token');
 
             $clientesProcesados = 0;
@@ -336,10 +346,10 @@ class IngestaController extends Controller
 
             $this->guardarProgresoInyeccion($progresoToken, 'iniciando', 0, 0, 'Preparando el lote...');
 
+            // DB::transaction maneja el COMMIT y el ROLLBACK de manera automática.
             DB::transaction(function () use (&$clientesProcesados, &$registrosIgnorados, $request, $bloqueOrigen, $progresoToken) {
 
-                // 1. OBTENER SÓLO CÉDULAS VÁLIDAS CRUZANDO DIRECTAMENTE EN BASE DE DATOS (JOIN IMPLÍCITO)
-                // Esto evita traer 30.000 registros a PHP solo para validarlos
+                // 1. OBTENER SÓLO CÉDULAS VÁLIDAS CRUZANDO DIRECTAMENTE EN BASE DE DATOS
                 $cedulasValidas = DB::table('car_sia_api')
                     ->join('MaeTerceros', 'car_sia_api.tercero', '=', 'MaeTerceros.cod_ter')
                     ->where('car_sia_api.numero_bloque', $bloqueOrigen)
@@ -355,7 +365,8 @@ class IngestaController extends Controller
 
                 // Si no hay válidas, calculamos cuántos fallaron para mostrar la alerta
                 if ($totalValidas === 0) {
-                    $hayPendientes = CarSiaApi::where('numero_bloque', $bloqueOrigen)
+                    $hayPendientes = DB::table('car_sia_api')
+                        ->where('numero_bloque', $bloqueOrigen)
                         ->where('estado', 'PENDIENTE')
                         ->where(function ($query) {
                             $query->whereNull('anular')->orWhere('anular', '!=', '1');
@@ -369,9 +380,9 @@ class IngestaController extends Controller
 
                 $this->guardarProgresoInyeccion($progresoToken, 'procesando', 10, $totalValidas, 'Terceros validados...');
 
-                // 2. CONTAR REGISTROS IGNORADOS (SIN USAR WHERENOTIN CON ARRAYS GIGANTES)
-                // Se usa whereNotExists para que el motor de BD haga el cruce internamente súper rápido
-                $registrosIgnorados = CarSiaApi::where('numero_bloque', $bloqueOrigen)
+                // 2. CONTAR REGISTROS IGNORADOS
+                $registrosIgnorados = DB::table('car_sia_api')
+                    ->where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
                     ->where(function ($query) {
                         $query->whereNull('anular')->orWhere('anular', '!=', '1');
@@ -385,14 +396,15 @@ class IngestaController extends Controller
 
                 $anioActual = date('Y');
 
-                // 3. OPTIMIZACIÓN CRÍTICA: REEMPLAZO DE whereYear()
-                // Al usar rangos (>= y <=), la base de datos SÍ usa los índices de fecha.
-                $inicioAnio = "{$anioActual}-01-01 00:00:00";
-                $finAnio    = "{$anioActual}-12-31 23:59:59";
+                // MEJORA 2: OBTENCIÓN SEGURA DEL ÚLTIMO CONSECUTIVO MATEMÁTICO
+                // Usamos DB::table() en lugar del Modelo para que no ignore los "SoftDeletes".
+                // Extraemos el número final mediante SQL para evitar fallos si los 'id' se desordenan.
+                $ultimoConsecutivo = DB::table('car_sia_operaciones')
+                    ->where('numero_radicado', 'like', "INI-{$anioActual}-%")
+                    ->lockForUpdate()
+                    ->max(DB::raw("CAST(SUBSTRING_INDEX(numero_radicado, '-', -1) AS UNSIGNED)"));
 
-                $cantidadActual = CarSiaOperacion::where('created_at', '>=', $inicioAnio)
-                                                 ->where('created_at', '<=', $finAnio)
-                                                 ->count();
+                $cantidadActual = $ultimoConsecutivo ? (int) $ultimoConsecutivo : 0;
 
                 $idEstadoReal = $request->id_car_sia_estados;
                 $idTipoEvento = $request->id_car_sia_tipos;
@@ -417,7 +429,8 @@ class IngestaController extends Controller
                 }
 
                 // 5. INSERCIÓN MASIVA CHUNKEADA
-                foreach (array_chunk($operacionesMatriz, 1000) as $bloque) {
+                // MEJORA 3: Bajar el chunk a 500. MySQL tiene un límite de placeholders por query (ej. max_allowed_packet)
+                foreach (array_chunk($operacionesMatriz, 500) as $bloque) {
                     CarSiaOperacion::insert($bloque);
                     $validasProcesadas += count($bloque);
                     $porcentaje = 10 + (int) floor(($validasProcesadas / $totalValidas) * 70);
@@ -452,8 +465,10 @@ class IngestaController extends Controller
                     ]);
                 }
 
-                // 7. ACTUALIZACIÓN MASIVA EFICIENTE (SIN USAR whereIn Gigante)
-                CarSiaApi::where('numero_bloque', $bloqueOrigen)
+                // 7. ACTUALIZACIÓN MASIVA EFICIENTE
+                // DB::table es mas rapido que el Eloquent Builder masivo para actualizaciones
+                DB::table('car_sia_api')
+                    ->where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
                     ->where(function ($query) {
                         $query->whereNull('anular')->orWhere('anular', '!=', '1');
@@ -469,7 +484,7 @@ class IngestaController extends Controller
                     ]);
 
                 // 8. ACTUALIZAR BLOQUE PADRE
-                CarSiaBloque::where('numero_bloque', $bloqueOrigen)->update(['estado' => 'PROCESADO']);
+                DB::table('car_sia_bloques')->where('numero_bloque', $bloqueOrigen)->update(['estado' => 'PROCESADO']);
 
                 $this->guardarProgresoInyeccion($progresoToken, 'procesando', 95, $totalValidas, 'Registrando auditoría...');
 
@@ -478,7 +493,7 @@ class IngestaController extends Controller
                     $this->registrarLogAuditoria(
                         $bloqueOrigen, 1, 2,
                         'Generación Automática Lote', 'Bloque', 'Procesamiento e inyección de datos desde la API hacia la matriz operativa.',
-                        [], // identificadores
+                        [],
                         [
                             'registros_procesados' => $clientesProcesados,
                             'registros_ignorados'  => $registrosIgnorados,
@@ -517,11 +532,10 @@ class IngestaController extends Controller
             return redirect()->back();
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            // MEJORA 4: Quitamos el DB::rollBack() manual, DB::transaction() lo hace solo si lanzas la excepcion.
             Log::error('CERTIFICADOS Ingesta - Error crítico: ' . $e->getMessage());
 
             if (str_contains($e->getMessage(), 'Ninguna de las cédulas del lote existe en el maestro de terceros')) {
-                // Recuperar faltantes usando query pura (más rápido)
                 $tercerosFaltantes = DB::table('car_sia_api')
                     ->select('tercero', 'nombre_tercero')
                     ->where('numero_bloque', $request->bloque_origen)
@@ -550,8 +564,11 @@ class IngestaController extends Controller
 
             $this->guardarProgresoInyeccion($progresoToken ?? null, 'error', 0, 0, 'No fue posible procesar el lote.');
 
-            if ($request->ajax()) return response()->json(['error' => 'Error SQL: ' . $e->getMessage()], 500);
-            return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
+            if ($request->ajax()) return response()->json(['error' => 'Error SQL: Hubo un problema procesando el bloque.'], 500);
+            return redirect()->back()->with('error', 'Error SQL: ' . explode("(", $e->getMessage())[0]);
+        } finally {
+            // MEJORA 1b: Liberamos el Lock sin importar si falló o fue exitoso
+            optional($lock)->release();
         }
     }
 
