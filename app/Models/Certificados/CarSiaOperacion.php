@@ -33,11 +33,13 @@ class CarSiaOperacion extends Model
         'numero_radicado',
         'numero_bloque',
         'id_tercero',
+        'metodo_creacion',
     ];
 
     // 3. Casteo de variables (Optimización de tipos)
     protected $casts = [
         'numero_bloque' => 'integer',
+        'metodo_creacion' => 'integer',
     ];
 
     // ---------------------------------------------------

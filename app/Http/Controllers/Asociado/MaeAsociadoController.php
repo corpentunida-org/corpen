@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 //use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Auth;
 
 class MaeAsociadoController extends Controller
 {
@@ -30,7 +31,7 @@ class MaeAsociadoController extends Controller
         $expedientesActivos = MaeAsociado::where('estado', 'Activo')->count();
         $expedientesInactivos = MaeAsociado::where('estado', 'Inactivo')->count();
         $digitalizadosEcm = MaeAsociado::where('cargado_ecm', true)->count();
-        
+
         $pendientesArchivo = MaeAsociado::where(function($q) {
             $q->whereNull('radicado')->orWhere('radicado', '');
         })->count();
@@ -77,13 +78,13 @@ class MaeAsociadoController extends Controller
 
         // 5. Paginación
         $asociados = $query->latest()->paginate(15)->withQueryString();
-        
+
         return view('asociados.index', compact(
-            'asociados', 
-            'totalExpedientes', 
-            'expedientesActivos', 
-            'expedientesInactivos', 
-            'digitalizadosEcm', 
+            'asociados',
+            'totalExpedientes',
+            'expedientesActivos',
+            'expedientesInactivos',
+            'digitalizadosEcm',
             'pendientesArchivo'
         ));
     }
@@ -96,7 +97,7 @@ class MaeAsociadoController extends Controller
         $ciudades = Ciudad::with('subregion:id_subregion,nombre')->get();
         $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
         $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
-        
+
         return view('asociados.create', compact('ciudades', 'distritos', 'congregaciones'));
     }
 
@@ -251,15 +252,15 @@ class MaeAsociadoController extends Controller
 
         // Retenemos los parámetros en la URL con withQueryString() para que no se pierdan al cambiar de página
         $asociados = $query->latest()->paginate(15)->withQueryString();
-        
+
         return view('asociados.ecm', compact('asociados', 'digitalizadosEcm', 'pendientesArchivo', 'validados'));
     }
-    
+
     public function dashboard()
     {
         $total = MaeAsociado::count();
-        
-        $estadosActivos = ['Activo', 'Vigente']; 
+
+        $estadosActivos = ['Activo', 'Vigente'];
         $estadosInactivos = ['Inactivo', 'Retirado', 'Suspendido'];
 
         $activosCount = MaeAsociado::whereIn('estado', $estadosActivos)->count();
@@ -358,9 +359,9 @@ class MaeAsociadoController extends Controller
             $errores = [];
             $contadorNuevos = 0;
             $contadorActualizaciones = 0;
-            
+
             // NUEVO: Array para rastrear si hay cédulas repetidas dentro de tu mismo Excel
-            $cedulasVistas = []; 
+            $cedulasVistas = [];
 
             foreach ($filasRaw as $index => $fila) {
                 $numeroLinea = $index + 2; // Línea real en el archivo Excel
@@ -385,7 +386,7 @@ class MaeAsociadoController extends Controller
                 // 2. Limpieza de errores de Excel (#VALUE!, #N/A, #REF!)
                 foreach ($fila as $key => $value) {
                     if (is_string($value) && str_starts_with(trim($value), '#')) {
-                        $fila[$key] = null; 
+                        $fila[$key] = null;
                     }
                 }
 
@@ -425,7 +426,7 @@ class MaeAsociadoController extends Controller
             } */
 
             // OPTIMIZACIÓN 3: Usar Caché en lugar de Sesión para datos masivos
-            $cacheKey = 'import_asociados_' . auth()->id();
+            $cacheKey = 'import_asociados_' . Auth::id();
             Cache::put($cacheKey, $filasProcesadas, now()->addHours(2));
             session(['import_asociados_key' => $cacheKey]);
 
@@ -443,15 +444,15 @@ class MaeAsociadoController extends Controller
     public function confirmarSincronizacion(Request $request)
     {
         // 1. OPTIMIZACIÓN EXTREMA: Evitar timeouts de PHP y desbordamientos de memoria RAM
-        set_time_limit(0); 
-        DB::disableQueryLog(); 
+        set_time_limit(0);
+        DB::disableQueryLog();
 
         $cacheKey = session('import_asociados_key');
         $datos = Cache::get($cacheKey);
-        
+
         // APLICAR CORRECCIONES MANUALES DE LA VISTA
         $correcciones = $request->input('correcciones', []);
-        
+
         if (!empty($correcciones)) {
             foreach ($datos as $key => $fila) {
                 // Si esta fila tiene una corrección entrante desde el formulario
@@ -464,7 +465,7 @@ class MaeAsociadoController extends Controller
             // Retiramos las filas que aún después de corregir (o si las dejaron vacías) sigan sin cédula
             $datos = array_filter($datos, fn($d) => !empty($d['cedula']));
         }
-        
+
         if (!$datos || count($datos) === 0) {
             return redirect()->route('asociados.sincronizar.index')
                 ->with('error', 'La sesión ha expirado o no se encontraron registros listos para confirmación.');
@@ -473,15 +474,15 @@ class MaeAsociadoController extends Controller
         $sincronizarTerceros = $request->boolean('sincronizar_terceros_global', true);
 
         try {
-            // 2. OPTIMIZACIÓN EXTREMA: Bajamos el tamaño del bloque a 100 
+            // 2. OPTIMIZACIÓN EXTREMA: Bajamos el tamaño del bloque a 100
             // porque el modelo dispara eventos hacia MaeTerceros multiplicando las consultas.
             $chunks = array_chunk($datos, 100);
 
             foreach ($chunks as $chunk) {
-                
+
                 // 3. OPTIMIZACIÓN EXTREMA: Obligamos a MySQL a reconectar para evitar el Error 2006
                 DB::reconnect();
-                
+
                 // MÁS IMPORTANTE: La transacción se abre y se cierra ADENTRO del bloque
                 DB::beginTransaction();
 
@@ -503,12 +504,12 @@ class MaeAsociadoController extends Controller
                         'fecha_expedicion'          => $this->transformDate($item['fecha_expedicion'] ?? null),
                         'estado_civil'              => $item['estado_civil'] ?? null,
                         'correo_pastor'             => $item['correo_pastor'] ?? null,
-                        
+
                         // BLINDAJE CONTRA TEXTOS LARGOS EN TELÉFONOS (Máximo 15 caracteres)
                         'celular_pastor'            => substr($item['celular_pastor'] ?? '', 0, 15),
                         'whatsapp'                  => substr($item['whatsapp'] ?? '', 0, 15),
                         'celular_esposa'            => substr($item['celular_esposa'] ?? '', 0, 15),
-                        
+
                         'fecha_afiliacion'          => $this->transformDate($item['fecha_afiliacion'] ?? null),
                         'distrito_actual'           => $item['distrito_actual'] ?? null,
                         'ciudad_distrito'           => $item['ciudad_distrito'] ?? null,
@@ -553,7 +554,7 @@ class MaeAsociadoController extends Controller
 
             // Limpieza de recursos cuando terminan todos los bloques
             Cache::forget($cacheKey);
-            session()->forget('import_asociados_key'); 
+            session()->forget('import_asociados_key');
 
             return redirect()->route('asociados.maestro.index')
                 ->with('success', 'Sincronización masiva finalizada. Se procesaron con éxito los expedientes.');
@@ -579,7 +580,7 @@ class MaeAsociadoController extends Controller
             }
             return \Carbon\Carbon::parse($value)->format($format);
         } catch (\Exception $e) {
-            return null; 
+            return null;
         }
     }
 
@@ -591,7 +592,7 @@ class MaeAsociadoController extends Controller
             if (in_array($value, ['1', 'SI', 'SÍ', 'TRUE', 'VERDADERO', 'V'])) return true;
         }
         if ($value == 1) return true;
-        
+
         return false;
     }
 

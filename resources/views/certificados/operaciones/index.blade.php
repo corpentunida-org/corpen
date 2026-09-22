@@ -1373,8 +1373,6 @@
                         <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
                         <div class="mb-3">
                             <label for="id_car_sia_tipos" class="form-label fw-semibold text-muted">Tipos de Certificado (Selección Múltiple)</label>
-
-                            {{-- MODIFICACIÓN: name="id_car_sia_tipos[]" y atributo "multiple" --}}
                             <select name="id_car_sia_tipos[]" id="id_car_sia_tipos" class="form-select bg-light border-0" size="4" multiple required>
                                 @isset($tipos)
                                     @foreach($tipos as $tipo)
@@ -1402,6 +1400,84 @@
             </div>
         </div>
         {{-- END 5.3 MODAL MASIVO --}}
+
+        {{-- 5.4 MODAL: REGISTRO NUEVO (Para búsquedas sin resultados) --}}
+        <div class="modal fade" id="modalRegistroNuevo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form action="{{ route('certificados.operaciones.store') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                    @csrf
+                    <div class="modal-header border-0 pb-0 pt-4 px-4">
+                        <h5 class="fw-bold mb-0 text-success"><i class="fas fa-plus-circle me-2"></i> Crear Nueva Operación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        {{-- BLOQUE PARA MOSTRAR ERRORES DE VALIDACIÓN --}}
+                        @if ($errors->any())
+                            <div class="alert alert-danger rounded-4 mb-4">
+                                <ul class="mb-0 text-start" style="font-size: 0.85rem;">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            {{-- Script para reabrir el modal automáticamente si hubo error --}}
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    let modalElement = document.getElementById('modalRegistroNuevo');
+                                    if(modalElement) {
+                                        let modal = new bootstrap.Modal(modalElement);
+                                        modal.show();
+                                    }
+                                });
+                            </script>
+                        @endif
+
+                        <div class="alert bg-pastel-success text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
+                            <i class="fas fa-search-minus me-2"></i> No se encontraron resultados. Puede registrar la operación manualmente para el lote <strong>API-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>.
+                        </div>
+
+                        {{-- Campos Ocultos Requeridos por el Store --}}
+                        <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+                        <input type="hidden" name="metodo_creacion" value="1"> {{-- 1: Método Manual --}}
+
+                        <div class="mb-3">
+                            <label for="termino_buscado" class="form-label fw-semibold text-muted">Término Buscado</label>
+                            <input type="text" id="termino_buscado" name="termino_buscado" class="form-control bg-light border-0 text-muted" readonly>
+                            <small class="text-muted" style="font-size: 0.75rem;">Este fue el término que intentó buscar.</small>
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="id_tercero" class="form-label fw-semibold text-dark">Tercero <span class="text-danger">*</span></label>
+                            <input type="number" name="id_tercero" id="id_tercero" class="form-control bg-white" placeholder="ID o NIT del Tercero" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 px-4 pb-4 pt-0 flex-column flex-md-row">
+                        <button type="button" class="btn btn-light rounded-pill px-4 shadow-sm border w-100 w-md-auto mb-2 mb-md-0" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm text-white w-100 w-md-auto m-0"><i class="fas fa-save me-1"></i> Guardar Registro</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {{-- END 5.4 MODAL REGISTRO NUEVO --}}
+
+        {{-- SCRIPT PARA ABRIR MODAL AUTOMÁTICAMENTE --}}
+        @if(isset($busquedaSinResultados) && $busquedaSinResultados)
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Instancia y abre el modal de registro
+                    let modalElement = document.getElementById('modalRegistroNuevo');
+                    let modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+
+                    // Pre-llenar el input de solo lectura con lo que el usuario buscó
+                    let inputBuscado = "{{ request('buscar') }}";
+                    let campoTermino = document.getElementById('termino_buscado');
+                    if(campoTermino) {
+                        campoTermino.value = inputBuscado;
+                    }
+                });
+            </script>
+        @endif
     @endif
     {{-- END REGION 5: MODALES --}}
 

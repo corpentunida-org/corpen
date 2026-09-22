@@ -2082,6 +2082,15 @@
         let form = document.getElementById('formInyeccion');
         if(!form) return;
 
+        // 1. CERRAR EL MODAL DE CONFIRMACIÓN PARA QUE SEA VISIBLE LA BARRA DE PROGRESO
+        let modalEl = document.getElementById('modalConfirmarInyeccion');
+        if (modalEl) {
+            let modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        }
+
         let token = crypto.randomUUID();
         let barra = document.getElementById('progresoInyeccion');
         let barraRelleno = document.getElementById('progresoInyeccionFill');
