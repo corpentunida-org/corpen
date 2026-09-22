@@ -71,11 +71,11 @@
                                 <tr>
                                     <td class="fw-bold align-middle">Municipio</td>
                                     <td>
-                                        <select class="form-select @error('municipio') is-invalid @enderror" name="municipio" required data-bs-toggle="tooltip" title="Selecciona el municipio donde se ubica la congregación">
+                                        <select class="form-select @error('municipio') is-invalid @enderror" name="municipio" id="municipioSelect" required data-bs-toggle="tooltip" title="Selecciona el municipio donde se ubica la congregación">
                                             <option value="" disabled selected>Seleccione un municipio...</option>
                                             @foreach($municipios as $m)
                                                 <option value="{{ $m->id }}" {{ old('municipio') == $m->id ? 'selected' : '' }}>
-                                                    {{ $m->nombre }}
+                                                    {{ $m->id == \App\Models\Maestras\MaeCongregacion::MUNICIPIO_EXTERIOR_ID ? '🌎 ' . $m->nombre . ' (fuera de Colombia)' : $m->nombre }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -88,6 +88,17 @@
                                     <td>
                                         <input type="text" class="form-control @error('direccion') is-invalid @enderror" name="direccion" placeholder="Dirección completa" value="{{ old('direccion') }}" data-bs-toggle="tooltip" title="Calle, carrera, número, barrio u otra referencia">
                                         @error('direccion')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </td>
+                                </tr>
+                                <tr id="filaMunicipioExterior" style="display: none;">
+                                    <td class="fw-bold align-middle">Ciudad / País</td>
+                                    <td colspan="3">
+                                        <input type="text" class="form-control @error('municipio_exterior_detalle') is-invalid @enderror"
+                                            name="municipio_exterior_detalle" placeholder="Ej: Lima, Perú"
+                                            value="{{ old('municipio_exterior_detalle') }}">
+                                        @error('municipio_exterior_detalle')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </td>
@@ -182,12 +193,22 @@
                 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
                 <script>
                     $(document).ready(function () {
+                        const MUNICIPIO_EXTERIOR_ID = '{{ \App\Models\Maestras\MaeCongregacion::MUNICIPIO_EXTERIOR_ID }}';
+
+                        function toggleMunicipioExterior() {
+                            const esExterior = $('#municipioSelect').val() === MUNICIPIO_EXTERIOR_ID;
+                            $('#filaMunicipioExterior').toggle(esExterior);
+                        }
+
+                        $('#municipioSelect').on('change', toggleMunicipioExterior);
+                        toggleMunicipioExterior();
+
                         $('#pastorInput').on('change', function () {
                             const cedula = $(this).val();
 
                             if (cedula.length > 5) {
                                 $.ajax({
-                                    url: '{{ route("buscar.pastor") }}',
+                                    url: '{{ route("maestras.buscar.pastor") }}',
                                     method: 'GET',
                                     data: { cedula: cedula },
                                     success: function (data) {

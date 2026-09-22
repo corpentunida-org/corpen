@@ -2,6 +2,7 @@
 
 namespace App\Models\Exequiales;
 
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -30,6 +31,11 @@ class ComaeExCli extends Model
     public function beneficiarios()
     {
         return $this->hasMany(ComaeExRelPar::class, 'cod_cli', 'cod_cli');
+    }
+
+    public function tercero()
+    {
+        return $this->belongsTo(MaeTerceros::class, 'cod_cli', 'cod_ter');
     }
 
     public function ciudade()

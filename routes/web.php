@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Middleware\CanDirect;
+use App\Http\Controllers\Auth\ForzarCambioPasswordController;
+use App\Http\Controllers\Admin\ImpersonarController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionsController;
@@ -8,6 +10,7 @@ use App\Http\Controllers\IndexController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\Admin\InformeUsoController;
 
 //CONTABILIDAD
 use App\Http\Controllers\Contabilidad\ConCuentaBancariaController;
@@ -94,6 +97,10 @@ use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 
 //MAESTRAS
 use App\Http\Controllers\Maestras\MaeCongregacionController;
+use App\Http\Controllers\Maestras\MaeDistritoController;
+use App\Http\Controllers\Maestras\CongregacionImportController;
+use App\Http\Controllers\Maestras\TerceroImportController;
+use App\Http\Controllers\Maestras\ComaeTerImportController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
@@ -200,12 +207,67 @@ Route::resource('users', UserController::class)
     ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
 Route::post('users/{user}/copiar-permisos', [UserController::class, 'copiarPermisos'])
     ->name('admin.users.copiar-permisos')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/bloquear', [UserController::class, 'bloquear'])
+    ->name('admin.users.bloquear')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/desbloquear', [UserController::class, 'desbloquear'])
+    ->name('admin.users.desbloquear')->middleware(['auth', 'candirect:admin.users.index']);
+Route::post('users/{user}/impersonar', [ImpersonarController::class, 'iniciar'])
+    ->name('admin.impersonar.iniciar')->middleware(['auth', 'candirect:admin.users.index']);
+// Sin candirect: mientras se está "viendo como", el usuario autenticado es el asociado (no
+// tiene ese permiso) — la validez de volver se controla por la presencia de
+// session('impersonador_id'), no por un permiso.
+Route::post('impersonar/salir', [ImpersonarController::class, 'detener'])
+    ->name('admin.impersonar.detener')->middleware(['auth']);
+
+// Pantalla obligatoria cuando un admin marcó "forzar cambio de contraseña" desde Gestión de
+// Usuarios (ver App\Http\Middleware\ForzarCambioPassword) — cualquier usuario autenticado
+// puede caer aquí, sin permiso especial, no depende de candirect.
+Route::middleware('auth')->group(function () {
+    Route::get('password/forzar', [ForzarCambioPasswordController::class, 'edit'])->name('password.forzar');
+    Route::post('password/forzar', [ForzarCambioPasswordController::class, 'update'])->name('password.forzar.store');
+});
 
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
+Route::get('informe-uso', [InformeUsoController::class, 'index'])
+    ->name('admin.informeuso.index')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
+Route::get('informe-uso/excel', [InformeUsoController::class, 'exportarExcel'])
+    ->name('admin.informeuso.excel')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
+Route::get('informe-uso/pdf', [InformeUsoController::class, 'exportarPdf'])
+    ->name('admin.informeuso.pdf')
+    ->middleware(['auth', 'candirect:admin.informeuso.index']);
 Route::resource('roles', RoleController::class)
     ->names('admin.roles')
+    ->middleware(['auth']);
+Route::post('roles-areas', [RoleController::class, 'crearArea'])
+    ->name('admin.roles.areas.crear')
+    ->middleware(['auth']);
+Route::post('roles-areas/{id}/perfiles', [RoleController::class, 'agregarPerfilesArea'])
+    ->name('admin.roles.areas.perfiles')
+    ->middleware(['auth']);
+Route::put('roles-areas/{id}', [RoleController::class, 'renombrarArea'])
+    ->name('admin.roles.areas.renombrar')
+    ->middleware(['auth']);
+Route::delete('roles-areas/{id}', [RoleController::class, 'eliminarArea'])
+    ->name('admin.roles.areas.eliminar')
+    ->middleware(['auth']);
+Route::get('roles/{role}/usuarios', [RoleController::class, 'usuariosDePerfil'])
+    ->name('admin.roles.usuarios')
+    ->middleware(['auth']);
+Route::put('roles/{role}/nombre', [RoleController::class, 'renombrar'])
+    ->name('admin.roles.nombre')
+    ->middleware(['auth']);
+Route::delete('roles/{role}/perfil', [RoleController::class, 'eliminarPerfil'])
+    ->name('admin.roles.eliminar')
+    ->middleware(['auth']);
+Route::put('roles/{role}/area', [RoleController::class, 'actualizarArea'])
+    ->name('admin.roles.area')
+    ->middleware(['auth']);
+Route::get('guia-permisos', [RoleController::class, 'guia'])
+    ->name('admin.guia.permisos')
     ->middleware(['auth']);
 Route::get('roles-permisos', [RoleController::class, 'matriz'])
     ->name('admin.roles.matriz')
@@ -648,10 +710,36 @@ Route::prefix('maestras')
     ->name('maestras.')
     ->group(function () {
         // TERCEROS
+        // La importación va ANTES del resource, por la misma razón que en Congregaciones: el
+        // resource registra GET terceros/{tercero} (show), que si va primero se traga
+        // "importar" como si fuera una cédula (route model binding falla -> 404 engañoso).
+        Route::prefix('terceros/importar')
+            ->name('terceros.importar.')
+            ->middleware('candirect:maestras.terceros.importar')
+            ->group(function () {
+                Route::get('/', [TerceroImportController::class, 'index'])->name('index');
+                Route::get('plantilla', [TerceroImportController::class, 'plantilla'])->name('plantilla');
+                Route::post('analizar', [TerceroImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [TerceroImportController::class, 'confirmar'])->name('confirmar');
+            });
+
         Route::resource('terceros', MaeTercerosController::class)
             ->names('terceros')
             ->parameters(['terceros' => 'tercero']);
         Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])->name('terceros.generarPdf');
+
+        // COMAE_TER: import genérico del volcado externo de Terceros (no solo pastores). Prefijo
+        // propio fuera de "terceros/" a propósito, para no depender del orden con el resource de
+        // arriba.
+        Route::prefix('comae-ter/importar')
+            ->name('comaeter.importar.')
+            ->middleware('candirect:maestras.comaeter.importar')
+            ->group(function () {
+                Route::get('/', [ComaeTerImportController::class, 'index'])->name('index');
+                Route::get('plantilla', [ComaeTerImportController::class, 'plantilla'])->name('plantilla');
+                Route::post('analizar', [ComaeTerImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [ComaeTerImportController::class, 'confirmar'])->name('confirmar');
+            });
 
         // TIPO
         Route::resource('tipos', MaeTiposController::class)
@@ -659,11 +747,29 @@ Route::prefix('maestras')
             ->parameters(['tipos' => 'tipo']);
 
         // CONGREGACION (CORREGIDO)
+        // La importación va ANTES del resource: el resource registra un GET
+        // congregaciones/{congregacion} (show) que, si va primero, se traga "importar" como si
+        // fuera un código de congregación (route model binding falla -> 404 engañoso).
+        Route::prefix('congregaciones/importar')
+            ->name('congregacion.importar.')
+            ->middleware('candirect:maestras.congregaciones.importar')
+            ->group(function () {
+                Route::get('/', [CongregacionImportController::class, 'index'])->name('index');
+                Route::post('analizar', [CongregacionImportController::class, 'analizar'])->name('analizar');
+                Route::post('confirmar', [CongregacionImportController::class, 'confirmar'])->name('confirmar');
+            });
+
         Route::resource('congregaciones', MaeCongregacionController::class)
             ->names('congregacion')
             ->parameters(['congregaciones' => 'congregacion']);
 
         Route::get('buscar-pastor', [MaeCongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
+
+        // DISTRITOS
+        Route::resource('distritos', MaeDistritoController::class)
+            ->names('distrito')
+            ->parameters(['distritos' => 'distrito'])
+            ->except(['show']);
 
         Route::get('departamentos/{region}', [MaeMunicipiosController::class, 'listadepartamentos'])->name('departamentos.listar');
         Route::get('municipios/{departamento}', [MaeMunicipiosController::class, 'listamunicipios'])->name('municipios.listar');

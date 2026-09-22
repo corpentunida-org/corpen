@@ -199,7 +199,7 @@ class EmpleadoController extends Controller
 
         $empleado = Empleado::create($datos);
 
-        $this->auditoria("Alta de colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
+        $this->auditoria("Alta de colaborador C.C. {$empleado->cod_ter}");
 
         // Opt-in explícito: solo se toca MaeTerceros.tip_prv si el usuario marcó la casilla
         // en el formulario. Nunca se sobrescribe en automático (podría borrar otra
@@ -209,7 +209,7 @@ class EmpleadoController extends Controller
 
             if ($tipoEmpleadoId !== null) {
                 MaeTerceros::where('cod_ter', $empleado->cod_ter)->update(['tip_prv' => $tipoEmpleadoId]);
-                $this->auditoria("Clasificación 'Empleado' aplicada en MaeTerceros para cod_ter {$empleado->cod_ter} (marcada explícitamente en el alta)");
+                $this->auditoria("Clasificación 'Empleado' aplicada en MaeTerceros para " . \App\Http\Controllers\AuditoriaController::refTercero($empleado->cod_ter) . " (marcada explícitamente en el alta)");
             }
         }
 
@@ -265,7 +265,7 @@ class EmpleadoController extends Controller
 
         $empleado->update($datos);
 
-        $this->auditoria("Actualización de datos del colaborador #{$empleado->id} (cod_ter {$empleado->cod_ter})");
+        $this->auditoria("Actualización de datos del colaborador C.C. {$empleado->cod_ter}");
 
         return redirect()->route('sgrh.empleado.index')
             ->with('success', 'Colaborador actualizado correctamente.');
@@ -539,7 +539,7 @@ class EmpleadoController extends Controller
 
         $tercero->update($validated);
 
-        $this->auditoria("Actualización de datos personales del tercero cod_ter {$tercero->cod_ter} desde el módulo SGRH");
+        $this->auditoria("Actualización de datos personales del tercero " . \App\Http\Controllers\AuditoriaController::refTercero($tercero->cod_ter) . " desde el módulo SGRH");
 
         return redirect()->back()->with('success', 'Datos del tercero actualizados correctamente.');
     }

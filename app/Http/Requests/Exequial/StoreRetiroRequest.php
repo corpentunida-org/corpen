@@ -32,6 +32,7 @@ class StoreRetiroRequest extends FormRequest
         return [
             'fecha_retiro' => $reglasFecha,
             'observaciones' => ['required', 'string'],
+            'marcar_pastor_retirado' => ['nullable', 'boolean'],
         ];
     }
 

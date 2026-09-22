@@ -156,6 +156,21 @@
             <span class="visually-hidden">Cargando...</span>
         </div>
     </div>
+
+    {{-- Aviso de "Ver como" (soporte a asociados) — visible en cualquier pantalla mientras un
+         admin esté viendo la cuenta de un asociado, para que nunca se le olvide que no está en
+         su propia sesión. Ver App\Http\Controllers\Admin\ImpersonarController. --}}
+    @if (session()->has('impersonador_id'))
+        <div class="d-flex flex-wrap align-items-center justify-content-center gap-3 py-2 px-3 text-center"
+             style="background:#f59e0b; color:#1e293b; font-weight:600; font-size:0.9rem; position:sticky; top:0; z-index:2000;">
+            <span><i class="bi bi-eye-fill me-1"></i> Estás viendo como: {{ auth()->user()->name }} (asociado)</span>
+            <form method="POST" action="{{ route('admin.impersonar.detener') }}" class="m-0">
+                @csrf
+                <button type="submit" class="btn btn-sm btn-dark">Volver a mi cuenta</button>
+            </form>
+        </div>
+    @endif
+
     @auth()
         @if (Auth::user()->actions->count() == 0)
             @include('layouts.norole')
@@ -178,9 +193,7 @@
                             <li class="nxl-item nxl-caption">
                                 <label>Menu</label>
                             </li>
-                            @foreach (auth()->user()->actions as $action)
-                                @include('layouts.actions.' . $action->role->name)
-                            @endforeach
+                            @include('layouts.partials.menu-modulos')
                             
                         </ul>
                     </div>

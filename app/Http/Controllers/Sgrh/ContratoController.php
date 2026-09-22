@@ -142,7 +142,7 @@ class ContratoController extends Controller
             return $contrato;
         });
 
-        $this->auditoria("Contrato creado #{$contrato->id} para colaborador #{$contrato->empleado_id}");
+        $this->auditoria("Contrato creado #{$contrato->id} para colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($contrato->empleado_id));
 
         $this->sincronizarEstadoColaborador($contrato->empleado);
 
@@ -185,7 +185,7 @@ class ContratoController extends Controller
 
         $contrato->update($validated);
 
-        $this->auditoria("Contrato actualizado #{$contrato->id} (colaborador #{$contrato->empleado_id})");
+        $this->auditoria("Contrato actualizado #{$contrato->id} (colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($contrato->empleado_id) . ")");
 
         // Cada edición de contrato deja un registro propio en sgrh_contrato_modificaciones
         // (causal + observación + foto del contrato ya actualizado), aparte del log genérico de
@@ -203,7 +203,7 @@ class ContratoController extends Controller
         // sincronizarEstadoColaborador() ya sabe no pisar 'retirado' con 'inactivo' después.
         if ($contrato->estado === 'Liquidado' && $request->boolean('retiro_definitivo')) {
             $contrato->empleado->update(['estado' => 'retirado', 'fecha_retiro' => now()]);
-            $this->auditoria("Colaborador #{$contrato->empleado_id} marcado como retirado definitivamente (contrato #{$contrato->id} liquidado)");
+            $this->auditoria("Colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($contrato->empleado_id) . " marcado como retirado definitivamente (contrato #{$contrato->id} liquidado)");
         }
 
         $this->sincronizarEstadoColaborador($contrato->empleado);
@@ -258,7 +258,7 @@ class ContratoController extends Controller
             $contrato->delete();
         });
 
-        $this->auditoria("Contrato eliminado [{$descripcion}] del colaborador #{$empleadoId}");
+        $this->auditoria("Contrato eliminado [{$descripcion}] del colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleadoId));
 
         $this->sincronizarEstadoColaborador(Empleado::findOrFail($empleadoId));
 
@@ -287,10 +287,10 @@ class ContratoController extends Controller
             // activo — antes vivía en el updateEstado() manual que se eliminó, ahora es este el
             // único lugar donde 'activo' se asigna.
             $empleado->update(['estado' => 'activo', 'fecha_retiro' => null]);
-            $this->auditoria("Colaborador #{$empleado->id} reactivado automáticamente (tiene un contrato activo)");
+            $this->auditoria("Colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . " reactivado automáticamente (tiene un contrato activo)");
         } elseif (!$tieneContratoActivo && $empleado->estado === 'activo') {
             $empleado->update(['estado' => 'inactivo']);
-            $this->auditoria("Colaborador #{$empleado->id} inactivado automáticamente (sin contrato activo)");
+            $this->auditoria("Colaborador " . \App\Http\Controllers\AuditoriaController::refColaborador($empleado->id) . " inactivado automáticamente (sin contrato activo)");
         }
     }
 

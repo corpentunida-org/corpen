@@ -10,6 +10,17 @@ services:
         volumes:
             - ".:/var/www/html"
             - ./public/assets/img:/var/www/html/public/assets/img
+            # Volúmenes nombrados (no bind mount) para lo que Laravel necesita escribir en
+            # runtime (vistas compiladas, sesiones/cache de archivo, logs, config:cache). Un bind
+            # mount del repo del host aquí puede quedar sin permiso de escritura para www-data
+            # -- en Linux porque el dueño real es el del checkout del host, y en Windows/Docker
+            # Desktop porque un chown/chmod contra una carpeta NTFS compartida no siempre se
+            # respeta. Un volumen nombrado es siempre un filesystem Linux gestionado por Docker,
+            # así que el chown del entrypoint (ver Dockerfile) queda firme sin importar el SO del
+            # host.
+            - storage_framework:/var/www/html/storage/framework
+            - storage_logs:/var/www/html/storage/logs
+            - bootstrap_cache:/var/www/html/bootstrap/cache
 
     worker:
         image: corpen-app
@@ -18,5 +29,13 @@ services:
         volumes:
             - ".:/var/www/html"
             - ./public/assets/img:/var/www/html/public/assets/img
+            - storage_framework:/var/www/html/storage/framework
+            - storage_logs:/var/www/html/storage/logs
+            - bootstrap_cache:/var/www/html/bootstrap/cache
         command: php artisan queue:work database --queue=default --timeout=1800 --tries=3 --memory=512 -vvv
         restart: unless-stopped
+
+volumes:
+    storage_framework:
+    storage_logs:
+    bootstrap_cache:

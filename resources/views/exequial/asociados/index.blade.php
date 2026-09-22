@@ -169,6 +169,19 @@
                                     <label class="form-label fw-bold text-dark small text-uppercase">Observaciones</label>
                                     <textarea name="observaciones" class="form-control" rows="3" required></textarea>
                                 </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="marcar_pastor_retirado"
+                                            id="marcarPastorRetirado" value="1">
+                                        <label class="form-check-label" for="marcarPastorRetirado">
+                                            Marcar también como "Retirado" en el módulo de Pastores/Asociados
+                                        </label>
+                                    </div>
+                                    <small class="text-muted">
+                                        Retirar del plan de Exequiales no cambia por sí solo el estado del pastor.
+                                        Solo marca esta casilla si este retiro también es un retiro pastoral.
+                                    </small>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer">

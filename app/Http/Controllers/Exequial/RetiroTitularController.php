@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Exequial\StoreReafiliacionRequest;
 use App\Http\Requests\Exequial\StoreRetiroRequest;
 use App\Imports\ExcelExport;
+use App\Models\Asociado\MaeAsociado;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\TitularRetiro;
+use App\Models\User;
 use App\Services\Exequial\ExequialApiException;
 use App\Services\Exequial\ExequialApiService;
 use App\Services\Integraciones\CorpentunidaCrmService;
@@ -31,12 +33,25 @@ class RetiroTitularController extends Controller
     }
 
     /**
+     * Un titular retirado no debería poder seguir entrando al portal de Reservas con esa misma
+     * cédula (users.nid) — antes el retiro solo tocaba el sistema externo y ComaeExCli, dejando
+     * la cuenta de acceso intacta. No todo titular tiene cuenta de portal (se omite en silencio
+     * si no existe), y esto no toca congrega/cod_dist ni nada de Maestra de Terceros — solo el
+     * acceso.
+     */
+    private function sincronizarBloqueoDePortal(string $cedula, bool $bloquear): void
+    {
+        User::where('nid', $cedula)->update(['bloqueado' => $bloquear]);
+    }
+
+    /**
      * Query base compartida entre la pantalla y las dos exportaciones, para no
      * duplicar los filtros en tres sitios distintos.
      */
     private function filtrar(Request $request)
     {
         return TitularRetiro::query()
+            ->with(['registradoPor', 'reafiliadoPor'])
             ->when($request->filled('fecha_desde'), fn($q) => $q->whereDate('fecha_retiro', '>=', $request->fecha_desde))
             ->when($request->filled('fecha_hasta'), fn($q) => $q->whereDate('fecha_retiro', '<=', $request->fecha_hasta))
             ->when($request->filled('reportado') && $request->reportado !== 'todos', function ($q) use ($request) {
@@ -93,6 +108,15 @@ class RetiroTitularController extends Controller
         }
 
         $titularLocal->update(['estado' => false]);
+        $this->sincronizarBloqueoDePortal($cedula, true);
+
+        // Retirarse del plan de Exequiales no tiene por qué implicar un retiro pastoral —
+        // son cosas distintas — así que solo se toca MaeAsociado si el usuario lo marca
+        // explícitamente en el modal. No todo titular tiene registro de Asociado (join real:
+        // 5792/6787), así que se omite en silencio si no existe.
+        if ($request->boolean('marcar_pastor_retirado')) {
+            MaeAsociado::where('cedula', $cedula)->update(['estado_pastor' => 'Retirado']);
+        }
 
         TitularRetiro::create([
             'cod_cli' => $cedula,
@@ -103,7 +127,7 @@ class RetiroTitularController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        $this->auditoria('retiro de titular ' . $cedula, 'EXEQUIALES');
+        $this->auditoria('retiro de titular ' . \App\Http\Controllers\AuditoriaController::refTercero($cedula), 'EXEQUIALES');
 
         // "Mejor esfuerzo": si el CRM Corpentunida no está disponible o mal
         // configurado, el retiro en siasoft y local ya quedó hecho — no se
@@ -163,6 +187,7 @@ class RetiroTitularController extends Controller
         }
 
         $titularLocal->update(['estado' => true]);
+        $this->sincronizarBloqueoDePortal($cedula, false);
 
         $retiroVigente->update([
             'fecha_reafiliacion' => now()->toDateString(),
@@ -170,7 +195,7 @@ class RetiroTitularController extends Controller
             'reafiliado_por' => auth()->id(),
         ]);
 
-        $this->auditoria('reafiliación de titular ' . $cedula, 'EXEQUIALES');
+        $this->auditoria('reafiliación de titular ' . \App\Http\Controllers\AuditoriaController::refTercero($cedula), 'EXEQUIALES');
 
         if (!$this->crm->actualizarEstadoTercero($cedula, true)) {
             session()->flash('warning', 'El titular se reafilió correctamente, pero no se pudo sincronizar el estado con el CRM Corpentunida. Actualízalo allí manualmente.');
@@ -187,7 +212,7 @@ class RetiroTitularController extends Controller
             'reportado_por' => auth()->id(),
         ]);
 
-        $this->auditoria('marcar reportado al aliado el retiro de ' . $retiro->cod_cli, 'EXEQUIALES');
+        $this->auditoria('marcar reportado al aliado el retiro de ' . \App\Http\Controllers\AuditoriaController::refTercero($retiro->cod_cli), 'EXEQUIALES');
 
         return redirect()->back()->with('success', 'Marcado como reportado al aliado comercial.');
     }
@@ -201,12 +226,13 @@ class RetiroTitularController extends Controller
             $r->nombre,
             optional($r->fecha_afiliacion)->format('Y-m-d'),
             $r->fecha_retiro->format('Y-m-d'),
+            $r->registradoPor->name ?? '—',
             $r->observaciones,
             $r->fecha_reafiliacion ? 'Reafiliado ' . $r->fecha_reafiliacion->format('Y-m-d') : 'Vigente',
             $r->reportado_aliado ? 'Sí' : 'No',
         ])->toArray();
 
-        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Observaciones', 'Estado', 'Reportado'];
+        $headings = ['Cédula', 'Nombre', 'Fecha Afiliación', 'Fecha Retiro', 'Registrado por', 'Observaciones', 'Estado', 'Reportado'];
         $name = 'Retirados_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
         return Excel::download(new ExcelExport($data, $headings), $name);

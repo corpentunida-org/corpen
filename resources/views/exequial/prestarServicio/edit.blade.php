@@ -77,6 +77,26 @@
                         <input type="text" class="form-control" name="lugarFallecimiento"
                             value="{{ $registro->lugarFallecimiento }}" required>
                     </div>
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <label class="form-label">Tipo de Muerte<span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipoMuerte" required>
+                                <option value="" disabled {{ $registro->tipoMuerte ? '' : 'selected' }}>Seleccione...</option>
+                                @foreach (\App\Models\Exequiales\ExMonitoria::TIPOS_MUERTE as $tipo)
+                                    <option value="{{ $tipo }}" {{ $registro->tipoMuerte === $tipo ? 'selected' : '' }}>{{ $tipo }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <label class="form-label">Ciudad de Fallecimiento</label>
+                            <select class="form-select" name="ciudad_fallecimiento_id">
+                                <option value="">Seleccione...</option>
+                                @foreach ($ciudades as $ciudad)
+                                    <option value="{{ $ciudad->id_ciudad }}" {{ (string) $registro->ciudad_fallecimiento_id === (string) $ciudad->id_ciudad ? 'selected' : '' }}>{{ $ciudad->nombre }}, {{ $ciudad->subregion->nombre ?? 'Sin región' }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

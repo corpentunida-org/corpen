@@ -19,10 +19,23 @@ use App\Http\Controllers\AuditoriaController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 use App\Models\Exequiales\ComaeExRelPar;
+use App\Models\Demografia\Ciudad;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MaeC_ExSerController extends Controller
 {
+    /**
+     * Mismo catálogo y misma cache key que MaeAsociadoController::edit() — se reutiliza el
+     * mismo listado de ciudades (geo_ciudades) en vez de duplicar la consulta/caché.
+     */
+    private function ciudades()
+    {
+        return Cache::remember('ciudades_list_cache', now()->addDays(7), function () {
+            return Ciudad::with('subregion')->orderBy('nombre', 'asc')->get();
+        });
+    }
+
     public function __construct(private ExequialApiService $api)
     {
     }
@@ -32,19 +45,56 @@ class MaeC_ExSerController extends Controller
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, $area);
     }
-    public function index()
+    /**
+     * Query base compartida entre la lista y los informes (PDF/Excel) — mismo criterio que
+     * RetiroTitularController::filtrar(). Sin ningún filtro, el default es el último mes (antes
+     * se traía todo el histórico en cada visita); esto aplica igual a la lista y a los informes
+     * para que lo descargado sea siempre lo mismo que se ve en pantalla.
+     *
+     * "anio" es un atajo pensado para auditoría (ver todo lo registrado por un funcionario, no
+     * solo lo reciente) y tiene prioridad sobre fecha_desde/fecha_hasta: 'todos' quita cualquier
+     * límite de fecha, y un año puntual filtra ese año completo.
+     */
+    private function filtrarRegistros(Request $request)
     {
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $query = ExMonitoria::query();
+
+        if ($request->filled('anio')) {
+            if ($request->input('anio') !== 'todos') {
+                $query->whereYear('fechaFallecimiento', $request->input('anio'));
+            }
+        } elseif ($request->filled('fecha_desde') || $request->filled('fecha_hasta')) {
+            if ($request->filled('fecha_desde')) {
+                $query->whereDate('fechaFallecimiento', '>=', $request->fecha_desde);
+            }
+            if ($request->filled('fecha_hasta')) {
+                $query->whereDate('fechaFallecimiento', '<=', $request->fecha_hasta);
+            }
+        } else {
+            $query->whereDate('fechaFallecimiento', '>=', Carbon::now()->subMonth()->startOfDay());
+        }
+
+        return $query->orderBy('id', 'desc');
+    }
+
+    public function index(Request $request)
+    {
+        $registros = $this->filtrarRegistros($request)->get();
         $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
+        $totalGeneral = ExMonitoria::count();
+        $mReg = ExMonitoria::whereDate('fechaFallecimiento', '>=', Carbon::now()->subMonth()->startOfDay())->count();
         $nmen = ExMonitoria::where('genero', 'M')->count();
         $nwomen = ExMonitoria::where('genero', 'F')->count();
+        $aniosDisponibles = ExMonitoria::selectRaw('DISTINCT YEAR(fechaFallecimiento) as anio')
+            ->whereNotNull('fechaFallecimiento')
+            ->orderByDesc('anio')
+            ->pluck('anio');
 
-        return view('exequial.prestarServicio.index', compact('registros', 'mReg', 'nmen', 'nwomen'));
+        return view('exequial.prestarServicio.index', compact('registros', 'totalGeneral', 'mReg', 'nmen', 'nwomen', 'aniosDisponibles'));
     }
 
     public function edit($id)
@@ -59,7 +109,8 @@ class MaeC_ExSerController extends Controller
         $municipio = DB::table('MaeMunicipios')->where('id', $registro->municipio)->first();
         $departamento = $municipio ? DB::table('MaeDepartamentos')->where('codigo_Dane', $municipio->id_departamento)->first() : null;
         $regionsel = $departamento ? DB::table('MaeRegiones')->where('id', $departamento->id_region)->first() : null;
-        return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel'));
+        $ciudades = $this->ciudades();
+        return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel', 'ciudades'));
     }
 
     public function store(StorePrestarServicioRequest $request)
@@ -106,6 +157,8 @@ class MaeC_ExSerController extends Controller
                 'cedulaFallecido' => $request->cedulaFallecido,
                 'fechaFallecimiento' => $request->fechaFallecimiento,
                 'lugarFallecimiento' => strtoupper($request->lugarFallecimiento),
+                'tipoMuerte' => $request->tipoMuerte,
+                'ciudad_fallecimiento_id' => $request->ciudad_fallecimiento_id,
                 'parentesco' => $request->parentesco,
                 'estado' => $request->estadonuevo,
                 'contacto' => strtoupper($request->contacto),
@@ -114,7 +167,7 @@ class MaeC_ExSerController extends Controller
                 'telefonoContacto2' => $request->telefonoContacto2,
                 'genero' => $request->genero,
             ]);
-            $accion = 'prestar servicio a ' . $request->cedulaFallecido;
+            $accion = 'prestar servicio a ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaFallecido);
             $this->auditoria($accion, 'EXEQUIALES');
 
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaTitular;
@@ -130,9 +183,9 @@ class MaeC_ExSerController extends Controller
         return view('exequial.prestarServicio.index', ['registros' => $filtromes]);
     }
 
-    public function generarpdf()
+    public function generarpdf(Request $request)
     {
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $registros = $this->filtrarRegistros($request)->get();
         $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
@@ -143,10 +196,10 @@ class MaeC_ExSerController extends Controller
         //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 
-    public function generarExcelPrestarServicio()
+    public function generarExcelPrestarServicio(Request $request)
     {
         Carbon::setLocale('es');
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $registros = $this->filtrarRegistros($request)->get();
         $data = [];
         $i = 1;
         $controllerparentesco = app()->make(ParentescosController::class);
@@ -181,6 +234,8 @@ class MaeC_ExSerController extends Controller
             'horaFallecimiento' => $request->horaFallecimiento,
             'fechaFallecimiento' => $request->fechaFallecimiento,
             'lugarFallecimiento' => $request->lugarFallecimiento,
+            'tipoMuerte' => $request->tipoMuerte,
+            'ciudad_fallecimiento_id' => $request->ciudad_fallecimiento_id,
             'contacto' => $request->contacto,
             'telefonoContacto' => $request->telefonoContacto,
             'Contacto2' => $request->contacto2,
@@ -188,7 +243,7 @@ class MaeC_ExSerController extends Controller
             'municipio' => $request->municipioid,
         ]);
         if ($updated > 0) {
-            $accion = 'actualizar prestar servicio a ' . $request->cedulaFallecido;
+            $accion = 'actualizar prestar servicio a ' . \App\Http\Controllers\AuditoriaController::refTercero($request->cedulaFallecido);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->route('exequial.prestarServicio.index')->with('success', 'Registro actualizado exitosamente');
         } else {

@@ -19,18 +19,34 @@
 
             {{-- INICIO DEL FORMULARIO DE BÚSQUEDA --}}
             <div class="px-4 pb-4">
-                <form action="{{ route('maestras.congregacion.index') }}" method="GET">
-                    <div class="input-group shadow-sm rounded">
-                        <span class="input-group-text bg-white border-end-0">
-                            <i class="feather-search text-muted"></i>
-                        </span>
-                        <input type="text" name="search" class="form-control border-start-0"
-                            placeholder="Buscar por código, nombre, municipio o pastor..."
-                            value="{{ request('search') }}">
-                        <button class="btn btn-outline-primary" type="submit">
-                            <i class="feather-arrow-right"></i> Buscar
+                <form action="{{ route('maestras.congregacion.index') }}" method="GET" class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1">Nombre de la congregación</label>
+                        <input type="text" name="nombre" class="form-control"
+                            placeholder="Ej. MEDELLIN 4 ESQUINAS" value="{{ request('nombre') }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1">Pastor titular (nombre o cédula)</label>
+                        <input type="text" name="pastor" class="form-control"
+                            placeholder="Ej. Carlos Pérez o 12345678" value="{{ request('pastor') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1">Código congregación</label>
+                        <input type="text" name="codigo" class="form-control"
+                            placeholder="Ej. 4104" value="{{ request('codigo') }}">
+                    </div>
+                    <div class="col-md-1 d-grid">
+                        <button class="btn btn-outline-primary" type="submit" title="Buscar">
+                            <i class="feather-search"></i>
                         </button>
                     </div>
+                    @if (request('nombre') || request('pastor') || request('codigo'))
+                        <div class="col-12">
+                            <a href="{{ route('maestras.congregacion.index') }}" class="small text-muted">
+                                <i class="feather-x"></i> Limpiar filtros
+                            </a>
+                        </div>
+                    @endif
                 </form>
             </div>
             {{-- FIN DEL FORMULARIO DE BÚSQUEDA --}}
@@ -64,7 +80,7 @@
                                 </td>
                                 <td class="py-1 px-2">{{ $congregacion->maeClaseCongregacion->nombre ?? '' }}</td>
                                 <td class="py-1 px-2">{{ $congregacion->maeDistritos->NOM_DIST ?? '' }}</td>
-                                <td class="py-1 px-2">{{ $congregacion->maeMunicipios->nombre ?? '' }}</td>
+                                <td class="py-1 px-2">{{ $congregacion->municipio_nombre ?? '' }}</td>
                                 <td class="py-1 px-2"
                                     title="{{ $congregacion->MaeTerceros->nom_ter ?? 'Nombre no disponible' }}">
                                     {{ $congregacion->pastor }}

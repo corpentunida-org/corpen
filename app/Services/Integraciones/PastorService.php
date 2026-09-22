@@ -19,8 +19,11 @@ class PastorService
         $url = config('services.api_produccion.url') . "/api/Pastors";
         $token = config('services.api_produccion.token');
 
-        // 1. Realizamos la solicitud GET
-        $response = Http::withToken($token)->get($url, [
+        // 1. Realizamos la solicitud GET. Timeout explícito: este servicio ahora también se usa
+        // como verificación obligatoria al crear una cuenta de asociado (ver
+        // CreateNewUser::create) — sin límite, una SiaSoft lenta dejaría colgada la petición de
+        // registro indefinidamente.
+        $response = Http::withToken($token)->timeout(15)->get($url, [
             'DocumentId' => $nid
         ]);
 

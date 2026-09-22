@@ -58,20 +58,12 @@
                                 <span class="d-block mb-2">Información:</span>
                             </h5>
                             <div class="d-flex gap-2">
-                                <!-- <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Prestar Servicio" data-bs-target="#proposalSent">
-                                <i class="fa-regular fa-bell"></i>
-                            </a> -->
-
                                 @if ($asociado['stade'])
                                     @candirect('exequial.prestarServicio.store')
-                                    <a href="javascript:void(0);" class="border" data-bs-toggle="offcanvas"
+                                    <a href="javascript:void(0);" class="btn btn-danger" data-bs-toggle="offcanvas"
                                         data-bs-target="#proposalSent2">
-                                        <div class="wd-60 d-flex align-items-center justify-content-center"
-                                            data-bs-toggle="tooltip" data-bs-trigger="hover" title=""
-                                            style="height: 59px" data-bs-original-title="Prestar Servicio"
-                                            aria-label="Prestar Servicio">
-                                            <i class="fa-regular fa-bell"></i>
-                                        </div>
+                                        <i class="fa-regular fa-bell me-2"></i>
+                                        <span>Prestar Servicio</span>
                                     </a>
                                     @endcandirect
                                     @candirect('exequial.asociados.update')
@@ -158,9 +150,9 @@
 
             <div class="d-flex justify-content-end gap-2 m-3 ">
                 <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId'], 'active' => 'false']) }}
-                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">Descargar PDF</a>
+                    data-no-loading class="btn btn-md bg-soft-teal text-teal border-soft-teal">Descargar PDF</a>
                 <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId'], 'active' => 'true']) }}
-                    class="btn btn-md btn-primary">Descargar certificado</a>
+                    data-no-loading class="btn btn-md btn-primary">Descargar certificado</a>
             </div>
         </div>
     </div>
@@ -194,6 +186,26 @@
                 <div class="form-group mb-4">
                     <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
                     <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
+                </div>
+                <div class="row">
+                    <div class="form-group col-lg-6 mb-4">
+                        <label class="form-label">Tipo de Muerte<span class="text-danger">*</span></label>
+                        <select class="form-control" name="tipoMuerte" required>
+                            <option value="" disabled selected>Seleccione...</option>
+                            @foreach (\App\Models\Exequiales\ExMonitoria::TIPOS_MUERTE as $tipo)
+                                <option value="{{ $tipo }}">{{ $tipo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="form-group col-lg-6 mb-4">
+                        <label class="form-label">Ciudad de Fallecimiento</label>
+                        <select class="form-control" name="ciudad_fallecimiento_id">
+                            <option value="">Seleccione...</option>
+                            @foreach ($ciudades as $ciudad)
+                                <option value="{{ $ciudad->id_ciudad }}">{{ $ciudad->nombre }}, {{ $ciudad->subregion->nombre ?? 'Sin región' }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <div class="row">
                     <div class="form-group col-lg-6 mb-4">

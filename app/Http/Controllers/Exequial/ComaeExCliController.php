@@ -15,6 +15,8 @@ use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\ComaeTer;
 use App\Models\Exequiales\TitularRetiro;
 use App\Models\Maestras\MaeTerceros;
+use App\Models\Demografia\Ciudad;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -147,10 +149,18 @@ class ComaeExCliController extends Controller
                 $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
                 $jsonTit['codePlan'] = $nomPlan;
             }
+            // Mismo catálogo y misma cache key que MaeAsociadoController::edit(), reutilizado
+            // aquí para el desplegable de "ciudad de fallecimiento" del formulario Prestar
+            // Servicio (offcanvas de esta vista y el de beneficiarios/show, incluido debajo).
+            $ciudades = Cache::remember('ciudades_list_cache', now()->addDays(7), function () {
+                return Ciudad::with('subregion')->orderBy('nombre', 'asc')->get();
+            });
+
             return view('exequial.asociados.show', [
                 'asociado' => $jsonTit,
                 'beneficiarios' => $jsonBene,
                 'maeter' => $maeter,
+                'ciudades' => $ciudades,
             ]);
         } else {
             return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
@@ -185,6 +195,22 @@ class ComaeExCliController extends Controller
     {
         //$this->authorize('create', auth()->user());
         $fechaActual = Carbon::now();
+
+        // Antes se creaba el titular con cualquier cédula, sin validar que existiera en
+        // SiaSoft (API /api/Pastors) — mismo patrón que ya usan Seguros
+        // (SegPolizaController::store) y ComaeTerController::show. Sin este chequeo, un
+        // titular podía quedar creado en la API de Exequiales sin estar nunca registrado
+        // en la maestra de terceros, mostrando luego el aviso "El usuario no se encuentra
+        // registrado en la maestra de terceros" en la vista show().
+        try {
+            $pastor = $this->api->get('/api/Pastors', ['documentId' => $request->documentId]);
+        } catch (ExequialApiException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+        if (!$pastor->successful() || !isset($pastor->json()['name'])) {
+            return redirect()->back()->with('error', 'Tercero no encontrado en la base de datos Siasoft.');
+        }
+
         try {
             $response = $this->api->post('/api/Exequiales/Tercero', [
                 'documentId' => $request->documentId,
@@ -198,16 +224,33 @@ class ComaeExCliController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
         if ($response->successful()) {
-            ComaeExCli::create([
-                'cod_cli' => $request->documentId,
-                'cod_plan' => $request->plan,
-                'fec_ing' => $fechaActual,
-                'cod_cco' => 'C1010',
-                'estado' => true,
-                'fec_ini' => $fechaActual,
-                'por_descto' => $request->discount,
-            ]);
-            $accion = 'add titular ' . $request->documentId;
+            // El titular YA quedó creado en el sistema externo de Exequiales (la llamada de
+            // arriba tuvo éxito) — lo de aquí abajo es solo el espejo local en EXE_ExCli, que
+            // usan el listado y la consulta por cédula (ComaeExCliController::index/show) para
+            // no depender de la API externa en cada búsqueda. Un fallo transitorio de BD justo
+            // acá (se confirmó un caso real: título creado en la API, sin fila local) deja al
+            // titular invisible en toda consulta/listado de la app aunque sí exista afuera —
+            // y sin este try/catch, el usuario ve un error 500 crudo sin saber que la creación
+            // externa sí ocurrió, con el riesgo de reintentar y duplicarlo allá.
+            try {
+                ComaeExCli::create([
+                    'cod_cli' => $request->documentId,
+                    'cod_plan' => $request->plan,
+                    'fec_ing' => $fechaActual,
+                    'cod_cco' => 'C1010',
+                    'estado' => true,
+                    'fec_ini' => $fechaActual,
+                    'por_descto' => $request->discount,
+                ]);
+            } catch (\Throwable $e) {
+                report($e);
+                return redirect()->back()->with('error',
+                    'El titular se creó en el sistema externo de Exequiales, pero no se pudo guardar la copia local '
+                    . '(posible error temporal de conexión a la base de datos). NO vuelvas a intentar crearlo con la '
+                    . 'misma cédula — ya existe allá y quedaría duplicado. Contacta a Sistemas para sincronizarlo.'
+                );
+            }
+            $accion = 'add titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentId, trim($request->names ?? ($request->apellidos . ' ' . $request->nombres)));
             $this->auditoria($accion, 'EXEQUIALES');
             // Antes usaba $request->cedulaAsociado, un campo que este formulario nunca envía
             // (ver resources/views/exequial/asociados/create.blade.php) — la redirección
@@ -246,7 +289,7 @@ class ComaeExCliController extends Controller
                 'benef' => $request->observation,
                 'estado' => true,
             ]);
-            $accion = 'update titular ' . $request->documentid;
+            $accion = 'update titular ' . \App\Http\Controllers\AuditoriaController::refTercero($request->documentid);
             $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
@@ -307,5 +350,7 @@ class ComaeExCliController extends Controller
                 return $pdf->download(date('Y-m-d') . ' Reporte ' . $jsonTit['documentId'] . '.pdf');
             }
         }
+
+        return redirect()->route('exequial.asociados.index')->with('warning', 'No se pudo generar el reporte: no se encontró información del titular o los beneficiarios.');
     }
 }

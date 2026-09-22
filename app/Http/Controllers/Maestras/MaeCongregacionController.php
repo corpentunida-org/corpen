@@ -18,21 +18,48 @@ class MaeCongregacionController extends Controller
      * Display a listing of the resource.
      * INICIO
      */
+    /**
+     * Antes solo había un buscador genérico que probaba el término contra
+     * MaeCongregaciones.pastor — pero esa columna guarda la CÉDULA del pastor (texto legado),
+     * no su nombre, así que buscar "Pérez" nunca encontraba nada aunque Pérez fuera el titular
+     * real. Se agregan 3 filtros propios (nombre, código, pastor) y el de pastor busca por
+     * cédula Y por nombre real, cruzando contra MaeTerceros vía la relación maeTercero()
+     * (congrega = codigo), que es la fuente de verdad actual del titular.
+     */
     public function index(Request $request)
     {
-        $query = MaeCongregacion::query()->with('maeClaseCongregacion');
-        $busqueda = trim($request->input('search'));
+        $query = MaeCongregacion::query()->with(['maeClaseCongregacion', 'maeTercero']);
 
-        if (!empty($busqueda)) {
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('nombre', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('codigo', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('municipio', 'LIKE', "%{$busqueda}%")
-                    ->orWhere('pastor', 'LIKE', "%{$busqueda}%");
+        if ($request->filled('nombre')) {
+            $query->where('nombre', 'LIKE', '%' . $request->input('nombre') . '%');
+        }
+
+        if ($request->filled('codigo')) {
+            $query->where('codigo', 'LIKE', '%' . $request->input('codigo') . '%');
+        }
+
+        if ($request->filled('pastor')) {
+            $pastor = $request->input('pastor');
+
+            // orWhereHas() aquí generaba un subquery DEPENDIENTE (una vuelta a MaeTerceros por
+            // CADA congregación, ~6.559 veces) que MySQL no resuelve con el índice de
+            // 'congrega' cuando se combina con el LIKE — se confirmó con EXPLAIN: type=ALL,
+            // ~160 millones de comparaciones, la pantalla se colgaba varios minutos. En vez de
+            // eso, se busca en MaeTerceros UNA sola vez (sin correlación) y se filtra
+            // MaeCongregaciones por los códigos resultantes con un IN, que sí usa el índice.
+            $codigosConPastorCoincidente = MaeTerceros::where('nom_ter', 'LIKE', "%{$pastor}%")
+                ->orWhere('cod_ter', 'LIKE', "%{$pastor}%")
+                ->pluck('congrega')
+                ->filter()
+                ->unique();
+
+            $query->where(function ($q) use ($pastor, $codigosConPastorCoincidente) {
+                $q->where('pastor', 'LIKE', "%{$pastor}%")
+                    ->orWhereIn('codigo', $codigosConPastorCoincidente);
             });
         }
 
-        $congregaciones = $query->orderBy('codigo', 'desc')->paginate(10);
+        $congregaciones = $query->orderBy('codigo', 'desc')->paginate(10)->withQueryString();
 
         return view('maestras.congregaciones.index', compact('congregaciones'));
     }
@@ -62,14 +89,19 @@ class MaeCongregacionController extends Controller
             return redirect()->back()->withInput()->with('error', 'El código ingresado ya está registrado.');
         }
 
+        if ($error = $this->errorPastorYaAsignado($request->pastor)) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
+
         // Crear la congregación
-        MaeCongregacion::create([
+        $congregacion = MaeCongregacion::create([
             'codigo' => $request->Codigo,
             'nombre' => strtoupper($request->nombre),
             'pastor' => $request->pastor,
             'estado' => $request->estado,
             'clase' => $request->clase,
             'municipio' => $request->municipio,
+            'municipio_exterior_detalle' => $this->municipioExteriorDetalle($request),
             'direccion' => strtoupper($request->direccion),
             'telefono' => $request->telefono,
             'celular' => $request->celular,
@@ -78,6 +110,8 @@ class MaeCongregacionController extends Controller
             'cierre' => $request->cierre,
             'observacion' => $request->observacion,
         ]);
+
+        $this->sincronizarPastorConTercero($congregacion);
 
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación registrada exitosamente!');
     }
@@ -101,14 +135,31 @@ class MaeCongregacionController extends Controller
      */
     public function update(Request $request, MaeCongregacion $congregacion)
     {
+        if ($error = $this->errorPastorYaAsignado($request->pastor, $congregacion->codigo)) {
+            return redirect()->back()->withInput()->with('error', $error);
+        }
+
+        // 'pastorAnterior' ya NO se recibe del formulario (antes era un campo libre editable a
+        // mano, sin relación real con quién fue el pastor antes — cualquiera podía escribir
+        // cualquier cédula ahí). Ahora se calcula solo: si el titular ('pastor') realmente
+        // cambia en este guardado, el que se está reemplazando pasa a 'pastorAnterior'. Si el
+        // titular no cambia, 'pastorAnterior' se deja tal como está.
+        $pastorAnterior = $congregacion->pastorAnterior;
+        $tituarActual = trim((string) $congregacion->pastor);
+        $tituarNuevo = trim((string) $request->pastor);
+        if ($tituarActual !== '' && $tituarActual !== $tituarNuevo) {
+            $pastorAnterior = $tituarActual;
+        }
+
         // Se actualiza la congregación directamente con los datos del request.
         $congregacion->update([
             'nombre' => strtoupper($request->nombre),
             'pastor' => $request->pastor,
-            'pastorAnterior' => $request->pastorAnterior,
+            'pastorAnterior' => $pastorAnterior,
             'estado' => $request->estado,
             'clase' => $request->clase,
             'municipio' => $request->municipio,
+            'municipio_exterior_detalle' => $this->municipioExteriorDetalle($request),
             'direccion' => strtoupper($request->direccion),
             'telefono' => $request->telefono,
             'celular' => $request->celular,
@@ -118,7 +169,61 @@ class MaeCongregacionController extends Controller
             'observacion' => $request->observacion,
         ]);
 
+        $this->sincronizarPastorConTercero($congregacion);
+
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación actualizada exitosamente!');
+    }
+
+    /**
+     * Un pastor solo puede estar a cargo de una congregación a la vez. Se valida antes de
+     * guardar en vez de dejar que ocurra y quedar con el mismo pastor "activo" en dos partes.
+     */
+    private function errorPastorYaAsignado(?string $pastor, ?string $codigoActual = null): ?string
+    {
+        if ($pastor === null || $pastor === '') {
+            return null;
+        }
+
+        $otra = MaeCongregacion::where('pastor', $pastor)
+            ->when($codigoActual, fn ($q) => $q->where('codigo', '!=', $codigoActual))
+            ->first();
+
+        if (!$otra) {
+            return null;
+        }
+
+        return "Este pastor ya está a cargo de la congregación {$otra->codigo} - {$otra->nombre}. Retíralo de ahí primero (o usa esa congregación) antes de asignarlo aquí.";
+    }
+
+    /**
+     * El pastor asignado a la congregación queda enlazado en su propio registro de tercero
+     * (congrega + cod_dist), la única forma en que esos dos campos se actualizan — ver
+     * MaeTercerosController::store()/update(), donde quedaron bloqueados.
+     */
+    private function sincronizarPastorConTercero(MaeCongregacion $congregacion): void
+    {
+        if ($congregacion->pastor === null || $congregacion->pastor === '') {
+            return;
+        }
+
+        MaeTerceros::where('cod_ter', $congregacion->pastor)->update([
+            'congrega' => $congregacion->codigo,
+            'cod_dist' => $congregacion->distrito,
+        ]);
+    }
+
+    /**
+     * El detalle libre (ciudad/país) solo tiene sentido cuando se elige el municipio
+     * "sentinela" de Otro/Exterior; si se elige un municipio real, se limpia para no dejar
+     * texto viejo colgado de una elección anterior.
+     */
+    private function municipioExteriorDetalle(Request $request): ?string
+    {
+        if ((int) $request->municipio !== MaeCongregacion::MUNICIPIO_EXTERIOR_ID) {
+            return null;
+        }
+
+        return $request->municipio_exterior_detalle ? strtoupper($request->municipio_exterior_detalle) : null;
     }
 
     /**
@@ -158,7 +263,7 @@ class MaeCongregacionController extends Controller
      */
     public function show($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTercero'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 
@@ -178,7 +283,7 @@ class MaeCongregacionController extends Controller
      */
     public function generarPdf($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTercero'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 

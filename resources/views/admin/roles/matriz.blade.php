@@ -52,8 +52,9 @@
 
     <div class="container-fluid px-0 pb-5">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-            <a href="{{ route('admin.roles.index') }}" class="text-decoration-none">
-                <i class="bi bi-arrow-left me-2"></i> Volver a Gestión de Roles
+            <span></span>
+            <a href="{{ route('admin.guia.permisos') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-signpost-split me-1"></i> Guía paso a paso
             </a>
         </div>
 
@@ -65,72 +66,357 @@
                 <h2 class="fw-bolder mb-0 fs-2">Matriz de Permisos</h2>
             </div>
             <p class="mb-0 fs-15 opacity-75 fw-medium ms-1">
-                A diferencia de "Gestión de Roles", aquí cada rol muestra <strong>todos</strong> los permisos del
-                sistema (agrupados por módulo), no solo los que fueron creados directamente para ese rol.
+                Aquí se definen los permisos de cada perfil (área/grupo). <strong>Cada persona tiene un solo perfil y sus permisos
+                y menús (<code>menu.*</code>) provienen únicamente de él</strong>: al guardar un rol, el cambio se aplica de inmediato a
+                todos los usuarios que lo tienen. Cada rol muestra <strong>todos</strong> los permisos del
+                sistema (agrupados por módulo), no solo los creados para ese rol.
             </p>
         </div>
 
+        <div class="row g-3 mb-4">
+            <div class="col-lg-5">
+                <div class="ui-card h-100" id="cardNuevaArea">
+                    <div class="p-3 p-md-4">
+                        <h6 class="fw-bold text-dark mb-1"><i class="bi bi-diagram-3 me-2 text-primary"></i>Crear área nueva</h6>
+                        <p class="text-muted fs-13">Una área agrupa los perfiles de un mismo equipo (ej. Cartera, Asociado, Admin). Se crea vacía y luego le agregas perfiles.</p>
+                        <form method="POST" action="{{ route('admin.roles.areas.crear') }}">
+                            @csrf
+                            <input type="text" name="area" value="{{ old('area') }}" maxlength="60" required
+                                   class="form-control mb-2 @error('area') is-invalid @enderror" placeholder="Nombre del área">
+                            @error('area') <div class="invalid-feedback d-block mb-2">{{ $message }}</div> @enderror
+                            <label class="form-label fs-12 fw-semibold mb-1">Agregar perfiles a la nueva área <span class="text-muted fw-normal">(opcional — solo perfiles sin área)</span></label>
+                            @include('admin.roles.partials.selector-perfiles', ['perfiles' => $sinArea])
+                            <button type="submit" class="ui-btn-primary mt-2"><i class="bi bi-plus-lg"></i> Crear área</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="ui-card h-100" id="cardNuevoPerfil">
+                    <div class="p-3 p-md-4">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <h6 class="fw-bold text-dark mb-1"><i class="bi bi-plus-circle me-2 text-primary"></i>Crear perfil nuevo</h6>
+                            <a href="{{ route('admin.guia.permisos') }}" target="_blank" class="fs-13"><i class="bi bi-signpost-split me-1"></i>Guía: cómo crear un perfil</a>
+                        </div>
+                        <p class="text-muted fs-13">Un perfil agrupa permisos y es lo único que se asigna a una persona. Se crea vacío y aquí mismo le marcas los permisos.</p>
+                        <form method="POST" action="{{ route('admin.roles.store') }}" class="row g-2 align-items-end">
+                            @csrf
+                            <div class="col-md-5">
+                                <label class="form-label fs-12 fw-semibold mb-1">Nombre del perfil <span class="text-danger">*</span></label>
+                                <input type="text" name="namerole" value="{{ old('namerole') }}" maxlength="100" required
+                                       class="form-control @error('namerole') is-invalid @enderror" placeholder="Ej. analista financiero">
+                                @error('namerole') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fs-12 fw-semibold mb-1">Dentro del área</label>
+                                <select name="area" class="form-select">
+                                    <option value="">(sin área)</option>
+                                    @foreach ($areas as $a) <option value="{{ $a }}" @selected(old('area', request('nuevaen')) === $a)>{{ strtoupper($a) }}</option> @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="ui-btn-primary w-100"><i class="bi bi-save"></i> Crear</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui-card mb-3 p-3">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <div class="input-group" style="max-width: 460px;">
+                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                    <input type="search" id="buscarPerfil" class="form-control" placeholder="Buscar área o perfil (ej. asociado, cartera)..." autocomplete="off">
+                </div>
+                <span class="text-muted fs-13" id="contadorPerfiles">{{ count($roles) }} perfiles</span>
+            </div>
+            <div class="text-muted fs-12 mt-1">Busca por área o por perfil. Al desplegar un perfil, ahí mismo tiene su propio buscador de permisos.</div>
+        </div>
+
         <div class="accordion ui-accordion mb-5" id="accordionMatriz">
-            @foreach ($roles as $i => $rol)
+            @foreach ($grupos as $g)
                 @php
-                    $idsAsignados = $rol->permissions->pluck('id')->toArray();
-                    $totalAsignados = count($idsAsignados);
-                    $totalPermisos = $permisosPorModulo->flatten()->count();
+                    $ga = $loop->index;
+                    $abrirArea = request('area') === $g['area'] || $g['roles']->contains(fn ($r) => (int) request('rol') === (int) $r->id);
                 @endphp
-                <div class="accordion-item shadow-sm">
-                    <h2 class="accordion-header" id="mheading-{{ $i }}">
-                        <button class="accordion-button collapsed d-flex justify-content-between align-items-center"
-                                type="button" data-bs-toggle="collapse" data-bs-target="#mcollapse-{{ $i }}" aria-expanded="false">
+                <div class="accordion-item shadow-sm area-item" data-nombre="{{ $g['area'] }}" id="area-{{ $ga }}">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button {{ $abrirArea ? '' : 'collapsed' }}" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#acollapse-{{ $ga }}" aria-expanded="{{ $abrirArea ? 'true' : 'false' }}">
                             <div class="d-flex align-items-center w-100 pe-3">
-                                <i class="bi bi-shield-check text-indigo me-3 fs-4" style="color: #6366f1;"></i>
-                                <span>{{ strtoupper($rol->name) }}</span>
+                                <i class="bi bi-diagram-3 me-3 fs-4" style="color: #0ea5e9;"></i>
+                                <span>ÁREA {{ strtoupper($g['area']) }}</span>
                                 <span class="ms-auto badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fw-medium fs-12">
-                                    {{ $totalAsignados }} / {{ $totalPermisos }} permisos
+                                    {{ count($g['roles']) }} {{ count($g['roles']) === 1 ? 'perfil' : 'perfiles' }}@if (count($g['roles'])): {{ $g['roles']->map(fn ($r) => strtoupper($r->name))->implode(', ') }}@endif
                                 </span>
                             </div>
                         </button>
                     </h2>
-
-                    <div id="mcollapse-{{ $i }}" class="accordion-collapse collapse" data-bs-parent="#accordionMatriz">
-                        <div class="accordion-body p-4 p-md-5 bg-light">
-                            <form action="{{ route('admin.roles.update', $rol->id) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-
-                                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center bg-white p-4 rounded-4 border border-light-subtle shadow-sm mb-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1">Todos los permisos del sistema</h6>
-                                        <p class="fs-13 text-muted mb-0">Marca o desmarca los que este rol debe tener, sin importar quién los haya creado.</p>
+                    <div id="acollapse-{{ $ga }}" class="accordion-collapse collapse {{ $abrirArea ? 'show' : '' }}">
+                        <div class="accordion-body p-3 p-md-4 bg-light">
+                            <div class="d-flex flex-wrap align-items-end gap-3 mb-3 pb-3 border-bottom">
+                                @if ($g['id'])
+                                    <form action="{{ route('admin.roles.areas.renombrar', $g['id']) }}" method="POST" class="d-flex flex-wrap align-items-end gap-2">
+                                        @csrf
+                                        @method('PUT')
+                                        <div>
+                                            <label class="form-label fs-12 fw-semibold mb-1">Nombre del área</label>
+                                            <input type="text" name="area" value="{{ $g['area'] }}" maxlength="60" required class="form-control form-control-sm" style="min-width: 200px;">
+                                        </div>
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i> Guardar nombre</button>
+                                    </form>
+                                @endif
+                                @if ($g['id'] && count($g['roles']) === 0)
+                                    <form action="{{ route('admin.roles.areas.eliminar', $g['id']) }}" method="POST" class="ms-auto"
+                                          onsubmit="return confirm('¿Eliminar el área {{ strtoupper($g['area']) }}? Está vacía.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> Eliminar área vacía</button>
+                                    </form>
+                                @endif
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-lg-7">
+                                    <div class="bg-white border rounded-3 p-3 h-100">
+                                        <div class="fw-semibold fs-13 mb-2"><i class="bi bi-plus-circle me-1 text-primary"></i>Agregar perfiles existentes a esta área</div>
+                                        <form action="{{ route('admin.roles.areas.perfiles', $g['id'] ?? 0) }}" method="POST">
+                                            @csrf
+                                            @include('admin.roles.partials.selector-perfiles', ['perfiles' => $sinArea])
+                                            <button type="submit" class="btn btn-sm btn-primary mt-2" @disabled(!$g['id'] || $sinArea->isEmpty())><i class="bi bi-plus-lg me-1"></i> Agregar seleccionados</button>
+                                        </form>
                                     </div>
-                                    <button type="submit" class="ui-btn-primary mt-3 mt-sm-0 shadow-sm">
-                                        <i class="bi bi-save me-2"></i> Actualizar Permisos
-                                    </button>
                                 </div>
-
-                                @foreach ($permisosPorModulo as $modulo => $permisosDelModulo)
-                                    <div class="modulo-titulo">{{ $modulo }}</div>
-                                    <div class="row g-3">
-                                        @foreach ($permisosDelModulo as $permiso)
-                                            <div class="col-lg-6 col-xl-4">
-                                                <div class="ui-card p-3 h-100 border-0">
-                                                    <div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">
-                                                        <label class="form-check-label user-select-none text-truncate pe-3" for="mchk-{{ $i }}-{{ $permiso->id }}">
-                                                            {{ $permiso->name }}
-                                                        </label>
-                                                        <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                            class="form-check-input flex-shrink-0 m-0" id="mchk-{{ $i }}-{{ $permiso->id }}"
-                                                            @if (in_array($permiso->id, $idsAsignados)) checked @endif>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                                <div class="col-lg-5">
+                                    <div class="bg-white border rounded-3 p-3 h-100">
+                                        <div class="fw-semibold fs-13 mb-2"><i class="bi bi-file-earmark-plus me-1 text-primary"></i>O crear un perfil nuevo aquí</div>
+                                        <form action="{{ route('admin.roles.store') }}" method="POST" class="d-flex flex-column gap-2">
+                                            @csrf
+                                            <input type="hidden" name="area" value="{{ $g['area'] }}">
+                                            <input type="text" name="namerole" maxlength="100" required placeholder="Nombre del perfil nuevo" class="form-control form-control-sm">
+                                            <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i> Crear y agregar</button>
+                                        </form>
                                     </div>
-                                @endforeach
-                            </form>
+                                </div>
+                            </div>
+                            @if (count($g['roles']))
+                                <div class="accordion ui-accordion">
+                                    @foreach ($g['roles'] as $rol)
+                                        @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => null])
+                                    @endforeach
+
+                                </div>
+                            @else
+                                <p class="text-muted fs-13 mb-0">Esta área aún no tiene perfiles. Agrega el primero arriba.</p>
+                            @endif
                         </div>
                     </div>
                 </div>
             @endforeach
+
+            @if ($sinArea->count())
+                <div class="text-uppercase text-muted fw-bold fs-12 mt-4 mb-2 px-1" id="tituloSinArea">
+                    <i class="bi bi-shield-check me-1"></i> Perfiles sin área ({{ $sinArea->count() }})
+                    <span class="text-lowercase fw-normal">— asígnales un área desde el selector de cada perfil</span>
+                </div>
+                @foreach ($sinArea as $rol)
+                    @include('admin.roles.partials.matriz-perfil', ['rol' => $rol, 'i' => $indice[$rol->id], 'parent' => '#accordionMatriz'])
+                @endforeach
+            @endif
         </div>
     </div>
+
+    @php
+        $catalogoJson = json_encode(
+            $permisosPorModulo->map(fn ($ps, $modulo) => [$modulo, $ps->map(fn ($p) => [$p->id, $p->name])->values()])->values(),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP
+        );
+    @endphp
+    <script>
+        // Catálogo único de permisos por módulo: [[modulo, [[id, nombre], ...]], ...]
+        const CATALOGO_PERMISOS = {!! $catalogoJson !!};
+
+        // Buscador de perfiles: por nombre del perfil o por permisos que tiene asignados.
+        (function () {
+            const caja = document.getElementById('buscarPerfil');
+            const contador = document.getElementById('contadorPerfiles');
+            if (!caja) return;
+            const items = Array.from(document.querySelectorAll('#accordionMatriz .perfil-item'));
+            const areas = Array.from(document.querySelectorAll('#accordionMatriz .area-item'));
+            caja.addEventListener('input', function () {
+                const t = caja.value.trim().toLowerCase();
+                let visibles = 0;
+                items.forEach(function (it) {
+                    const area = it.closest('.area-item');
+                    const coincide = !t || (area && area.dataset.nombre.includes(t)) || it.dataset.nombre.includes(t);
+                    it.classList.toggle('d-none', !coincide);
+                    if (coincide) visibles++;
+                });
+                // Un área se muestra si alguno de sus perfiles coincide, y se despliega para verlos.
+                areas.forEach(function (a) {
+                    const vacia = a.querySelector('.perfil-item') === null;
+                    const hay = vacia ? (!t || a.dataset.nombre.includes(t)) : a.querySelector('.perfil-item:not(.d-none)') !== null;
+                    a.classList.toggle('d-none', !hay);
+                    if (t && hay) {
+                        a.querySelector(':scope > .accordion-collapse').classList.add('show');
+                        a.querySelector(':scope > .accordion-header .accordion-button').classList.remove('collapsed');
+                    }
+                });
+                const titulo = document.getElementById('tituloSinArea');
+                if (titulo) titulo.classList.toggle('d-none', !!t && !items.some(function (it) { return !it.closest('.area-item') && !it.classList.contains('d-none'); }));
+                contador.textContent = t ? visibles + ' de ' + items.length + ' perfiles' : items.length + ' perfiles';
+            });
+        })();
+
+        // Filtra la lista de perfiles sin área de un selector (por nombre).
+        function filtrarSelectorPerfiles(input) {
+            const t = input.value.trim().toLowerCase();
+            const cont = input.closest('.selector-perfiles');
+            let visibles = 0;
+            cont.querySelectorAll('.item-sin-area').forEach(function (it) {
+                const ok = !t || it.dataset.nombre.includes(t);
+                it.classList.toggle('d-none', !ok);
+                if (ok) visibles++;
+            });
+            const vacio = cont.querySelector('.sin-resultados');
+            if (vacio) vacio.classList.toggle('d-none', visibles > 0 || !cont.querySelector('.item-sin-area'));
+        }
+
+        // Despliega/oculta la lista de perfiles sin área de un selector.
+        function alternarSelectorPerfiles(boton) {
+            const panel = boton.closest('.selector-perfiles').querySelector('.panel-selector');
+            const abierto = panel.classList.toggle('d-none') === false;
+            boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            boton.querySelector('.bi').className = 'bi ' + (abierto ? 'bi-chevron-up' : 'bi-chevron-down');
+            if (abierto) { const b = panel.querySelector('input[type=search]'); if (b) b.focus(); }
+        }
+
+        // Muestra en el botón cuántos perfiles hay marcados.
+        function actualizarConteoSelector(casilla) {
+            const cont = casilla.closest('.selector-perfiles');
+            const marcados = Array.from(cont.querySelectorAll('input[name="perfiles[]"]:checked')).map(function (c) { return c.closest('label').innerText.trim(); });
+            cont.querySelector('.etiqueta-selector').textContent = marcados.length
+                ? marcados.length + ' seleccionado(s): ' + marcados.join(', ')
+                : 'Seleccionar perfiles sin área…';
+        }
+
+        // Lista de usuarios de un perfil: se pide al servidor al desplegar (asociado tiene >1000), con
+        // búsqueda y "Cargar más".
+        function alternarUsuariosPerfil(boton) {
+            const panel = boton.closest('.accordion-body').querySelector('.panel-usuarios');
+            const abierto = panel.classList.toggle('d-none') === false;
+            boton.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            if (abierto && !panel.dataset.iniciado) {
+                panel.dataset.iniciado = '1';
+                panel.dataset.url = boton.dataset.url;
+                const caja = panel.querySelector('.buscar-usuarios');
+                let temporizador;
+                caja.addEventListener('input', function () { clearTimeout(temporizador); temporizador = setTimeout(function () { cargarUsuariosPerfil(panel, true); }, 300); });
+                panel.querySelector('.mas-usuarios').addEventListener('click', function () { cargarUsuariosPerfil(panel, false); });
+                cargarUsuariosPerfil(panel, true);
+            }
+        }
+
+        function cargarUsuariosPerfil(panel, reiniciar) {
+            const cuerpo = panel.querySelector('.lista-usuarios');
+            const mensaje = panel.querySelector('.mensaje-usuarios');
+            const mas = panel.querySelector('.mas-usuarios');
+            if (reiniciar) { panel.dataset.pagina = '0'; cuerpo.innerHTML = ''; }
+            const pagina = parseInt(panel.dataset.pagina || '0', 10) + 1;
+            const token = String(Date.now()); panel.dataset.token = token;
+            mensaje.textContent = 'Cargando…'; mensaje.classList.remove('d-none'); mas.classList.add('d-none');
+            const q = encodeURIComponent(panel.querySelector('.buscar-usuarios').value.trim());
+            fetch(panel.dataset.url + '?page=' + pagina + '&buscar=' + q, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+                .then(function (d) {
+                    if (panel.dataset.token !== token) return; // llegó una respuesta vieja
+                    d.usuarios.forEach(function (u) {
+                        const tr = document.createElement('tr');
+                        const nombre = document.createElement('td');
+                        const a = document.createElement('a'); a.href = u.url; a.textContent = u.nombre; a.target = '_blank';
+                        nombre.appendChild(a);
+                        if (u.bloqueado) { const b = document.createElement('span'); b.className = 'badge bg-danger-subtle text-danger ms-2'; b.textContent = 'bloqueado'; nombre.appendChild(b); }
+                        [u.cedula ? 'C.C. ' + u.cedula : '—', u.correo, u.tipo].forEach(function (txt) { const td = document.createElement('td'); td.textContent = txt; tr.appendChild(td); });
+                        tr.insertBefore(nombre, tr.firstChild);
+                        cuerpo.appendChild(tr);
+                    });
+                    panel.dataset.pagina = String(pagina);
+                    panel.querySelector('.total-usuarios').textContent = '(' + d.total + ')';
+                    mensaje.textContent = d.total === 0 ? 'Ningún usuario coincide.' : '';
+                    mensaje.classList.toggle('d-none', d.total !== 0);
+                    mas.classList.toggle('d-none', !d.hay_mas);
+                })
+                .catch(function () { mensaje.textContent = 'No se pudo cargar la lista de usuarios. Intenta de nuevo.'; mensaje.classList.remove('d-none'); });
+        }
+
+        function escaparHtml(t) {
+            return String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        // Dibuja (una sola vez) la cuadrícula de permisos del perfil i con sus interruptores.
+        function construirMatriz(i) {
+            const cont = document.getElementById('mmatriz-' + i);
+            if (!cont || cont.dataset.construida) return;
+            const asignados = new Set(JSON.parse(cont.dataset.asignados || '[]'));
+            let html = '';
+            CATALOGO_PERMISOS.forEach(function ([modulo, permisos]) {
+                const mod = escaparHtml(modulo), modLower = escaparHtml(String(modulo).toLowerCase());
+                html += '<div class="modulo-titulo modulo-item-' + i + '" data-nombre="' + modLower + '">' + mod + '</div>'
+                     + '<div class="row g-3 modulo-grupo-' + i + '" data-modulo="' + modLower + '">';
+                permisos.forEach(function ([id, nombre]) {
+                    const n = escaparHtml(nombre);
+                    html += '<div class="col-lg-6 col-xl-4 permiso-item-' + i + '" data-nombre="' + escaparHtml(nombre.toLowerCase()) + '">'
+                         + '<div class="ui-card p-3 h-100 border-0"><div class="form-check form-switch ui-switch d-flex align-items-center justify-content-between w-100 m-0 p-0">'
+                         + '<label class="form-check-label user-select-none text-truncate pe-3" for="mchk-' + i + '-' + id + '">' + n + '</label>'
+                         + '<input type="checkbox" name="permissions[]" value="' + id + '" class="form-check-input flex-shrink-0 m-0" id="mchk-' + i + '-' + id + '"'
+                         + (asignados.has(id) ? ' checked' : '') + '></div></div></div>';
+                });
+                html += '</div>';
+            });
+            cont.innerHTML = html;
+            cont.dataset.construida = '1';
+        }
+
+        document.querySelectorAll('#accordionMatriz [id^="mcollapse-"]').forEach(function (panel) {
+            const i = panel.id.replace('mcollapse-', '');
+            panel.addEventListener('show.bs.collapse', function () { construirMatriz(i); });
+            if (panel.classList.contains('show')) construirMatriz(i);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const nuevo = document.querySelector('#formNuevoPerfil.show');
+            if (nuevo) { nuevo.scrollIntoView({ block: 'center' }); return; }
+            const abierto = document.querySelector('#accordionMatriz [id^="mcollapse-"].show');
+            if (abierto) abierto.closest('.accordion-item').scrollIntoView({ block: 'start' });
+        });
+
+        // Filtra por nombre de permiso O de módulo dentro de la matriz de UN rol — el módulo
+        // solo se oculta si ninguno de sus permisos coincide con la búsqueda.
+        function filtrarPermisosMatriz(i, texto) {
+            const termino = texto.trim().toLowerCase();
+            document.querySelectorAll('.modulo-grupo-' + i).forEach(function (grupo) {
+                let visibles = 0;
+                grupo.querySelectorAll('.permiso-item-' + i).forEach(function (item) {
+                    const coincide = item.dataset.nombre.includes(termino) || grupo.dataset.modulo.includes(termino);
+                    item.classList.toggle('d-none', !coincide);
+                    if (coincide) visibles++;
+                });
+                grupo.classList.toggle('d-none', visibles === 0);
+                const titulo = grupo.previousElementSibling;
+                if (titulo && titulo.classList.contains('modulo-item-' + i)) {
+                    titulo.classList.toggle('d-none', visibles === 0);
+                }
+            });
+        }
+
+        // Marca/desmarca solo los permisos actualmente visibles (respeta el filtro de búsqueda),
+        // así "Marcar todos" después de buscar "reservas" no toca el resto de módulos.
+        function marcarPermisosMatriz(i, estado) {
+            document.querySelectorAll('#mmatriz-' + i + ' .permiso-item-' + i).forEach(function (item) {
+                if (!item.classList.contains('d-none')) {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = estado;
+                }
+            });
+        }
+    </script>
 </x-base-layout>

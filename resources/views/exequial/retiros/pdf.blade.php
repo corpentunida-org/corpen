@@ -57,7 +57,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="7" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME DE RETIRADOS</th>
+                <th colspan="8" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME DE RETIRADOS</th>
             </tr>
         </thead>
         <tbody>
@@ -66,6 +66,7 @@
                 <th>Nombre</th>
                 <th>Fecha Afiliación</th>
                 <th>Fecha Retiro</th>
+                <th>Registrado por</th>
                 <th>Observaciones</th>
                 <th>Estado</th>
                 <th>Reportado</th>
@@ -76,6 +77,7 @@
                     <td>{{ $r->nombre }}</td>
                     <td>{{ optional($r->fecha_afiliacion)->format('d/m/Y') }}</td>
                     <td>{{ $r->fecha_retiro->format('d/m/Y') }}</td>
+                    <td>{{ $r->registradoPor->name ?? '—' }}</td>
                     <td>{{ $r->observaciones }}</td>
                     <td>{{ $r->fecha_reafiliacion ? 'Reafiliado ' . $r->fecha_reafiliacion->format('d/m/Y') : 'Vigente' }}</td>
                     <td>{{ $r->reportado_aliado ? 'Sí' : 'No' }}</td>

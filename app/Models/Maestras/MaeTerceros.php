@@ -280,6 +280,11 @@ class MaeTerceros extends Model
         return $this->belongsTo(MaeCongregacion::class, 'congrega', 'codigo');
     }
 
+    public function titularExequial()
+    {
+        return $this->hasOne(\App\Models\Exequiales\ComaeExCli::class, 'cod_cli', 'cod_ter');
+    }
+
     public function maeTipos()
     {
         return $this->belongsTo(MaeTipo::class, 'tip_prv', 'id');

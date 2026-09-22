@@ -13,6 +13,11 @@ class MaeCongregacion extends Model
 {
     use HasFactory;
 
+    // Municipio "sentinela" para congregaciones fuera de Colombia (ver migración
+    // add_otro_exterior_a_congregaciones): el catálogo real de municipios solo cubre DIVIPOLA.
+    // El detalle real (ciudad/país) va en municipio_exterior_detalle.
+    public const MUNICIPIO_EXTERIOR_ID = 9999;
+
     // --- CONFIGURACIÓN DE LA TABLA Y CLAVE PRIMARIA (YA ESTÁ BIEN) ---
     protected $table = 'MaeCongregaciones';
     protected $primaryKey = 'codigo';
@@ -30,10 +35,12 @@ class MaeCongregacion extends Model
      */
     protected $fillable = [
         'codigo',
+        'codigo_texto',
         'nombre',
         'clase',
         'estado',
         'municipio',
+        'municipio_exterior_detalle',
         'direccion',
         'telefono',
         'celular',
@@ -75,5 +82,15 @@ class MaeCongregacion extends Model
     public function maeMunicipios()
     {
         return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id');
+    }
+
+    /** Nombre a mostrar: el detalle libre si es "Otro / Exterior", si no el municipio real. */
+    public function getMunicipioNombreAttribute(): ?string
+    {
+        if ((int) $this->municipio === self::MUNICIPIO_EXTERIOR_ID) {
+            return $this->municipio_exterior_detalle;
+        }
+
+        return $this->maeMunicipios?->nombre;
     }
 }

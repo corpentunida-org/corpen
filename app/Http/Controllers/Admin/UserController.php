@@ -14,30 +14,71 @@ use Spatie\Permission\Models\Role;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use App\Services\Admin\PermisosPorRolService;
 
 class UserController extends Controller
 {
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "ADMINISTRACIÓN");
+        // La columna de auditoría admite 255 caracteres: un texto más largo haría fallar toda la operación.
+        $auditoriaController->create(mb_substr($accion, 0, 250), "ADMINISTRACIÓN");
     }
 
-    public function index()
+    /**
+     * Antes solo mostraba empleados (type=null) — los 1.101 usuarios "ASOCIADO" (nacidos del
+     * autorregistro del portal de Reservas) no tenían NINGUNA pantalla admin donde verse, ni
+     * fecha de registro, ni forma de bloquearlos o eliminarlos. Un mismo listado con pestañas
+     * cubre ambos grupos; "asociados" pagina porque son >1000 filas.
+     */
+    public function index(Request $request)
     {
-        $users = User::where('type', null)->get();
-        //$users = User::where('type', null)->paginate(5);
-        return view('admin.users.index', compact('users'));
+        $tipo = $request->input('tipo') === 'asociados' ? 'asociados' : 'empleados';
+        $busqueda = trim((string) $request->input('buscar', ''));
+
+        $query = User::query()->when(
+            $tipo === 'asociados',
+            fn ($q) => $q->where('type', 'ASOCIADO'),
+            fn ($q) => $q->whereNull('type'),
+        );
+
+        if ($busqueda !== '') {
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('name', 'like', "%{$busqueda}%")
+                    ->orWhere('email', 'like', "%{$busqueda}%")
+                    ->orWhere('nid', 'like', "%{$busqueda}%");
+            });
+        }
+
+        // Empleados: se muestra su perfil y área, se cargan de una vez para no consultar por fila.
+        if ($tipo === 'empleados') {
+            $query->with('actions.role');
+        }
+
+        $users = $query->orderByDesc('created_at')->paginate(20)->withQueryString();
+
+        $totalEmpleados = User::whereNull('type')->count();
+        $totalAsociados = User::where('type', 'ASOCIADO')->count();
+
+        return view('admin.users.index', compact('users', 'tipo', 'busqueda', 'totalEmpleados', 'totalAsociados'));
     }
 
-
-    
     public function edit(User $user)
     {
+        // Antes se asumía que un asociado nunca tiene roles/permisos (es un perfil de
+        // autoservicio del portal de Reservas, no un colaborador interno) y se le mostraba una
+        // vista sin matriz de permisos. Resultó ser falso: hay asociados con permisos directos y
+        // roles asignados de verdad (ej. gestión de Reservas) que quedaban invisibles e
+        // imposibles de tocar desde aquí. La matriz de roles/permisos ahora se calcula y se
+        // muestra igual para los dos tipos — solo cambia la plantilla (edit vs edit-asociado)
+        // por los campos de identidad que sí son distintos.
         $roles = Role::all();
         $user->load('actions.role', 'permissions');
-        $acciones = $count = auditoria::where('usuario', $user->name)->count();
-        $fecha = auditoria::where('usuario', $user->name)->orderBy('fechaRegistro', 'desc')->first();
+        // Por usuario_id, no por nombre: el nombre guardado en Auditoria es el que tenía el
+        // usuario al momento de cada acción, así que alguien renombrado (ej. "admin" -> nombre
+        // real) perdía sus registros viejos al filtrar por el nombre actual.
+        $acciones = $count = auditoria::where('usuario_id', $user->id)->count();
+        $fecha = auditoria::where('usuario_id', $user->id)->orderBy('fechaRegistro', 'desc')->first();
 
         // Permisos por rol: se combinan dos fuentes porque conviven dos esquemas de asignación.
         // El legado (columna permissions.role_id, un permiso "pertenece" a un solo rol) es el
@@ -60,20 +101,34 @@ class UserController extends Controller
             ->pluck('permission_id')
             ->toArray();
 
-        // Para "Copiar perfil": lista de otros usuarios de los que se puede clonar acceso.
-        $usuarios = User::where('type', null)
+        // Para "Copiar perfil": lista de otros usuarios del MISMO tipo de los que se puede
+        // clonar acceso (un rol de empleado no tiene sentido copiado a un asociado y viceversa).
+        $usuarios = User::where('type', $user->type)
             ->where('id', '!=', $user->id)
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
-        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios'));
+        // Perfiles de cada usuario de referencia (una sola consulta): la pantalla avisa cuáles
+        // se asignarían antes de copiar.
+        $rolesPorUsuario = DB::table('actions')
+            ->join('roles', 'roles.id', '=', 'actions.role_id')
+            ->whereIn('actions.user_id', $usuarios->pluck('id'))
+            ->orderBy('roles.name')
+            ->get(['actions.user_id', 'roles.id as role_id', 'roles.name'])
+            ->groupBy('user_id')
+            ->map(fn ($rs) => $rs->map(fn ($r) => ['id' => $r->role_id, 'name' => strtoupper($r->name)])->values());
+
+        if ($user->type === 'ASOCIADO') {
+            return view('admin.users.edit-asociado', compact('user', 'roles', 'permisosPorRol', 'permisosAsignados', 'usuarios', 'rolesPorUsuario'));
+        }
+
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosPorRol', 'permisosAsignados', 'usuarios', 'rolesPorUsuario'));
     }
 
     /**
-     * "Copiar perfil": suma al usuario editado los perfiles (roles) y permisos directos que ya
-     * tiene un usuario de referencia — no quita nada de lo que el usuario editado ya tenía. Útil
-     * para replicar el acceso de un compañero con el mismo cargo en vez de armarlo permiso por
-     * permiso.
+     * "Copiar perfil": asigna al usuario editado el MISMO perfil que tiene un usuario de referencia
+     * (ej. un compañero del área). Un usuario tiene un solo perfil, así que reemplaza el que
+     * tuviera; los permisos y menús llegan solos desde el perfil.
      */
     public function copiarPermisos(Request $request, User $user)
     {
@@ -91,27 +146,26 @@ class UserController extends Controller
 
         $origen = User::with('actions')->findOrFail($request->usuario_referencia_id);
 
-        $rolesActuales = $user->actions()->pluck('role_id');
-        $rolesNuevos = $origen->actions->pluck('role_id')->diff($rolesActuales)->unique();
-        foreach ($rolesNuevos as $roleId) {
-            Action::create(['user_id' => $user->id, 'role_id' => $roleId]);
+        // Regla: un solo perfil por usuario. Solo se puede copiar de alguien que tenga
+        // exactamente uno (los casos antiguos con varios se deben resolver a mano).
+        $rolesOrigen = $origen->actions->pluck('role_id')->unique()->values();
+        if ($rolesOrigen->count() !== 1) {
+            return back()->with('error', $rolesOrigen->isEmpty()
+                ? "{$origen->name} no tiene ningún perfil asignado, no hay nada que copiar."
+                : "{$origen->name} tiene varios perfiles (caso antiguo) y cada usuario debe tener uno solo. Elige otro compañero o asigna el perfil manualmente.");
         }
 
-        $permisosActuales = DB::table('model_has_permissions')->where('model_id', $user->id)->pluck('permission_id');
-        $permisosOrigen = DB::table('model_has_permissions')->where('model_id', $origen->id)->pluck('permission_id');
-        $permisosNuevos = $permisosOrigen->diff($permisosActuales)->unique();
-        foreach ($permisosNuevos as $permissionId) {
-            DB::table('model_has_permissions')->insert([
-                'permission_id' => $permissionId,
-                'model_type' => 'App\Models\User',
-                'model_id' => $user->id,
-            ]);
-        }
+        $roleId = (int) $rolesOrigen->first();
+        $nombrePerfil = strtoupper(Role::find($roleId)->name);
+        $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, $roleId);
 
-        $this->auditoria("Se copiaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) de {$origen->name} (#{$origen->id}) al usuario {$user->name} (#{$user->id})");
+        $this->auditoria("Se copió el perfil {$nombrePerfil} de " . \App\Http\Controllers\AuditoriaController::refUsuario($origen) . " al usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user)
+            . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
 
         return redirect()->route('admin.users.edit', $user->id)
-            ->with('success', "Se agregaron {$rolesNuevos->count()} perfil(es) y {$permisosNuevos->count()} permiso(s) nuevos, copiados de {$origen->name}.");
+            ->with('success', "Se asignó el perfil {$nombrePerfil}, copiado de {$origen->name}."
+                . ($reemplazados ? ' Reemplazó: ' . strtoupper(implode(', ', $reemplazados)) . '.' : '')
+                . ' Sus permisos se aplicaron automáticamente.');
     }
 
     public function create()
@@ -132,73 +186,52 @@ class UserController extends Controller
             'email' => $request['email'],
             'password' => bcrypt($request['pass']),
         ]);
-        $roles = $request->input('rol');
-        foreach ($roles as $role) {
-            Action::create([
-                'user_email' => $user->email,
-                'user_id' => $user->id,
-                'role_id' => $role,
-            ]);
-            $permisos_rol = $this->permisos_rol($role);
-            foreach ($permisos_rol as $p) {
-                DB::table('model_has_permissions')->insert([
-                    'permission_id' => $p->permission_id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $user->id,
-                ]);
-            }
+        // Un solo perfil por usuario (si llegara una lista, se toma el primero).
+        $rol = collect((array) $request->input('rol', []))->filter()->first();
+        if ($rol && Role::whereKey($rol)->exists()) {
+            app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, (int) $rol);
         }
         if (!$user) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
         $emailuser = explode('@', $user->email);
-        $accion = "add usuario app  " . $emailuser[0];
+        $accion = "add usuario app " . \App\Http\Controllers\AuditoriaController::refUsuario($user);
         $this->auditoria($accion);
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
 
     public function update(Request $request, User $user)
     {
+        if ($user->type === 'ASOCIADO') {
+            return $this->updateAsociado($request, $user);
+        }
+
         $update = [];
         if(strtoupper($request->input('name'))!== $user->name){
             $update['name'] = strtoupper($request->input('name'));
         }
+        // El campo de correo sí está en el formulario (Datos Personales) pero nunca se
+        // procesaba aquí — se editaba en pantalla y se descartaba en silencio al guardar.
+        if ($request->filled('email') && $request->input('email') !== $user->email) {
+            $request->validate(['email' => ['email', 'max:255', 'unique:users,email,' . $user->id]]);
+            $update['email'] = $request->input('email');
+        }
+        if ($request->input('telefono') != null && $request->input('telefono') !== $user->telefono) {
+            $update['telefono'] = $request->input('telefono');
+        }
         if ($request->input('pass') != null) {
             $update['password'] = bcrypt($request->input('pass'));
+            // Solo tiene sentido junto con una contraseña nueva — si no se está cambiando la
+            // clave en este guardado, la casilla no debería poder tocar la marca existente.
+            $update['debe_cambiar_password'] = $request->boolean('forzar_cambio_password');
         }
         if(!empty($update)){
             $user->update($update);
-            $this->auditoria('Se actualizó el usuario ' . $user->id);
-        }        
-        $currentPermissions = $user->permissions()->pluck('id')->toArray();
-        $permissions = $request->input('permissions', []);
-        $permissionsToAdd = array_diff($permissions, $currentPermissions);
-        $permissionsToRemove = array_diff($currentPermissions, $permissions);
-        if (!empty($permissionsToAdd)) {
-            $user->permissions()->attach($permissionsToAdd, [
-                'model_type' => 'App\Models\User'
-            ]);
+            $this->auditoria('Se actualizó el usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
         }
-        if (!empty($permissionsToRemove)) {
-            $user->permissions()->detach($permissionsToRemove);
-        }
-        if (!Action::where('user_id', $user->id)
-           ->where('role_id', $request->rolnuevo)
-           ->exists()) {        
-            Action::create([
-                'user_id' => $user->id,
-                'role_id' => $request->rolnuevo,
-            ]); 
-            $permisos_rol = $this->permisos_rol($request->rolnuevo);
-            foreach ($permisos_rol as $p) {
-                DB::table('model_has_permissions')->insert([
-                    'permission_id' => $p->permission_id,
-                    'model_type' => 'App\Models\User',
-                    'model_id' => $user->id,
-                ]);
-            }
-            $this->auditoria('Se agregó el rol id ' . $request->rolnuevo . " al usuario " . $user->id);
-        }
+
+        $this->sincronizarRolesYPermisos($request, $user);
+
         return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
     }
 
@@ -207,6 +240,109 @@ class UserController extends Controller
         //$permisos = Permisos::where('role_id', $role)->get();
         $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
         return $permisos;
+    }
+
+    /**
+     * Compartido entre update() (empleado) y updateAsociado(). Los permisos ya NO se asignan por
+     * persona: provienen únicamente de los roles (perfiles/grupos) que la persona tiene, y esos
+     * roles se editan en la Matriz de Permisos. Aquí solo se puede VINCULAR un rol; cualquier
+     * 'permissions[]' que llegue en el request se ignora a propósito (aunque alguien arme el POST
+     * a mano). Después se recalcula model_has_permissions desde los roles (PermisosPorRolService).
+     * 'rolnuevo' es opcional (el select no siempre trae una opción seleccionable si el usuario no
+     * tenía ningún rol previo).
+     */
+    private function sincronizarRolesYPermisos(Request $request, User $user): void
+    {
+        // Un solo perfil por usuario: asignar uno REEMPLAZA el que tuviera.
+        if ($request->filled('rolnuevo') && Role::whereKey($request->rolnuevo)->exists()) {
+            $reemplazados = app(PermisosPorRolService::class)->asignarPerfilUnico($user->id, (int) $request->rolnuevo);
+            $this->auditoria('Se asignó el perfil ' . strtoupper(Role::find($request->rolnuevo)->name) . ' al usuario ' . \App\Http\Controllers\AuditoriaController::refUsuario($user)
+                . ($reemplazados ? '; reemplazó: ' . implode(', ', $reemplazados) : ''));
+            return;
+        }
+
+        app(PermisosPorRolService::class)->sincronizarUsuario($user->id);
+    }
+
+    /**
+     * Actualización del perfil de un ASOCIADO: los campos de identidad son más simples que los
+     * de empleado (sin cargo/áreas/etc.), pero SÍ puede tener roles/permisos reales que
+     * administrar (ver docblock de edit()) — por eso también llama a
+     * sincronizarRolesYPermisos().
+     */
+    public function updateAsociado(Request $request, User $user)
+    {
+        abort_unless($user->type === 'ASOCIADO', 404);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'telefono' => ['nullable', 'string', 'max:14'],
+            'pass' => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $update = [
+            'name' => strtoupper($validated['name']),
+            'email' => $validated['email'],
+            'telefono' => $validated['telefono'] ?? null,
+        ];
+
+        if (!empty($validated['pass'])) {
+            $update['password'] = bcrypt($validated['pass']);
+            $update['debe_cambiar_password'] = $request->boolean('forzar_cambio_password');
+        }
+
+        $user->update($update);
+        $this->auditoria('Se actualizó el usuario (asociado) ' . \App\Http\Controllers\AuditoriaController::refUsuario($user));
+
+        $this->sincronizarRolesYPermisos($request, $user);
+
+        return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
+    }
+
+    /**
+     * Bloquear/desbloquear: impide o restaura el login sin borrar nada (ver
+     * Fortify::authenticateUsing en FortifyServiceProvider, que es quien realmente hace cumplir
+     * esta marca al iniciar sesión). Antes no existía ninguna forma de restringir acceso a un
+     * usuario sin eliminarlo por completo.
+     */
+    public function bloquear(User $user)
+    {
+        $user->update(['bloqueado' => true]);
+        $this->auditoria("Se bloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
+
+        return back()->with('success', "{$user->name} fue bloqueado. Ya no podrá iniciar sesión.");
+    }
+
+    public function desbloquear(User $user)
+    {
+        $user->update(['bloqueado' => false]);
+        $this->auditoria("Se desbloqueó el acceso del usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
+
+        return back()->with('success', "{$user->name} fue desbloqueado.");
+    }
+
+    /**
+     * "Eliminar" es soft-delete (ver migración 2026_09_16_160000 y SoftDeletes en el modelo
+     * User) — placeholder de destroy() nunca había existido, aunque la ruta ya estaba
+     * registrada por Route::resource(): visitarla antes tiraba un error de método no definido.
+     */
+    public function destroy(User $user)
+    {
+        if ($user->id === auth()->id()) {
+            return back()->with('error', 'No puedes eliminar tu propia cuenta.');
+        }
+
+        if ($this->tieneHistorial($user)) {
+            return back()->with('error', "{$user->name} tiene actividad registrada en el sistema (auditoría, gestiones, reservas u otros módulos) y no se puede eliminar por trazabilidad. Usa \"Bloquear\" en su lugar.");
+        }
+
+        $nombre = $user->name;
+        $user->delete();
+        $this->auditoria("Se eliminó el usuario " . \App\Http\Controllers\AuditoriaController::refUsuario($user));
+
+        return redirect()->route('admin.users.index', ['tipo' => $user->type === 'ASOCIADO' ? 'asociados' : 'empleados'])
+            ->with('success', "{$nombre} fue eliminado.");
     }
 
     public function show(Request $request)
@@ -284,6 +420,30 @@ class UserController extends Controller
     public function validarAsociadoCreate()
     {
         return view('auth.validarAsociado');
+    }
+
+    /**
+     * Mismas fuentes de "actividad real" que ya usa InformeUsoController para saber quién usa la
+     * app — reutilizadas aquí para decidir si un usuario puede eliminarse. Si tiene cualquier
+     * rastro en alguna de estas tablas, eliminarlo (aunque sea soft-delete) rompería
+     * trazabilidad real: gestiones de cartera, reservas hechas, tickets de soporte, tareas de
+     * proyectos, etc. — se bloquea la acción y se sugiere bloquear el acceso en su lugar.
+     */
+    private function tieneHistorial(User $user): bool
+    {
+        $id = $user->id;
+
+        return DB::table('Auditoria')->where('usuario_id', $id)->exists()
+            || DB::table('sesiones_usuario')->where('user_id', $id)->exists()
+            || DB::table('res_reservas')->where('user_id', $id)->exists()
+            || DB::table('interactions')->where('agent_id', $id)->exists()
+            || DB::table('car_comprobantes_pagos')->where('id_user', $id)->exists()
+            || DB::table('car_sia_operaciones_logs')->where('id_user', $id)->exists()
+            || DB::table('scp_soportes')->where('id_users', $id)->exists()
+            || DB::table('scp_observaciones')->where('id_users', $id)->exists()
+            || DB::table('wor_tasks')->where('user_id', $id)->exists()
+            || DB::table('wor_task_comments')->where('user_id', $id)->exists()
+            || DB::table('wor_task_histories')->where('cambiado_por', $id)->exists();
     }
 
 
