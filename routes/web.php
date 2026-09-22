@@ -213,6 +213,8 @@ Route::post('users/{user}/desbloquear', [UserController::class, 'desbloquear'])
     ->name('admin.users.desbloquear')->middleware(['auth', 'candirect:admin.users.index']);
 Route::post('users/{user}/impersonar', [ImpersonarController::class, 'iniciar'])
     ->name('admin.impersonar.iniciar')->middleware(['auth', 'candirect:admin.users.index']);
+Route::get('users-buscar-tercero', [UserController::class, 'buscarTerceroPorCedula'])
+    ->name('admin.users.buscar-tercero')->middleware(['auth', 'candirect:admin.users.index']);
 // Sin candirect: mientras se está "viendo como", el usuario autenticado es el asociado (no
 // tiene ese permiso) — la validez de volver se controla por la presencia de
 // session('impersonador_id'), no por un permiso.

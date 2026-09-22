@@ -20,36 +20,46 @@
                             @method('POST')
                             <div class="mb-4">
                                 <label class="form-label">Nombre y Apellidos<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control uppercase-input" name="name" required>
+                                <input type="text" class="form-control uppercase-input @error('name') is-invalid @enderror"
+                                       name="name" value="{{ old('name') }}" required>
+                                @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Cédula<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control @error('nid') is-invalid @enderror" id="nidInput"
+                                       name="nid" value="{{ old('nid') }}" inputmode="numeric" maxlength="20" required>
+                                @error('nid')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @else
+                                    <div class="form-text fs-13" id="nidFeedback"></div>
+                                @enderror
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Correo corporativo<span class="text-danger">*</span></label>
-                                <input type="email" class="form-control" name="email" required>
+                                <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                       name="email" value="{{ old('email') }}" required>
+                                @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
 
                             <div class="mb-4">
                                 <label class="form-label">Contraseña<span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" name="pass" required>
+                                <input type="password" class="form-control @error('pass') is-invalid @enderror" name="pass" required>
+                                @error('pass') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
 
-                            <div id="contenedor-roles">
-                                <div class="mb-4 rol-row">
-                                    <label class="form-label">Perfil (uno solo por usuario)<span class="text-danger">*</span></label>
-                                    <select class="form-control" name="rol[]">
-                                        @foreach ($roles as $rol)
-                                            <option value="{{ $rol->id }}">
-                                                {{ strtoupper($rol->name) }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            </div>
                             <div class="mb-4">
-                                <a href="javascript:void(0);" class="btn btn-primary wd-200" id="add-rol">
-                                    <i class="feather-plus me-2"></i>
-                                    <span>Agregar Rol</span>
-                                </a>
+                                <label class="form-label">Perfil<span class="text-danger">*</span></label>
+                                <select class="form-control @error('rol') is-invalid @enderror" name="rol" required>
+                                    <option value="" disabled selected>Seleccione un perfil...</option>
+                                    @foreach ($roles as $rol)
+                                        <option value="{{ $rol->id }}" @selected(old('rol') == $rol->id)>
+                                            {{ strtoupper($rol->name) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('rol') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <div class="form-text fs-13">Cada usuario tiene un solo perfil; define sus menús y permisos.</div>
                             </div>
 
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
@@ -67,44 +77,30 @@
     </div>
     <script>
         $(document).ready(function () {
-            /*$('#add-rol').click(function() {
-                const container = document.getElementById('contenedor-roles');
-                const coberturaRow = document.querySelector('.rol-row');
-
-                const clonedRow = coberturaRow.cloneNode(true);
-
-                const inputs = clonedRow.querySelectorAll('input');
-                inputs.forEach(input => input.value = '');
-
-                container.appendChild(clonedRow);
-            });*/
-
-            $('#add-rol').click(function () {
-                const container = document.getElementById('contenedor-roles');
-                const coberturaRow = document.querySelector('.rol-row');
-
-                const clonedRow = coberturaRow.cloneNode(true);
-
-                // Vaciar los inputs del clon
-                const inputs = clonedRow.querySelectorAll('input');
-                inputs.forEach(input => input.value = '');
-
-                // Crear botón eliminar
-                const deleteBtn = document.createElement('button');
-                deleteBtn.type = 'button';
-                deleteBtn.classList.add('btn', 'btn-danger', 'btn-sm');
-                deleteBtn.textContent = 'Eliminar Rol';
-
-                deleteBtn.addEventListener('click', function () {
-                    clonedRow.remove();
-                });
-
-                clonedRow.appendChild(deleteBtn);
-
-                container.appendChild(clonedRow);
+            // Confirma en vivo si la cédula ya existe como tercero — antes de llegar al submit,
+            // que exige lo mismo (exists:MaeTerceros) pero solo avisa tras enviar el formulario.
+            let temporizadorNid;
+            $('#nidInput').on('input', function () {
+                clearTimeout(temporizadorNid);
+                const cedula = $(this).val().trim();
+                const feedback = $('#nidFeedback');
+                if (cedula === '') { feedback.text(''); return; }
+                feedback.removeClass('text-success text-danger').addClass('text-muted').text('Verificando...');
+                temporizadorNid = setTimeout(function () {
+                    $.getJSON('{{ route('admin.users.buscar-tercero') }}', { cedula: cedula })
+                        .done(function (r) {
+                            feedback.removeClass('text-muted text-success text-danger');
+                            if (!r.encontrado) {
+                                feedback.addClass('text-danger').text('No se encontró esta cédula en Terceros.');
+                            } else if (r.ya_tiene_usuario) {
+                                feedback.addClass('text-danger').text('✗ ' + r.nombre + ' — ya tiene un usuario con esta cédula.');
+                            } else {
+                                feedback.addClass('text-success').text('✓ Coincide con: ' + r.nombre);
+                            }
+                        })
+                        .fail(function () { feedback.removeClass('text-muted').addClass('text-danger').text('No se pudo verificar. Intenta de nuevo.'); });
+                }, 400);
             });
-
-
             $('#formAddUser').submit(function (event) {
                 var form = this;
                 if (!form.checkValidity()) {

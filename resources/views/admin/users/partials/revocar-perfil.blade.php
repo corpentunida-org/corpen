@@ -11,7 +11,9 @@
         </div>
 
         <div class="col-lg-6 border-start border-danger border-opacity-25 ps-lg-3">
-            <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}" novalidate>
+            {{-- Sin novalidate: el navegador ya bloquea el envío si no se elige un perfil
+                 (select required). El servidor también lo valida (RoleController::destroy). --}}
+            <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}">
                 @csrf
                 @method('DELETE')
 
