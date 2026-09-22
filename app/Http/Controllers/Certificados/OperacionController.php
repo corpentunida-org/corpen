@@ -144,6 +144,12 @@ class OperacionController extends Controller
             // Paginación rápida de la tabla inferior
             $operaciones = $query->orderBy('created_at', 'desc')->paginate(5)->withQueryString();
 
+            // Detectar si la búsqueda no arrojó resultados
+            $busquedaSinResultados = false;
+            if ($request->filled('buscar') && $operaciones->isEmpty()) {
+                $busquedaSinResultados = true;
+            }
+
             $aniosDisponibles = Cache::remember('sia_anios_disponibles', 3600, function () {
                 return DB::table('car_sia_operaciones')
                     ->whereNotNull('created_at')
@@ -162,7 +168,8 @@ class OperacionController extends Controller
             return view('certificados.operaciones.index', compact(
                 'operaciones', 'aniosDisponibles', 'bloquesDisponibles', 'bloqueActivo',
                 'kpi', 'tiposAlerta', 'tipos', 'historialBloque', 'configuracionesBase',
-                'operacionesConfiguradas', 'configuracionesMasivas', 'alertasBloqueActivo', 'tiposBloqueActivo'
+                'operacionesConfiguradas', 'configuracionesMasivas', 'alertasBloqueActivo', 'tiposBloqueActivo',
+                'busquedaSinResultados'
             ));
 
         } catch (\Exception $e) {
@@ -508,6 +515,65 @@ class OperacionController extends Controller
         }
     }
 
+    /**
+     * 2.1. Si no hay tercero, creamos la operación directamente desde el modal de búsqueda fallida
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'id_tercero'      => 'required|exists:MaeTerceros,cod_ter',
+            'numero_bloque'   => 'required|numeric',
+            'metodo_creacion' => 'required|numeric'
+        ], [
+            'id_tercero.required'      => 'Debe ingresar el ID o NIT del Tercero.',
+            'id_tercero.exists'        => 'El documento ingresado no existe en la maestra de terceros.',
+            'numero_bloque.required'   => 'Falta el número de bloque.',
+            'metodo_creacion.required' => 'Falta el método de creación.'
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                // 1. Validar límite máximo de 2 registros por tercero en el mismo bloque
+                $conteoTerceroEnBloque = CarSiaOperacion::where('numero_bloque', $request->numero_bloque)
+                    ->where('id_tercero', $request->id_tercero)
+                    ->count();
+
+                if ($conteoTerceroEnBloque >= 2) {
+                    throw new \Exception('Este tercero ya ha alcanzado el límite máximo de 2 registros en el Lote ' . $request->numero_bloque);
+                }
+
+                // 2. Obtener el año actual
+                $anioActual = now()->year;
+
+                // 3. Crear la operación con un radicado temporal (necesitamos que la BD asigne el ID primero)
+                $nuevaOperacion = CarSiaOperacion::create([
+                    'numero_radicado' => 'TEMP',
+                    'numero_bloque'   => (int) $request->numero_bloque,
+                    'id_tercero'      => $request->id_tercero,
+                    'metodo_creacion' => (int) $request->metodo_creacion,
+                ]);
+
+                // 4. Actualizar el radicado inyectando el ID recién creado y el año
+                $nuevaOperacion->update([
+                    'numero_radicado' => "INI-{$anioActual}-{$nuevaOperacion->id}"
+                ]);
+
+                // Registrar auditoría
+                if (method_exists($this, 'registrarLogAuditoria')) {
+                    $this->registrarLogAuditoria(
+                        $request->numero_bloque, 1, 1,
+                        'Creación de Operación (Anidada)', 'Operación', 'Registro creado desde búsqueda fallida.',
+                        ['id_operacion' => $nuevaOperacion->id]
+                    );
+                }
+            });
+
+            return redirect()->back()->with('success', 'Registro creado exitosamente.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
+    }
     /**
      * 3. TRANSICIONA ESTADOS
      */
