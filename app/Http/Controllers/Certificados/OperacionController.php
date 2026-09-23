@@ -1890,7 +1890,7 @@ class OperacionController extends Controller
                 'Ejecución directa interactiva desde hoja de cálculo.',
                 ['id_operacion' => $operacion->id], [],
                 ['hash_generado' => $auditoria['hash'], 'total_lineas' => count($lineasData)]
-            );
+            ); 
 
             DB::commit();
 
