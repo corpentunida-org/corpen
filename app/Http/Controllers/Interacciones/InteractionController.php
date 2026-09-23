@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\Storage;
 
 class InteractionController extends Controller
 {
+    use \App\Http\Controllers\Interacciones\Concerns\GuardaSoporteInteraccion;
+
     /**
      * Alcance por agente para los Informes — mismo criterio de 3 niveles que
      * alcanceInteracciones() (Listado/Auditoría), pero devuelto como una lista de IDs de agente
@@ -804,6 +806,13 @@ class InteractionController extends Controller
             $nombresLineas[] = isset($lineasIds[$i]) ? ($allLineas[$lineasIds[$i]] ?? '') : '';
         }
 
+        // El adjunto vive en el seguimiento, nunca en la interacción (interactions.attachment_urls
+        // no existe como columna real — antes esto siempre salía vacío). Mismo criterio que
+        // show.blade.php: el primer seguimiento que sí tenga archivo.
+        $seguimientoConArchivo = $item->relationLoaded('seguimientos')
+            ? $item->seguimientos->first(fn ($s) => !empty($s->attachment_urls))
+            : null;
+
         return [
             'id' => $item->id,
             'fecha' => optional($item->interaction_date)->format('d/m/Y H:i'),
@@ -833,7 +842,7 @@ class InteractionController extends Controller
             'llamante_celular' => $item->celular_quien_llama ?? '—',
             'llamante_parentesco' => $item->parentesco_quien_llama ?? '—',
             'notas' => $item->notes ?? 'Sin notas.',
-            'archivo' => !empty($item->attachment_urls) ? $item->getFile($item->attachment_urls) : null,
+            'archivo' => $seguimientoConArchivo ? $item->getFile($seguimientoConArchivo->attachment_urls) : null,
 
             // Solo llenos en las pestañas Vencidos/Próximos (ver $proximasPorInteraccion arriba)
             'proxima_accion' => optional(optional($proximasPorInteraccion->get($item->id))->nextAction)->name,
@@ -877,7 +886,7 @@ class InteractionController extends Controller
             // por agente (solo lo propio, sin el permiso "ver todos"). Antes esta tabla arrancaba
             // de cero y no la heredaba — cualquiera con acceso al módulo veía TODAS las
             // interacciones de TODOS los agentes en las 6 pestañas, tuviera o no el permiso.
-            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado']);
+            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
 
             // A) Filtro por pestaña activa
             $tab = $request->input('tab', 'all');
@@ -1004,7 +1013,7 @@ class InteractionController extends Controller
         $baseQuery->whereBetween('interaction_date', [$desde, $hasta]);
 
         if ($request->ajax()) {
-            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado']);
+            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
 
             // Filtro fino por usuario (dentro del área ya delimitada arriba) — cliente/distrito/
             // canal/motivo/resultado, que en Listado de Interacciones no cabían.
@@ -1208,7 +1217,7 @@ class InteractionController extends Controller
             'next_action_type' => 'nullable',
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
-            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'attachment' => $this->reglaValidacionSoporte(),
             'cedula_quien_llama' => 'nullable|string|max:50',
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
@@ -1261,9 +1270,10 @@ class InteractionController extends Controller
 
         // 3. Procesar archivo adjunto
         $rutaArchivo = null;
+        $tamanoArchivo = null;
         if ($request->hasFile('attachment')) {
-            $folderPath = "corpentunida/interacciones/evidencia_{$interaction->id}_{$interaction->client_id}";
-            $rutaArchivo = $request->file('attachment')->store($folderPath, 's3');
+            $tamanoArchivo = $request->file('attachment')->getSize();
+            $rutaArchivo = $this->guardarSoporte($request->file('attachment'), $interaction->id);
         }
 
         // 4. Crear el seguimiento
@@ -1280,6 +1290,7 @@ class InteractionController extends Controller
             'next_action_notes' => $validated['next_action_notes'] ?? ($validated['notes'] ?? null),
             'interaction_url' => $validated['interaction_url'] ?? null,
             'attachment_urls' => $rutaArchivo,
+            'attachment_size' => $tamanoArchivo,
         ]);
 
         return redirect()->route('interactions.show', $interaction->id)->with('success', 'Interacción creada exitosamente.');
@@ -1341,7 +1352,7 @@ class InteractionController extends Controller
             'next_action_type' => 'nullable|exists:int_next_actions,id',
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
-            'attachment' => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'attachment' => $this->reglaValidacionSoporte(),
             'cedula_quien_llama' => 'nullable|string|max:50',
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
@@ -1376,11 +1387,10 @@ class InteractionController extends Controller
 
             // Lógica para subir nuevo archivo si lo hay
             $path = null;
+            $tamanoArchivo = null;
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
-                $safeName = time().'_'.str_replace(' ', '_', $file->getClientOriginalName());
-                $folderPath = 'corpentunida/daytrack/'.$interaction->id;
-                $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
+                $tamanoArchivo = $request->file('attachment')->getSize();
+                $path = $this->guardarSoporte($request->file('attachment'), $interaction->id);
             }
 
             // 2. Crear nueva línea de evolución en Seguimiento (TABLA 2)
@@ -1395,6 +1405,7 @@ class InteractionController extends Controller
                     'next_action_notes' => $request->input('next_action_notes'),
                     'interaction_url' => $request->input('interaction_url'),
                     'attachment_urls' => $path,
+                    'attachment_size' => $tamanoArchivo,
                 ]);
             }
 
@@ -1429,42 +1440,6 @@ class InteractionController extends Controller
             Log::error('Error al eliminar interacción '.$interaction->id.': '.$e->getMessage());
 
             return redirect()->back()->with('error', 'Hubo un error al eliminar la interacción.');
-        }
-    }
-
-    public function downloadAttachment($fileName)
-    {
-        try {
-            // Ajustar ruta según corresponda si pasaste un nombre de archivo o ruta completa
-            $path = 'corpentunida/daytrack/'.$fileName;
-
-            if (! Storage::disk('s3')->exists($path)) {
-                abort(404, 'Archivo no encontrado.');
-            }
-
-            return Storage::disk('s3')->download($path);
-        } catch (Exception $e) {
-            Log::error('Error al descargar archivo: '.$e->getMessage());
-            abort(404, 'Archivo no encontrado.');
-        }
-    }
-
-    public function viewAttachment($fileName)
-    {
-        try {
-            $path = 'corpentunida/daytrack/'.$fileName;
-
-            if (! Storage::disk('s3')->exists($path)) {
-                abort(404, 'Archivo no encontrado.');
-            }
-
-            $file = Storage::disk('s3')->get($path);
-            $mimeType = Storage::disk('s3')->mimeType($path);
-
-            return response($file)->header('Content-Type', $mimeType);
-        } catch (Exception $e) {
-            Log::error('Error al visualizar archivo: '.$e->getMessage());
-            abort(404, "Archivo no encontrado: {$fileName}");
         }
     }
 
@@ -1666,6 +1641,9 @@ class InteractionController extends Controller
                     'agente' => $seg->creator->name ?? 'Sistema',
                     'accion' => $seg->nextAction->name ?? 'N/A',
                     'fecha_accion' => optional($seg->next_action_date)->format('d/m/Y') ?? 'N/A',
+                    // Antes el historial del modal no traía el archivo en absoluto, aunque el
+                    // seguimiento sí tuviera uno — no había forma de verlo desde aquí.
+                    'archivo' => !empty($seg->attachment_urls) ? $seg->getFile($seg->attachment_urls) : null,
                 ];
             });
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ImpersonarController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\AdjuntosInteraccionController;
 use App\Http\Controllers\IndexController;
 
 use Illuminate\Support\Facades\Route;
@@ -220,6 +221,17 @@ Route::get('users-buscar-tercero', [UserController::class, 'buscarTerceroPorCedu
 // session('impersonador_id'), no por un permiso.
 Route::post('impersonar/salir', [ImpersonarController::class, 'detener'])
     ->name('admin.impersonar.detener')->middleware(['auth']);
+
+// Limpiar Historial de Adjuntos: ver el resumen por año requiere admin.adjuntos.index; el botón
+// de limpiar de verdad requiere admin.adjuntos.limpiar aparte (ver AdjuntosInteraccionController).
+Route::get('adjuntos-interacciones', [AdjuntosInteraccionController::class, 'index'])
+    ->name('admin.adjuntos.index')->middleware(['auth', 'candirect:admin.adjuntos.index']);
+Route::get('adjuntos-interacciones/{anio}', [AdjuntosInteraccionController::class, 'verAnio'])
+    ->where('anio', '[0-9]{4}')
+    ->name('admin.adjuntos.ver')->middleware(['auth', 'candirect:admin.adjuntos.index']);
+Route::post('adjuntos-interacciones/{anio}/limpiar', [AdjuntosInteraccionController::class, 'limpiarAnio'])
+    ->where('anio', '[0-9]{4}')
+    ->name('admin.adjuntos.limpiar')->middleware(['auth', 'candirect:admin.adjuntos.limpiar']);
 
 // Pantalla obligatoria cuando un admin marcó "forzar cambio de contraseña" desde Gestión de
 // Usuarios (ver App\Http\Middleware\ForzarCambioPassword) — cualquier usuario autenticado
@@ -900,10 +912,6 @@ Route::prefix('interactions')
 
             // 🗑️ Eliminar
             Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
-
-            // 📎 Archivos adjuntos
-            Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
-            Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 
             // 📌 AJAX: Obtener datos del cliente por cod_ter
             Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
@@ -1617,10 +1625,10 @@ Route::middleware(['auth'])
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
 
         // --- RUTAS ESTÁTICAS (Sin {id} - Deben ir antes) ---
-        
+
         // Creación manual de operaciones (desde el modal)
         Route::post('operaciones/store', [OperacionController::class, 'store'])->name('operaciones.store');
-        
+
         // Programar alerta a nivel de Lote/Bloque
         Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
 
@@ -1649,6 +1657,9 @@ Route::middleware(['auth'])
 
         // CERTIFICADOS: Procesamiento Individual (Guarda en BD antes de mostrar PDF)
         Route::post('operaciones/{id}/procesar-individual', [OperacionController::class, 'procesarIndividual'])->name('operaciones.procesar_individual');
+        
+        // CERTIFICADOS: Generación de Gestión Manual (Un clic)
+        Route::post('operaciones/{id}/gestion-manual', [OperacionController::class, 'generarCertificadoGestionManual'])->name('operaciones.gestion_manual');
 
         // --- Toggle para activar/inactivar configuración operativa ---
         Route::patch('operaciones/config/{id}/toggle', [OperacionController::class, 'toggleEstado'])->name('operaciones.config.toggle');

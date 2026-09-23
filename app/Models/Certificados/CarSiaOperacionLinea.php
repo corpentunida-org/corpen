@@ -21,7 +21,7 @@ class CarSiaOperacionLinea extends Model
     protected $fillable = [
         'id_car_sia_operaciones',
         'id_factura',
-        'id_car_sia_lineas', //cuenta
+        'id_car_sia_lineas', // cuenta
         'numero_bloque',
         'observacion',
         'calificacion',
@@ -34,8 +34,9 @@ class CarSiaOperacionLinea extends Model
         'id_user',
         'id_car_sia_tipos',
         'hash_certificado',
-        // --- CAMPO JSON ---
+        // --- CAMPOS JSON ---
         'metadata',
+        'payload_documento',
         // --- CAMPO DE ESTADO API ---
         'estadoApi',
     ];
@@ -47,6 +48,7 @@ class CarSiaOperacionLinea extends Model
         'procesado_en'              => 'datetime',
         'dias_mora_automaticos'     => 'integer',
         'metadata'                  => 'array', // Convierte automáticamente el JSON a Array de PHP
+        'payload_documento'         => 'array', // <-- Añadido para parsear el nuevo JSON automáticamente
     ];
 
     // ---------------------------------------------------
@@ -58,8 +60,6 @@ class CarSiaOperacionLinea extends Model
      */
     public function factura()
     {
-        // Nota: Si la llave primaria en car_sia_api no es 'id' sino 'id_factura',
-        // debes declararlo así: return $this->belongsTo(CarSiaApi::class, 'id_factura', 'id_factura');
         return $this->belongsTo(CarSiaApi::class, 'id_factura', 'id_factura');
     }
 
