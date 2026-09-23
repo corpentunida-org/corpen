@@ -695,6 +695,7 @@
                                                 <div class="bg-light p-2 rounded" style="font-size: 0.8rem;">
                                                     <span class="d-block text-secondary mb-1"><i class="feather-user me-1"></i> Agente: <strong>${seg.agente}</strong></span>
                                                     <span class="d-block text-secondary"><i class="feather-calendar me-1"></i> Próx. Acción: <strong>${seg.accion}</strong> (${seg.fecha_accion})</span>
+                                                    ${seg.archivo ? `<a href="${seg.archivo}" target="_blank" class="d-block text-primary mt-1"><i class="feather-paperclip me-1"></i>Ver soporte adjunto</a>` : ''}
                                                 </div>
                                             </div>`;
                                     });

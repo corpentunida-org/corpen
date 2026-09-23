@@ -744,11 +744,11 @@
                             id="drop-zone" style="border-radius: 4px;">
                             <input type="file" id="attachment" name="attachment"
                                 class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
-                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
+                                accept="image/*,.pdf,.doc,.docx" onchange="handleFileSelect(this)">
                             <div class="dz-message d-flex flex-column align-items-center justify-content-center"
                                 style="min-height: 80px;" id="upload-icon-wrapper">
                                 <h6 class="text-dark mb-1" id="file-label">Adjuntar archivo</h6>
-                                <p class="text-muted small mb-0">PDF, Word, Excel, Img (Max 10MB)</p>
+                                <p class="text-muted small mb-0">PDF, Word, Imagen (Max 5MB)</p>
                             </div>
                         </div>
 
@@ -761,20 +761,30 @@
                                 style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
                         </div>
 
-                        @if ($modoEdicion && $interaction->attachment_urls)
-                            <div class="mt-3">
-                                <label class="form-label small text-dark">Archivo Guardado</label>
-                                <div class="d-flex align-items-center p-2 bg-light border">
-                                    <div class="flex-grow-1 overflow-hidden me-2">
-                                        <div class="text-dark text-truncate small">
-                                            {{ basename($interaction->attachment_urls) }}</div>
-                                    </div>
-                                    <div class="d-flex gap-1">
-                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
-                                            class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                        @if ($modoEdicion)
+                            @php
+                                // El adjunto vive en el seguimiento, nunca en la interacción
+                                // (interactions.attachment_urls no es una columna real) — mismo
+                                // criterio que show.blade.php: el primer seguimiento que tenga uno.
+                                $seguimientoConArchivo = $interaction->seguimientos
+                                    ->first(fn ($s) => !empty($s->attachment_urls));
+                            @endphp
+                            @if ($seguimientoConArchivo)
+                                <div class="mt-3">
+                                    <label class="form-label small text-dark">Archivo Guardado</label>
+                                    <div class="d-flex align-items-center p-2 bg-light border">
+                                        <div class="flex-grow-1 overflow-hidden me-2">
+                                            <div class="text-dark text-truncate small">
+                                                {{ basename(is_array($seguimientoConArchivo->attachment_urls) ? ($seguimientoConArchivo->attachment_urls[0] ?? '') : $seguimientoConArchivo->attachment_urls) }}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ $seguimientoConArchivo->getFile($seguimientoConArchivo->attachment_urls) }}"
+                                                class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
                         @endif
                     </div>
 

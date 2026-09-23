@@ -16,6 +16,9 @@
         @candirect('admin.informeuso.index')
         <li class="nxl-item"><a href="{{ route('admin.informeuso.index') }}" class="nxl-link">Informe de Uso</a></li>
         @endcandirect
+        @candirect('admin.adjuntos.index')
+        <li class="nxl-item"><a href="{{ route('admin.adjuntos.index') }}" class="nxl-link">Limpiar Historial Adjuntos</a></li>
+        @endcandirect
         @candirect('admin.auditoria.index')
         <!-- MENÚ INTEGRACIONES (Independiente) -->
         <li class="nxl-item nxl-hasmenu">
