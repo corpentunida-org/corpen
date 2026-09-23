@@ -16,12 +16,34 @@
             </a>
         </div>
     </div> --}}
-    @candirect('interacciones.informes.todosagentes')
+    {{-- Imprimir siempre está disponible — reportPdf() aplica el mismo alcance que la pantalla
+         (individual/área/todos, ver alcanceInformes), así que el PDF nunca trae más de lo que ya
+         se está viendo aquí. Antes esto se ocultaba sin informes.area/.todosagentes, dejando a
+         quien solo ve su propio informe sin poder imprimirlo. --}}
     <div class="d-flex justify-content-end align-items-center mb-3">
         <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank"
             class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
     </div>
-    @endcandirect
+
+    {{-- "Ver": por defecto SIEMPRE "Individual" (lo propio), igual que en Listado/Auditoría — hay
+         que elegir activamente ver más. --}}
+    @if ($puedeVerArea || $puedeVerTodos)
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="text-muted fs-13 fw-semibold">Ver:</span>
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'propias'])) }}"
+                   class="btn {{ ($modo ?? 'propias') === 'propias' ? 'btn-primary' : 'btn-outline-secondary' }}">Individual</a>
+                @if ($puedeVerArea)
+                    <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'area'])) }}"
+                       class="btn {{ ($modo ?? '') === 'area' ? 'btn-primary' : 'btn-outline-secondary' }}">Mi área</a>
+                @endif
+                @if ($puedeVerTodos)
+                    <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'todos'])) }}"
+                       class="btn {{ ($modo ?? '') === 'todos' ? 'btn-primary' : 'btn-outline-secondary' }}">Todos</a>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- Filtros Avanzados (MANUALES) --}}
     <div class="card mb-2">
@@ -38,10 +60,14 @@
         </div>
         <div class="card-body p-3">
             <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
+                {{-- Los selects de Ver/Agente/Área navegan con GET, así que hay que conservar el
+                     modo elegido arriba al enviar el formulario de filtros. --}}
+                <input type="hidden" name="modo" value="{{ $modo ?? 'propias' }}">
+
                 {{-- Filtro: Agente --}}
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
-                    @if (auth()->user()->hasDirectPermission('interacciones.informes.todosagentes'))
+                    @if ($puedeVerArea)
                         <select name="agent_id" class="form-select form-select-sm select2-search"
                             data-placeholder="Todos">
                             <option value=""></option>
@@ -59,6 +85,22 @@
                     @endif
                 </div>
 
+                {{-- Filtro: Área — solo con informes.todosagentes tiene sentido elegir cuál (con
+                     informes.area ya está fija en la propia). --}}
+                @if ($puedeVerTodos && in_array($modo ?? 'propias', ['area', 'todos'], true))
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold text-muted small mb-1">Área</label>
+                        <select name="area_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
+                            <option value=""></option>
+                            @foreach ($listAreas as $area)
+                                <option value="{{ $area }}" {{ request('area_id') === $area ? 'selected' : '' }}>
+                                    {{ strtoupper($area) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
                     <select name="client_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
@@ -72,12 +114,22 @@
                     </select>
                 </div>
 
+                {{-- Filtro: Mes — atajo para no tener que elegir Fecha Inicio/Fin a mano; al
+                     elegir un mes completa esas dos fechas con su primer y último día (JS abajo).
+                     Se puede seguir ajustando Fecha Inicio/Fin manualmente después si hace falta
+                     un rango que no sea un mes completo. --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted mb-1">Mes</label>
+                    <input type="month" name="mes" id="filtroMes" class="form-control"
+                        value="{{ request('mes') }}" />
+                </div>
+
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted mb-1">Fecha Inicio</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i
                                 class="feather-calendar text-primary"></i></span>
-                        <input type="date" name="start_date" class="form-control border-start-0 ps-0"
+                        <input type="date" name="start_date" id="filtroFechaInicio" class="form-control border-start-0 ps-0"
                             value="{{ $startDate ?? request('start_date') }}" />
                     </div>
                 </div>
@@ -88,7 +140,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i
                                 class="feather-calendar text-primary"></i></span>
-                        <input type="date" name="end_date" class="form-control border-start-0 ps-0"
+                        <input type="date" name="end_date" id="filtroFechaFin" class="form-control border-start-0 ps-0"
                             value="{{ $endDate ?? request('end_date') }}" />
                     </div>
                 </div>
@@ -190,6 +242,26 @@
             </div>
         </a>
     </div>
+
+    {{-- Indicadores por Área — solo aporta cuando el alcance cubre más de una (Ver: Mi área con
+         listado.todos eligiendo "Todas", o Ver: Todos); con una sola área en alcance sale una
+         sola barra, sigue siendo correcto. --}}
+    @if (count($chartAreas['labels'] ?? []) > 0)
+        <div class="row g-3 mb-0">
+            <div class="col-12">
+                <div class="card shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header py-3 border-bottom-0 bg-transparent">
+                        <h6 class="mb-0 fw-bold"><i class="feather-grid me-2 text-indigo" style="color:#6610f2;"></i>Indicadores por Área</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="chartAreas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Primera Fila de Gráficos: Canales y Resultados --}}
     <div class="row g-3">
@@ -331,6 +403,21 @@
                 window.location.href = "{{ route('interactions.report') }}";
             });
 
+            // Filtro Mes: completa Fecha Inicio/Fin con el primer y último día del mes elegido
+            // (no se manda "mes" al servidor para nada más, solo llena esos dos campos).
+            const filtroMes = document.getElementById('filtroMes');
+            if (filtroMes) {
+                filtroMes.addEventListener('change', function () {
+                    if (!this.value) return;
+                    const [anio, mes] = this.value.split('-').map(Number);
+                    const primerDia = new Date(anio, mes - 1, 1);
+                    const ultimoDia = new Date(anio, mes, 0);
+                    const aYMD = (d) => d.toISOString().slice(0, 10);
+                    document.getElementById('filtroFechaInicio').value = aYMD(primerDia);
+                    document.getElementById('filtroFechaFin').value = aYMD(ultimoDia);
+                });
+            }
+
             // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
             Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
             Chart.defaults.color = '#718096';
@@ -431,6 +518,8 @@
             const vencidasPendientesLabels = @json($chartAccionesAgentes['labels'] ?? []);
             const pendientesData = @json($chartAccionesAgentes['pendientes'] ?? []);
             const vencidasData = @json($chartAccionesAgentes['vencidas'] ?? []);
+            const areasLabels = @json($chartAreas['labels'] ?? []);
+            const areasData = @json($chartAreas['data'] ?? []);
 
             // 1. Canales (Barras Verticales)
             const ctxCanales = document.getElementById('chartCanales').getContext('2d');
@@ -554,6 +643,11 @@
                 'rgba(46, 204, 113, 0.2)');
             createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
                 'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
+            // Por Área — solo se crea si la tarjeta está en el DOM (la vista la oculta cuando el
+            // alcance cubre una sola área/agente).
+            if (document.getElementById('chartAreas')) {
+                createHBar('chartAreas', areasLabels, areasData, 'rgba(102, 16, 242, 0.8)', 'rgba(102, 16, 242, 0.2)');
+            }
 
             // Líneas de Crédito (Barras Verticales)
             const ctxLineas = document.getElementById('chartLineas').getContext('2d');

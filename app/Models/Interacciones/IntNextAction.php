@@ -11,7 +11,7 @@ class IntNextAction extends Model
 
     protected $table = 'int_next_actions';
 
-    protected $fillable = ['id','name'];
+    protected $fillable = ['id','name','area'];
 
     public function seguimientos()
     {

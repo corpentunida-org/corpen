@@ -31,6 +31,29 @@
         </div>
     </div>
 
+    {{-- Campo: Área (a qué equipo pertenece esta acción) --}}
+    <div class="col-12">
+        <div class="form-group">
+            <label class="text-uppercase fs-xs fw-bold text-muted mb-2 d-block" style="letter-spacing: 1px;">
+                Área
+            </label>
+            @if ($puedeElegirArea ?? false)
+                <select name="area" class="form-select form-select-lg border rounded-3">
+                    <option value="" @selected(old('area', $nextAction->area ?? '') === '')>Compartido (todas las áreas)</option>
+                    @foreach ($areas as $a)
+                        <option value="{{ $a }}" @selected(old('area', $nextAction->area ?? '') === $a)>{{ strtoupper($a) }}</option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted mt-2 d-block opacity-75">Déjalo en "Compartido" para que la vean todas las áreas.</small>
+            @else
+                <div class="alert alert-light border fs-13 mb-0">
+                    <i class="feather-info me-1"></i>
+                    {{ isset($nextAction) ? 'Es de tu área (' . strtoupper($nextAction->area ?? $miArea ?? '—') . ').' : 'Quedará para tu área (' . strtoupper($miArea ?? '—') . '), solo tu equipo la verá.' }}
+                </div>
+            @endif
+        </div>
+    </div>
+
     {{-- Divisor --}}
     <div class="col-12 py-2">
         <hr class="opacity-10">

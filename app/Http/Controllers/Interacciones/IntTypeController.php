@@ -3,31 +3,14 @@
 namespace App\Http\Controllers\Interacciones;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Interacciones\Concerns\GestionaAreaDeCatalogo;
 use App\Models\Interacciones\IntType;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class IntTypeController extends Controller
 {
-    /**
-     * El área del perfil del usuario actual (roles.area, Matriz de Permisos) — de qué "Tipo de
-     * interacción" es responsable. Mismo criterio que InteractionController::areaDelUsuario().
-     */
-    private function areaDelUsuario(): ?string
-    {
-        return DB::table('actions')
-            ->join('roles', 'roles.id', '=', 'actions.role_id')
-            ->where('actions.user_id', Auth::id())
-            ->orderByRaw('roles.area is null')
-            ->value('roles.area');
-    }
-
-    /** Con listado.todos se administran los tipos de cualquier área; sin él, solo los propios. */
-    private function puedeElegirArea(): bool
-    {
-        return auth()->user()->hasDirectPermission('interacciones.listado.todos');
-    }
+    use GestionaAreaDeCatalogo;
 
     /**
      * Mostrar lista de tipos de interacción
@@ -39,6 +22,14 @@ class IntTypeController extends Controller
 
         $types = IntType::withCount('interactions')
             ->when(!$puedeElegirArea, fn ($q) => $q->where(fn ($q2) => $q2->whereNull('area')->orWhere('area', $miArea)))
+            // Filtro por área: solo tiene sentido para quien ve más de una (sin listado.todos ya
+            // está limitado arriba a la suya + compartidos, no hay nada más que filtrar).
+            // "compartido" es un valor especial (no un área real) para pedir area IS NULL.
+            ->when($puedeElegirArea && $request->filled('area'), function ($q) use ($request) {
+                $request->input('area') === 'compartido'
+                    ? $q->whereNull('area')
+                    : $q->where('area', $request->input('area'));
+            })
             ->when($request->search, function($query, $search) {
                 $query->where('name', 'like', "%{$search}%");
             })
@@ -46,7 +37,11 @@ class IntTypeController extends Controller
             ->paginate(12)
             ->withQueryString();
 
-        return view('interactions.types.index', compact('types', 'puedeElegirArea'));
+        $areasDisponibles = $puedeElegirArea
+            ? DB::table('roles')->whereNotNull('area')->distinct()->orderBy('area')->pluck('area')
+            : collect();
+
+        return view('interactions.types.index', compact('types', 'puedeElegirArea', 'areasDisponibles'));
     }
 
     /**
