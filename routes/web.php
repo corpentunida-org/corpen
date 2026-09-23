@@ -1613,10 +1613,10 @@ Route::middleware(['auth'])
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
 
         // --- RUTAS ESTÁTICAS (Sin {id} - Deben ir antes) ---
-        
+
         // Creación manual de operaciones (desde el modal)
         Route::post('operaciones/store', [OperacionController::class, 'store'])->name('operaciones.store');
-        
+
         // Programar alerta a nivel de Lote/Bloque
         Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
 
@@ -1645,6 +1645,9 @@ Route::middleware(['auth'])
 
         // CERTIFICADOS: Procesamiento Individual (Guarda en BD antes de mostrar PDF)
         Route::post('operaciones/{id}/procesar-individual', [OperacionController::class, 'procesarIndividual'])->name('operaciones.procesar_individual');
+        
+        // CERTIFICADOS: Generación de Gestión Manual (Un clic)
+        Route::post('operaciones/{id}/gestion-manual', [OperacionController::class, 'generarCertificadoGestionManual'])->name('operaciones.gestion_manual');
 
         // --- Toggle para activar/inactivar configuración operativa ---
         Route::patch('operaciones/config/{id}/toggle', [OperacionController::class, 'toggleEstado'])->name('operaciones.config.toggle');

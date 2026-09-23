@@ -1375,9 +1375,9 @@
 
                                     {{-- Usamos un d-flex gap-2 para separar los botones si hay más de uno --}}
                                     <div class="d-flex gap-2">
-                                        {{-- Botón "Certificados de Gestión" SIEMPRE VISIBLE --}}
-                                        {{-- Nota: Ajusta el data-bs-target al modal correcto que uses para este botón --}}
-                                        <button type="button" class="btn bg-pastel-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalGestion">
+
+                                        {{-- Botón "Certificados de Gestión" - Abre el Modal de Selección --}}
+                                        <button type="button" class="btn bg-pastel-primary shadow-sm rounded-pill px-3 fw-bold d-flex align-items-center hover-opacity" data-bs-toggle="modal" data-bs-target="#modalSeleccionTipo">
                                             <i class="fas fa-file-signature me-2 opacity-75"></i> Certificados de Gestión
                                         </button>
 
@@ -2561,12 +2561,11 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- MODALES GLOBALES (Tipo Certificado)        -->
-    <!-- ========================================== -->
+    <!-- ================================================================= -->
+    <!-- 1. MODAL: GENERAR CERTIFICADO INDIVIDUAL / MASIVO                 -->
+    <!-- ================================================================= -->
     <div class="modal fade" id="modalTipo" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <!-- Formulario para generar el Certificado -->
             <form id="formGenerarCertificado" action="{{ route('certificados.operaciones.procesar_individual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
@@ -2575,10 +2574,8 @@
                 </div>
 
                 <div class="modal-body p-4">
-                    {{-- Envío del número de bloque oculto como referencia --}}
                     <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}">
 
-                    {{-- Selección de Tipo de Certificado (Solución a estructura cortada) --}}
                     <div class="mb-3">
                         <label for="tipo_certificado_id" class="form-label text-muted fw-bold fs-8 text-uppercase">Tipo de Certificado a Generar</label>
                         <select name="tipo_certificado_id" id="tipo_certificado_id" class="form-select" required>
@@ -2595,9 +2592,15 @@
                     </div>
                 </div>
 
-                <div class="modal-footer border-0 px-4 pb-4 pt-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger fw-bold shadow-sm" onclick="bloquearBotonUI(this, 'Generando...')">
+                <div class="modal-footer border-0 px-4 pb-4 pt-0 d-flex justify-content-between align-items-center">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" id="btnCancelCertificado">Cancelar</button>
+
+                    <!-- Elemento que faltaba para que el JS no falle -->
+                    <span id="loadingCertificado" class="d-none text-muted fw-semibold" style="font-size: 0.85rem;">
+                        <i class="fas fa-spinner fa-spin me-1 text-danger"></i> Generando PDF...
+                    </span>
+
+                    <button type="submit" class="btn btn-danger fw-bold shadow-sm">
                         <i class="fas fa-check me-2"></i> Generar
                     </button>
                 </div>
@@ -2605,14 +2608,340 @@
         </div>
     </div>
 
-    {{-- ======================================================= --}}
-    {{-- MODAL: ASIGNAR NUEVA EXCEPCIÓN / CONFIGURACIÓN          --}}
-    {{-- ======================================================= --}}
+
+    <!-- ================================================================= -->
+    <!-- 2. MODAL A: SELECCIÓN DE TIPO DE CERTIFICADO DE GESTIÓN (UX Pro)  -->
+    <!-- ================================================================= -->
+    <div class="modal fade" id="modalSeleccionTipo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+
+                {{-- Header limpio y estandarizado --}}
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="fas fa-file-signature text-primary me-2"></i> Seleccionar Certificado de Gestión
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                {{-- Cuerpo del modal con el select estructurado --}}
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="selectTipoGestionModal" class="form-label text-muted fw-bold fs-8 text-uppercase">Tipo de Certificado a Gestionar</label>
+
+                        <select id="selectTipoGestionModal" class="form-select" required>
+                            <option value="">Seleccione un tipo de gestión...</option>
+                            @if(isset($tiposGestion))
+                                @foreach($tiposGestion as $tipo)
+                                    <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                @endforeach
+                            @endif
+                        </select>
+
+                        <div class="form-text mt-2 fs-8 text-muted">
+                            <i class="fas fa-info-circle text-primary"></i> Selecciona el tipo de certificado para continuar con la previsualización y ejecución del motor de reglas.
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Footer con botones de acción alineados --}}
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary fw-bold shadow-sm" onclick="validarYContinuarGestion()">
+                        <i class="fas fa-arrow-right me-2"></i> Continuar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================================================================= -->
+    <!-- 3. MODAL B: PREVISUALIZACIÓN Y HOJA DE CÁLCULO (Google Sheets UI)  -->
+    <!-- ================================================================= -->
+    <div class="modal fade" id="modalGestion" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 99vw; width: 100%;">
+            <form action="{{ route('certificados.operaciones.gestion_manual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-3">
+                @csrf
+
+                {{-- Input oculto que recibe dinámicamente el ID del tipo seleccionado en el Modal A --}}
+                <input type="hidden" name="tipo_certificado" id="inputTipoCertificado" value="">
+                <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}">
+
+                {{-- Header Estilo Hoja de Cálculo --}}
+                <div class="modal-header border-bottom pb-2 pt-3 px-4 bg-light rounded-top-3 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-success text-white rounded p-1 d-flex align-items-center justify-content-center shadow-sm" style="width: 28px; height: 28px;">
+                            <i class="fas fa-file-excel" style="font-size: 0.85rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.85rem;">Hoja de Trabajo Masiva - car_sia_operaciones_lineas (Con Relaciones)</h6>
+                            <span class="text-muted" style="font-size: 0.65rem;">Radicado: <strong>{{ $operacion->numero_radicado ?? 'N/A' }}</strong> | Bloque: {{ $operacion->numero_bloque }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" style="font-size: 0.7rem;" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body p-0">
+                    {{-- Barra de Herramientas Estilo Sheets --}}
+                    <div class="px-3 py-2 bg-white border-bottom d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
+                        <span class="text-muted"><i class="fas fa-info-circle text-primary me-1"></i> Los campos con relaciones traen sus IDs y nombres asociados de forma automática.</span>
+                        <span class="badge bg-light text-secondary border font-monospace" id="contadorFilasInfo">Filas activas: 1</span>
+                    </div>
+
+                    {{-- Contenedor Estilo Hoja de Cálculo (Grid con scroll horizontal y vertical fluido) --}}
+                    <div class="table-responsive bg-light" style="max-height: 58vh; overflow: auto; border: 1px solid #dee2e6;">
+                        <table class="table table-bordered table-sm align-middle mb-0 bg-white" style="font-size: 0.68rem; border-color: #cbd5e1 !important; min-width: 1750px;">
+                            <thead class="sticky-top text-uppercase text-secondary fw-bold text-center" style="background-color: #f8fafc; z-index: 5; font-size: 0.6rem; letter-spacing: 0.2px;">
+                                <tr style="border-bottom: 2px solid #94a3b8;">
+                                    <th class="py-2 px-1 border-end text-dark" style="width: 2%;">#</th>
+                                    <th class="py-2 px-2 border-end text-primary" style="width: 5%;">id <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(Auto)</span></th>
+                                    <th class="py-2 px-2 border-end text-danger" style="width: 7%;">id_factura <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(BIGINT)</span></th>
+                                    <th class="py-2 px-2 border-end text-danger" style="width: 7%;">id_car_sia_lineas <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(Cuenta/FK)</span></th>
+                                    <th class="py-2 px-2 border-end text-dark" style="width: 5%;">numero_bloque <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(INT)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 9%;">observacion <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(TEXT)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 7%;">calificacion <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(VARCHAR)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 7%;">fecha_venci <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(DATETIME)</span></th>
+                                    <th class="py-2 px-2 border-end text-danger" style="width: 8%;">id_car_sia_estados <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(RELACIÓN ESTADOS)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 8%;">fecha_ultimo_recordatorio <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(TIMESTAMP)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 5%;">dias_mora_automaticos <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(INT)</span></th>
+                                    <th class="py-2 px-2 border-end text-danger" style="width: 5%;">id_user <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(AUDITORÍA)</span></th>
+                                    <th class="py-2 px-2 border-end text-danger" style="width: 8%;">id_car_sia_tipos <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(RELACIÓN TIPOS)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 8%;">hash_certificado <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(VARCHAR)</span></th>
+                                    <th class="py-2 px-2 border-end text-primary" style="width: 8%;">metadata <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(JSON)</span></th>
+                                    <th class="py-2 px-2 border-end text-secondary" style="width: 6%;">estadoApi <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(VARCHAR)</span></th>
+                                    <th class="py-2 px-2 border-end text-primary" style="width: 8%;">payload_documento <span class="d-block text-muted fw-normal" style="font-size: 0.55rem;">(JSON)</span></th>
+                                    <th class="py-2 px-1 text-danger" style="width: 3%;">🗑️</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cuerpoTablaLineas">
+                                @php
+                                    $facturasList = $operacion->facturas ?? collect();
+                                    if ($facturasList->isEmpty()) {
+                                        $facturasList = [ (object)[
+                                            'id' => '',
+                                            'id_factura' => '',
+                                            'id_car_sia_lineas' => '',
+                                            'numero_bloque' => $operacion->numero_bloque,
+                                            'observacion' => '',
+                                            'calificacion' => 'Bueno',
+                                            'fecha_venci' => null,
+                                            'id_car_sia_estados' => 3,
+                                            'fecha_ultimo_recordatorio' => null,
+                                            'dias_mora_automaticos' => 0,
+                                            'id_user' => auth()->id(),
+                                            'id_car_sia_tipos' => '',
+                                            'hash_certificado' => '',
+                                            'metadata' => '{"config_base": true}',
+                                            'estadoApi' => '0',
+                                            'payload_documento' => '{"tipo_emision": "manual", "version": "1.0"}'
+                                        ] ];
+                                    }
+                                @endphp
+
+                                @foreach($facturasList as $index => $linea)
+                                    @php
+                                        $idLinea = $linea->id ?? '';
+                                        $idFactura = $linea->id_factura ?? '';
+                                        $idCarSiaLineas = $linea->id_car_sia_lineas ?? $linea->cuenta ?? '';
+                                        $numeroBloque = $linea->numero_bloque ?? $operacion->numero_bloque;
+                                        $observacion = $linea->observacion ?? '';
+                                        $calificacion = $linea->calificacion ?? 'Bueno';
+                                        $fechaVenci = $linea->fecha_venci ? \Carbon\Carbon::parse($linea->fecha_venci)->format('Y-m-d') : '';
+                                        $idCarSiaEstados = $linea->id_car_sia_estados ?? 3;
+                                        $fechaUltRec = $linea->fecha_ultimo_recordatorio ? \Carbon\Carbon::parse($linea->fecha_ultimo_recordatorio)->format('Y-m-d\TH:i') : '';
+                                        $diasMora = $linea->dias_mora_automaticos ?? 0;
+                                        $idUser = $linea->id_user ?? auth()->id();
+                                        $idCarSiaTipos = $linea->id_car_sia_tipos ?? '';
+                                        $hashCert = $linea->hash_certificado ?? '';
+                                        $metadataVal = is_array($linea->metadata ?? null) ? json_encode($linea->metadata, JSON_UNESCAPED_UNICODE) : ($linea->metadata ?? '{}');
+                                        $estadoApi = $linea->estadoApi ?? '0';
+                                        $payloadVal = is_array($linea->payload_documento ?? null) ? json_encode($linea->payload_documento, JSON_UNESCAPED_UNICODE) : ($linea->payload_documento ?? '{}');
+                                    @endphp
+                                    <tr class="sheet-row" style="height: 35px;">
+                                        <!-- # Índice -->
+                                        <td class="text-center text-muted bg-light fw-bold border-end row-number" style="background-color: #f8fafc !important;">{{ $index + 1 }}</td>
+
+                                        <!-- id (PK) -->
+                                        <td class="px-2 py-1 border-end bg-light font-monospace text-center text-muted" style="font-size: 0.65rem;">
+                                            <input type="text" name="lineas[{{ $index }}][id]" value="{{ $idLinea }}" class="form-control form-control-sm border-0 bg-transparent text-center text-muted p-0 font-monospace shadow-none" readonly placeholder="Auto" style="font-size: 0.68rem;">
+                                        </td>
+
+                                        <!-- id_factura -->
+                                        <td class="px-2 py-1 border-end bg-white">
+                                            <input type="number" name="lineas[{{ $index }}][id_factura]" value="{{ $idFactura }}" class="form-control form-control-sm border-0 bg-transparent fw-bold text-dark p-0 font-monospace shadow-none" required placeholder="Ej: 101" style="font-size: 0.7rem;">
+                                        </td>
+
+                                        <!-- id_car_sia_lineas (Relación con car_sia_lineas -> mostrando nombre_cuenta) -->
+                                        <td class="px-2 py-1 border-end bg-white">
+                                            <select name="lineas[{{ $index }}][id_car_sia_lineas]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-dark fw-medium py-0 px-1" style="font-size: 0.68rem;" required>
+                                                <option value="">Seleccione cuenta...</option>
+                                                @isset($lineasDisponibles)
+                                                    @foreach($lineasDisponibles as $lineaCredito)
+                                                        <option value="{{ $lineaCredito->cuenta }}" {{ $idCarSiaLineas == $lineaCredito->cuenta ? 'selected' : '' }}>
+                                                            {{ $lineaCredito->nombre_cuenta ?? $lineaCredito->nombre ?? 'Cuenta: '.$lineaCredito->cuenta }}
+                                                        </option>
+                                                    @endforeach
+                                                @endisset
+                                            </select>
+                                        </td>
+
+                                        <!-- numero_bloque -->
+                                        <td class="px-2 py-1 border-end bg-white text-center">
+                                            <input type="number" name="lineas[{{ $index }}][numero_bloque]" value="{{ $numeroBloque }}" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" readonly style="font-size: 0.7rem;">
+                                        </td>
+
+                                        <!-- observacion -->
+                                        <td class="px-2 py-1 border-end bg-white">
+                                            <input type="text" name="lineas[{{ $index }}][observacion]" value="{{ $observacion }}" class="form-control form-control-sm border-0 bg-transparent p-0 shadow-none" placeholder="Escribir nota..." style="font-size: 0.68rem;">
+                                        </td>
+
+                                        <!-- calificacion -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <select name="lineas[{{ $index }}][calificacion]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-medium py-0 px-1" style="font-size: 0.68rem;">
+                                                <option value="Bueno" {{ $calificacion == 'Bueno' ? 'selected' : '' }}>Bueno</option>
+                                                <option value="Regular" {{ $calificacion == 'Regular' ? 'selected' : '' }}>Regular</option>
+                                                <option value="Atencion Especial" {{ $calificacion == 'Atencion Especial' ? 'selected' : '' }}>Atención Especial</option>
+                                                <option value="Restringido" {{ $calificacion == 'Restringido' ? 'selected' : '' }}>Restringido</option>
+                                                <option value="Irregular" {{ $calificacion == 'Irregular' ? 'selected' : '' }}>Irregular</option>
+                                            </select>
+                                        </td>
+
+                                        <!-- fecha_venci -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <input type="date" name="lineas[{{ $index }}][fecha_venci]" value="{{ $fechaVenci }}" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" style="font-size: 0.65rem;">
+                                        </td>
+
+                                        <!-- id_car_sia_estados (Relación con la tabla de Estados) -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <select name="lineas[{{ $index }}][id_car_sia_estados]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 text-primary" style="font-size: 0.68rem;" required>
+                                                <option value="">Seleccione estado...</option>
+                                                @isset($estados)
+                                                    @foreach($estados as $est)
+                                                        <option value="{{ $est->id }}" {{ $idCarSiaEstados == $est->id ? 'selected' : '' }}>
+                                                            {{ $est->nombre }} (ID: {{ $est->id }})
+                                                        </option>
+                                                    @endforeach
+                                                @endisset
+                                            </select>
+                                        </td>
+
+                                        <!-- fecha_ultimo_recordatorio -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <input type="datetime-local" name="lineas[{{ $index }}][fecha_ultimo_recordatorio]" value="{{ $fechaUltRec }}" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" style="font-size: 0.6rem;">
+                                        </td>
+
+                                        <!-- dias_mora_automaticos -->
+                                        <td class="px-2 py-1 border-end bg-white text-center">
+                                            <input type="number" name="lineas[{{ $index }}][dias_mora_automaticos]" value="{{ $diasMora }}" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" min="0" style="font-size: 0.7rem;">
+                                        </td>
+
+                                        <!-- id_user (Relación con usuarios -> mostrando nombre) -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <select name="lineas[{{ $index }}][id_user]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-medium py-0 px-1 text-dark" style="font-size: 0.68rem;" required>
+                                                <option value="">Seleccione usuario...</option>
+                                                @isset($usuarios)
+                                                    @foreach($usuarios as $usr)
+                                                        <option value="{{ $usr->id }}" {{ $idUser == $usr->id ? 'selected' : '' }}>
+                                                            {{ $usr->name ?? 'Usuario '.$usr->id }}
+                                                        </option>
+                                                    @endforeach
+                                                @endisset
+                                            </select>
+                                        </td>
+
+                                        <!-- id_car_sia_tipos (Relación con Tipos de Gestión / Certificados) -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <select name="lineas[{{ $index }}][id_car_sia_tipos]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 text-success" style="font-size: 0.68rem;" required>
+                                                <option value="">Seleccione tipo...</option>
+                                                @isset($tiposGestion)
+                                                    @foreach($tiposGestion as $tg)
+                                                        <option value="{{ $tg->id }}" {{ $idCarSiaTipos == $tg->id ? 'selected' : '' }}>
+                                                            {{ $tg->nombre }} (ID: {{ $tg->id }})
+                                                        </option>
+                                                    @endforeach
+                                                @endisset
+                                                @isset($tiposCertificados)
+                                                    @foreach($tiposCertificados as $tc)
+                                                        <option value="{{ $tc->id }}" {{ $idCarSiaTipos == $tc->id ? 'selected' : '' }}>
+                                                            {{ $tc->nombre }} (ID: {{ $tc->id }})
+                                                        </option>
+                                                    @endforeach
+                                                @endisset
+                                            </select>
+                                        </td>
+
+                                        <!-- hash_certificado -->
+                                        <td class="px-1 py-1 border-end bg-white font-monospace">
+                                            <input type="text" name="lineas[{{ $index }}][hash_certificado]" value="{{ $hashCert }}" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" placeholder="Hash..." style="font-size: 0.62rem;">
+                                        </td>
+
+                                        <!-- metadata (JSON) -->
+                                        <td class="px-1 py-1 border-end bg-white font-monospace">
+                                            <textarea name="lineas[{{ $index }}][metadata]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{{ $metadataVal }}</textarea>
+                                        </td>
+
+                                        <!-- estadoApi -->
+                                        <td class="px-1 py-1 border-end bg-white text-center">
+                                            <select name="lineas[{{ $index }}][estadoApi]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 {{ $estadoApi == '1' ? 'text-success' : 'text-muted' }}" style="font-size: 0.68rem;">
+                                                <option value="0" {{ $estadoApi == '0' ? 'selected' : '' }}>0 - Pendiente</option>
+                                                <option value="1" {{ $estadoApi == '1' ? 'selected' : '' }}>1 - Pagado</option>
+                                                <option value="2" {{ $estadoApi == '2' ? 'selected' : '' }}>2 - Anulado</option>
+                                            </select>
+                                        </td>
+
+                                        <!-- payload_documento (JSON) -->
+                                        <td class="px-1 py-1 border-end bg-white font-monospace">
+                                            <textarea name="lineas[{{ $index }}][payload_documento]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{{ $payloadVal }}</textarea>
+                                        </td>
+
+                                        <!-- Acciones (Eliminar) -->
+                                        <td class="text-center bg-white p-1">
+                                            <button type="button" class="btn btn-sm btn-light text-danger border-0 p-1 shadow-none" title="Eliminar Fila" onclick="eliminarFilaExcel(this)">
+                                                <i class="fas fa-trash-alt" style="font-size: 0.65rem;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Botón para agregar más filas dinámicamente --}}
+                    <div class="px-3 py-2 bg-white border-top d-flex align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-success fw-medium rounded-1 shadow-sm" onclick="agregarFilaExcel()">
+                            <i class="fas fa-plus me-1"></i> Agregar Fila (car_sia_operaciones_lineas)
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Footer del Modal --}}
+                <div class="modal-header border-top px-4 py-3 bg-light rounded-bottom-3 d-flex justify-content-between align-items-center">
+                    <div class="text-muted" style="font-size: 0.7rem;">
+                        <i class="fas fa-shield-alt text-success me-1"></i> Relaciones de Estados y Tipos vinculadas correctamente.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3 fw-medium rounded-1" onclick="volverASeleccion()">
+                            <i class="fas fa-arrow-left me-1"></i> Atrás
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-dark px-4 fw-bold rounded-1 shadow-sm" onclick="bloquearBotonUI(this, 'Procesando Motor...')">
+                            <i class="fas fa-cogs me-1 text-warning"></i> Ejecutar Motor & Generar Certificado
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 4. MODAL: ASIGNAR NUEVA EXCEPCIÓN / CONFIGURACIÓN                 -->
+    <!-- ================================================================= -->
     <div class="modal fade" id="modalCrearConfiguracion" tabindex="-1" aria-labelledby="modalCrearConfiguracionLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
-                {{-- HEADER DEL MODAL --}}
+                {{-- Header del Modal --}}
                 <div class="modal-header bg-pastel-primary border-bottom-0 pb-3 pt-4 px-4">
                     <h5 class="modal-title fw-bold text-primary" id="modalCrearConfiguracionLabel">
                         <i class="fas fa-tasks me-2"></i> Asignar Reglas de Excepción
@@ -2620,26 +2949,18 @@
                     <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                {{-- FORMULARIO --}}
                 <form action="{{ route('certificados.operaciones.config.individual') }}" method="POST">
                     @csrf
-
-                    {{-- LLAVES FORÁNEAS OCULTAS --}}
                     <input type="hidden" name="id_operacion" value="{{ $operacion->id }}">
 
                     <div class="modal-body bg-light p-4">
-
-                        {{-- ALERTA DE CONTEXTO --}}
                         <div class="alert bg-white border-info border-start border-4 shadow-sm py-2 px-3 mb-4 text-muted" style="font-size: 0.8rem;">
                             <i class="fas fa-info-circle text-info me-2"></i> Estás asignando reglas excepcionales al radicado <strong>{{ $operacion->numero_radicado }}</strong>.
                         </div>
 
                         <div class="row g-4">
-
-                            {{-- COLUMNA IZQUIERDA: Notificaciones, Vigencia y Justificación --}}
+                            {{-- Columna Izquierda: Notificaciones, Vigencia y Justificación --}}
                             <div class="col-md-5">
-
-                                {{-- Switch de Notificaciones --}}
                                 <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded-3 border shadow-sm mb-3">
                                     <div><span class="fw-bold d-block text-dark" style="font-size: 0.85rem;"><i class="fas fa-bell text-warning me-1"></i> Notificaciones</span></div>
                                     <div class="form-check form-switch fs-5 m-0 p-0 d-flex align-items-center gap-2">
@@ -2648,7 +2969,6 @@
                                     </div>
                                 </div>
 
-                                {{-- Vigencia y Justificación --}}
                                 <div class="p-3 bg-white border rounded-3 shadow-sm">
                                     <label class="form-label fw-bold text-dark" style="font-size: 0.85rem;"><i class="fas fa-calendar-alt text-primary me-1"></i> Vigente Hasta <span class="text-muted fw-normal">(Opcional)</span></label>
                                     <input type="date" class="form-control form-control-sm mb-3" name="vigente_hasta" min="{{ date('Y-m-d') }}">
@@ -2657,10 +2977,9 @@
                                     <textarea class="form-control form-control-sm" name="justificacion" rows="3" required placeholder="Motivo por el cual se asignan estas reglas al cliente..."></textarea>
                                     <div class="form-text mt-1" style="font-size: 0.65rem;">Auditor: {{ auth()->user()->name ?? 'N/A' }}</div>
                                 </div>
-
                             </div>
 
-                            {{-- COLUMNA DERECHA: Selección Múltiple de Configuraciones --}}
+                            {{-- Columna Derecha: Selección Múltiple de Configuraciones Base --}}
                             <div class="col-md-7">
                                 <label class="form-label fw-bold text-dark mb-3"><i class="fas fa-list-check text-muted me-1"></i> Selecciona las reglas a aplicar (Múltiple):</label>
 
@@ -2668,7 +2987,6 @@
                                     @if(isset($configuracionesBase) && $configuracionesBase->count() > 0)
                                         @foreach($configuracionesBase as $cfg)
                                             @php
-                                                // Corrección del JSON aplicada aquí también
                                                 $p = is_array($cfg->parametros) ? $cfg->parametros : (json_decode($cfg->parametros, true) ?? []);
                                                 $claseMora = strtolower($p['clasificacion_mora'] ?? 'n/a');
                                                 $diasMax = $p['mora_dias_max'] ?? '0';
@@ -2683,7 +3001,6 @@
                                                 };
                                             @endphp
                                             <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-3 border-0 border-bottom" style="cursor: pointer;">
-                                                {{-- OJO AQUÍ: id_car_sia_config[] es un arreglo ahora --}}
                                                 <input class="form-check-input flex-shrink-0 mt-0" type="checkbox" name="id_car_sia_config[]" value="{{ $cfg->id }}" style="font-size: 1.3rem;">
                                                 <div class="flex-grow-1">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -2709,34 +3026,42 @@
                                     @endif
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
-                    {{-- FOOTER Y BOTONES --}}
                     <div class="modal-footer border-top-0 bg-white px-4 pb-4 pt-3 d-flex justify-content-between">
                         <button type="button" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm border" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
                             <i class="fas fa-save me-2"></i> Guardar Asignaciones
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
-    </di
+    </div>
 
+
+    <!-- ================================================================= -->
+    <!-- 5. MODAL: CAMBIAR ESTADO DE LA OPERACIÓN                          -->
+    <!-- ================================================================= -->
     <div class="modal fade" id="modalTransicionar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('certificados.operaciones.transicionar', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
-                <div class="modal-header border-0 pb-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-exchange-alt text-warning me-2"></i> Cambiar Estado</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-exchange-alt text-warning me-2"></i> Cambiar Estado</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body p-4">
                     <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}">
                     <div class="mb-3">
                         <select name="id_car_sia_estados" id="id_car_sia_estados" class="form-select bg-light border-0" required>
                             <option value="">Seleccione un estado</option>
-                            @isset($estados) @foreach($estados as $estado) <option value="{{ $estado->id }}">{{ $estado->nombre }}</option> @endforeach @endisset
+                            @isset($estados)
+                                @foreach($estados as $estado)
+                                    <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
+                                @endforeach
+                            @endisset
                         </select>
                     </div>
                 </div>
@@ -2748,20 +3073,33 @@
         </div>
     </div>
 
+
+    <!-- ================================================================= -->
+    <!-- 6. MODAL: PROGRAMAR ALERTA                                        -->
+    <!-- ================================================================= -->
     <div class="modal fade" id="modalAlerta" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('certificados.operaciones.programar_alerta', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
-                <div class="modal-header border-0 pb-0 pt-4 px-4"><h5 class="fw-bold mb-0"><i class="fas fa-bell text-info me-2"></i> Programar Alerta</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-bell text-info me-2"></i> Programar Alerta</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body p-4">
                     <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}">
                     <div class="mb-3">
                         <select name="id_car_sia_tipos_alerta" id="id_car_sia_tipos_alerta" class="form-select bg-light border-0" required>
                             <option value="">Seleccione una alerta</option>
-                            @isset($tiposAlerta) @foreach($tiposAlerta as $tipoAlerta) <option value="{{ $tipoAlerta->id }}">{{ $tipoAlerta->nombre }}</option> @endforeach @endisset
+                            @isset($tiposAlerta)
+                                @foreach($tiposAlerta as $tipoAlerta)
+                                    <option value="{{ $tipoAlerta->id }}">{{ $tipoAlerta->nombre }}</option>
+                                @endforeach
+                            @endisset
                         </select>
                     </div>
-                    <div class="mb-0"><input type="date" name="fecha_programada" class="form-control bg-light border-0" required></div>
+                    <div class="mb-0">
+                        <input type="date" name="fecha_programada" class="form-control bg-light border-0" required>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 px-4 pb-4 pt-0">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
@@ -2774,83 +3112,317 @@
 
 
     @push('scripts')
-    <script>
-        $(document).ready(function() {
-            const $modal = $('#modalEditarTercero');
-            const $selects = $('.select2-buscador');
+        <script>
+            /**
+             * =======================================================================
+             * MÓDULO 1: INICIALIZACIÓN DE COMPONENTES DE TERCEROS (SELECT2)
+             * =======================================================================
+             */
+            $(document).ready(function() {
+                const $modal =$('#modalEditarTercero');
+                const $selects =$('.select2-buscador');
 
-            // 1. Inicialización de Select2 dentro del modal
-            $selects.select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: 'Seleccione o busque...',
-                allowClear: true,
-                dropdownParent: $modal
+                if ($selects.length > 0) {$selects.select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        placeholder: 'Seleccione o busque...',
+                        allowClear: true,
+                        dropdownParent: $modal
+                    });
+                }
+
+                function setSelect2Flexible($element, targetValue) {
+                    if (!targetValue || targetValue.trim() === '') {
+                        let bladeSelected = $element.find('option[selected]').val();
+                        if (bladeSelected) {
+                            $element.val(bladeSelected).trigger('change.select2');
+                        }
+                        return;
+                    }
+
+                    let cleanTarget = $.trim(targetValue);
+                    let matchingOption = null;
+
+                    $element.find('option').each(function() {
+                        if ($.trim($(this).val()) === cleanTarget) {
+                            matchingOption = $(this).val();
+                            return false;
+                        }
+                    });
+
+                    if (matchingOption !== null) {
+                        $element.val(matchingOption).trigger('change.select2');
+                    } else {
+                        console.warn("Select2: No se encontró opción coincidente para el valor:", cleanTarget);
+                    }
+                }
+
+                $modal.on('shown.bs.modal', function () {
+                    let distVal = "{{ trim($operacion->tercero->cod_dist ?? '') }}";
+                    let tipoVal = "{{ trim($operacion->tercero->tip_prv ?? '') }}";
+                    let congVal = "{{ trim($operacion->tercero->congrega ?? '') }}";
+
+                    setSelect2Flexible($('#select_cod_dist'), distVal);
+                    setSelect2Flexible($('#select_tip_prv'), tipoVal);
+                    setSelect2Flexible($('#select_congrega'), congVal);
+                });
             });
 
-            // Función para asignar valor de forma segura e insensible a espacios
-            function setSelect2Flexible($element, targetValue) {
-                if (!targetValue || targetValue.trim() === '') {
-                    // Si la variable en JS viene vacía, intentamos rescatar la opción que Blade marcó como 'selected'
-                    let bladeSelected = $element.find('option[selected]').val();
-                    if (bladeSelected) {
-                        $element.val(bladeSelected).trigger('change.select2');
-                    }
+            /**
+             * =======================================================================
+             * CATÁLOGOS INYECTADOS DESDE PHP (Requeridos para las filas dinámicas)
+             * =======================================================================
+             */
+            // Estos catálogos deben estar definidos fuera de la función para que se carguen
+            // una sola vez al abrir la página y puedan ser reutilizados al agregar múltiples filas.
+            const catLineasCredito     = @json($lineasDisponibles ?? []);
+            const catUsuarios          = @json($usuarios ?? []);
+            const catEstados           = @json($estados ?? []);
+            const catTiposGestion      = @json($tiposGestion ?? []);
+            const catTiposCertificados = @json($tiposCertificados ?? []);
+
+            /**
+             * =======================================================================
+             * FUNCIÓN PRINCIPAL: AGREGAR FILA A LA HOJA DE CÁLCULO
+             * =======================================================================
+             * Agrega una nueva fila en blanco a la matriz de trabajo (Modal B).
+             * Dibuja los selectores dinámicos para relaciones (Líneas, Estados, Tipos y Usuarios).
+             */
+            function agregarFilaExcel() {
+                const tbody = document.getElementById('cuerpoTablaLineas');
+                if (!tbody) return;
+
+                // 1. Obtención de datos iniciales
+                const rowIndex = tbody.children.length; // Para mantener la secuencia de los índices del array (0, 1, 2...)
+                const currentUserId = "{{ auth()->id() }}";
+                const numeroBloqueVal = "{{ $operacion->numero_bloque ?? now()->format('YmdHis') }}";
+
+                // 2. Construcción de opciones dinámicas para los menús desplegables (<select>)
+
+                // 2.1 Opciones para Estados
+                let opcionesEstados = '<option value="">Seleccione estado...</option>';
+                catEstados.forEach(est => {
+                    opcionesEstados += `<option value="${est.id}">${est.nombre} (ID: ${est.id})</option>`;
+                });
+
+                // 2.2 Opciones para Cuentas / Líneas de Crédito (Muestra el nombre de la cuenta)
+                let opcionesLineas = '<option value="">Seleccione cuenta...</option>';
+                catLineasCredito.forEach(lin => {
+                    let nombreMostrar = lin.nombre_cuenta || lin.nombre || `Cuenta: ${lin.cuenta}`;
+                    opcionesLineas += `<option value="${lin.cuenta}">${nombreMostrar}</option>`;
+                });
+
+                // 2.3 Opciones para Tipos (Agrupa Gestión y Certificados)
+                let opcionesTipos = '<option value="">Seleccione tipo...</option>';
+                catTiposGestion.forEach(tg => {
+                    opcionesTipos += `<option value="${tg.id}">${tg.nombre} (ID: ${tg.id})</option>`;
+                });
+                catTiposCertificados.forEach(tc => {
+                    opcionesTipos += `<option value="${tc.id}">${tc.nombre} (ID: ${tc.id})</option>`;
+                });
+
+                // 2.4 Opciones para Usuarios (Preselecciona automáticamente al usuario actual)
+                let opcionesUsuarios = '<option value="">Seleccione usuario...</option>';
+                catUsuarios.forEach(usr => {
+                    let selected = (usr.id == currentUserId) ? 'selected' : '';
+                    opcionesUsuarios += `<option value="${usr.id}" ${selected}>${usr.name}</option>`;
+                });
+
+                // 3. Creación del nodo DOM (Fila <tr>)
+                const tr = document.createElement('tr');
+                tr.className = 'sheet-row';
+                tr.style.height = '35px';
+
+                // 4. Inyección del HTML (Celdas estructuradas idénticas a Google Sheets)
+                tr.innerHTML = `
+                    <!-- # Índice -->
+                    <td class="text-center text-muted bg-light fw-bold border-end row-number" style="background-color: #f8fafc !important;">
+                        ${rowIndex + 1}
+                    </td>
+
+                    <!-- id (Autoincremental de la BD, de solo lectura) -->
+                    <td class="px-2 py-1 border-end bg-light font-monospace text-center text-muted" style="font-size: 0.65rem;">
+                        <input type="text" name="lineas[${rowIndex}][id]" class="form-control form-control-sm border-0 bg-transparent text-center text-muted p-0 font-monospace shadow-none" readonly placeholder="Auto" style="font-size: 0.68rem;">
+                    </td>
+
+                    <!-- id_factura (Manual) -->
+                    <td class="px-2 py-1 border-end bg-white">
+                        <input type="number" name="lineas[${rowIndex}][id_factura]" class="form-control form-control-sm border-0 bg-transparent fw-bold text-dark p-0 font-monospace shadow-none" required placeholder="Ej: 101" style="font-size: 0.7rem;">
+                    </td>
+
+                    <!-- id_car_sia_lineas (Select Relacional de Cuentas) -->
+                    <td class="px-2 py-1 border-end bg-white">
+                        <select name="lineas[${rowIndex}][id_car_sia_lineas]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-dark fw-medium py-0 px-1 font-monospace" style="font-size: 0.68rem;" required>
+                            ${opcionesLineas}
+                        </select>
+                    </td>
+
+                    <!-- numero_bloque (Heredado de la operación principal) -->
+                    <td class="px-2 py-1 border-end bg-white text-center">
+                        <input type="number" name="lineas[${rowIndex}][numero_bloque]" value="${numeroBloqueVal}" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" readonly style="font-size: 0.7rem;">
+                    </td>
+
+                    <!-- observacion -->
+                    <td class="px-2 py-1 border-end bg-white">
+                        <input type="text" name="lineas[${rowIndex}][observacion]" class="form-control form-control-sm border-0 bg-transparent p-0 shadow-none" placeholder="Escribir nota..." style="font-size: 0.68rem;">
+                    </td>
+
+                    <!-- calificacion (Catálogo estático) -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <select name="lineas[${rowIndex}][calificacion]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-medium py-0 px-1" style="font-size: 0.68rem;">
+                            <option value="Bueno" selected>Bueno</option>
+                            <option value="Regular">Regular</option>
+                            <option value="Atencion Especial">Atención Especial</option>
+                            <option value="Restringido">Restringido</option>
+                            <option value="Irregular">Irregular</option>
+                        </select>
+                    </td>
+
+                    <!-- fecha_venci -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <input type="date" name="lineas[${rowIndex}][fecha_venci]" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" style="font-size: 0.65rem;">
+                    </td>
+
+                    <!-- id_car_sia_estados (Select Relacional de Estados) -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <select name="lineas[${rowIndex}][id_car_sia_estados]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 text-primary" style="font-size: 0.68rem;" required>
+                            ${opcionesEstados}
+                        </select>
+                    </td>
+
+                    <!-- fecha_ultimo_recordatorio -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <input type="datetime-local" name="lineas[${rowIndex}][fecha_ultimo_recordatorio]" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" style="font-size: 0.6rem;">
+                    </td>
+
+                    <!-- dias_mora_automaticos -->
+                    <td class="px-2 py-1 border-end bg-white text-center">
+                        <input type="number" name="lineas[${rowIndex}][dias_mora_automaticos]" value="0" class="form-control form-control-sm border-0 bg-transparent text-center p-0 font-monospace shadow-none" min="0" style="font-size: 0.7rem;">
+                    </td>
+
+                    <!-- id_user (Select Relacional de Usuarios) -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <select name="lineas[${rowIndex}][id_user]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-medium py-0 px-1 text-dark" style="font-size: 0.68rem;" required>
+                            ${opcionesUsuarios}
+                        </select>
+                    </td>
+
+                    <!-- id_car_sia_tipos (Select Relacional de Tipos) -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <select name="lineas[${rowIndex}][id_car_sia_tipos]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 text-success" style="font-size: 0.68rem;" required>
+                            ${opcionesTipos}
+                        </select>
+                    </td>
+
+                    <!-- hash_certificado -->
+                    <td class="px-1 py-1 border-end bg-white font-monospace">
+                        <input type="text" name="lineas[${rowIndex}][hash_certificado]" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" placeholder="Hash..." style="font-size: 0.62rem;">
+                    </td>
+
+                    <!-- metadata (JSON) -->
+                    <td class="px-1 py-1 border-end bg-white font-monospace">
+                        <textarea name="lineas[${rowIndex}][metadata]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"config_base": true}</textarea>
+                    </td>
+
+                    <!-- estadoApi (Catálogo estático) -->
+                    <td class="px-1 py-1 border-end bg-white text-center">
+                        <select name="lineas[${rowIndex}][estadoApi]" class="form-select form-select-sm border-0 bg-transparent shadow-none text-center fw-semibold py-0 px-1 text-muted" style="font-size: 0.68rem;">
+                            <option value="0" selected>0 - Pendiente</option>
+                            <option value="1">1 - Pagado</option>
+                            <option value="2">2 - Anulado</option>
+                        </select>
+                    </td>
+
+                    <!-- payload_documento (JSON) -->
+                    <td class="px-1 py-1 border-end bg-white font-monospace">
+                        <textarea name="lineas[${rowIndex}][payload_documento]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace shadow-none" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"tipo_emision": "manual", "version": "1.0"}</textarea>
+                    </td>
+
+                    <!-- Botón Eliminar Fila -->
+                    <td class="text-center bg-white p-1">
+                        <button type="button" class="btn btn-sm btn-light text-danger border-0 p-1 shadow-none" title="Eliminar Fila" onclick="eliminarFilaExcel(this)">
+                            <i class="fas fa-trash-alt" style="font-size: 0.65rem;"></i>
+                        </button>
+                    </td>
+                `;
+
+                // 5. Inserción en el DOM
+                tbody.appendChild(tr);
+
+                // 6. Actualización de contadores y nomenclaturas de la matriz para Laravel
+                actualizarNumerosFilas();
+            }
+
+            /**
+             * Elimina una fila específica de la hoja de cálculo tras validación de mínimo una fila.
+             */
+            function eliminarFilaExcel(btn) {
+                const tr = btn.closest('tr');
+                const tbody = tr.parentNode;
+
+                if (tbody.children.length === 1) {
+                    alert('Debe mantener al menos una fila en la hoja de trabajo.');
                     return;
                 }
 
-                let cleanTarget = $.trim(targetValue);
-                let matchingOption = null;
-
-                // Buscamos cuál <option> coincide limpiando espacios en ambos lados
-                $element.find('option').each(function() {
-                    if ($.trim($(this).val()) === cleanTarget) {
-                        matchingOption = $(this).val();
-                        return false; // Romper loop
-                    }
-                });
-
-                if (matchingOption !== null) {
-                    $element.val(matchingOption).trigger('change.select2');
-                } else {
-                    console.warn("Select2: No se encontró opción coincidente para el valor:", cleanTarget);
-                }
+                tr.remove();
+                actualizarNumerosFilas();
             }
 
-            // 2. Evento al abrir el modal
-            $modal.on('shown.bs.modal', function () {
-                let distVal = "{{ trim($operacion->tercero->cod_dist ?? '') }}";
-                let tipoVal = "{{ trim($operacion->tercero->tip_prv ?? '') }}";
-                let congVal = "{{ trim($operacion->tercero->congrega ?? '') }}";
+            /**
+             * Actualiza el índice visual (#) y reindexa los atributos 'name' de los inputs para Laravel.
+             */
+            function actualizarNumerosFilas() {
+                const rows = document.querySelectorAll('#cuerpoTablaLineas tr.sheet-row');
 
-                setSelect2Flexible($('#select_cod_dist'), distVal);
-                setSelect2Flexible($('#select_tip_prv'), tipoVal);
-                setSelect2Flexible($('#select_congrega'), congVal);
-            });
-        });
-    </script>
+                rows.forEach((row, index) => {
+                    const rowNumCell = row.querySelector('.row-number');
+                    if (rowNumCell) {
+                        rowNumCell.textContent = index + 1;
+                    }
+
+                    row.querySelectorAll('input, select, textarea').forEach(el => {
+                        let name = el.getAttribute('name');
+                        if (name) {
+                            el.setAttribute('name', name.replace(/\[\d+\]/, `[${index}]`));
+                        }
+                    });
+                });
+
+                const info = document.getElementById('contadorFilasInfo');
+                if (info) {
+                    info.textContent = `Filas activas: ${rows.length}`;
+                }
+            }
+        </script>
     @endpush
 
     <script>
-        // 1. BLOQUEO GLOBAL DE FORMULARIOS: Impide por completo cualquier doble POST en toda la vista
+        /**
+         * =======================================================================
+         * MÓDULO 2: UTILIDADES GLOBALES (BLOQUEOS, PESTAÑAS Y MODALES)
+         * =======================================================================
+         */
         document.addEventListener('DOMContentLoaded', function () {
+
+            // 2.1 BLOQUEO GLOBAL DE FORMULARIOS: Impide el doble POST
             document.querySelectorAll('form').forEach(form => {
                 form.addEventListener('submit', function (e) {
-                    // Si ya se está enviando, bloqueamos la ejecución extra
+                    // Prevenir ejecución si ya está procesando
                     if (form.classList.contains('form-is-submitting')) {
                         e.preventDefault();
                         return;
                     }
                     form.classList.add('form-is-submitting');
 
-                    // Buscamos el botón "submit" para deshabilitarlo visualmente
+                    // Feedback visual en el botón de submit
                     const submitBtn = form.querySelector('[type="submit"]');
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Procesando...';
                     }
 
-                    // Acciones visuales exclusivas para el generador de PDF
+                    // Excepción/Lógica específica para la generación de PDF
                     if (form.id === 'formGenerarCertificado') {
                         document.getElementById('btnCancelCertificado').classList.add('d-none');
                         document.getElementById('loadingCertificado').classList.remove('d-none');
@@ -2858,23 +3430,21 @@
                 });
             });
 
-            // =========================================================================
-            // LÓGICA DE MEMORIA DE PESTAÑAS (Para volver a la última pestaña abierta)
-            // =========================================================================
+            // 2.2 LÓGICA DE MEMORIA DE PESTAÑAS (Session Storage)
             const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
-            // Usamos un ID único combinando con el de la operación para evitar cruces
+            // Identificador único para aislar las pestañas por operación
             const sessionKey = 'activeTab_Operacion_{{ $operacion->id }}';
             const activeTabId = sessionStorage.getItem(sessionKey);
 
+            // Restaurar pestaña activa si existe en sesión
             if (activeTabId) {
                 const targetTab = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
                 if (targetTab) {
-                    // Usando la forma nativa de Bootstrap para cambiar la pestaña activa en JS
                     targetTab.click();
                 }
             }
 
-            // Escuchar cambios para guardar en sesión
+            // Guardar la pestaña activa al cambiar
             tabButtons.forEach(tab => {
                 tab.addEventListener('shown.bs.tab', function (event) {
                     const targetId = event.target.getAttribute('data-bs-target');
@@ -2883,7 +3453,11 @@
             });
         });
 
-        // 2. FUNCIÓN DE ENVÍO REMOTO: Para modales aislados que envían formularios padres
+        /**
+         * Envía un formulario desde fuera de su etiqueta <form>, ideal para botones en footers de modales.
+         * @param {string} formId - ID del formulario a enviar.
+         * @param {HTMLElement} btn - Botón que disparó la acción.
+         */
         function enviarFormularioRemoto(formId, btn) {
             const form = document.getElementById(formId);
             if (!form || form.classList.contains('form-is-submitting')) return;
@@ -2892,14 +3466,21 @@
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Guardando...';
 
-            // Ocultar el botón cancelar del modal
+            // Ocultar botón de cancelar contiguo para evitar interrupciones
             const btnCancel = btn.previousElementSibling;
             if (btnCancel) btnCancel.style.display = 'none';
 
             form.submit();
         }
 
-        // 3. BLOQUEO DE ENLACES EXTERNOS (PDF/Reportes): Evita múltiples peticiones GET simultáneas
+        /**
+         * Bloquea temporalmente un botón para evitar clics múltiples en peticiones GET (Ej: Descargas).
+         * Nota: Esta función se re-declara más abajo. La versión de abajo sobrescribirá esta en ejecución.
+         *
+         * @param {HTMLElement} btn - Botón a bloquear.
+         * @param {string} loadingText - Texto opcional a mostrar durante la carga.
+         * @returns {boolean} - Retorna false si ya estaba bloqueado, true si procedió.
+         */
         function bloquearBotonUI(btn, loadingText = '') {
             if (btn.classList.contains('form-is-submitting')) return false;
 
@@ -2908,15 +3489,21 @@
             btn.style.pointerEvents = 'none';
             btn.innerHTML = `<i class='fas fa-spinner fa-spin ${loadingText ? "me-2" : ""}'></i> ${loadingText}`;
 
-            // Reactivamos el botón después de 3 segundos (tiempo estimado de generación)
+            // Reactivación automática tras 3 segundos (estimación de respuesta de descargas)
             setTimeout(() => {
                 btn.classList.remove('form-is-submitting');
                 btn.style.pointerEvents = 'auto';
                 btn.innerHTML = originalContent;
             }, 3000);
+
             return true;
         }
 
+        /**
+         * Alterna la interfaz entre vista de PDF y vista de Datos.
+         * @param {string} mode - Modo a visualizar ('pdf' o 'data').
+         * @param {string|number} certId - Identificador del certificado para encontrar los contenedores.
+         */
         function toggleMode(mode, certId) {
             const btnPdf = document.getElementById('btnModePdf_' + certId);
             const btnData = document.getElementById('btnModeData_' + certId);
@@ -2924,13 +3511,25 @@
             const containerData = document.getElementById('dataEditorContainer_' + certId);
 
             if (mode === 'pdf') {
-                btnPdf.classList.replace('btn-light', 'btn-danger'); btnPdf.classList.replace('text-danger', 'text-white');
-                btnData.classList.replace('btn-success', 'btn-light'); btnData.classList.replace('text-white', 'text-success');
-                containerPdf.classList.remove('d-none'); containerData.classList.add('d-none');
+                // Estilos botón PDF (Activo)
+                btnPdf.classList.replace('btn-light', 'btn-danger');
+                btnPdf.classList.replace('text-danger', 'text-white');
+                // Estilos botón Data (Inactivo)
+                btnData.classList.replace('btn-success', 'btn-light');
+                btnData.classList.replace('text-white', 'text-success');
+                // Visibilidad
+                containerPdf.classList.remove('d-none');
+                containerData.classList.add('d-none');
             } else {
-                btnData.classList.replace('btn-light', 'btn-success'); btnData.classList.replace('text-success', 'text-white');
-                btnPdf.classList.replace('btn-danger', 'btn-light'); btnPdf.classList.replace('text-white', 'text-danger');
-                containerData.classList.remove('d-none'); containerPdf.classList.add('d-none');
+                // Estilos botón Data (Activo)
+                btnData.classList.replace('btn-light', 'btn-success');
+                btnData.classList.replace('text-success', 'text-white');
+                // Estilos botón PDF (Inactivo)
+                btnPdf.classList.replace('btn-danger', 'btn-light');
+                btnPdf.classList.replace('text-white', 'text-danger');
+                // Visibilidad
+                containerData.classList.remove('d-none');
+                containerPdf.classList.add('d-none');
             }
         }
     </script>
@@ -2939,9 +3538,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
+        /**
+         * =======================================================================
+         * MÓDULO 3: GRÁFICOS Y ESTADÍSTICAS (CHART.JS)
+         * =======================================================================
+         */
         document.addEventListener('DOMContentLoaded', function() {
 
-            // --- GRÁFICO 1: COMPOSICIÓN DE CARTERA (Doughnut) ---
+            // 3.1 GRÁFICO 1: COMPOSICIÓN DE CARTERA (Doughnut)
             const ctxCartera = document.getElementById('chartCartera');
             if (ctxCartera) {
                 new Chart(ctxCartera.getContext('2d'), {
@@ -2965,12 +3569,12 @@
                         plugins: {
                             legend: { position: 'bottom' }
                         },
-                        cutout: '70%'
+                        cutout: '70%' // Grosor del gráfico de anillo
                     }
                 });
             }
 
-            // --- GRÁFICO 2: DISTRIBUCIÓN DE EVENTOS (Barras) ---
+            // 3.2 GRÁFICO 2: DISTRIBUCIÓN DE EVENTOS (Barras)
             const ctxEventos = document.getElementById('chartEventos');
             if (ctxEventos) {
                 const eventosLabels = {!! json_encode($chartEventosData->keys()) !!};
@@ -2984,7 +3588,7 @@
                             label: 'Cantidad de Eventos',
                             data: eventosData,
                             backgroundColor: '#3b82f6', // Azul
-                            borderRadius: 6,
+                            borderRadius: 6, // Bordes redondeados en las barras
                             barPercentage: 0.5
                         }]
                     },
@@ -2992,15 +3596,15 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false } // Se oculta porque solo hay un dataset
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                ticks: { precision: 0 } // Para que muestre números enteros (0, 1, 2...)
+                                ticks: { precision: 0 } // Fuerzo números enteros (0, 1, 2...)
                             },
                             x: {
-                                grid: { display: false }
+                                grid: { display: false } // Diseño más limpio sin líneas verticales
                             }
                         }
                     }
@@ -3009,32 +3613,35 @@
         });
     </script>
 
-    <!-- ========================================== -->
-    <!-- SCRIPTS PARA INTERACTIVIDAD DE LA TABLA    -->
-    <!-- ========================================== -->
     <script>
-        function toggleParametros(targetId, element) {
-            // Obtenemos el <tr> que contiene el formulario oculto
-            var targetRow = document.getElementById(targetId);
+        /**
+         * =======================================================================
+         * MÓDULO 4: INTERACTIVIDAD DE TABLAS Y PETICIONES API (FETCH)
+         * =======================================================================
+         */
 
-            // Obtenemos el ícono de la fila que acabamos de hacer clic
+        /**
+         * Despliega u oculta una fila de parámetros (formulario colapsable en tabla).
+         * @param {string} targetId - ID de la fila (<tr>) a alternar.
+         * @param {HTMLElement} element - Elemento que disparó el evento (para animar ícono).
+         */
+        function toggleParametros(targetId, element) {
+            var targetRow = document.getElementById(targetId);
             var icon = element.querySelector('.icon-toggle');
 
-            // Verificamos el estado actual para alternarlo
             if (targetRow.style.display === 'none' || targetRow.style.display === '') {
-                // Es MUY importante usar 'table-row' y no 'block' para que no se rompa la tabla
+                // IMPORTANTE: Se usa 'table-row' y no 'block' para preservar la estructura de la tabla
                 targetRow.style.display = 'table-row';
 
-                // Cambiar ícono a flecha arriba
+                // Animación: Flecha arriba indicando que se puede contraer
                 if (icon) {
                     icon.classList.remove('fa-chevron-circle-down');
                     icon.classList.add('fa-chevron-circle-up');
                 }
             } else {
-                // Ocultar la fila
                 targetRow.style.display = 'none';
 
-                // Cambiar ícono a flecha abajo
+                // Animación: Flecha abajo indicando que se puede expandir
                 if (icon) {
                     icon.classList.remove('fa-chevron-circle-up');
                     icon.classList.add('fa-chevron-circle-down');
@@ -3042,37 +3649,41 @@
             }
         }
 
-        // ========================================== -->
-        // FUNCIÓN PARA ACTUALIZAR ESTADO API DIRECTO  -->
-        // ========================================== -->
+        /**
+         * Actualiza el estado de una factura directamente vía Fetch API y
+         * actualiza dinámicamente varios campos de la fila (mora, calificación, etc).
+         *
+         * @param {HTMLSelectElement} selectElement - El select que disparó el cambio.
+         * @param {number|string} idFactura - ID de la factura a actualizar.
+         * @param {number|string} numeroBloque - Identificador del bloque asociado.
+         */
         function actualizarEstadoApiDirecto(selectElement, idFactura, numeroBloque) {
             const nuevoEstado = selectElement.value;
+            const fila = selectElement.closest('tr'); // Fila actual para contexto del DOM
 
-            // Encontramos la fila (tr) actual de la tabla para manipular sus campos visualmente
-            const fila = selectElement.closest('tr');
-
-            // Cambiar visualmente el estilo de forma inmediata mientras responde el servidor
+            // --- ACTUALIZACIÓN OPTIMISTA DE LA INTERFAZ ---
+            // Si el estado es "1" (Éxito/Pagado)
             if (nuevoEstado == '1') {
+                // Cambio visual del select principal a verde
                 selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 text-success';
 
                 if (fila) {
-                    // 1. Poner el campo de Mora en 0 automáticamente
+                    // Paso A: Poner mora en 0
                     const inputMora = fila.querySelector('input[name*="[dias_mora_automaticos]"]');
                     if (inputMora) {
                         inputMora.value = 0;
                         inputMora.dispatchEvent(new Event('input', { bubbles: true }));
                     }
 
-                    // 2. Cambiar la Calificación a "Bueno" automáticamente
+                    // Paso B: Calificar automáticamente como "Bueno"
                     const selectCalificacion = fila.querySelector('select[name*="[calificacion]"]');
                     if (selectCalificacion) {
                         selectCalificacion.value = 'Bueno';
-                        // Actualizamos su clase de color a verde (text-success)
                         selectCalificacion.className = 'form-select form-select-sm border-0 shadow-none bg-transparent px-1 text-center text-success';
                         selectCalificacion.dispatchEvent(new Event('change', { bubbles: true }));
                     }
 
-                    // 3. Poner la fecha actual en Últ. Rec. (fecha_ultimo_recordatorio)
+                    // Paso C: Registrar fecha actual
                     const inputUltRec = fila.querySelector('input[name*="[fecha_ultimo_recordatorio]"]');
                     if (inputUltRec) {
                         const hoy = new Date();
@@ -3082,30 +3693,29 @@
                         inputUltRec.value = `${anio}-${mes}-${dia}`;
                     }
 
-                    // 4. Construir la observación en el último campo de la fila
+                    // Paso D: Concatenar log de observación sin borrar lo anterior
                     const inputObservacion = fila.querySelector('input[name*="[observacion]"]');
                     if (inputObservacion) {
                         const fechaActualFormateada = new Date().toLocaleDateString();
                         let textoActual = inputObservacion.value.trim();
                         const mensajePago = `Pago registrado el ${fechaActualFormateada}. Calificado como Bueno, mora ajustada a 0.`;
 
-                        // Si ya tenía texto, lo acumulamos ordenadamente; si está vacío, colocamos el mensaje directo
                         if (textoActual !== '' && !textoActual.includes('Pago registrado')) {
                             inputObservacion.value = textoActual + " - " + mensajePago;
                         } else if (textoActual === '') {
                             inputObservacion.value = mensajePago;
                         }
 
-                        // Actualizamos el title para que se visualice completo al pasar el mouse
+                        // Actualizar tooltip
                         inputObservacion.setAttribute('title', inputObservacion.value);
                     }
                 }
-
             } else {
+                // Si el estado no es "1", vuelve al diseño neutro/gris
                 selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 text-muted';
             }
 
-            // Construir la URL usando la ruta nombrada de Laravel
+            // --- PETICIÓN AL SERVIDOR (FETCH) ---
             const url = `{{ route('certificados.operaciones.estado_api.bloque', ['idFactura' => ':id', 'numeroBloque' => ':bloque']) }}`
                         .replace(':id', idFactura)
                         .replace(':bloque', numeroBloque);
@@ -3126,9 +3736,91 @@
                 }
             })
             .catch(error => {
-                console.error('Error de red:', error);
+                console.error('Error de red al actualizar estado API:', error);
                 alert('Ocurrió un error de red al intentar actualizar el estado API.');
             });
+        }
+    </script>
+
+    <script>
+        /**
+         * =======================================================================
+         * MÓDULO 5: NAVEGACIÓN ENTRE MODALES ANIDADOS
+         * =======================================================================
+         */
+
+        /**
+         * Valida la selección del desplegable y da paso al Modal B de Previsualización de forma limpia.
+         */
+        function validarYContinuarGestion() {
+            const select = document.getElementById('selectTipoGestionModal');
+            const tipoId = select.value;
+
+            // 1. Validación UX: Si no selecciona nada, avisa y detiene el proceso
+            if (!tipoId) {
+                alert('Por favor, seleccione un tipo de certificado antes de continuar.');
+                select.focus();
+                return;
+            }
+
+            // 2. Asignar el ID elegido al input oculto del Modal B (Previsualización)
+            document.getElementById('inputTipoCertificado').value = tipoId;
+
+            // 3. Obtener instancias de Bootstrap de ambos modales de forma segura
+            const elModalSeleccion = document.getElementById('modalSeleccionTipo');
+            const modalSeleccionInstance = bootstrap.Modal.getInstance(elModalSeleccion) || new bootstrap.Modal(elModalSeleccion);
+
+            const elModalGestion = document.getElementById('modalGestion');
+            const modalGestionInstance = bootstrap.Modal.getInstance(elModalGestion) || new bootstrap.Modal(elModalGestion);
+
+            // 4. Ocultar el modal A y abrir el modal B al terminar la transición (evita conflictos de backdrop)
+            modalSeleccionInstance.hide();
+
+            // Pequeño retardo nativo para permitir que Bootstrap limpie el DOM y abra el siguiente modal sin fallar
+            setTimeout(() => {
+                modalGestionInstance.show();
+            }, 150);
+        }
+
+        /**
+         * Pasa de la selección de tipo de certificado al formulario de gestión directo.
+         * @param {string|number} tipoId - ID del tipo de certificado seleccionado.
+         */
+        function abrirPrevisualizacion(tipoId) {
+            // 1. Asignar el ID elegido al input oculto del Modal B
+            document.getElementById('inputTipoCertificado').value = tipoId;
+
+            // 2. Ocultar Modal A
+            let modalSeleccion = bootstrap.Modal.getInstance(document.getElementById('modalSeleccionTipo'));
+            modalSeleccion.hide();
+
+            // 3. Mostrar Modal B
+            let modalGestion = new bootstrap.Modal(document.getElementById('modalGestion'));
+            modalGestion.show();
+        }
+
+        /**
+         * Retrocede del Modal B (Gestión) al Modal A (Selección).
+         */
+        function volverASeleccion() {
+            // Regresar del Modal B al Modal A
+            let modalGestion = bootstrap.Modal.getInstance(document.getElementById('modalGestion'));
+            modalGestion.hide();
+
+            let modalSeleccion = new bootstrap.Modal(document.getElementById('modalSeleccionTipo'));
+            modalSeleccion.show();
+        }
+
+        /**
+         * Bloquea el botón y envía el formulario padre de forma directa.
+         *
+         * @param {HTMLElement} button - Botón a bloquear
+         * @param {string} texto - Texto a mostrar durante la carga
+         */
+        function bloquearBotonUI(button, texto) {
+            button.disabled = true;
+            button.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> ${texto}`;
+            button.closest('form').submit();
         }
     </script>
 
