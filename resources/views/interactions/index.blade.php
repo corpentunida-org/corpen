@@ -20,15 +20,15 @@
     @php
         // IDs para inicializar las tablas mediante AJAX
         // Orden pedido: Vencidos abre por defecto (el primero es el que nace "show active" más
-        // abajo), luego Pendientes, Hoy, Próximos a vencer, Exitosos, y Todos al final (es la
-        // general, el catálogo completo sin filtrar).
+        // abajo), luego Pendientes, Hoy, Próximos a vencer, Exitosos. El catálogo completo sin
+        // filtrar ("Todos") vive aparte, en Auditoría (interactions.auditoria) — con filtros
+        // finos de usuario/área/cliente/distrito/canal/motivo/resultado que no cabían aquí.
         $tabs = [
             'overdue' => 'tablaVencidos',
             'pending' => 'tablaPendientes',
             'today' => 'tablaHoy',
             'upcoming' => 'tablaProximos',
             'success' => 'tablaExitosos',
-            'all' => 'tablaPrincipal',
         ];
         // Vencidos/Próximos muestran la agenda de seguimiento (a quién se le prometió qué y
         // cuándo), no las columnas genéricas de canal/motivo — son la lista de trabajo del día.
@@ -93,7 +93,7 @@
         <div class="card-body p-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                    <h5 class="fw-bold mb-1">Listado de Interacciones</h5>
+                    <h5 class="fw-bold mb-1">Mis Interacciones</h5>
                     <p class="text-muted mb-0 small">Gestiona y monitorea todas las interacciones con clientes</p>
                 </div>
                 <div class="d-flex gap-2">
@@ -115,7 +115,7 @@
                         aria-selected="true">
                         <i class="feather-alert-triangle me-2"></i>
                         VENCIDOS
-                        <span class="badge bg-soft-danger text-danger">
+                        <span class="badge bg-soft-danger text-danger" id="badge-overdue">
                             {{ $stats['overdue'] ?? 0 }}
                         </span>
                     </button>
@@ -126,7 +126,7 @@
                         aria-selected="false">
                         <i class="feather-clock me-2"></i>
                         PENDIENTES
-                        <span class="badge bg-soft-warning text-warning">
+                        <span class="badge bg-soft-warning text-warning" id="badge-pending">
                             {{ $stats['pending'] }}
                         </span>
                     </button>
@@ -137,7 +137,7 @@
                         aria-selected="false">
                         <i class="feather-calendar me-2"></i>
                         HOY
-                        <span class="badge bg-soft-primary text-primary">
+                        <span class="badge bg-soft-primary text-primary" id="badge-today">
                             {{ $stats['today'] }}
                         </span>
                     </button>
@@ -148,7 +148,7 @@
                         aria-selected="false">
                         <i class="feather-clock me-2"></i>
                         PRÓXIMOS A VENCER
-                        <span class="badge bg-soft-info text-info">
+                        <span class="badge bg-soft-info text-info" id="badge-upcoming">
                             {{ $stats['upcoming'] ?? 0 }}
                         </span>
                     </button>
@@ -161,17 +161,6 @@
                         MIS EXITOSOS
                         <span class="badge bg-soft-teal text-success">
                             {{ $stats['successful'] }}
-                        </span>
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link pastel-tab" id="tab-all-tab" data-bs-toggle="tab"
-                        data-bs-target="#tab-all" type="button" role="tab" aria-controls="tab-all"
-                        aria-selected="false">
-                        <i class="feather-inbox me-2"></i>
-                        TODOS
-                        <span class="badge bg-soft-teal text-teal">
-                            {{ $stats['total'] }}
                         </span>
                     </button>
                 </li>
@@ -203,37 +192,6 @@
                 </div>
             @endif
             <input type="hidden" id="modoActual" value="{{ $modo }}">
-
-            @if ($modo !== 'propias')
-                {{-- Filtro fino por usuario (y por área, solo en modo "Todos"): acota dentro de lo
-                     que "Ver" ya dejó visible. Aplica a Todos, Vencidos y Pendientes (JS lo
-                     muestra/oculta según la pestaña). --}}
-                <div class="d-flex flex-wrap align-items-end gap-2 mb-3 d-none" id="filtroAgendaUsuarioArea">
-                    <div>
-                        <label class="form-label fw-semibold text-muted small mb-1">Usuario</label>
-                        <select class="form-select form-select-sm pastel-input" id="filterAgendaAgente" style="min-width: 200px;">
-                            <option value="">{{ $modo === 'todos' ? 'Todos' : 'Toda mi área' }}</option>
-                            @foreach ($listAgentesAgenda as $agente)
-                                <option value="{{ $agente->id }}">{{ $agente->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    @if ($modo === 'todos')
-                        <div>
-                            <label class="form-label fw-semibold text-muted small mb-1">Área</label>
-                            <select class="form-select form-select-sm pastel-input" id="filterAgendaArea" style="min-width: 180px;">
-                                <option value="">Todas</option>
-                                @foreach ($listAreasAgenda as $area)
-                                    <option value="{{ $area }}">{{ strtoupper($area) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="limpiarFiltroAgenda">
-                        <i class="feather-x me-1"></i>Quitar filtro
-                    </button>
-                </div>
-            @endif
 
             {{-- Contenido limpio de las tablas (DataTables llenará los tbody mediante AJAX) --}}
             <div class="tab-content" id="interactionTabsContent">
@@ -524,11 +482,6 @@
                                     d.start_date = $('#filterFechaInicio').val();
                                     d.end_date = $('#filterFechaFin').val();
                                 }
-                                // Filtro por usuario/área: Todos, Vencidos y Pendientes.
-                                if (tabType === 'overdue' || tabType === 'pending' || tabType === 'all') {
-                                    d.agent_id = $('#filterAgendaAgente').val();
-                                    d.area_id = $('#filterAgendaArea').val();
-                                }
                                 // d.search.value is handled by DataTables automatically
                             }
                         },
@@ -645,36 +598,16 @@
                 // Inicializar primera tabla (Vencidos: la pestaña que abre por defecto)
                 setTimeout(() => initializeDataTable('#tablaVencidos', 'overdue'), 300);
 
-                // El filtro por usuario/área aplica a Todos, Vencidos y Pendientes (si el modo es
-                // "propias" o el usuario no tiene el permiso, ese bloque no se renderizó, el
-                // elemento no existe y esto simplemente no hace nada).
-                function toggleFiltroAgenda(tab) {
-                    $('#filtroAgendaUsuarioArea').toggleClass('d-none', !['overdue', 'pending', 'all'].includes(tab));
-                }
-                toggleFiltroAgenda('overdue'); // estado inicial: Vencidos abre activo
-
                 // Eventos de pestañas
                 document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function(tabElement) {
                     tabElement.addEventListener('shown.bs.tab', function(event) {
                         const targetPaneId = event.target.getAttribute('data-bs-target');
-                        if (targetPaneId === '#tab-all') initializeDataTable('#tablaPrincipal', 'all');
-                        else if (targetPaneId === '#tab-success') initializeDataTable('#tablaExitosos', 'success');
+                        if (targetPaneId === '#tab-success') initializeDataTable('#tablaExitosos', 'success');
                         else if (targetPaneId === '#tab-pending') initializeDataTable('#tablaPendientes', 'pending');
                         else if (targetPaneId === '#tab-today') initializeDataTable('#tablaHoy', 'today');
                         else if (targetPaneId === '#tab-overdue') initializeDataTable('#tablaVencidos', 'overdue');
                         else if (targetPaneId === '#tab-upcoming') initializeDataTable('#tablaProximos', 'upcoming');
-                        toggleFiltroAgenda(targetPaneId.replace('#tab-', ''));
                     });
-                });
-
-                // Cambiar usuario/área o "Quitar filtro" vuelve a pedir los datos de la tabla
-                // activa (currentTable.draw() relee los selects vía ajax.data de arriba).
-                $('#filterAgendaAgente, #filterAgendaArea').on('change', function () {
-                    if (currentTable) currentTable.draw();
-                });
-                $('#limpiarFiltroAgenda').on('click', function () {
-                    $('#filterAgendaAgente, #filterAgendaArea').val('');
-                    if (currentTable) currentTable.draw();
                 });
 
                 // Botones de filtro

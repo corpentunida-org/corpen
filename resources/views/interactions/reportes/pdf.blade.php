@@ -138,7 +138,8 @@
         <thead>
             <tr>
                 <th width="5%" class="text-center">#</th>
-                <th width="25%">Nombre del Agente</th>
+                <th width="20%">Nombre del Agente</th>
+                <th width="12%">Área</th>
                 <th class="text-center">Total</th>
                 <th class="text-center">Éxito</th>
                 <th class="text-center">Vencidas</th>
@@ -183,6 +184,7 @@
                 <tr>
                     <td class="text-center">{!! $rankDisplay !!}</td>
                     <td><strong>{{ $agente->nombre }}</strong></td>
+                    <td>{{ $agente->area }}</td>
                     <td class="text-center">{{ $agente->total }}</td>
                     <td class="text-center"><span class="badge bg-green">{{ $agente->exitosas }}</span></td>
                     <td class="text-center">
@@ -206,7 +208,60 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="text-center">No hay datos de agentes para mostrar.</td></tr>
+                <tr><td colspan="8" class="text-center">No hay datos de agentes para mostrar.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    {{-- NUEVO: Indicadores por Área — mismas métricas que la tabla de agentes, sumadas por área,
+         para comparar Cartera vs Seguros (o las que se activen) sin sumar filas a mano. Si el
+         informe está acotado a una sola área (o a un solo agente), esta tabla sale con una sola
+         fila — sigue siendo correcta, solo que no hay nada que comparar. --}}
+    <div class="section-title" style="margin-top: 20px;">Indicadores por Área</div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th width="20%">Área</th>
+                <th class="text-center">Agentes</th>
+                <th class="text-center">Total</th>
+                <th class="text-center">Éxito</th>
+                <th class="text-center">Pendientes</th>
+                <th class="text-center">Vencidas</th>
+                <th width="20%">Nivel de Efectividad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($areasAuditoria as $area)
+                @php
+                    $colorClassArea = 'color-warning';
+                    if ($area->efectividad >= 75) $colorClassArea = 'color-success';
+                    if ($area->efectividad < 50) $colorClassArea = 'color-danger';
+                @endphp
+                <tr>
+                    <td><strong>{{ $area->area }}</strong></td>
+                    <td class="text-center">{{ $area->agentes }}</td>
+                    <td class="text-center">{{ $area->total }}</td>
+                    <td class="text-center"><span class="badge bg-green">{{ $area->exitosas }}</span></td>
+                    <td class="text-center">{{ $area->pendientes }}</td>
+                    <td class="text-center">
+                        @if($area->vencidas > 0)
+                            <span class="badge bg-red">{{ $area->vencidas }}</span>
+                        @else
+                            <span style="color: #cbd5e0;">-</span>
+                        @endif
+                    </td>
+                    <td>
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
+                            <span>Efectividad</span>
+                            <strong>{{ $area->efectividad }}%</strong>
+                        </div>
+                        <div class="progress-bg">
+                            <div class="progress-bar {{ $colorClassArea }}" style="width: {{ $area->efectividad }}%;"></div>
+                        </div>
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="7" class="text-center">No hay datos por área para mostrar.</td></tr>
             @endforelse
         </tbody>
     </table>

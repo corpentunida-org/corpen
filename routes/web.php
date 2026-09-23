@@ -874,6 +874,10 @@ Route::prefix('interactions')
             // 📄 Página principal (lista de interacciones)
             Route::get('/', [InteractionController::class, 'index'])->name('index');
 
+            // 🔎 Auditoría: el listado completo con filtros finos (antes la pestaña "Todos" de
+            // arriba, movida aquí para no saturar la pantalla principal).
+            Route::get('/auditoria', [InteractionController::class, 'auditoria'])->name('auditoria');
+
             // 📊 Informe / Dashboard de interacciones
             Route::get('/report', [InteractionController::class, 'report'])->name('report');
 
