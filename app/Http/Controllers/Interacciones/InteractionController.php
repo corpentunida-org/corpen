@@ -7,7 +7,7 @@ use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Cartera\CarComprobantePago;
 use App\Models\Contabilidad\ConCuentaBancaria;
-use App\Models\Creditos\LineaCredito;
+use App\Models\Interacciones\IntLinea;
 use App\Models\Interacciones\IntChannel;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntNextAction;
@@ -15,9 +15,12 @@ use App\Models\Interacciones\IntOutcome;
 //use App\Models\Maestras\MaeCongregacion; Sin uso actual.
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntType;
+use App\Models\Interacciones\IntAlertaConfig;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
+use App\Services\Interacciones\AlertasInteraccionesService;
+use App\Services\Sgrh\FestivoColombiaCalculador;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -50,9 +53,15 @@ class InteractionController extends Controller
      */
     private function alcanceInformes(Request $request): array
     {
+        // El Informe se abre SIEMPRE personal desde el menú (sin modo, sin selector propio para
+        // cambiarlo) — para ver el informe de un área o de todos hay que entrar desde Auditoría,
+        // que sí trae ese selector y pasa su modo/area_id/agent_id/fechas actuales al llegar
+        // aquí (ver el botón "Ver Informe" en auditoria.blade.php). Mismos permisos que
+        // Auditoría (interacciones.listado.area/.todos) — antes eran otros separados
+        // (informes.area/.todosagentes), duplicaban el mismo concepto sin necesidad.
         $modo = $request->input('modo', 'propias');
-        $puedeVerTodos = auth()->user()->hasDirectPermission('interacciones.informes.todosagentes');
-        $puedeVerArea = $puedeVerTodos || auth()->user()->hasDirectPermission('interacciones.informes.area');
+        $puedeVerTodos = auth()->user()->hasDirectPermission('interacciones.listado.todos');
+        $puedeVerArea = $puedeVerTodos || auth()->user()->hasDirectPermission('interacciones.listado.area');
         $miArea = $this->areaDelUsuario(Auth::id());
         $areaElegida = null;
 
@@ -190,6 +199,10 @@ class InteractionController extends Controller
 
         // 4. Datos para Gráficos
 
+        // a0. Interacciones por Día — tendencia dentro del rango, aplica igual en individual que
+        // en área/todos (ver chartInteraccionesPorDia()).
+        $chartInteraccionesPorDia = $this->chartInteraccionesPorDia($baseQuery, $start, $end);
+
         // a. Agrupación por Canal
         $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
 
@@ -223,7 +236,7 @@ class InteractionController extends Controller
         ];
 
         // e. Agrupación por Línea de Crédito (CORREGIDO PARA USAR CACHÉ Y EVITAR ERROR NULL)
-        $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
+        $allLineas = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
 
         $lineasData = (clone $baseQuery)
             ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
@@ -364,7 +377,7 @@ class InteractionController extends Controller
         // 5. Listas para los select de Filtro
         // Asegúrate de tener el modelo MaeDistritos importado arriba
         $listDistritos = MaeDistritos::all();
-        $listLineas = LineaCredito::all();
+        $listLineas = IntLinea::orderBy('name')->get();
 
         // Selector de Agente: mismo alcance que el informe — sin permiso alguno no tiene caso
         // ofrecer un desplegable (la vista lo oculta), con informes.area se limita a los agentes
@@ -391,6 +404,7 @@ class InteractionController extends Controller
             'interactions.reportes.report',
             compact(
                 'stats',
+                'chartInteraccionesPorDia',
                 'chartCanales',
                 'chartResultados',
                 'chartAgentes',
@@ -430,7 +444,10 @@ class InteractionController extends Controller
         // Mismo alcance de 3 niveles que report() (propias/área/todos, ver alcanceInformes) —
         // antes esto se validaba solo en la pantalla, no aquí, así que pedir el PDF directo por
         // URL con otro agent_id daba acceso a los datos de cualquier persona.
-        ['agentIds' => $agentIds] = $this->alcanceInformes($request);
+        ['agentIds' => $agentIds, 'modo' => $modo] = $this->alcanceInformes($request);
+
+        // Pie de página: marca y quién lo imprimió — trazabilidad de quién generó cada PDF.
+        $impresoPor = auth()->user()->name ?? 'Usuario';
 
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
@@ -451,6 +468,9 @@ class InteractionController extends Controller
         if ($filtroCliente) {
             $baseQuery->where('client_id', $filtroCliente);
         }
+
+        // Interacciones por Día — misma tendencia que en pantalla, ver chartInteraccionesPorDia().
+        $chartInteraccionesPorDia = $this->chartInteraccionesPorDia($baseQuery, $start, $end);
 
         $totalInteracciones = (clone $baseQuery)->count();
         $exitosas = (clone $baseQuery)
@@ -519,7 +539,7 @@ class InteractionController extends Controller
 
         // Obtenemos los nombres de las líneas manualmente para evitar el error de array key 0
         $idsLineas = $lineasData->pluck('primer_id')->filter()->toArray();
-        $nombresLineasMap = LineaCredito::whereIn('id', $idsLineas)->pluck('nombre', 'id');
+        $nombresLineasMap = IntLinea::whereIn('id', $idsLineas)->pluck('name', 'id');
 
         $chartLineas = [
             'labels' => $lineasData->map(function ($item) use ($nombresLineasMap) {
@@ -530,6 +550,72 @@ class InteractionController extends Controller
 
         $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
         $chartClientes = ['labels' => $clientesData->map(fn ($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
+
+        // Top 5 Distritos — misma agrupación que report() (ver chartDistritos allá).
+        $distritosData = (clone $baseQuery)->with(['client.distrito'])->get()
+            ->groupBy(fn ($item) => optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito')
+            ->map(fn ($row) => $row->count())
+            ->sortByDesc(fn ($count) => $count)
+            ->take(5);
+        $chartDistritos = ['labels' => $distritosData->keys()->toArray(), 'data' => $distritosData->values()->toArray()];
+
+        // Top 5 Agentes por Seguimientos — misma consulta que report() (ver chartSeguimientosAgentes allá).
+        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
+            $q->whereBetween('interaction_date', [$start, $end]);
+            if ($filtroDistrito) {
+                $q->whereHas('client', fn ($q3) => $q3->where('cod_dist', $filtroDistrito));
+            }
+            if ($filtroLinea) {
+                $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+            }
+            if ($agentIds !== null) {
+                $q->whereIn('agent_id', $agentIds);
+            }
+            if ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            }
+        })
+            ->select('agent_id', DB::raw('count(*) as total'))
+            ->with('creator')
+            ->groupBy('agent_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+        $chartSeguimientosAgentes = [
+            'labels' => $seguimientosAgentesData->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
+            'data' => $seguimientosAgentesData->pluck('total')->toArray(),
+        ];
+
+        // Vencidas y Pendientes por Agente — misma consulta que report() (ver chartAccionesAgentes allá).
+        $accionesAgentesData = IntSeguimiento::select('agent_id', DB::raw('SUM(CASE WHEN next_action_date >= NOW() THEN 1 ELSE 0 END) as pendientes'), DB::raw('SUM(CASE WHEN next_action_date < NOW() THEN 1 ELSE 0 END) as vencidas'))
+            ->whereNotNull('next_action_date')
+            ->whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
+                $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
+                    $q2->where('estado', '!=', 1)->orWhereNull('estado');
+                });
+                if ($filtroDistrito) {
+                    $q->whereHas('client', fn ($q3) => $q3->where('cod_dist', $filtroDistrito));
+                }
+                if ($filtroLinea) {
+                    $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+                }
+                if ($agentIds !== null) {
+                    $q->whereIn('agent_id', $agentIds);
+                }
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
+                }
+            })
+            ->with('creator')
+            ->groupBy('agent_id')
+            ->orderByDesc('vencidas')
+            ->limit(5)
+            ->get();
+        $chartAccionesAgentes = [
+            'labels' => $accionesAgentesData->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
+            'pendientes' => $accionesAgentesData->pluck('pendientes')->toArray(),
+            'vencidas' => $accionesAgentesData->pluck('vencidas')->toArray(),
+        ];
 
         // AUDITORÍA POR AGENTE
         $agentesList = (clone $baseQuery)->select('agent_id')->distinct()->pluck('agent_id');
@@ -636,7 +722,7 @@ class InteractionController extends Controller
         $agenteMasEfectivo = $agentesAuditoria->where('total', '>', 5)->sortByDesc('efectividad')->first();
         $tasaGlobal = $totalInteracciones > 0 ? round(($exitosas / $totalInteracciones) * 100, 1) : 0;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 'agentesAuditoria', 'areasAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartInteraccionesPorDia', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 'chartDistritos', 'chartSeguimientosAgentes', 'chartAccionesAgentes', 'agentesAuditoria', 'areasAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal', 'modo', 'impresoPor'));
 
         $pdf->setPaper('A4', 'portrait');
 
@@ -686,6 +772,84 @@ class InteractionController extends Controller
             ->where('actions.user_id', $userId)
             ->orderByRaw('roles.area is null') // los que SÍ tienen área, primero
             ->value('roles.area');
+    }
+
+    /**
+     * Tendencia "Interacciones por Día" dentro del rango elegido — usado tanto por report()
+     * (pantalla) como por reportPdf(), y en los dos casos aplica igual en el informe individual
+     * que en el de área/todos (a diferencia de los comparativos entre agentes, que no tienen
+     * sentido con una sola persona). $baseQuery ya debe traer aplicado el alcance y los demás
+     * filtros — se usa tal cual, clonándolo aquí.
+     *
+     * Rellena con 0 los días sin interacciones (si no, un día flojo simplemente desaparece del
+     * eje en vez de mostrar la caída). Si el rango es largo (> 45 días) se agrupa por semana en
+     * vez de por día, para que el gráfico siga siendo legible tanto en pantalla como impreso —
+     * pero "días hábiles sin registrar" siempre se cuenta día por día, sin importar cómo se
+     * muestre el gráfico (agrupar por semana no debe perder ese detalle).
+     */
+    private function chartInteraccionesPorDia($baseQuery, Carbon $start, Carbon $end): array
+    {
+        // Conteo diario real — se necesita siempre, tanto para pintar el gráfico (si el rango es
+        // corto) como para "días hábiles sin registrar" (sin importar el rango).
+        $porDia = (clone $baseQuery)
+            ->selectRaw('DATE(interaction_date) as dia, count(*) as total')
+            ->groupBy('dia')
+            ->pluck('total', 'dia');
+
+        // Días hábiles (lunes a viernes, sin festivos colombianos — FestivoColombiaCalculador ya
+        // existe en SGRH, se reutiliza aquí) dentro del rango en los que no se registró NINGUNA
+        // interacción.
+        $calculadorFestivos = app(FestivoColombiaCalculador::class);
+        $diasHabilesSinRegistro = 0;
+        $cursorHabil = $start->copy()->startOfDay();
+        $finHabil = $end->copy()->startOfDay();
+        while ($cursorHabil->lte($finHabil)) {
+            if ($cursorHabil->isWeekday()
+                && ! $calculadorFestivos->esFestivo($cursorHabil)
+                && (int) ($porDia[$cursorHabil->toDateString()] ?? 0) === 0) {
+                $diasHabilesSinRegistro++;
+            }
+            $cursorHabil->addDay();
+        }
+
+        $diasEnRango = $start->copy()->startOfDay()->diffInDays($end->copy()->startOfDay()) + 1;
+        $porSemana = $diasEnRango > 45;
+
+        if ($porSemana) {
+            $agrupado = (clone $baseQuery)
+                ->selectRaw('YEARWEEK(interaction_date, 3) as semana, MIN(DATE(interaction_date)) as inicio_semana, count(*) as total')
+                ->groupBy('semana')
+                ->orderBy('semana')
+                ->get()
+                ->keyBy('semana');
+
+            $labels = [];
+            $data = [];
+            $cursor = $start->copy()->startOfWeek(Carbon::MONDAY);
+            $finCursor = $end->copy()->endOfWeek(Carbon::SUNDAY);
+            while ($cursor->lte($finCursor)) {
+                $clave = (int) $cursor->format('oW'); // mismo criterio que YEARWEEK(...,3): semana ISO
+                $fila = $agrupado->get($clave);
+                $labels[] = $cursor->format('d/m').' - '.$cursor->copy()->addDays(6)->format('d/m');
+                $data[] = (int) ($fila->total ?? 0);
+                $cursor->addWeek();
+            }
+
+            return ['labels' => $labels, 'data' => $data, 'dias_habiles_sin_registro' => $diasHabilesSinRegistro];
+        }
+
+        $labels = [];
+        $data = [];
+        $cursor = $start->copy()->startOfDay();
+        $finCursor = $end->copy()->startOfDay();
+        while ($cursor->lte($finCursor)) {
+            $clave = $cursor->toDateString();
+            $labels[] = $cursor->format('d/m');
+            $data[] = (int) ($porDia[$clave] ?? 0);
+            $cursor->addDay();
+        }
+
+        return ['labels' => $labels, 'data' => $data, 'dias_habiles_sin_registro' => $diasHabilesSinRegistro];
     }
 
     /**
@@ -742,55 +906,6 @@ class InteractionController extends Controller
         $dias = (int) ceil(now()->diffInDays($fecha));
 
         return 'Vence en '.$dias.' día'.($dias == 1 ? '' : 's');
-    }
-
-    /**
-     * Alcance en 3 niveles para cualquier pantalla de Interacciones (Listado y Auditoría),
-     * elegido a propósito por la persona — nunca automático según su permiso: aunque tenga
-     * listado.area o listado.todos, por defecto ("propias", sin el parámetro modo) ve solo lo
-     * suyo. Para ver más tiene que elegirlo activamente en la pantalla (los botones "Ver").
-     *  - modo=todos, con interacciones.listado.todos: sin restricción, cualquier área.
-     *  - modo=area, con listado.area (o listado.todos): solo agentes de SU MISMA área (ej.
-     *    segurosadmon ve el equipo de Seguros, no el de Cartera). Con listado.todos se puede
-     *    elegir explícitamente OTRA área vía ?area_id=.
-     *  - modo=propias, o cualquier otro caso (incluido pedir un modo sin el permiso): solo lo
-     *    propio.
-     *
-     * @return array{baseQuery: \Illuminate\Database\Eloquent\Builder, modo: string, puedeVerArea: bool, puedeVerTodos: bool, miArea: ?string}
-     */
-    private function alcanceInteracciones(Request $request): array
-    {
-        $baseQuery = Interaction::query();
-
-        $modo = $request->input('modo', 'propias');
-        $puedeVerTodos = auth()->user()->hasDirectPermission('interacciones.listado.todos');
-        $puedeVerArea = $puedeVerTodos || auth()->user()->hasDirectPermission('interacciones.listado.area');
-        $miAreaParaFiltro = null;
-
-        if ($modo === 'todos' && $puedeVerTodos) {
-            // sin restricción
-        } elseif ($modo === 'area' && $puedeVerArea) {
-            $miAreaParaFiltro = ($puedeVerTodos && $request->filled('area_id'))
-                ? $request->input('area_id')
-                : $this->areaDelUsuario(Auth::id());
-            if ($miAreaParaFiltro) {
-                $idsDeMiArea = User::whereHas('roles', fn ($q) => $q->where('area', $miAreaParaFiltro))->pluck('id');
-                $baseQuery->where(fn ($q) => $q->whereIn('agent_id', $idsDeMiArea)->orWhereIn('id_user_asignacion', $idsDeMiArea));
-            } else {
-                // Su perfil no tiene área asignada en la Matriz: no hay "mi área" que ampliar.
-                $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
-            }
-        } else {
-            $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
-        }
-
-        return [
-            'baseQuery' => $baseQuery,
-            'modo' => $modo,
-            'puedeVerArea' => $puedeVerArea,
-            'puedeVerTodos' => $puedeVerTodos,
-            'miArea' => $miAreaParaFiltro,
-        ];
     }
 
     /**
@@ -858,12 +973,96 @@ class InteractionController extends Controller
     }
 
     /**
-     * Muestra la lista de interacciones con filtros y búsqueda.
+     * Buscador de "Cliente puntual" en Mis Interacciones: esto es un CRM, y el seguimiento de un
+     * asociado debe poder verse completo sin importar qué usuario lo atendió (ej. responder una
+     * reclamación con todo el historial, aunque la mayoría no la haya gestionado quien pregunta
+     * hoy). Es una excepción deliberada y acotada a la regla de "cada quien ve solo lo suyo" de
+     * index(): no requiere interacciones.listado.area/.todos, porque no deja NAVEGAR el trabajo
+     * general de otros agentes — solo consultar el historial de UN cliente puntual, ya
+     * identificado por nombre o cédula. Sin restricción de fecha tampoco (a diferencia de
+     * Auditoría): el objetivo es ver TODO lo que le ha pasado a ese cliente, no una ventana de
+     * tiempo.
+     */
+    public function buscarCliente(Request $request)
+    {
+        $request->validate(['cliente' => 'required|string|min:2']);
+        $buscar = $request->input('cliente');
+
+        $query = Interaction::whereHas('client', fn ($q) => $q->where('nom_ter', 'LIKE', "%{$buscar}%")->orWhere('cod_ter', 'LIKE', "%{$buscar}%"))
+            ->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
+
+        $totalRecords = (clone $query)->count();
+
+        $start = $request->input('start', 0);
+        $length = $request->input('length', 20);
+        $data = (clone $query)->orderByDesc('interaction_date')->skip($start)->take($length)->get();
+
+        $allLineas = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
+        $sinProximas = collect();
+        $data->transform(fn ($item) => $this->formatearFilaInteraccion($item, $allLineas, $sinProximas));
+
+        return response()->json([
+            'draw' => intval($request->input('draw')),
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Alertas propias (vencidas + pendientes) — alimenta la campanita del header (components/
+     * alertas-interacciones.blade.php) y el aviso recordatorio cada 3 horas. Misma definición de
+     * "vencida"/"pendiente" que el correo diario y el informe (ver AlertasInteraccionesService),
+     * para que la campanita, el correo y el informe nunca digan números distintos.
+     */
+    public function alertas(AlertasInteraccionesService $servicio)
+    {
+        $userId = Auth::id();
+        $vencidas = $servicio->vencidasDeUsuario($userId);
+        $pendientes = $servicio->pendientesDeUsuario($userId);
+
+        $formatear = fn ($seguimiento, bool $vencida) => [
+            'id_interaction' => $seguimiento->id_interaction,
+            'cliente' => $seguimiento->interaction->client->nom_ter ?? ('Cliente '.$seguimiento->interaction->client_id),
+            'next_action_date' => optional($seguimiento->next_action_date)->format('d/m/Y H:i'),
+            'dias_vencida' => ($vencida && $seguimiento->next_action_date) ? (int) $seguimiento->next_action_date->diffInDays(now()) : null,
+            'url' => route('interactions.show', $seguimiento->id_interaction),
+        ];
+
+        return response()->json([
+            'vencidas_count' => $vencidas->count(),
+            'vencidas' => $vencidas->take(8)->map(fn ($s) => $formatear($s, true))->values(),
+            'pendientes_count' => $pendientes->count(),
+            'pendientes' => $pendientes->take(8)->map(fn ($s) => $formatear($s, false))->values(),
+            // Configurable desde Admin → Configuración de Alertas (antes era un 3 fijo en el JS).
+            'aviso_intervalo_horas' => IntAlertaConfig::actual()->aviso_intervalo_horas,
+        ]);
+    }
+
+    /**
+     * Registra la decisión (responder/posponer) que el aviso de cada 3 horas obliga a tomar
+     * cuando hay vencidas — ver AlertasInteraccionesService::registrarDecision() para la racha
+     * de días seguidos posponiendo y la escalación al admon del área.
+     */
+    public function registrarDecisionAlerta(Request $request, AlertasInteraccionesService $servicio)
+    {
+        $request->validate(['decision' => 'required|in:responder,posponer']);
+
+        $resultado = $servicio->registrarDecision(Auth::id(), $request->input('decision'));
+
+        return response()->json($resultado);
+    }
+
+    /**
+     * Muestra la lista de interacciones con filtros y búsqueda. Exclusiva de cada usuario —
+     * nunca muestra lo del área ni lo de la empresa (a diferencia de Auditoría, que si tiene ese
+     * alcance): aquí siempre es agent_id/id_user_asignacion = quien tiene la sesión, sin
+     * excepción ni parámetro que lo amplíe. El buscador de "Cliente puntual" es aparte (ver
+     * buscarCliente()) y sí puede salirse de lo propio a propósito.
      */
     public function index(Request $request)
     {
-        ['baseQuery' => $baseQuery, 'modo' => $modo, 'puedeVerArea' => $puedeVerArea, 'puedeVerTodos' => $puedeVerTodos]
-            = $this->alcanceInteracciones($request);
+        $baseQuery = Interaction::where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
 
         // 1. Estadísticas de las pestañas: solo tienen sentido en la carga de la página completa
         // (las pestañas/paginación/búsqueda llegan por AJAX y no usan $stats). Antes se calculaban
@@ -874,7 +1073,7 @@ class InteractionController extends Controller
         }
 
         // 2. Catálogos en Caché
-        $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
+        $allLineas = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
         $channels = Cache::remember('cat_channels', 86400, fn () => IntChannel::orderBy('name')->pluck('name', 'id'));
         $outcomes = Cache::remember('cat_outcomes', 86400, fn () => IntOutcome::orderBy('name')->pluck('name', 'id'));
 
@@ -961,7 +1160,7 @@ class InteractionController extends Controller
         }
 
         // 4. Si es la carga normal de la vista, YA NO ENVIAMOS $interactions NI $collectionsForTabs
-        return view('interactions.index', compact('stats', 'channels', 'outcomes', 'modo', 'puedeVerArea', 'puedeVerTodos'));
+        return view('interactions.index', compact('stats', 'channels', 'outcomes'));
     }
 
     /**
@@ -1057,7 +1256,7 @@ class InteractionController extends Controller
 
             $data = $query->skip($start)->take($length)->get();
 
-            $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
+            $allLineas = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
             $sinProximas = collect(); // Auditoría no muestra "próxima acción" (eso es de la agenda)
             $data->transform(fn ($item) => $this->formatearFilaInteraccion($item, $allLineas, $sinProximas));
 
@@ -1178,7 +1377,9 @@ class InteractionController extends Controller
 
         $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
         $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
-        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+        // Igual que $types: solo las líneas de SU área (+ compartidas) — Cartera no debe ver
+        // pólizas de Seguros, ni Seguros ver líneas de crédito de Cartera.
+        $lineasCredito = IntLinea::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos))->orderBy('name')->pluck('name', 'id');
 
         $agente = Auth::user();
         $cargoAgente = null;
@@ -1313,7 +1514,12 @@ class InteractionController extends Controller
 
         $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
         $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
-        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+        // Igual que $types, y también preserva las líneas YA elegidas aunque sean de otra área
+        // (id_linea_de_obligacion es un arreglo, no un solo id — por eso whereIn en vez de
+        // orWhere('id', ...) como con $types).
+        $idsLineasActuales = is_array($interaction->id_linea_de_obligacion) ? $interaction->id_linea_de_obligacion : [];
+        $lineasCredito = IntLinea::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos)->orWhereIn('id', $idsLineasActuales))
+            ->orderBy('name')->pluck('name', 'id');
 
         $agente = Auth::user();
         $cargoAgente = null;
@@ -1402,7 +1608,10 @@ class InteractionController extends Controller
                     'outcome' => $validatedData['outcome'],
                     'next_action_type' => $request->input('next_action_type') ?? 1,
                     'next_action_date' => $request->input('next_action_date'),
-                    'next_action_notes' => $request->input('next_action_notes'),
+                    // El campo "Instrucciones" (duplicaba a Notas Finales) se quitó del
+                    // formulario — mismo fallback que ya tenía store(): si no llega explícito,
+                    // usa las Notas Finales.
+                    'next_action_notes' => $request->input('next_action_notes') ?? $validatedData['notes'] ?? null,
                     'interaction_url' => $request->input('interaction_url'),
                     'attachment_urls' => $path,
                     'attachment_size' => $tamanoArchivo,

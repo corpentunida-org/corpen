@@ -54,6 +54,7 @@ class CarComprobantePagoController extends Controller
                   ->orWhere('id_obligacion', 'LIKE', "%{$busqueda}%")
                   ->orWhere('monto_pagado', 'LIKE', "%{$busqueda}%")
                   ->orWhere('numero_cuota', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('hasta_cuota', 'LIKE', "%{$busqueda}%")
                   ->orWhere('pr', 'LIKE', "%{$busqueda}%")
                   ->orWhere('cco', 'LIKE', "%{$busqueda}%")
                   ->orWhere('tipo_pago', 'LIKE', "%{$busqueda}%")
@@ -124,6 +125,10 @@ class CarComprobantePagoController extends Controller
             'pr'           => $request->filled('pr') ? $request->pr : null,
             'cco'          => $request->filled('cco') ? $request->cco : null,
             'numero_cuota' => $request->filled('numero_cuota') ? $request->numero_cuota : null,
+            // "Hasta Cuota": si no llega (pago de una sola cuota), cae al mismo valor de
+            // "Desde" (numero_cuota) — el front ya lo autocompleta, esto es un respaldo por si
+            // llega vacío igual (ej. JS deshabilitado).
+            'hasta_cuota'  => $request->filled('hasta_cuota') ? $request->hasta_cuota : $request->numero_cuota,
             'tipo_pago'    => $request->filled('tipo_pago') ? $request->tipo_pago : null,
             'observacion'  => $request->filled('observacion') ? $request->observacion : null,
         ]);
@@ -141,6 +146,7 @@ class CarComprobantePagoController extends Controller
             'pr'                      => 'nullable|integer',
             'cco'                     => 'nullable|integer',
             'numero_cuota'            => 'nullable|integer',
+            'hasta_cuota'             => 'nullable|integer|gte:numero_cuota',
             'tipo_pago'               => 'nullable|string|max:100',
             'observacion'             => 'nullable|string|max:255',
         ]);
@@ -196,6 +202,7 @@ class CarComprobantePagoController extends Controller
                 'pr'                      => $validated['pr'],
                 'cco'                     => $validated['cco'],
                 'numero_cuota'            => $validated['numero_cuota'],
+                'hasta_cuota'             => $validated['hasta_cuota'] ?? $validated['numero_cuota'],
                 'tipo_pago'               => $validated['tipo_pago'],
                 'observacion'             => $validated['observacion']
             ]);
@@ -224,6 +231,7 @@ class CarComprobantePagoController extends Controller
             'pr'             => 'sometimes|nullable|integer',
             'cco'            => 'sometimes|nullable|integer',
             'numero_cuota'   => 'sometimes|nullable|integer',
+            'hasta_cuota'    => 'sometimes|nullable|integer',
         ]);
 
         // Si se sube un archivo nuevo, borramos el viejo de S3

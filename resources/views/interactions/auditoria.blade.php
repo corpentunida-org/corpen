@@ -10,9 +10,14 @@
                 </h6>
                 <small class="text-muted">Por defecto muestra el último mes — ajustable abajo.</small>
             </div>
-            <button type="button" class="btn btn-sm btn-light" id="clearFilters">
-                <i class="feather-refresh-cw me-1"></i>Restablecer
-            </button>
+            <div class="d-flex gap-2">
+                <a href="{{ route('interactions.report') }}" id="verInformeBtn" class="btn btn-sm btn-outline-primary">
+                    <i class="feather-bar-chart-2 me-1"></i>Ver Informe
+                </a>
+                <button type="button" class="btn btn-sm btn-light" id="clearFilters">
+                    <i class="feather-refresh-cw me-1"></i>Restablecer
+                </button>
+            </div>
         </div>
         <div class="card-body p-3">
             <div class="row g-3">
@@ -446,6 +451,44 @@
                     $('#filterFechaFin').val('{{ now()->format('Y-m-d') }}');
                     table.search('').draw();
                 });
+
+                // "Ver Informe" hereda el alcance que se tiene elegido AHORA en Auditoría
+                // (individual/mi área/todos) traduciéndolo al "modo" que espera el Informe —
+                // ver alcanceInformes() en el controlador. El Informe abierto desde el menú
+                // siempre es personal; este botón es la única forma de verlo con más alcance.
+                function actualizarLinkInforme() {
+                    const areaVal = $('#filterArea').length ? $('#filterArea').val() : null;
+                    const agenteVal = $('#filterAgente').val();
+                    const params = new URLSearchParams();
+
+                    @if ($puedeVerTodos)
+                        // Con listado.todos: select "Área" existe. Vacío ("Todas") = modo todos;
+                        // con una elegida = modo área (pasando cuál).
+                        if (areaVal) {
+                            params.set('modo', 'area');
+                            params.set('area_id', areaVal);
+                        } else {
+                            params.set('modo', 'todos');
+                        }
+                    @elseif ($puedeVerArea)
+                        // Con listado.area (sin .todos): siempre la propia, no hay select de área.
+                        params.set('modo', 'area');
+                    @else
+                        params.set('modo', 'propias');
+                    @endif
+
+                    if (agenteVal) {
+                        params.set('agent_id', agenteVal);
+                    }
+                    const fechaInicio = $('#filterFechaInicio').val();
+                    const fechaFin = $('#filterFechaFin').val();
+                    if (fechaInicio) params.set('start_date', fechaInicio);
+                    if (fechaFin) params.set('end_date', fechaFin);
+
+                    $('#verInformeBtn').attr('href', '{{ route('interactions.report') }}?' + params.toString());
+                }
+                actualizarLinkInforme();
+                $('#filterAgente, #filterArea, #filterFechaInicio, #filterFechaFin').on('change', actualizarLinkInforme);
 
                 // Lógica del modal (idéntica a Listado de Interacciones)
                 document.addEventListener('click', function(e) {
