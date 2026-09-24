@@ -22,24 +22,23 @@ class Interaction extends Model
         'id_user_asignacion' => 'integer',
     ];
 
+    /**
+     * Ya no verifica Storage::exists() antes de generar el link — esa llamada viajaba a S3 por
+     * cada fila con adjunto al listar (bloqueante, una por una); con miles de seguimientos la
+     * pantalla se volvía cada vez más lenta a medida que crecía el volumen. destroy() en
+     * InteractionController ya borra el archivo de S3 cuando se borra la interacción, así que
+     * una ruta guardada casi siempre existe; en el raro caso de que no, el link simplemente da
+     * error al abrirlo, preferible a frenar toda la lista por archivo.
+     */
     public function getFile($nameFile)
     {
-        $url = '#';
-
-        // Si nameFile llega como un array (por un cast en el modelo), tomamos el primer elemento
+        // Si nameFile llega como un array (por un cast legado en el modelo), tomamos el primer
+        // elemento — attachment_urls en la práctica siempre guarda una sola ruta como texto.
         if (is_array($nameFile) && count($nameFile) > 0) {
             $nameFile = $nameFile[0];
         }
 
-        if ($nameFile) {
-            if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile,
-                    now()->addMinutes(10), // Aumentado a 10 min por comodidad del usuario
-                );
-            }
-        }
-        return $url;
+        return $nameFile ? Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(10)) : '#';
     }
 
     // ------------------- RELACIONES -------------------

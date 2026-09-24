@@ -5,10 +5,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ config('app.name', 'Corpentunida') }}</title>
+    <title>{{ config('app.name', 'AppCorpentunida') }}</title>
     <!--! END:  Apps Title-->
     <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ asset('assets/images/logo/corpenfavicon.png') }}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/images/logo/favicon-32.png') }}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/images/logo/favicon-16.png') }}" />
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/images/logo/favicon-180.png') }}" />
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}" />
@@ -238,6 +240,48 @@
                     </div> --}}
 
                     <!--! [Start] Header RIGHT !-->
+                    <style>
+                        /* Íconos del header (modo oscuro, mensajería, Soportes, Alertas, pantalla
+                           completa) — antes eran solo el glifo flotando sin fondo, poco legibles
+                           como botones. Ahora cada uno es una "píldora" circular de 42px con un
+                           fondo sutil siempre visible (no solo al pasar el mouse) y sombra leve
+                           para que se lean claramente como botones clicables, con hover marcado.
+                           El tema trae ".nxl-head-link>i{font-size:20px}" — antes esta regla
+                           (sin !important) quedó sin querer en 18px, MÁS chica que el original
+                           del tema; ahora sí quedan más grandes que antes (22px) y con !important
+                           para que ninguna otra regla del tema la vuelva a pisar.
+                           Selector acotado a .header-right para no tocar .nxl-head-link en otras
+                           partes de la app (ej. dentro del menú lateral). */
+                        {{-- OJO: sin !important en "display" — el toggle de modo oscuro/claro
+                             oculta uno de los dos íconos (moon/sun) con style="display:none"
+                             inline en ese mismo elemento .nxl-head-link; un !important aquí le
+                             ganaría a ese inline style y los mostraría los dos a la vez. --}}
+                        .header-right .nxl-head-link {
+                            width: 42px !important;
+                            height: 42px !important;
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 50% !important;
+                            background: rgba(15, 23, 42, .06) !important;
+                            box-shadow: 0 1px 2px rgba(15, 23, 42, .06);
+                            transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+                        }
+                        .header-right .nxl-head-link:hover {
+                            background: rgba(15, 23, 42, .12) !important;
+                            box-shadow: 0 2px 6px rgba(15, 23, 42, .12);
+                            transform: translateY(-1px);
+                        }
+                        .header-right .nxl-head-link i {
+                            font-size: 22px !important;
+                        }
+                        html.app-skin-dark .header-right .nxl-head-link {
+                            background: rgba(255, 255, 255, .1) !important;
+                        }
+                        html.app-skin-dark .header-right .nxl-head-link:hover {
+                            background: rgba(255, 255, 255, .18) !important;
+                        }
+                    </style>
                     <div class="header-right ms-auto">
                         <div class="d-flex align-items-center">
                             <div class="nxl-head-link dark-light-theme">
@@ -249,6 +293,7 @@
                                 </a>
                             </div>
                             <x-notifications-base />
+                            <x-alertas-interacciones />
                             <div class="nxl-h-item d-none d-sm-flex">
                                 <div class="full-screen-switcher">
                                     <a href="javascript:void(0);" class="nxl-head-link me-0"

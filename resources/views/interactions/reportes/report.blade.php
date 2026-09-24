@@ -16,12 +16,30 @@
             </a>
         </div>
     </div> --}}
-    @candirect('interacciones.informes.todosagentes')
+    {{-- Imprimir siempre está disponible — reportPdf() aplica el mismo alcance que la pantalla
+         (individual/área/todos, ver alcanceInformes), así que el PDF nunca trae más de lo que ya
+         se está viendo aquí. Antes esto se ocultaba sin informes.area/.todosagentes, dejando a
+         quien solo ve su propio informe sin poder imprimirlo. --}}
     <div class="d-flex justify-content-end align-items-center mb-3">
         <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank"
             class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
     </div>
-    @endcandirect
+
+    {{-- El Informe abierto desde el menú es SIEMPRE personal — no tiene selector propio para
+         verlo por área o de todos (eso vive en Auditoría, ver el botón "Ver Informe" allá). Si
+         se llegó aquí desde Auditoría con un alcance más amplio ya elegido (modo=area/todos en
+         la URL), se respeta y se avisa aquí, con un link de vuelta para ajustarlo. --}}
+    @if (($modo ?? 'propias') !== 'propias')
+        <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3 py-2">
+            <span class="fs-13">
+                <i class="feather-info me-1"></i>
+                Viendo el informe de <strong>{{ $modo === 'todos' ? 'Todos' : 'Mi Área' }}</strong> — heredado desde Auditoría.
+            </span>
+            <a href="{{ route('interactions.auditoria') }}" class="btn btn-sm btn-outline-secondary">
+                Ajustar en Auditoría
+            </a>
+        </div>
+    @endif
 
     {{-- Filtros Avanzados (MANUALES) --}}
     <div class="card mb-2">
@@ -38,26 +56,13 @@
         </div>
         <div class="card-body p-3">
             <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
-                {{-- Filtro: Agente --}}
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
-                    @if (auth()->user()->hasDirectPermission('interacciones.informes.todosagentes'))
-                        <select name="agent_id" class="form-select form-select-sm select2-search"
-                            data-placeholder="Todos">
-                            <option value=""></option>
-                            @foreach ($listAgentes as $agente)
-                                <option value="{{ $agente->id }}"
-                                    {{ ($filtroAgente ?? '') == $agente->id ? 'selected' : '' }}>
-                                    {{ $agente->name ?? 'Agente ' . $agente->id }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @else
-                        <input type="text" class="form-control form-control-sm" value="{{ auth()->user()->name }}"
-                            disabled>
-                        <input type="hidden" name="agent_id" value="{{ auth()->id() }}">
-                    @endif
-                </div>
+                {{-- El alcance (modo/área/agente) ya no se elige aquí — se hereda tal cual de la
+                     URL con la que se llegó (desde el menú siempre "propias"; desde Auditoría, lo
+                     que allá se tenía seleccionado). Se conserva como campos ocultos para que los
+                     demás filtros de este formulario no lo pierdan al enviarse. --}}
+                <input type="hidden" name="modo" value="{{ $modo ?? 'propias' }}">
+                <input type="hidden" name="agent_id" value="{{ request('agent_id') }}">
+                <input type="hidden" name="area_id" value="{{ request('area_id') }}">
 
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
@@ -72,12 +77,22 @@
                     </select>
                 </div>
 
+                {{-- Filtro: Mes — atajo para no tener que elegir Fecha Inicio/Fin a mano; al
+                     elegir un mes completa esas dos fechas con su primer y último día (JS abajo).
+                     Se puede seguir ajustando Fecha Inicio/Fin manualmente después si hace falta
+                     un rango que no sea un mes completo. --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted mb-1">Mes</label>
+                    <input type="month" name="mes" id="filtroMes" class="form-control"
+                        value="{{ request('mes') }}" />
+                </div>
+
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted mb-1">Fecha Inicio</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i
                                 class="feather-calendar text-primary"></i></span>
-                        <input type="date" name="start_date" class="form-control border-start-0 ps-0"
+                        <input type="date" name="start_date" id="filtroFechaInicio" class="form-control border-start-0 ps-0"
                             value="{{ $startDate ?? request('start_date') }}" />
                     </div>
                 </div>
@@ -88,7 +103,7 @@
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i
                                 class="feather-calendar text-primary"></i></span>
-                        <input type="date" name="end_date" class="form-control border-start-0 ps-0"
+                        <input type="date" name="end_date" id="filtroFechaFin" class="form-control border-start-0 ps-0"
                             value="{{ $endDate ?? request('end_date') }}" />
                     </div>
                 </div>
@@ -108,15 +123,15 @@
                     </select>
                 </div>
 
-                {{-- Filtro: Línea de Crédito --}}
+                {{-- Filtro: Línea --}}
                 <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Línea de Crédito</label>
+                    <label class="form-label fw-semibold text-muted small mb-1">Línea</label>
                     <select name="linea_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
                         <option value=""></option>
                         @foreach ($listLineas as $linea)
                             <option value="{{ $linea->id }}"
                                 {{ ($filtroLinea ?? '') == $linea->id ? 'selected' : '' }}>
-                                {{ $linea->nombre ?? 'Línea ' . $linea->id }}
+                                {{ $linea->name ?? 'Línea ' . $linea->id }}
                             </option>
                         @endforeach
                     </select>
@@ -190,6 +205,51 @@
             </div>
         </a>
     </div>
+
+    {{-- Interacciones por Día — tendencia dentro del rango elegido. A diferencia de los
+         comparativos entre agentes, esta sí aplica igual en el informe individual que en el de
+         área/todos: en individual muestra el propio ritmo de trabajo, en área/todos el volumen
+         del equipo. Fila completa (no a la mitad como las demás) porque una serie de tiempo
+         necesita más ancho para leerse bien. --}}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-header py-3 border-bottom-0 bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="mb-0 fw-bold"><i class="feather-trending-up me-2 text-primary"></i>Interacciones por Día</h6>
+                    @php $diasSinRegistro = $chartInteraccionesPorDia['dias_habiles_sin_registro'] ?? 0; @endphp
+                    <span class="badge {{ $diasSinRegistro > 0 ? 'bg-soft-danger text-danger' : 'bg-soft-success text-success' }} fs-13 fw-semibold px-3 py-2">
+                        <i class="feather-calendar me-1"></i>
+                        {{ $diasSinRegistro }} día(s) hábil(es) sin registrar interacciones
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="chartInteraccionesPorDia"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Indicadores por Área — solo aporta cuando el alcance cubre más de una (Ver: Mi área con
+         listado.todos eligiendo "Todas", o Ver: Todos); con una sola área en alcance sale una
+         sola barra, sigue siendo correcto. --}}
+    @if (count($chartAreas['labels'] ?? []) > 0)
+        <div class="row g-3 mb-0">
+            <div class="col-12">
+                <div class="card shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header py-3 border-bottom-0 bg-transparent">
+                        <h6 class="mb-0 fw-bold"><i class="feather-grid me-2 text-indigo" style="color:#6610f2;"></i>Indicadores por Área</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="chartAreas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Primera Fila de Gráficos: Canales y Resultados --}}
     <div class="row g-3">
@@ -331,6 +391,21 @@
                 window.location.href = "{{ route('interactions.report') }}";
             });
 
+            // Filtro Mes: completa Fecha Inicio/Fin con el primer y último día del mes elegido
+            // (no se manda "mes" al servidor para nada más, solo llena esos dos campos).
+            const filtroMes = document.getElementById('filtroMes');
+            if (filtroMes) {
+                filtroMes.addEventListener('change', function () {
+                    if (!this.value) return;
+                    const [anio, mes] = this.value.split('-').map(Number);
+                    const primerDia = new Date(anio, mes - 1, 1);
+                    const ultimoDia = new Date(anio, mes, 0);
+                    const aYMD = (d) => d.toISOString().slice(0, 10);
+                    document.getElementById('filtroFechaInicio').value = aYMD(primerDia);
+                    document.getElementById('filtroFechaFin').value = aYMD(ultimoDia);
+                });
+            }
+
             // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
             Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
             Chart.defaults.color = '#718096';
@@ -431,6 +506,41 @@
             const vencidasPendientesLabels = @json($chartAccionesAgentes['labels'] ?? []);
             const pendientesData = @json($chartAccionesAgentes['pendientes'] ?? []);
             const vencidasData = @json($chartAccionesAgentes['vencidas'] ?? []);
+            const areasLabels = @json($chartAreas['labels'] ?? []);
+            const areasData = @json($chartAreas['data'] ?? []);
+            const porDiaLabels = @json($chartInteraccionesPorDia['labels'] ?? []);
+            const porDiaData = @json($chartInteraccionesPorDia['data'] ?? []);
+
+            // 0. Interacciones por Día (línea de tendencia) — aplica igual en individual que en
+            // área/todos, por eso va primero, antes que los demás gráficos.
+            const ctxPorDia = document.getElementById('chartInteraccionesPorDia').getContext('2d');
+            new Chart(ctxPorDia, {
+                type: 'line',
+                data: {
+                    labels: porDiaLabels,
+                    datasets: [{
+                        label: 'Interacciones',
+                        data: porDiaData,
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: createGradient(ctxPorDia, 'rgba(52, 152, 219, 0.35)', 'rgba(52, 152, 219, 0.02)'),
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: porDiaLabels.length > 45 ? 0 : 3,
+                        pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                        pointHoverRadius: 5,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: elegantTooltip
+                    },
+                    scales: cleanScales
+                }
+            });
 
             // 1. Canales (Barras Verticales)
             const ctxCanales = document.getElementById('chartCanales').getContext('2d');
@@ -554,6 +664,11 @@
                 'rgba(46, 204, 113, 0.2)');
             createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
                 'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
+            // Por Área — solo se crea si la tarjeta está en el DOM (la vista la oculta cuando el
+            // alcance cubre una sola área/agente).
+            if (document.getElementById('chartAreas')) {
+                createHBar('chartAreas', areasLabels, areasData, 'rgba(102, 16, 242, 0.8)', 'rgba(102, 16, 242, 0.2)');
+            }
 
             // Líneas de Crédito (Barras Verticales)
             const ctxLineas = document.getElementById('chartLineas').getContext('2d');

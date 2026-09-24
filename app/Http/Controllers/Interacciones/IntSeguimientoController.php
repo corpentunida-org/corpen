@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Interacciones;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Interacciones\Concerns\GuardaSoporteInteraccion;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\Interaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class IntSeguimientoController extends Controller
 {
+    use GuardaSoporteInteraccion;
+
     public function store(Request $request)
     {
         // 1. Validación de datos
@@ -18,46 +23,50 @@ class IntSeguimientoController extends Controller
             'outcome' => 'required',
             'next_action_notes' => 'required|string',
             'id_user_asignacion' => 'required|exists:users,id',
-            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048', // 2MB max
+            'attachment' => $this->reglaValidacionSoporte(),
             'next_action_date' => 'nullable|date',
         ]);
 
+        // 2. Subir el soporte ANTES de la transacción: si S3 falla, no hay nada que revertir en
+        // la base de datos. Si en cambio la transacción de abajo falla DESPUÉS de subir el
+        // archivo, sí quedaría huérfano en S3 — por eso el catch lo borra explícitamente.
+        $rutaArchivo = null;
+        $tamanoArchivo = null;
+        if ($request->hasFile('attachment')) {
+            $tamanoArchivo = $request->file('attachment')->getSize();
+            $rutaArchivo = $this->guardarSoporte($request->file('attachment'), (int) $request->id_interaction);
+        }
+
         try {
-            $data = $request->all();
-            
-            // 2. Manejo del archivo (Soporte)
-            if ($request->hasFile('attachment')) {
-                // Guardamos en el disco configurado (ej: s3 o local)
-                $path = $request->file('attachment')->store('seguimientos/adjuntos', 's3');
-                $data['attachment_urls'] = $path;
-            }
+            DB::transaction(function () use ($request, $rutaArchivo, $tamanoArchivo) {
+                IntSeguimiento::create([
+                    'id_interaction'     => $request->id_interaction,
+                    'agent_id'           => auth()->id(),
+                    'id_user_asignacion' => $request->id_user_asignacion,
+                    'outcome'            => $request->outcome,
+                    'next_action_type'   => $request->next_action_type,
+                    'next_action_date'   => $request->next_action_date,
+                    'next_action_notes'  => $request->next_action_notes,
+                    'attachment_urls'    => $rutaArchivo,
+                    'attachment_size'    => $tamanoArchivo,
+                    'interaction_url'    => $request->interaction_url,
+                ]);
 
-            // 3. Crear el seguimiento
-            $seguimiento = IntSeguimiento::create([
-                'id_interaction'     => $request->id_interaction,
-                'agent_id'           => auth()->id(),
-                'id_user_asignacion' => $request->id_user_asignacion,
-                'outcome'            => $request->outcome,
-                'next_action_type'   => $request->next_action_type,
-                'next_action_date'   => $request->next_action_date,
-                'next_action_notes'  => $request->next_action_notes,
-                'attachment_urls'    => $data['attachment_urls'] ?? null,
-                'interaction_url'    => $request->interaction_url,
-            ]);
-
-            /* * OPCIONAL: Actualizar el estado de la interacción padre 
-             * para que refleje el último resultado.
-             */
-            $parent = Interaction::find($request->id_interaction);
-            $parent->update([
-                'outcome' => $request->outcome,
-                'id_user_asignacion' => $request->id_user_asignacion
-            ]);
+                // Refleja en la interacción el último resultado registrado.
+                Interaction::whereKey($request->id_interaction)->update([
+                    'outcome' => $request->outcome,
+                    'id_user_asignacion' => $request->id_user_asignacion,
+                ]);
+            });
 
             return redirect()->back()->with('success', '¡Seguimiento registrado correctamente!');
-
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al guardar: ' . $e->getMessage());
+            if ($rutaArchivo) {
+                Storage::disk('s3')->delete($rutaArchivo);
+            }
+            Log::error('Error al registrar seguimiento (interacción '.$request->id_interaction.'): '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Error al guardar: '.$e->getMessage());
         }
     }
 }

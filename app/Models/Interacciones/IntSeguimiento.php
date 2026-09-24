@@ -21,27 +21,45 @@ class IntSeguimiento extends Model
         'next_action_type', 
         'next_action_date', 
         'next_action_notes', 
-        'attachment_urls', 
-        'interaction_url', 
+        'attachment_urls',
+        'attachment_size',
+        'interaction_url',
     ];
 
     protected $casts = [
         'next_action_date' => 'datetime',
-        'attachment_urls'  => 'array', // Necesario para guardar arrays/JSON de archivos
+        // OJO antes de "corregir" esto: el cast 'array' SÍ hace falta para leer bien lo ya
+        // guardado. Las 3 vías que suben un adjunto siempre guardan UNA sola ruta (nunca un
+        // array real), pero el propio cast 'array' la codifica con json_encode() al guardar —
+        // así que en la columna queda literalmente '"corpentunida\/daytrack\/3\/x.png"' (con
+        // comillas y barras escapadas), no la ruta limpia. Sin este cast, leer attachment_urls
+        // devuelve ese texto crudo con comillas en vez de la ruta real (se probó: pasar esto a
+        // 'string' rompía el link de los 13.440 seguimientos que ya tienen archivo). Con el
+        // cast puesto, el round-trip (encode al guardar / decode al leer) sí funciona bien y
+        // siempre devuelve un string limpio (nunca llega a devolver un array de verdad, porque
+        // nadie guarda más de un archivo por seguimiento) — por eso destroy() en
+        // InteractionController igual se defiende con (array) antes de iterar, por si acaso.
+        'attachment_urls'  => 'array',
     ];
 
     /**
-     * Genera la URL temporal del archivo en S3
+     * Genera la URL temporal del archivo en S3. Ya no verifica Storage::exists() antes: esa
+     * llamada viajaba a S3 por cada fila con adjunto al listar (bloqueante, una por una) — con
+     * miles de seguimientos la pantalla se volvía cada vez más lenta. destroy() en
+     * InteractionController ya borra el archivo de S3 cuando se borra la interacción, así que
+     * una ruta guardada casi siempre existe; en el raro caso de que no, el link generado
+     * simplemente da error al abrirlo, lo cual es preferible a frenar toda la lista por archivo.
      */
     public function getFile($nameFile)
     {
-        $url = '#';
-        if ($nameFile) {
-            if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
-            }
+        // attachment_urls está casteado a 'array' (ver el porqué arriba) pero en la práctica
+        // siempre es un string ya decodificado — is_array() es solo por si alguna vez alguien
+        // sí llega a guardar más de uno.
+        if (is_array($nameFile) && count($nameFile) > 0) {
+            $nameFile = $nameFile[0];
         }
-        return $url;
+
+        return $nameFile ? Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5)) : '#';
     }
 
     // ------------------- RELACIONES -------------------

@@ -744,11 +744,11 @@
                             id="drop-zone" style="border-radius: 4px;">
                             <input type="file" id="attachment" name="attachment"
                                 class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
-                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
+                                accept="image/*,.pdf,.doc,.docx" onchange="handleFileSelect(this)">
                             <div class="dz-message d-flex flex-column align-items-center justify-content-center"
                                 style="min-height: 80px;" id="upload-icon-wrapper">
                                 <h6 class="text-dark mb-1" id="file-label">Adjuntar archivo</h6>
-                                <p class="text-muted small mb-0">PDF, Word, Excel, Img (Max 10MB)</p>
+                                <p class="text-muted small mb-0">PDF, Word, Imagen (Max 5MB)</p>
                             </div>
                         </div>
 
@@ -761,20 +761,30 @@
                                 style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
                         </div>
 
-                        @if ($modoEdicion && $interaction->attachment_urls)
-                            <div class="mt-3">
-                                <label class="form-label small text-dark">Archivo Guardado</label>
-                                <div class="d-flex align-items-center p-2 bg-light border">
-                                    <div class="flex-grow-1 overflow-hidden me-2">
-                                        <div class="text-dark text-truncate small">
-                                            {{ basename($interaction->attachment_urls) }}</div>
-                                    </div>
-                                    <div class="d-flex gap-1">
-                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
-                                            class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                        @if ($modoEdicion)
+                            @php
+                                // El adjunto vive en el seguimiento, nunca en la interacción
+                                // (interactions.attachment_urls no es una columna real) — mismo
+                                // criterio que show.blade.php: el primer seguimiento que tenga uno.
+                                $seguimientoConArchivo = $interaction->seguimientos
+                                    ->first(fn ($s) => !empty($s->attachment_urls));
+                            @endphp
+                            @if ($seguimientoConArchivo)
+                                <div class="mt-3">
+                                    <label class="form-label small text-dark">Archivo Guardado</label>
+                                    <div class="d-flex align-items-center p-2 bg-light border">
+                                        <div class="flex-grow-1 overflow-hidden me-2">
+                                            <div class="text-dark text-truncate small">
+                                                {{ basename(is_array($seguimientoConArchivo->attachment_urls) ? ($seguimientoConArchivo->attachment_urls[0] ?? '') : $seguimientoConArchivo->attachment_urls) }}
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            <a href="{{ $seguimientoConArchivo->getFile($seguimientoConArchivo->attachment_urls) }}"
+                                                class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
                         @endif
                     </div>
 
@@ -902,13 +912,6 @@
                                     @error('next_action_date')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
-                                </div>
-
-                                <div class="form-group mb-0">
-                                    <label for="next_action_notes"
-                                        class="form-label small text-muted">Instrucciones</label>
-                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                        name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -1043,12 +1046,12 @@
 
                             <div class="fv-row mt-4 position-relative">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago
-                                    *</label>
+                                    <span class="text-muted normal-case fw-normal">(opcional)</span></label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0"><i
                                             class="fas fa-search text-muted"></i></span>
                                     <input type="text" id="search_tipo_pago" class="form-control border-0"
-                                        placeholder="Busca el tipo de pago..." autocomplete="off" required>
+                                        placeholder="Busca el tipo de pago..." autocomplete="off">
                                     <input type="hidden" id="tipo_pago" name="tipo_pago">
                                 </div>
                                 @php
@@ -1151,26 +1154,34 @@
                         <div class="col-12 mt-2">
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N°
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">Desde
                                             Cuota</label>
                                         <input type="number" name="numero_cuota" id="numero_cuota"
                                             class="form-control form-control-sm border-gray-300 bg-white"
                                             placeholder="Ej: 1">
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">Hasta
+                                            Cuota</label>
+                                        <input type="number" name="hasta_cuota" id="hasta_cuota"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="Ej: 1">
+                                    </div>
+                                    <div class="col-md-3">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
                                         <input type="number" name="pr" id="pr"
                                             class="form-control form-control-sm border-gray-300 bg-white"
                                             placeholder="0">
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
                                         <input type="number" name="cco" id="cco"
                                             class="form-control form-control-sm border-gray-300 bg-white"
                                             placeholder="0">
                                     </div>
                                 </div>
+                                <div class="form-text fs-9 text-muted mt-1">Al llenar "Desde Cuota" se copia automáticamente a "Hasta Cuota" — solo cámbiala si el pago cubre varias cuotas seguidas.</div>
                             </div>
                         </div>
 
@@ -1839,7 +1850,12 @@
             },
             submitForm: function(e) {
                 e.preventDefault();
-                Timer.stop();
+                // OJO: Timer.stop() va DENTRO del "si confirma" — antes se llamaba aquí arriba,
+                // antes de siquiera mostrar el diálogo, así que si la persona daba "Cancelar" el
+                // cronómetro quedaba apagado para siempre (stop() no acumula el tiempo transcurrido
+                // ni se reanuda solo, a diferencia de pause()): la duración dejaba de registrarse
+                // aunque siguiera trabajando en la interacción. Mientras el diálogo está abierto el
+                // tiempo sigue corriendo con normalidad; solo se congela si de verdad va a guardar.
                 Swal.fire({
                     title: 'Confirmar guardado',
                     text: "¿Deseas guardar la interacción ahora?",
@@ -1853,6 +1869,7 @@
                     allowEscapeKey: false
                 }).then((result) => {
                     if (result.isConfirmed || result.value || result === true) {
+                        Timer.stop();
                         document.querySelector(DOM.form).submit();
                     }
                 });
@@ -2053,7 +2070,7 @@
             if (fileInput) fileInput.value = '';
             const prev = document.getElementById('preview_container');
             if (prev) prev.classList.add('d-none');
-            ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco',
+            ['numero_cuota', 'hasta_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco',
                 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'
             ].forEach(id => {
                 const el = document.getElementById(id);
@@ -2069,7 +2086,12 @@
             const cuotaInput = document.getElementById('numero_cuota');
             if (cuotaInput) {
                 cuotaInput.removeAttribute('required');
-                cuotaInput.previousElementSibling.innerHTML = 'N° Cuota';
+                cuotaInput.previousElementSibling.innerHTML = 'Desde Cuota';
+            }
+            const hastaCuotaInput = document.getElementById('hasta_cuota');
+            if (hastaCuotaInput) {
+                hastaCuotaInput.removeAttribute('required');
+                hastaCuotaInput.previousElementSibling.innerHTML = 'Hasta Cuota';
             }
             const prInput = document.getElementById('pr');
             if (prInput) {
@@ -2366,6 +2388,8 @@
 
                 const cuotaInput = document.getElementById('numero_cuota');
                 const cuotaLabel = cuotaInput ? cuotaInput.previousElementSibling : null;
+                const hastaCuotaInput = document.getElementById('hasta_cuota');
+                const hastaCuotaLabel = hastaCuotaInput ? hastaCuotaInput.previousElementSibling : null;
                 const prInput = document.getElementById('pr');
                 const prLabel = prInput ? prInput.previousElementSibling : null;
                 const lineasRequeridas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12",
@@ -2376,8 +2400,11 @@
                     if (cuotaInput) {
                         cuotaInput.setAttribute('required', 'required');
                         if (!cuotaLabel.innerHTML.includes('*')) cuotaLabel.innerHTML =
-                            'N° Cuota <span class="text-danger fw-bolder">*</span>';
+                            'Desde Cuota <span class="text-danger fw-bolder">*</span>';
                     }
+                    // "Hasta Cuota" no se pide requerida aparte: en cuanto se llena "Desde" se
+                    // autocompleta sola (ver el listener de input más abajo), así que a efectos
+                    // prácticos siempre queda llena cuando "Desde" también lo está.
                     if (prInput) {
                         prInput.setAttribute('required', 'required');
                         if (!prLabel.innerHTML.includes('*')) prLabel.innerHTML =
@@ -2386,7 +2413,10 @@
                 } else {
                     if (cuotaInput) {
                         cuotaInput.removeAttribute('required');
-                        cuotaLabel.innerHTML = 'N° Cuota';
+                        cuotaLabel.innerHTML = 'Desde Cuota';
+                    }
+                    if (hastaCuotaInput) {
+                        hastaCuotaLabel.innerHTML = 'Hasta Cuota';
                     }
                     if (prInput) {
                         prInput.removeAttribute('required');
@@ -2411,6 +2441,30 @@
                 }
             });
         }
+
+        // "Desde Cuota" → "Hasta Cuota": al llenar Desde se copia a Hasta automáticamente, para
+        // el caso más común (pago de una sola cuota). Solo mientras Hasta no se haya tocado a
+        // mano — si la persona ya la cambió para cubrir varias cuotas seguidas, no se la pisa
+        // en cada tecla que escriba en Desde.
+        (function() {
+            const desdeCuotaInput = document.getElementById('numero_cuota');
+            const hastaCuotaInput = document.getElementById('hasta_cuota');
+            if (!desdeCuotaInput || !hastaCuotaInput) return;
+
+            let hastaTocadaAMano = false;
+            hastaCuotaInput.addEventListener('input', () => hastaTocadaAMano = true);
+
+            desdeCuotaInput.addEventListener('input', function() {
+                if (!hastaTocadaAMano) hastaCuotaInput.value = this.value;
+            });
+
+            // Al limpiar el modal (resetFile) también se limpia el flag, para que el próximo
+            // registro vuelva a autocompletar desde cero.
+            const modalComprobanteEl = document.getElementById('modalComprobante');
+            if (modalComprobanteEl) {
+                modalComprobanteEl.addEventListener('hidden.bs.modal', () => hastaTocadaAMano = false);
+            }
+        })();
 
         function actualizarHash() {
             const banco = document.getElementById('id_banco')?.value;
@@ -2474,7 +2528,7 @@
             if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') formData.set(
                 'id_interaccion', '0');
             if (forceSave) formData.append('force_save', '1');
-            ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => {
+            ['numero_cuota', 'hasta_cuota', 'pr', 'cco', 'observacion'].forEach(f => {
                 if (!formData.get(f)) formData.delete(f);
             });
 

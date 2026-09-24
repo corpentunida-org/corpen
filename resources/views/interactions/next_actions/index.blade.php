@@ -54,12 +54,24 @@
         {{-- Contenedor de Tabla Moderna --}}
         <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white">
             <div class="card-header bg-white border-0 pt-4 px-4">
-                <form action="{{ route('interactions.next_actions.index') }}" method="GET" class="position-relative">
-                    <i class="feather-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                    <input type="text" name="search" 
-                           class="form-control form-control-lg ps-5 border-0 bg-light rounded-3" 
-                           placeholder="Buscar acción de seguimiento..." 
-                           value="{{ request('search') }}">
+                <form action="{{ route('interactions.next_actions.index') }}" method="GET" class="d-flex flex-wrap gap-2">
+                    <div class="position-relative flex-grow-1" style="min-width: 240px;">
+                        <i class="feather-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="text" name="search"
+                               class="form-control form-control-lg ps-5 border-0 bg-light rounded-3"
+                               placeholder="Buscar acción de seguimiento..."
+                               value="{{ request('search') }}">
+                    </div>
+                    @if ($puedeElegirArea)
+                        <select name="area" class="form-select form-select-lg border-0 bg-light rounded-3"
+                                style="max-width: 220px;" onchange="this.form.submit()">
+                            <option value="">Todas las áreas</option>
+                            <option value="compartido" @selected(request('area') === 'compartido')>Compartido</option>
+                            @foreach ($areasDisponibles as $area)
+                                <option value="{{ $area }}" @selected(request('area') === $area)>{{ strtoupper($area) }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </form>
             </div>
 
@@ -68,6 +80,9 @@
                     <thead class="bg-light-subtle">
                         <tr>
                             <th class="ps-4 py-3 border-0 text-uppercase fs-xs fw-bold text-muted" style="letter-spacing: 1px;">Tipo de Acción</th>
+                            @if ($puedeElegirArea)
+                                <th class="border-0 text-uppercase fs-xs fw-bold text-muted">Área</th>
+                            @endif
                             <th class="text-center border-0 text-uppercase fs-xs fw-bold text-muted">Frecuencia en Seguimientos</th>
                             <th class="text-end pe-4 border-0 text-uppercase fs-xs fw-bold text-muted">Acciones</th>
                         </tr>
@@ -86,6 +101,15 @@
                                         </div>
                                     </a>
                                 </td>
+                                @if ($puedeElegirArea)
+                                    <td>
+                                        @if ($nextAction->area)
+                                            <span class="badge bg-soft-indigo text-indigo">{{ strtoupper($nextAction->area) }}</span>
+                                        @else
+                                            <span class="badge bg-light text-muted border">Compartido</span>
+                                        @endif
+                                    </td>
+                                @endif
                                 <td class="text-center">
                                     {{-- Corregido: Solo usamos seguimientos_count --}}
                                     @php $usos = $nextAction->seguimientos_count; @endphp
@@ -123,7 +147,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="text-center py-5">
+                                <td colspan="{{ $puedeElegirArea ? 4 : 3 }}" class="text-center py-5">
                                     <div class="py-4 opacity-50">
                                         <i class="feather-clock mb-3 d-block" style="font-size: 3rem;"></i>
                                         <h5 class="fw-bold">No se encontraron acciones</h5>

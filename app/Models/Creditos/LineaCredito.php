@@ -77,6 +77,17 @@ class LineaCredito extends Model
     {
         return $this->hasMany(Interaction::class, 'id_linea_de_obligacion', 'id');
     }
+
+    /**
+     * Créditos que usan esta línea. LineaCreditoController::destroy() ya llamaba a
+     * creditos()->count() para no dejar borrar una línea en uso, pero esta relación nunca se
+     * había definido — cualquier intento de eliminar tronaba con "Call to undefined method
+     * creditos()", incluso para una línea sin ningún crédito asociado.
+     */
+    public function creditos()
+    {
+        return $this->hasMany(Credito::class, 'cre_lineas_creditos_id');
+    }
     public function comprobantes()
     {
         return $this->hasMany(CarComprobantePago::class, 'id_obligacion', 'id');

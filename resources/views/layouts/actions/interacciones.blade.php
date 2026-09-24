@@ -13,16 +13,18 @@
         </li>
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('interactions.index') }}">
-                <i class="bi bi-list-check me-2"></i> Listado de Interacciones
+                <i class="bi bi-list-check me-2"></i> Mis Interacciones
             </a>
         </li>
         <li class="nxl-item">
-            <a href="{{ route('interactions.report',
-                auth()->user()->hasDirectPermission('interacciones.informes.todosagentes')
-                    ? request()->all()
-                    : array_merge(request()->all(), ['agent_id' => auth()->id()]),
-                ) }}"
-                class="nxl-link">
+            <a class="nxl-link" href="{{ route('interactions.auditoria') }}">
+                <i class="bi bi-search me-2"></i> Auditoría Interacciones
+            </a>
+        </li>
+        <li class="nxl-item">
+            {{-- Ya no hace falta forzar agent_id aquí: report() siempre parte de "individual"
+                 (lo propio) por defecto, igual que Listado/Auditoría — ver alcanceInformes(). --}}
+            <a href="{{ route('interactions.report') }}" class="nxl-link">
                 <i class="bi bi-bar-chart-fill me-2"></i> Informe
             </a>
         </li>
@@ -52,6 +54,11 @@
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.next_actions.index') }}">
                         <i class="bi bi-calendar2-check me-2"></i> Próxima Acción
+                    </a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.lineas.index') }}">
+                        <i class="bi bi-list-ul me-2"></i> Líneas
                     </a>
                 </li>
 

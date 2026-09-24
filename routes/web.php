@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\ImpersonarController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\AdjuntosInteraccionController;
+use App\Http\Controllers\Admin\AlertasInteraccionesConfigController;
 use App\Http\Controllers\IndexController;
 
 use Illuminate\Support\Facades\Route;
@@ -109,12 +111,14 @@ use App\Http\Controllers\Demografia\DemografiaController;
 
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
+use App\Http\Controllers\Creditos\LineaCreditoController;
 
 //INTERACCIONES
 use App\Models\Maestras\MaeTerceros;
 use App\Http\Controllers\Interacciones\InteractionController;
 use App\Http\Controllers\Interacciones\IntChannelController;
 use App\Http\Controllers\Interacciones\IntTypeController;
+use App\Http\Controllers\Interacciones\IntLineaController;
 use App\Http\Controllers\Interacciones\IntOutcomeController;
 use App\Http\Controllers\Interacciones\IntNextActionController;
 use App\Http\Controllers\Interacciones\IntSeguimientoController;
@@ -139,6 +143,7 @@ use App\Http\Controllers\Soportes\ScpPrioridadController;
 use App\Http\Controllers\Soportes\ScpTipoController;
 use App\Http\Controllers\Soportes\ScpTipoObservacionController;
 use App\Http\Controllers\Soportes\ScpTableroParametroController;
+use App\Http\Controllers\Soportes\ScpAlertaController;
 use App\Http\Controllers\Soportes\ScpSoporteController;
 use App\Http\Controllers\Soportes\ScpObservacionController;
 use App\Http\Controllers\Soportes\ScpSubTipoController;
@@ -220,6 +225,27 @@ Route::get('users-buscar-tercero', [UserController::class, 'buscarTerceroPorCedu
 // session('impersonador_id'), no por un permiso.
 Route::post('impersonar/salir', [ImpersonarController::class, 'detener'])
     ->name('admin.impersonar.detener')->middleware(['auth']);
+
+// Limpiar Historial de Adjuntos: ver el resumen por año requiere admin.adjuntos.index; el botón
+// de limpiar de verdad requiere admin.adjuntos.limpiar aparte (ver AdjuntosInteraccionController).
+Route::get('adjuntos-interacciones', [AdjuntosInteraccionController::class, 'index'])
+    ->name('admin.adjuntos.index')->middleware(['auth', 'candirect:admin.adjuntos.index']);
+Route::get('adjuntos-interacciones/{anio}', [AdjuntosInteraccionController::class, 'verAnio'])
+    ->where('anio', '[0-9]{4}')
+    ->name('admin.adjuntos.ver')->middleware(['auth', 'candirect:admin.adjuntos.index']);
+Route::post('adjuntos-interacciones/{anio}/limpiar', [AdjuntosInteraccionController::class, 'limpiarAnio'])
+    ->where('anio', '[0-9]{4}')
+    ->name('admin.adjuntos.limpiar')->middleware(['auth', 'candirect:admin.adjuntos.limpiar']);
+
+// Configuración de Alertas de Interacciones (Daytrack): cada cuánto sale el aviso forzado,
+// días seguidos posponiendo antes de escalar al admon del área, horarios de los correos
+// programados (ver AlertasInteraccionesConfigController / IntAlertaConfig).
+Route::get('alertas-interacciones/config', [AlertasInteraccionesConfigController::class, 'edit'])
+    ->name('admin.alertas-interacciones.config.edit')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
+Route::put('alertas-interacciones/config', [AlertasInteraccionesConfigController::class, 'update'])
+    ->name('admin.alertas-interacciones.config.update')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
+Route::put('alertas-soportes/config', [AlertasInteraccionesConfigController::class, 'updateSoportes'])
+    ->name('admin.alertas-soportes.config.update')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
 
 // Pantalla obligatoria cuando un admin marcó "forzar cambio de contraseña" desde Gestión de
 // Usuarios (ver App\Http\Middleware\ForzarCambioPassword) — cualquier usuario autenticado
@@ -783,6 +809,14 @@ Route::resource('creditos', CreditoController::class)
     ->names('creditos.credito')
     ->middleware(['auth']);
 
+// El controlador ya existía completo (crear/editar/eliminar con validación) pero nunca se había
+// conectado — sin rutas, sin vistas, sin menú. ->parameters() fuerza el placeholder a
+// {lineas_credito} para que calce con el binding del controlador (LineaCredito $lineas_credito)
+// y con route('lineas_credito.index'...) que ya usan sus redirects.
+Route::resource('lineas_credito', LineaCreditoController::class)
+    ->parameters(['lineas_credito' => 'lineas_credito'])
+    ->middleware(['auth']);
+
 
 // =========================================================================
 // MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED) ARCHIVO - TALENTO HUMANO
@@ -874,6 +908,23 @@ Route::prefix('interactions')
             // 📄 Página principal (lista de interacciones)
             Route::get('/', [InteractionController::class, 'index'])->name('index');
 
+            // 🔎 Auditoría: el listado completo con filtros finos (antes la pestaña "Todos" de
+            // arriba, movida aquí para no saturar la pantalla principal).
+            Route::get('/auditoria', [InteractionController::class, 'auditoria'])->name('auditoria');
+
+            // 🔎 Buscar Cliente (CRM): historial completo de un cliente puntual, sin importar
+            // quién lo atendió — ver InteractionController::buscarCliente().
+            Route::get('/buscar-cliente', [InteractionController::class, 'buscarCliente'])->name('buscar-cliente');
+
+            // 🔔 Alertas propias (vencidas + pendientes) — campanita del header (fuera del
+            // módulo también, ver components/alertas-interacciones.blade.php) y aviso
+            // recordatorio cada 3 horas.
+            Route::get('/alertas', [InteractionController::class, 'alertas'])->name('alertas.index');
+
+            // Decisión forzada (responder/posponer) del aviso cada 3 horas — ver
+            // AlertasInteraccionesService::registrarDecision().
+            Route::post('/alertas/decision', [InteractionController::class, 'registrarDecisionAlerta'])->name('alertas.decision');
+
             // 📊 Informe / Dashboard de interacciones
             Route::get('/report', [InteractionController::class, 'report'])->name('report');
 
@@ -896,10 +947,6 @@ Route::prefix('interactions')
 
             // 🗑️ Eliminar
             Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
-
-            // 📎 Archivos adjuntos
-            Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
-            Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 
             // 📌 AJAX: Obtener datos del cliente por cod_ter
             Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
@@ -976,6 +1023,20 @@ Route::prefix('interactions')
                     Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
                     Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
                     Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
+                });
+
+            // --- 📡 GRUPO DE RUTAS PARA LÍNEAS (propio de Interacciones, por área — independiente
+            // de las Líneas de Crédito de Cartera, ver 2026_09_24_090000_...) ---
+            Route::prefix('lineas')
+                ->name('lineas.')
+                ->group(function () {
+                    Route::get('/', [IntLineaController::class, 'index'])->name('index');
+                    Route::get('/create', [IntLineaController::class, 'create'])->name('create');
+                    Route::post('/', [IntLineaController::class, 'store'])->name('store');
+                    Route::get('/{linea}', [IntLineaController::class, 'show'])->name('show');
+                    Route::get('/{linea}/edit', [IntLineaController::class, 'edit'])->name('edit');
+                    Route::put('/{linea}', [IntLineaController::class, 'update'])->name('update');
+                    Route::delete('/{linea}', [IntLineaController::class, 'destroy'])->name('destroy');
                 });
         });
 
@@ -1177,6 +1238,11 @@ Route::middleware('auth')
 
         // Acción manual de reenvío de correo
         Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])->name('enviarCorreoEscalado');
+
+        // Alerta forzada (soportes asignados a mí, sin cerrar) — réplica de la de Interacciones,
+        // ver ScpAlertaController / AlertasSoportesService.
+        Route::get('alertas/pendientes', [ScpAlertaController::class, 'pendientes'])->name('alertas.pendientes');
+        Route::post('alertas/decision', [ScpAlertaController::class, 'registrarDecision'])->name('alertas.decision');
     });
 //FIN SOPORTE
 
