@@ -247,6 +247,12 @@ Route::put('alertas-interacciones/config', [AlertasInteraccionesConfigController
 Route::put('alertas-soportes/config', [AlertasInteraccionesConfigController::class, 'updateSoportes'])
     ->name('admin.alertas-soportes.config.update')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
 
+// Agentes Omitidos — lista compartida entre Interacciones y Soportes (ver IntAlertaOmitido).
+Route::post('alertas-omitidos', [AlertasInteraccionesConfigController::class, 'agregarOmitido'])
+    ->name('admin.alertas-omitidos.store')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
+Route::delete('alertas-omitidos/{omitido}', [AlertasInteraccionesConfigController::class, 'quitarOmitido'])
+    ->name('admin.alertas-omitidos.destroy')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
+
 // Pantalla obligatoria cuando un admin marcó "forzar cambio de contraseña" desde Gestión de
 // Usuarios (ver App\Http\Middleware\ForzarCambioPassword) — cualquier usuario autenticado
 // puede caer aquí, sin permiso especial, no depende de candirect.

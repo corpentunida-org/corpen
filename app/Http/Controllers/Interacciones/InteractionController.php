@@ -16,6 +16,7 @@ use App\Models\Interacciones\IntOutcome;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntType;
 use App\Models\Interacciones\IntAlertaConfig;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
@@ -1036,6 +1037,9 @@ class InteractionController extends Controller
             'pendientes' => $pendientes->take(8)->map(fn ($s) => $formatear($s, false))->values(),
             // Configurable desde Admin → Configuración de Alertas (antes era un 3 fijo en el JS).
             'aviso_intervalo_horas' => IntAlertaConfig::actual()->aviso_intervalo_horas,
+            // Si está en la lista de "omitir pantalla" (Agentes Omitidos), el front no debe
+            // forzar el modal — sigue viendo su propia campanita normalmente si quiere.
+            'pantalla_omitida' => IntAlertaOmitido::estaOmitido($userId, 'pantalla'),
         ]);
     }
 
