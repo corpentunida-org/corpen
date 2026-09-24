@@ -5,9 +5,13 @@
         <div class="card stretch stretch-full">
             <div class="card-header">
                 <h5 class="card-title">Lista de quizes</h5>
-                <a href="{{ route('indicators.quizes.create') }}" class="btn btn-light-brand"> 
+                <a href="{{ route('indicators.quizes.create') }}" class="btn btn-light-brand">
                 <i class="bi bi-plus-circle me-2"></i> Crear una encuesta</a>
+                <a href="{{ route('indicators.quiz.exportar') }}" class="btn btn-success">
+                    Descargar Informe CSV
+                </a>
             </div>
+
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -58,7 +62,7 @@
     <div class="col-xxl-8">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Participantes del Quiz</h5>                
+                <h5 class="card-title">Participantes del Quiz</h5>
                 {{-- <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
@@ -223,10 +227,43 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a class="btn btn-primary">Generate Report</a>
+                <button type="button" class="btn btn-primary" onclick="descargarPDF()">
+                    Generate Report
+                </button>
             </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+    @media print {
+        /* Ocultar elementos que no quieres que salgan en el reporte (botones, menús, etc.) */
+        .card-footer,
+        .btn,
+        nav,
+        aside,
+        header {
+            display: none !important;
+        }
+
+        /* Asegurar que las tarjetas ocupen todo el ancho y no se corten mal */
+        body {
+            background-color: #fff !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+    </style>
+
+    <script>
+    function generateReport() {
+        // Opcional: puedes personalizar el título de la página temporalmente para el PDF
+        document.title = "Reporte_Quizes_" + new Date().toISOString().slice(0,10);
+        window.print();
+    }
+    </script>
+
     <script>
         const porcentaje = {{ round(($datacharts['usuariosmaspuntaje'] / $datacharts['totalempleados']) * 100, 1) }};
         const ctx = document.getElementById('progressChart').getContext('2d');

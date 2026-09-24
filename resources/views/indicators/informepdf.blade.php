@@ -13,7 +13,6 @@
         }
 
         body {
-            /* VOLVEMOS A LA FUENTE SEGURA QUE NO ROMPE EL TEXTO */
             font-family: 'Helvetica', Arial, sans-serif;
             font-size: 10px;
             color: #2c3e50;
@@ -42,11 +41,6 @@
         .header-title-box {
             border-left: 4px solid #0d6efd;
             padding-left: 12px;
-        }
-
-        .header-table td {
-            border: none;
-            padding: 0;
         }
 
         .header-title {
@@ -141,6 +135,20 @@
             background-color: #fdfdfe;
         }
 
+        /* Estilo para la fila separadora de áreas */
+        .area-header {
+            background-color: #e9ecef !important;
+            border-bottom: 2px solid #ced4da !important;
+        }
+
+        .area-header td {
+            font-size: 11px;
+            font-weight: bold;
+            color: #212529;
+            padding: 8px 10px;
+            text-transform: uppercase;
+        }
+
         .formula-text {
             font-size: 9px;
             color: #7f8c8d;
@@ -207,7 +215,8 @@
                 </div>
             </td>
             <td class="header-meta">
-                <strong>Generado por:</strong> {{ auth()->user()->name ?? 'Sistema' }}<br>
+                <!-- Se agregó ?-> para evitar error si auth()->user() es nulo en el momento de generar el PDF -->
+                <strong>Generado por:</strong> {{ auth()->user()?->name ?? 'Sistema' }}<br>
                 <strong>Fecha de emisión:</strong> {{ now()->format('d/m/Y') }}<br>
                 <strong>Hora:</strong> {{ now()->format('H:i') }}
             </td>
@@ -243,35 +252,49 @@
             </tr>
         </thead>
         <tbody>
-            @forelse($indicators as $ind)
-                <tr>
-                    <td class="text-center fw-bold" style="color: #0d6efd;">#{{ $ind->id }}</td>
-                    <td class="fw-bold">{{ $ind->nombre }}</td>
+            {{-- Iteración general agrupada por Área --}}
+            @forelse($indicators as $areaNombre => $grupo)
 
-                    {{-- LIMPIEZA DE CÁLCULO: Por si acaso también hay símbolos raros aquí --}}
-                    <td class="formula-text">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->calculo) }}</td>
-
-                    {{-- LA SOLUCIÓN MÁGICA: Convertimos ≥ a >= usando PHP --}}
-                    <td class="text-center fw-bold">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->meta) }}</td>
-
-                    <td class="text-center">
-                        @php
-                            $badgeClass = match($ind->frecuencia) {
-                                'Mensual' => 'badge-primary',
-                                'Trimestral' => 'badge-warning',
-                                'Semestral' => 'badge-info',
-                                default => 'badge-success',
-                            };
-                        @endphp
-                        <span class="badge {{ $badgeClass }}">{{ $ind->frecuencia }}</span>
-                    </td>
-                    <td class="text-right fw-bold" style="font-size: 11px;">
-                        {{ $ind->indicador_calculado !== null
-                            ? number_format($ind->indicador_calculado, 1) . ' %'
-                            : '—'
-                        }}
+                {{-- Fila separadora con el nombre del Área --}}
+                <tr class="area-header">
+                    <td colspan="6">
+                        Área: {{ $areaNombre }}
                     </td>
                 </tr>
+
+                {{-- Iteramos sobre los indicadores de ESA Área --}}
+                @foreach($grupo as $ind)
+                    <tr>
+                        <td class="text-center fw-bold" style="color: #0d6efd;">#{{ $ind->id }}</td>
+                        <td class="fw-bold">{{ $ind->nombre }}</td>
+
+                        <!-- Se agregó ?? '' para evitar errores si el calculo o meta están vacíos en BD -->
+                        <td class="formula-text">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->calculo ?? '') }}</td>
+
+                        <td class="text-center fw-bold">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->meta ?? '') }}</td>
+
+                        <td class="text-center">
+                            @php
+                                // Nos aseguramos de tener un valor válido para el match
+                                $frecuencia = $ind->frecuencia ?? 'Mensual';
+                                $badgeClass = match($frecuencia) {
+                                    'Mensual' => 'badge-primary',
+                                    'Trimestral' => 'badge-warning',
+                                    'Semestral' => 'badge-info',
+                                    default => 'badge-success',
+                                };
+                            @endphp
+                            <span class="badge {{ $badgeClass }}">{{ $frecuencia }}</span>
+                        </td>
+                        <td class="text-right fw-bold" style="font-size: 11px;">
+                            @if($ind->indicador_calculado !== null)
+                                {{ number_format($ind->indicador_calculado, 1) }} {{ $ind->unidad_medida }}
+                            @else
+                                —
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
             @empty
                 <tr>
                     <td colspan="6" class="text-center" style="padding: 30px; color: #7f8c8d; font-style: italic;">

@@ -1440,9 +1440,15 @@ Route::get('/indicators/quiz', [QuizController::class, 'quizinicio'])->name('ind
 Route::get('/indicators/quiz/{prueba}/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
 Route::post('/indicators/validarcorreo', [QuizController::class, 'validar'])->name('indicators.validar.correo');
 Route::post('/indicators/quiz/store', [QuizController::class, 'storeQuiz'])->name('indicators.quiz.store');
+
 Route::prefix('indicators')->group(function () {
+    // Ruta nueva para exportar el informe protegida con el middleware auth
+    Route::get('/quiz/exportar', [QuizController::class, 'exportarInforme'])->name('indicators.quiz.exportar')->middleware('auth');
+
     Route::resource('quizes', QuizController::class)->names('indicators.quizes')->middleware('auth');
 });
+
+
 //Indicadores
 Route::prefix('indicators')->group(function () {
     Route::resource('indicador', IndicadoresController::class)->names('indicators.indicadores')->middleware('auth');
@@ -1645,7 +1651,7 @@ Route::middleware(['auth'])
 
         // CERTIFICADOS: Procesamiento Individual (Guarda en BD antes de mostrar PDF)
         Route::post('operaciones/{id}/procesar-individual', [OperacionController::class, 'procesarIndividual'])->name('operaciones.procesar_individual');
-        
+
         // CERTIFICADOS: Generación de Gestión Manual (Un clic)
         Route::post('operaciones/{id}/gestion-manual', [OperacionController::class, 'generarCertificadoGestionManual'])->name('operaciones.gestion_manual');
 
