@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Models\Soportes\ScpAlertaConfig;
 use App\Services\Soportes\AlertasSoportesService;
 use Illuminate\Http\Request;
@@ -29,6 +30,9 @@ class ScpAlertaController extends Controller
                 'url' => route('soportes.soportes.show', $s->id),
             ])->values(),
             'aviso_intervalo_horas' => ScpAlertaConfig::actual()->aviso_intervalo_horas,
+            // Lista compartida con Interacciones (Admin → Configuración de Alertas → Agentes
+            // Omitidos) — "pantalla" tapa el modal forzado en los dos módulos por igual.
+            'pantalla_omitida' => IntAlertaOmitido::estaOmitido($userId, 'pantalla'),
         ]);
     }
 

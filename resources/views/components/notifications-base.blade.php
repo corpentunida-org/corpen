@@ -782,7 +782,9 @@
                     if (data.aviso_intervalo_horas) {
                         avisoSoportesIntervaloMs = data.aviso_intervalo_horas * 60 * 60 * 1000;
                     }
-                    if (evaluarAviso) {
+                    // Lista compartida con Interacciones — si está en "omitir pantalla" no se le
+                    // fuerza el modal en ningún módulo.
+                    if (evaluarAviso && !data.pantalla_omitida) {
                         evaluarAvisoForzadoSoportes(data.pendientes_count ?? 0);
                     }
                 })

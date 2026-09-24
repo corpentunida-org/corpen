@@ -6,6 +6,7 @@ use App\Mail\Interacciones\InteraccionesEscalacionPosponerMail;
 use App\Models\Interacciones\IntAlertaConfig;
 use App\Models\Interacciones\IntAlertaDecision;
 use App\Models\Interacciones\IntAlertaEscalacion;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\User;
 use Carbon\Carbon;
@@ -89,9 +90,15 @@ class AlertasInteraccionesService
      */
     public function usuariosConAccesoInteracciones(): Collection
     {
+        // Excluye a quien esté en la lista de "omitir correos" (Admin → Configuración de
+        // Alertas → Agentes Omitidos) — este es el único correo que le llega directo al propio
+        // agente, los demás (informe semanal, inactividad, escalación) van a los admon.
+        $omitidosCorreo = IntAlertaOmitido::idsOmitidos('correo');
+
         return User::whereNull('deleted_at')
             ->where(fn ($q) => $q->where('bloqueado', false)->orWhereNull('bloqueado'))
             ->whereHas('permissions', fn ($q) => $q->where('name', 'menu.interacciones'))
+            ->whereNotIn('id', $omitidosCorreo)
             ->get();
     }
 

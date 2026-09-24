@@ -214,7 +214,10 @@
                         }
 
                         renderLista();
-                        if (mostrarAvisoSiToca) {
+                        // Si está en la lista de "omitir pantalla" (Admin → Configuración de
+                        // Alertas → Agentes Omitidos), no se le fuerza el modal — sigue viendo su
+                        // campanita normalmente si quiere consultarla.
+                        if (mostrarAvisoSiToca && !data.pantalla_omitida) {
                             evaluarAvisoPeriodico(totalUrgente);
                         }
                         return data;
