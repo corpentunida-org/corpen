@@ -10,6 +10,7 @@ use App\Models\Indicators\IndQuiz;
 use App\Models\Archivo\GdoEmpleado;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class QuizController extends Controller
 {
@@ -17,10 +18,7 @@ class QuizController extends Controller
     {
         return view('indicators.quiz.inicioquiz');
     }
-    /*
-        $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 4")->count();
-                return ($usuarios / GdoEmpleado::count()) * 100;
-    */
+
     public function index()
     {
         $lista_quizes = IndQuiz::all();
@@ -30,6 +28,7 @@ class QuizController extends Controller
         $puntajesQuiz = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         $ticcorpen = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         $ticsoft = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 'n/a' => 0];
+
         foreach ($pruebausuarios as $usuario) {
             if (!empty($usuario->puntaje)) {
                 $puntaje = explode('/', $usuario->puntaje)[0];
@@ -41,6 +40,7 @@ class QuizController extends Controller
                 }
             }
         }
+
         foreach ($respuestas as $respuesta) {
             $array = is_string($respuesta) ? json_decode($respuesta, true) : $respuesta;
             if (isset($array[5]) && is_numeric($array[5])) {
@@ -78,8 +78,15 @@ class QuizController extends Controller
         if (!$activeQuiz) {
             return view('indicators.quiz.quizTI', ['quizActivo' => false]);
         }
+
         $idsEspeciales = [1, 2];
-        $idsPreguntas = IndPreguntas::where('ref_quiz', $pruebaid)->whereNotIn('id', $idsEspeciales)->inRandomOrder()->limit(5)->pluck('id')->toArray();
+        $idsPreguntas = IndPreguntas::where('ref_quiz', $pruebaid)
+            ->whereNotIn('id', $idsEspeciales)
+            ->inRandomOrder()
+            ->limit(5)
+            ->pluck('id')
+            ->toArray();
+
         $idsPreguntas = array_merge($idsPreguntas, $idsEspeciales);
         $preguntas = [];
 
@@ -98,6 +105,7 @@ class QuizController extends Controller
                 'indicador' => in_array($idPregunta, $idsEspeciales),
             ];
         }
+
         return view('indicators.quiz.quizTI', [
             'quizActivo' => true,
             'preguntas' => $preguntas,
@@ -165,6 +173,7 @@ class QuizController extends Controller
         $correo = $request->correoUsuario;
         $existe = DB::table('gdo_cargo')->where('correo_corporativo', $correo)->exists();
         $respondido = DB::table('Ind_usuarios')->where('id_correo', $correo)->where('prueba', $request->pruebaid)->exists();
+
         return response()->json([
             'existe' => $existe,
             'respondido' => $respondido,
@@ -178,15 +187,13 @@ class QuizController extends Controller
 
     public function store(Request $request)
     {
-        dd($request->all());
-
         DB::transaction(function () use ($request) {
             $quiz = IndQuiz::create([
                 'nombre' => $request->titulo,
                 'total_preguntas' => count($request->preguntas),
                 'estado' => 1,
-                'usuario_creador' => auth()->id(),
-                'area' => null, // REVISAAAAR
+                'usuario_creador' => Auth::id(),
+                'area' => null,
             ]);
 
             foreach ($request->preguntas as $pregunta) {
@@ -206,5 +213,51 @@ class QuizController extends Controller
         });
 
         return redirect()->route('indicators.quizes.index')->with('success', 'Quiz creado exitosamente.');
+    }
+
+    /**
+     * Método para exportar/descargar el informe en formato CSV (compatible con Excel).
+     */
+    public function exportarInforme()
+    {
+        $fileName = 'informe_quiz_usuarios_' . date('Y-m-d_H-i-s') . '.csv';
+
+        // Obtenemos los usuarios con su respectiva información del quiz asociado si existe relación
+        $usuarios = IndUsuarios::all();
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($usuarios) {
+            $file = fopen('php://output', 'w');
+
+            // Añadir BOM para que Excel reconozca correctamente las tildes y caracteres especiales UTF-8
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Encabezados de las columnas del archivo CSV
+            fputcsv($file, ['ID', 'Correo', 'Nombre', 'Puntaje', 'Prueba ID', 'Tiempo Transcurrido', 'Fecha de Registro'], ';');
+
+            // Recorrer los registros y escribirlos fila por fila
+            foreach ($usuarios as $usuario) {
+                fputcsv($file, [
+                    $usuario->id,
+                    $usuario->id_correo,
+                    $usuario->nombre,
+                    $usuario->puntaje,
+                    $usuario->prueba,
+                    $usuario->tiempo,
+                    $usuario->fecha
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

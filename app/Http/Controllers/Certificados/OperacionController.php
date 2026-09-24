@@ -35,6 +35,8 @@ use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\Certificados\CarSiaLinea;
+use App\Models\Asociado\MaeAsociado;
+use App\Models\Interacciones\Interaction;
 
 class OperacionController extends Controller
 {
@@ -232,7 +234,7 @@ class OperacionController extends Controller
             // NUEVO: EXTRAER LAS INTERACCIONES (CRM) DEL TERCERO
             // Llaves de cruce: Interaction (client_id) -> Operacion (id_tercero)
             // ==============================================================================
-            $interacciones = \App\Models\Interacciones\Interaction::with([
+            $interacciones = Interaction::with([
                 'agent',
                 'channel',
                 'type',
@@ -248,7 +250,7 @@ class OperacionController extends Controller
             // NUEVO: EXTRAER LOS DOCUMENTOS (ANEXOS Y ECM) DEL ASOCIADO
             // Llaves de cruce: MaeAsociado (cedula) -> Operacion (id_tercero)
             // ==============================================================================
-            $documentosAsociado = \App\Models\Asociado\MaeAsociado::where('cedula', $operacion->id_tercero)->first();
+            $documentosAsociado = MaeAsociado::where('cedula', $operacion->id_tercero)->first();
             // ==============================================================================
 
             // ==============================================================================
@@ -310,7 +312,7 @@ class OperacionController extends Controller
             $tiposCertificados = $tipos->whereIn('id', [3, 4]); //Asigancion Tipo de Certificados del Show
             // Tipos independientes para el modal de Certificados de Gestión (#modalSeleccionTipo)
             // Cambia los números dentro del array [2, 5, 6] por los IDs reales que deseas mostrar en este modal
-            $tiposGestion = $tipos->whereIn('id', [2, 5, 6]);
+            $tiposGestion = $tipos->whereIn('id', [2, 5, 6, 7]);
 
             // ==============================================================================
             // CONSULTAR CATÁLOGO DE LÍNEAS PARA EL MODAL CERTIFICADOS DE GESTIÓN (#modalSeleccionTipo)
@@ -1106,11 +1108,13 @@ class OperacionController extends Controller
 
                 // 4. Asignar dinámicamente la vista
                 $vistaPdf = match((int) $tipoCertificadoId) {
-                    1 => 'certificados.pdf.inicio',
-                    2 => 'certificados.pdf.paz_y_salvo',
-                    3 => 'certificados.pdf.cobro_persuasivo',
-                    4 => 'certificados.pdf.estado_cuenta',
-                    5 => 'certificados.pdf.acuerdos_pago',
+                    1 => 'certificados.pdf.01_postulacion', //Color gris
+                    2 => 'certificados.pdf.02_paz_y_salvo', //Color rojo
+                    3 => 'certificados.pdf.03_compromisos_activo', //Color rojo
+                    4 => 'certificados.pdf.04_estado_cuenta', //Color rojo
+                    5 => 'certificados.pdf.05_acuerdos_pago', //Color naranja
+                    6 => 'certificados.pdf.06_cuenta_credito', //Color naranja
+                    7 => 'certificados.pdf.07_refinanciacion', //Color naranja
                     default => 'certificados.pdf.paz_y_salvo',
                 };
 
@@ -1789,15 +1793,14 @@ class OperacionController extends Controller
 
     /**
      * 15. GENERACIÓN DE CERTIFICADO DE GESTIÓN DESDE HOJA DE CÁLCULO MANUAL
-     * Procesa la matriz enviada por el modal, genera los hashes de auditoría,
-     * evalúa el payload JSON individual por línea y persiste los registros.
+     * Procesa los bloques y matrices enviados por el modal, genera los hashes de auditoría,
+     * evalúa el payload JSON y persiste los registros correctamente.
      */
     public function generarCertificadoGestionManual(Request $request, $id)
     {
-        // 1. Quitamos la restricción estricta de "in:2,4" para que no bloquee los nuevos tipos (5, 6, etc.)
         $request->validate([
             'tipo_certificado' => 'required',
-            'lineas'           => 'required|array|min:1',
+            'bloques'          => 'required|array|min:1',
         ]);
 
         try {
@@ -1806,103 +1809,148 @@ class OperacionController extends Controller
             $operacion = CarSiaOperacion::findOrFail($id);
             $tipoGestionId = $request->input('tipo_certificado');
 
-            // 1. Registramos el tipo de operación con el ID dinámico seleccionado en el Modal A
-            \App\Models\Certificados\CarSiaTipoOperacion::create([
+            // Registrar el tipo de operación general
+            CarSiaTipoOperacion::create([
                 'id_car_sia_operaciones' => $operacion->id,
                 'numero_bloque'          => $operacion->numero_bloque,
                 'id_car_sia_tipos'       => $tipoGestionId,
                 'id_user'                => Auth::id(),
             ]);
 
-            // Obtenemos los metadatos y hash de auditoría corporativos
-            $auditoria = $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque);
+            // Obtener datos de auditoría base
+            $auditoria = method_exists($this, 'obtenerDatosAuditoria')
+                ? $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque)
+                : ['user_id' => Auth::id()];
+
             $auditoria['id_tipo'] = $tipoGestionId;
 
-            // 2. Procesamos cada fila/línea enviada desde la matriz de la hoja de cálculo
-            $lineasData = $request->input('lineas', []);
+            // =========================================================================
+            // GENERAR UN ÚNICO HASH GLOBAL PARA TODO EL LOTE/BLOQUE
+            // =========================================================================
+            $timestampLote = now()->timestamp;
+            $hashLoteUnico = "API-{$operacion->numero_bloque}-TIPO-{$tipoGestionId}-OP-{$operacion->id}-TS-{$timestampLote}";
+            // =========================================================================
 
-            foreach ($lineasData as $linea) {
-                $facturaId = $linea['id_factura'] ?? null;
-                if (!$facturaId) continue;
+            $bloquesData = $request->input('bloques', []);
+            $totalLineasProcesadas = 0;
 
-                // Parseo seguro de Payload Documento
-                $payloadInput = $linea['payload_documento'] ?? null;
-                $payloadArray = ["tipo_emision" => "manual_spreadsheet"];
-                if (is_string($payloadInput)) {
-                    $decoded = json_decode($payloadInput, true);
-                    $payloadArray = json_last_error() === JSON_ERROR_NONE ? $decoded : ["raw_text" => $payloadInput];
-                } elseif (is_array($payloadInput)) {
-                    $payloadArray = $payloadInput;
+            foreach ($bloquesData as $bloque) {
+                $idCarSiaLineas  = $bloque['id_car_sia_lineas'] ?? null;
+                $idCarSiaEstados = $bloque['id_car_sia_estados'] ?? 3;
+                $idUserBloque    = $bloque['id_user'] ?? ($auditoria['user_id'] ?? Auth::id());
+                $facturas        = $bloque['facturas'] ?? [];
+
+                foreach ($facturas as $linea) {
+                    $facturaId = $linea['id_factura'] ?? null;
+                    if (!$facturaId) {
+                        continue;
+                    }
+
+                    // Parseo seguro de Payload del documento
+                    $payloadInput = $linea['payload_documento'] ?? null;
+                    $payloadArray = ["tipo_emision" => "manual_spreadsheet"];
+
+                    if (is_string($payloadInput)) {
+                        $decoded = json_decode($payloadInput, true);
+                        $payloadArray = json_last_error() === JSON_ERROR_NONE ? $decoded : ["raw_text" => $payloadInput];
+                    } elseif (is_array($payloadInput)) {
+                        $payloadArray = $payloadInput;
+                    }
+
+                    // Parseo seguro de Metadata
+                    $metadataInput = $linea['metadata'] ?? null;
+                    $metadataArray = [];
+
+                    if (is_string($metadataInput)) {
+                        $decodedMeta = json_decode($metadataInput, true);
+                        $metadataArray = json_last_error() === JSON_ERROR_NONE ? $decodedMeta : [];
+                    } elseif (is_array($metadataInput)) {
+                        $metadataArray = $metadataInput;
+                    }
+
+                    // Cálculo de Mora automático basado en la fecha de vencimiento
+                    $fechaVenci = $linea['fecha_venci'] ?? null;
+                    $diasMora = 0;
+
+                    if ($fechaVenci) {
+                        try {
+                            $fechaVencimientoCarbon = Carbon::parse($fechaVenci);
+                            $diferencia = now()->diffInDays($fechaVencimientoCarbon, false);
+                            $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
+                        } catch (\Exception $ex) {
+                            $diasMora = 0;
+                        }
+                    }
+
+                    // =========================================================================
+                    // ASIGNAR EL HASH ÚNICO DEL LOTE O EL PERSONALIZADO DE LA LÍNEA
+                    // =========================================================================
+                    $hashLinea = !empty($linea['hash_certificado'])
+                        ? $linea['hash_certificado']
+                        : $hashLoteUnico;
+                    // =========================================================================
+
+                    CarSiaOperacionLinea::updateOrCreate(
+                        [
+                            'id_car_sia_operaciones' => $operacion->id,
+                            'numero_bloque'          => $operacion->numero_bloque,
+                            'id_factura'             => $facturaId,
+                            'hash_certificado'       => $hashLinea,
+                        ],
+                        [
+                            'id_car_sia_lineas'         => $idCarSiaLineas,
+                            'observacion'               => $linea['observacion'] ?? 'Actualizado desde hoja de cálculo manual.',
+                            'calificacion'              => ucfirst(strtolower($linea['calificacion'] ?? 'Bueno')),
+                            'fecha_venci'               => $fechaVenci,
+                            'id_car_sia_estados'        => $idCarSiaEstados,
+                            'fecha_ultimo_recordatorio' => $linea['fecha_ultimo_recordatorio'] ?? now(),
+                            'dias_mora_automaticos'     => $diasMora,
+                            'procesado_en'              => now(),
+                            'id_user'                   => $idUserBloque,
+                            'id_car_sia_tipos'          => $tipoGestionId,
+                            'estadoApi'                 => $linea['estadoApi'] ?? '0',
+                            'metadata'                  => $metadataArray,
+                            'payload_documento'         => $payloadArray,
+                        ]
+                    );
+
+                    $totalLineasProcesadas++;
                 }
-
-                // Parseo seguro de Metadata (Faltaba en tu código original)
-                $metadataInput = $linea['metadata'] ?? null;
-                $metadataArray = [];
-                if (is_string($metadataInput)) {
-                    $decodedMeta = json_decode($metadataInput, true);
-                    $metadataArray = json_last_error() === JSON_ERROR_NONE ? $decodedMeta : [];
-                } elseif (is_array($metadataInput)) {
-                    $metadataArray = $metadataInput;
-                }
-
-                // Cálculo de Mora
-                $fechaVenci = $linea['fecha_venci'] ?? null;
-                $diasMora = (int)($linea['dias_mora_automaticos'] ?? 0);
-                if ($fechaVenci) {
-                    $fechaVencimientoCarbon = \Carbon\Carbon::parse($fechaVenci);
-                    $diferencia = now()->diffInDays($fechaVencimientoCarbon, false);
-                    $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
-                }
-
-                // Persistencia de la línea (Respetando los selects de JS)
-                CarSiaOperacionLinea::updateOrCreate(
-                    [
-                        // Llaves de búsqueda
-                        'id_car_sia_operaciones' => $operacion->id,
-                        'numero_bloque'          => $operacion->numero_bloque,
-                        'id_factura'             => $facturaId,
-                        'hash_certificado'       => $linea['hash_certificado'] ?? $auditoria['hash'],
-                    ],
-                    [
-                        // Valores a actualizar/crear capturados desde el modal JS
-                        'id_car_sia_lineas'         => $linea['id_car_sia_lineas'] ?? null,
-                        'observacion'               => $linea['observacion'] ?? 'Actualizado desde hoja de cálculo manual.',
-                        'calificacion'              => ucfirst(strtolower($linea['calificacion'] ?? 'Bueno')),
-                        'fecha_venci'               => $fechaVenci,
-                        'id_car_sia_estados'        => $linea['id_car_sia_estados'] ?? 3, // Ahora toma el select del modal
-                        'fecha_ultimo_recordatorio' => $linea['fecha_ultimo_recordatorio'] ?: now(),
-                        'dias_mora_automaticos'     => $diasMora,
-                        'procesado_en'              => now(),
-                        'id_user'                   => $linea['id_user'] ?? $auditoria['user_id'], // Ahora toma el select del modal
-                        'id_car_sia_tipos'          => $linea['id_car_sia_tipos'] ?? $auditoria['id_tipo'], // Ahora toma el select del modal
-                        'estadoApi'                 => $linea['estadoApi'] ?? '0',
-                        'metadata'                  => $metadataArray,
-                        'payload_documento'         => $payloadArray,
-                    ]
-                );
             }
 
-            // 3. Guardamos el log de auditoría global
-            $this->registrarLogAuditoria(
-                $operacion->numero_bloque, 1, 4,
-                'Generación manual de Certificado de Gestión (Matriz Excel, Tipo ID: '.$tipoGestionId.')',
-                'Operación',
-                'Ejecución directa interactiva desde hoja de cálculo.',
-                ['id_operacion' => $operacion->id], [],
-                ['hash_generado' => $auditoria['hash'], 'total_lineas' => count($lineasData)]
-            ); 
+            if ($totalLineasProcesadas === 0) {
+                throw new \Exception('No se encontraron líneas o facturas válidas para procesar en los bloques enviados.');
+            }
 
             DB::commit();
 
-            return redirect()->back()->with('success', 'Certificado de Gestión y matriz procesados exitosamente.');
+            // Responder acorde al tipo de solicitud (AJAX/JSON vs Redirección clásica)
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Certificado procesado exitosamente. Total líneas: {$totalLineasProcesadas}",
+                    'total_procesadas' => $totalLineasProcesadas
+                ]);
+            }
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Captura errores de validación para que no fallen en silencio
-            return redirect()->back()->with('error', 'Error de validación: ' . $e->getMessage());
+            return redirect()->back()->with('success', 'Certificado procesado exitosamente.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("SIA - Error al procesar matriz de Certificado de Gestión en op {$id}: " . $e->getMessage());
-            return redirect()->back()->with('error', 'Ocurrió un error al procesar la matriz: ' . $e->getMessage());
+
+            // Registro detallado del error en los logs de Laravel
+            Log::error("Error en generarCertificadoGestionManual [Op ID: {$id}]: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al procesar el certificado: ' . $e->getMessage()
+                ], 422);
+            }
+
+            return redirect()->back()->with('error', 'Ocurrió un error: ' . $e->getMessage())->withInput();
         }
     }
 

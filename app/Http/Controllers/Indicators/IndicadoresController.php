@@ -31,19 +31,68 @@ class IndicadoresController extends Controller
 
         $lastReport = IndRegistroInformes::latest()->first();
 
+        // Calculamos el promedio usando el método refactorizado
+        $promedioAlcanzados = $this->calcularPromedio($indicators);
+
+        return view('indicators.index', compact('indicators', 'lastReport', 'promedioAlcanzados'));
+    }
+
+    public function dataIndicadores()
+    {
+        $indicators = IndIndicadores::with('arearel')->get();
+
+        foreach ($indicators as $ind) {
+            $ind->calculo = (string) $ind->calculo;
+            $ind->meta = (string) $ind->meta;
+            $ind->frecuencia = $ind->frecuencia ?? 'Mensual';
+
+            // AQUÍ EXTRAEMOS LA UNIDAD INTELIGENTEMENTE
+            $metaData = $this->parseMeta($ind->meta);
+            $ind->unidad_medida = $metaData['unidad'] ?? ''; // Ej: '%', 'horas', '/ 5', 'días'
+
+            if (!empty($ind->consulta_bd)) {
+                try {
+                    $resultado = collect(DB::select($ind->consulta_bd))->first();
+                    $ind->indicador_calculado = $resultado ? (float) array_values((array) $resultado)[0] : null;
+                } catch (\Exception $e) {
+                    throw new \Exception('Error en el indicador "' . $ind->nombre . '" - ' . $e->getMessage());
+                }
+            } else {
+                $ind->indicador_calculado = null;
+            }
+        }
+
+        return $indicators->groupBy(function($item) {
+            return $item->arearel->nombre ?? 'Sin Área Asignada';
+        });
+    }
+
+    private function calcularPromedio($indicatorsGrouped)
+    {
         $totalIndicadores = 0;
         $indicadoresAlcanzados = 0;
 
-        // Descomentado y corregido: Ahora que '$indicators' vuelve a estar agrupado,
-        // este cálculo del promedio funcionará correctamente sin causar error.
-        foreach ($indicators as $grupo) {
+        foreach ($indicatorsGrouped as $grupo) {
             foreach ($grupo as $ind) {
+                // OMITIR TEMPORALMENTE LOS INDICADORES DE TIEMPO ERRÓNEOS (#6, #7, #8)
+                if (in_array($ind->id, [6, 7, 8])) {
+                    continue;
+                }
+
                 if ($ind->indicador_calculado !== null) {
                     $totalIndicadores++;
+
                     $meta = $this->parseMeta($ind->meta);
-                    // Verificamos que parseMeta nos haya devuelto un arreglo válido
+
                     if (!empty($meta) && isset($meta['valor'])) {
-                        if ($ind->indicador_calculado >= $meta['valor']) {
+                        $cumple = false;
+                        if ($meta['op'] === '<=') {
+                            $cumple = ($ind->indicador_calculado <= $meta['valor']);
+                        } else {
+                            $cumple = ($ind->indicador_calculado >= $meta['valor']);
+                        }
+
+                        if ($cumple) {
                             $indicadoresAlcanzados++;
                         }
                     }
@@ -52,33 +101,49 @@ class IndicadoresController extends Controller
         }
 
         $promedioAlcanzados = $totalIndicadores > 0 ? ($indicadoresAlcanzados / $totalIndicadores) * 100 : 0;
-        $promedioAlcanzados = round($promedioAlcanzados, 2);
-
-        return view('indicators.index', compact('indicators', 'lastReport', 'promedioAlcanzados'));
+        return round($promedioAlcanzados, 2);
     }
 
-    public function dataIndicadores()
+    /**
+     * Método unificado y mejorado para interpretar la Meta (Texto a Lógica Matemática)
+     */
+    private function parseMeta(?string $meta): array
     {
-        // Obtenemos todos los indicadores con la relación de su área
-        $indicators = IndIndicadores::with('arearel')->get();
-
-        // Calculamos los valores recorriendo la lista plana
-        foreach ($indicators as $ind) {
-            if (!empty($ind->consulta_bd)) {
-                try {
-                    $resultado = collect(DB::select($ind->consulta_bd))->first();
-                    $ind->indicador_calculado = $resultado ? array_values((array) $resultado)[0] ?? null : null;
-                } catch (\Exception $e) {
-                    throw new \Exception('Error en el indicador "' . $ind->nombre . '" - ' . $e->getMessage());
-                }
-            }
+        if (empty($meta)) {
+            return [];
         }
 
-        // SOLUCIÓN AL ERROR: Agrupamos la colección por el nombre del área
-        // ANTES de enviarla a la vista. Así los dos @foreach funcionarán perfecto.
-        return $indicators->groupBy(function($item) {
-            return $item->arearel->nombre ?? 'Sin Área Asignada';
-        });
+        $metaStr = trim(mb_strtolower($meta));
+
+        // 1. Determinar el operador lógico por defecto (>=) o si es menor o igual (<=)
+        $op = '>=';
+        if (str_contains($metaStr, '<=') || str_contains($metaStr, '≤') || str_contains($metaStr, '<')) {
+            $op = '<=';
+        }
+
+        // 2. Extraer el primer valor numérico de la cadena
+        $valor = 0;
+        if (preg_match('/(\d+(\.\d+)?)/', $metaStr, $m)) {
+            $valor = (float) $m[1];
+        }
+
+        // 3. Determinar la unidad de medida visual
+        $unidad = '';
+        if (str_contains($metaStr, '%')) {
+            $unidad = '%';
+        } elseif (preg_match('/\/\s*5/', $metaStr)) {
+            $unidad = '/ 5';
+        } elseif (str_contains($metaStr, 'hora')) {
+            $unidad = 'horas';
+        } elseif (str_contains($metaStr, 'día') || str_contains($metaStr, 'dia')) {
+            $unidad = 'días';
+        }
+
+        return [
+            'op' => $op,
+            'valor' => $valor,
+            'unidad' => $unidad
+        ];
     }
 
     public function show($id)
@@ -89,65 +154,41 @@ class IndicadoresController extends Controller
 
     public function descargarInforme()
     {
-        $user = Auth::user();
-        $indicators = $this->dataIndicadores();
+        try {
+            // 1. Obtenemos los indicadores agrupados y procesados
+            $indicators = $this->dataIndicadores();
 
-        $pdf = Pdf::loadView('indicators.informepdf', compact('indicators'))->setPaper('A4', 'portrait');
-        $fileName = 'InformeTIC_' . now()->format('Ymd_His') . '.pdf';
+            // 2. Calculamos el promedio general de cumplimiento
+            $promedioAlcanzados = $this->calcularPromedio($indicators);
 
-        Storage::disk('s3')->put('corpentunida/indicators/' . $fileName, $pdf->output());
+            // 3. Generamos el PDF
+            $pdf = Pdf::loadView('indicators.informepdf', compact('indicators', 'promedioAlcanzados'))
+                ->setPaper('A4', 'portrait');
 
-        IndRegistroInformes::create([
-            'archivo' => 'corpentunida/indicators/' . $fileName,
-            'usuario' => Auth::id(),
-            'fecha_descarga' => now(),
-        ]);
+            $fileName = 'InformeTIC_' . now()->format('Ymd_His') . '.pdf';
 
-        return $pdf->download('informe_indicadores.pdf');
-    }
+            // Guardamos en S3
+            Storage::disk('s3')->put('corpentunida/indicators/' . $fileName, $pdf->output());
 
-    private function parseMeta(string $meta): array
-    {
-        $meta = trim(mb_strtolower($meta));
+            IndRegistroInformes::create([
+                'archivo' => 'corpentunida/indicators/' . $fileName,
+                'usuario' => Auth::id(),
+                'fecha_descarga' => now(),
+            ]);
 
-        // ≥ 80%
-        if (preg_match('/≥\s*(\d+(\.\d+)?)%/', $meta, $m)) {
-            return ['op' => '>=', 'valor' => (float) $m[1], 'unidad' => '%'];
+            return $pdf->download('informe_indicadores.pdf');
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Ocurrió un error al generar el PDF: ' . $e->getMessage());
         }
-
-        // ≥ 4.2 / 5
-        if (preg_match('/≥\s*(\d+(\.\d+)?)\s*\/\s*(\d+(\.\d+)?)/', $meta, $m)) {
-            return ['op' => '>=', 'valor' => ((float) $m[1] / (float) $m[3]) * 100, 'unidad' => '%'];
-        }
-
-        // ≤ 6 horas
-        if (preg_match('/≤\s*(\d+(\.\d+)?)\s*horas?/', $meta, $m)) {
-            return ['op' => '<=', 'valor' => (float) $m[1], 'unidad' => 'horas'];
-        }
-
-        // fallback numérico
-        if (is_numeric($meta)) {
-            return ['op' => '>=', 'valor' => (float) $meta, 'unidad' => null];
-        }
-
-        return [];
     }
 
     public function create()
     {
         $areas = GdoArea::select('id', 'nombre')->get();
         $responsables = GdoEmpleado::selectRaw(
-            "id,
-                CONCAT(
-                    nombre1, ' ',
-                    IFNULL(nombre2, ''), ' ',
-                    apellido1, ' ',
-                    IFNULL(apellido2, '')
-                ) as nombre
-            "
-        )
-            ->where('id', '>=', 11)
-            ->get();
+            "id, CONCAT(nombre1, ' ', IFNULL(nombre2, ''), ' ', apellido1, ' ', IFNULL(apellido2, '')) as nombre"
+        )->where('id', '>=', 11)->get();
 
         return view('indicators.create', compact('areas', 'responsables'));
     }
@@ -171,7 +212,9 @@ class IndicadoresController extends Controller
     {
         $indicador = IndIndicadores::findOrFail($id);
         $areas = GdoArea::select('id', 'nombre')->get();
-        $responsables = GdoEmpleado::selectRaw("id,CONCAT(nombre1, ' ',IFNULL(nombre2, ''), ' ',apellido1, ' ',IFNULL(apellido2, '')) as nombre")->where('id', '>=', 11)->get();
+        $responsables = GdoEmpleado::selectRaw(
+            "id, CONCAT(nombre1, ' ', IFNULL(nombre2, ''), ' ', apellido1, ' ', IFNULL(apellido2, '')) as nombre"
+        )->where('id', '>=', 11)->get();
 
         return view('indicators.edit', compact('indicador', 'areas', 'responsables'));
     }
