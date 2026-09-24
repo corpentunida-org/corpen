@@ -55,7 +55,7 @@ RUN composer install --optimize-autoloader --no-dev --no-scripts
 RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build
 
-RUN php artisan view:cache
+# RUN php artisan view:cache
 RUN php artisan route:cache
 
 RUN chown -R www-data:www-data /var/www/html
