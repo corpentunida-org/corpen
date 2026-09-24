@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado de Cuenta de Créditos - CORPENTUNIDA</title>
+    <style>
+        /* 1. MÁRGENES AJUSTADOS (Ganamos espacio vertical) */
+        @page { margin: 3.8cm 2cm 3.5cm 2cm; }
+
+        body {
+            font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+            font-size: 9.5pt;
+            line-height: 1.3;
+            color: #1e293b;
+            text-align: justify;
+        }
+
+        #fondo-plantilla {
+            position: fixed; top: -3.8cm; left: -2cm; width: 21.5cm; height: 29.7cm; z-index: -2000;
+        }
+        #fondo-plantilla img { width: 100%; height: 100%; }
+
+        /* 2. PIE DE PÁGINA (Paginador) */
+        .footer {
+            position: fixed; bottom: -3.3cm; right: 0cm; text-align: right;
+            font-size: 8pt; color: #475569; font-weight: bold;
+        }
+        .page-number:before { content: "Página " counter(page) " de " counter(pages); }
+
+        /* 3. ENCABEZADO CORPORATIVO DE JERARQUÍA ALTA */
+        .header { text-align: center; margin-bottom: 12px; }
+        .title {
+            font-size: 13pt; color: #0f172a; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+        }
+        .subtitle {
+            font-size: 10pt; color: #0284c7; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            border-bottom: 2px solid #0284c7; padding-bottom: 6px;
+            margin-bottom: 15px; width: 80%; margin-left: auto; margin-right: auto;
+        }
+
+        .content { margin-bottom: 14px; font-size: 9.5pt; color: #334155; }
+        strong { color: #0f172a; }
+
+        /* 4. TABLAS CON JERARQUÍA VISIBLE */
+        .table-container { margin-bottom: 15px; page-break-inside: auto; }
+
+        .linea-title {
+            background-color: #0f172a; color: #ffffff; font-size: 9pt;
+            font-weight: bold; text-transform: uppercase; padding: 6px 12px;
+            display: inline-block; border-radius: 4px 4px 0 0;
+            letter-spacing: 0.5px; margin-bottom: 0;
+        }
+
+        .table-detalles {
+            width: 100%; border-collapse: collapse; font-size: 8pt;
+            border: 1px solid #94a3b8; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .table-detalles th {
+            background-color: #e2e8f0; color: #0f172a; padding: 6px 4px;
+            text-align: center; font-weight: bold; border-bottom: 2px solid #64748b;
+            text-transform: uppercase; font-size: 7pt; letter-spacing: 0.3px;
+        }
+
+        .table-detalles td {
+            padding: 5px 4px; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #f1f5f9;
+        }
+
+        .table-detalles tbody tr:nth-child(even) { background-color: #f8fafc; }
+        .table-detalles tbody tr:hover { background-color: #f1f5f9; }
+        .table-detalles tbody tr { page-break-inside: avoid; }
+
+        /* 5. ESTADOS Y JERARQUÍA DE DATOS CRÍTICOS */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+
+        .badge-ok { color: #047857; background-color: #d1fae5; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 7pt; }
+        .badge-mora { color: #b91c1c; background-color: #fee2e2; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 7pt; }
+        .badge-api-pago { color: #047857; background-color: #d1fae5; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 7pt; }
+        .badge-api-falta { color: #b45309; background-color: #fef3c7; padding: 2px 5px; border-radius: 3px; font-weight: bold; font-size: 7pt; }
+
+        .tr-subtotal td {
+            font-weight: bold; background-color: #f1f5f9; color: #0f172a;
+            border-top: 2px solid #64748b; border-bottom: 2px solid #64748b;
+            font-size: 9pt; padding: 7px 6px;
+        }
+
+        .total-box {
+            display: inline-block; background-color: #0f172a; color: #ffffff;
+            padding: 10px 18px; font-size: 11pt; font-weight: bold;
+            border-radius: 6px; letter-spacing: 0.5px; border: 1px solid #334155;
+        }
+
+        /* 6. ESTILOS MANUAL PRO */
+        .manual-pro {
+            background-color: #f8fafc; border: 1px solid #cbd5e1;
+            border-top: 4px solid #0284c7; border-radius: 6px;
+            padding: 16px 20px; margin-top: 20px; margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .manual-header {
+            font-size: 11pt; color: #0f172a; font-weight: bold; margin-bottom: 12px;
+            border-bottom: 1px dashed #cbd5e1; padding-bottom: 8px;
+        }
+        .step-table { width: 100%; border-collapse: collapse; }
+        .step-table td { padding: 6px 0; vertical-align: top; border: none; }
+        .step-num-container { width: 30px; text-align: center; }
+        .step-num {
+            width: 20px; height: 20px; background-color: #0284c7; color: #ffffff;
+            text-align: center; border-radius: 50%; font-weight: bold; font-size: 9pt;
+            display: inline-block; line-height: 20px;
+        }
+        .step-text { padding-left: 10px; font-size: 9pt; color: #475569; line-height: 1.4; text-align: left; }
+        .step-text strong { color: #0f172a; }
+        .highlight-box {
+            background-color: #e0f2fe; color: #0369a1; padding: 2px 6px;
+            border-radius: 3px; font-weight: bold; font-size: 8.5pt; border: 1px solid #bae6fd;
+        }
+        .btn-portal {
+            background-color: #0f172a; color: #ffffff !important; text-decoration: none;
+            padding: 3px 8px; border-radius: 4px; font-size: 8pt; font-weight: bold; display: inline-block;
+        }
+
+        /* 7. NUEVAS CLASES PARA OPCIONES DE PAGO */
+        .opcion-pago-title {
+            font-size: 9.5pt; color: #0284c7; font-weight: bold; margin-top: 15px; margin-bottom: 8px;
+            background-color: #e0f2fe; padding: 5px 10px; border-left: 4px solid #0284c7;
+            border-radius: 0 4px 4px 0;
+        }
+        .img-banco {
+            width: 100%; max-width: 320px;
+            border: 1px solid #cbd5e1; border-radius: 4px;
+            margin-top: 4px;
+            display: block; margin-left: auto; margin-right: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 8. CLASES UTILITARIAS PARA CONTROL DE SALTOS */
+        .evitar-salto { page-break-inside: avoid; }
+    </style>
+</head>
+<body>
+    <div id="fondo-plantilla">
+        <img src="{{ resource_path('views/certificados/pdf/fondo_pdf.jpg') }}" alt="Fondo">
+    </div>
+
+    <!-- PIE DE PÁGINA (PAGINADOR) -->
+    <div class="footer">
+        <span class="page-number"></span>
+    </div>
+    <br><br>
+    <div class="header">
+        <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br></div>
+        <div class="subtitle">Estado de Cuenta de Créditos</div>
+    </div>
+    <br><br>
+    <div class="content">
+        El presente documento certifica que el(la) asociado(a) <strong>{{ strtoupper($operacion->tercero->nom_ter ?? '') }} {{ strtoupper($operacion->tercero->apl1 ?? '') }} {{ strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
+        identificado(a) con cédula de ciudadanía No. <strong>{{ $operacion->tercero->cod_ter ?? 'N/A' }}</strong>,
+        registra el siguiente estado de cuenta detallado de sus créditos con la Asociación a la fecha de corte:
+    </div>
+
+    @php
+        $lineasOrdenadas = $lineas->sortBy(function($linea) {
+            return $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
+        });
+
+        $lineasAgrupadas = $lineasOrdenadas->groupBy(fn($l) => $l->lineaSia->nombre ?? 'Línea Desconocida');
+
+        $granTotalDeuda = 0;
+    @endphp
+
+    @forelse($lineasAgrupadas as $nombreLinea => $grupoLineas)
+        @php $subtotalLinea = 0; @endphp
+
+        <div class="table-container">
+            <div class="linea-title">{{ $nombreLinea }}</div>
+
+            <table class="table-detalles">
+                <thead>
+                    <tr>
+                        <th width="14%">Factura</th>
+                        <th width="8%">Cuota</th>
+                        <th width="18%">Vencimiento</th>
+                        <th width="12%">Días Mora</th>
+                        <th width="16%">Estado Mora</th>
+                        <th width="16%">Estado API</th>
+                        <th width="16%" class="text-right">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($grupoLineas as $linea)
+                        @php
+                            $factura = $linea->factura;
+                            $valorCuota = $factura ? (float) $factura->valor : 0;
+                            $subtotalLinea += $valorCuota;
+
+                            $diasMora = (int) $linea->dias_mora_automaticos;
+                            $estadoApiVal = $linea->estadoApi;
+                            $tieneEstadoApi = !is_null($estadoApiVal) && trim($estadoApiVal) !== '';
+                            $esPago = $tieneEstadoApi && ($estadoApiVal == '1' || strtoupper(trim($estadoApiVal)) === 'CANCELADO');
+                            $esAlDia = ($diasMora <= 0) || $esPago;
+                            $fechaVencReal = $linea->fecha_venci ?? optional($factura)->fecha_venci;
+
+                            $fechaVencimiento = $fechaVencReal
+                                ? \Carbon\Carbon::parse($fechaVencReal)->format('d/m/Y')
+                                : 'N/A';
+
+                            $esSeguro = stripos($nombreLinea, 'SEGURO') !== false;
+                            $cuotaOriginal = $factura->cuota ?? null;
+
+                            if ($esSeguro || empty($cuotaOriginal) || $cuotaOriginal === 'N/A') {
+                                if ($fechaVencReal) {
+                                    $fechaVenc = \Carbon\Carbon::parse($fechaVencReal);
+                                    $meses = [1 => 'ENE', 2 => 'FEB', 3 => 'MAR', 4 => 'ABR', 5 => 'MAY', 6 => 'JUN', 7 => 'JUL', 8 => 'AGO', 9 => 'SEP', 10 => 'OCT', 11 => 'NOV', 12 => 'DIC'];
+                                    $mesAbrev = $meses[$fechaVenc->month] ?? '';
+                                    $anio2Digitos = $fechaVenc->format('y');
+                                    $cuotaMostrar = "{$mesAbrev}-{$anio2Digitos}";
+                                } else {
+                                    $cuotaMostrar = 'N/A';
+                                }
+                            } else {
+                                $cuotaMostrar = $cuotaOriginal;
+                            }
+
+                            $referenciaPago = $linea->id_factura ?? ($factura->id_factura ?? 'N/A');
+                        @endphp
+                        <tr>
+                            <td class="text-center font-monospace" style="font-weight: bold;">
+                                @if(!$esPago && $referenciaPago !== 'N/A')
+                                    <a href="https://www.avalpaycenter.com/wps/portal/portal-de-pagos/web/pagos-aval/resultado-busqueda/realizar-pago-facturadores?idConv=00010645&origen=buscar"
+                                       target="_blank"
+                                       onclick="navigator.clipboard.writeText('{{ $referenciaPago }}');"
+                                       style="color: #0284c7; text-decoration: underline; cursor: pointer;"
+                                       title="Copiar referencia y pagar en AvalPay Center">
+                                        #{{ $referenciaPago }}
+                                    </a>
+                                @else
+                                    <span style="color: #0f172a;">#{{ $referenciaPago }}</span>
+                                @endif
+                            </td>
+                            <td class="text-center" style="font-weight: 600;">{{ $cuotaMostrar }}</td>
+                            <td class="text-center">{{ $fechaVencimiento }}</td>
+                            <td class="text-center">
+                                @if($diasMora > 0 && !$esPago)
+                                    <span style="color: #b91c1c; font-weight: bold; font-size: 8.5pt;">{{ $diasMora }}</span>
+                                @else
+                                    <span style="color: #64748b;">0</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <span class="{{ $esAlDia ? 'badge-ok' : 'badge-mora' }}">
+                                    @if($esPago) AL DÍA @else {{ $esAlDia ? '-' : 'EN MORA' }} @endif
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if($tieneEstadoApi)
+                                    <span class="badge-api-pago" title="Valor: {{ $estadoApiVal }}">
+                                        {{ $estadoApiVal == '1' ? 'CANCELADO' : strtoupper($estadoApiVal) }}
+                                    </span>
+                                @else
+                                    <span class="badge-api-falta">PENDIENTE POR CANCELAR</span>
+                                @endif
+                            </td>
+                            <td class="text-right" style="font-weight: bold; color: #0f172a;">${{ number_format($valorCuota, 2, ',', '.') }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr class="tr-subtotal">
+                        <td colspan="6" class="text-right">SUBTOTAL {{ mb_strtoupper($nombreLinea, 'UTF-8') }}:</td>
+                        <td class="text-right" style="color: #0f172a; font-size: 9.5pt;">${{ number_format($subtotalLinea, 2, ',', '.') }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        @php $granTotalDeuda += $subtotalLinea; @endphp
+
+    @empty
+        <div style="text-align: center; padding: 20px; background-color: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; color: #64748b; font-weight: bold;">
+            No registra obligaciones activas procesadas para este certificado.
+        </div>
+    @endforelse
+
+    {{-- BLOQUES FINALES DIVIDIDOS PARA EVITAR SALTOS EN BLANCO --}}
+    @if($granTotalDeuda > 0)
+        <table width="100%" class="evitar-salto" style="margin-bottom: 15px; border-collapse: collapse;">
+            <tr>
+                <td width="30%"></td>
+                <td width="70%" align="right">
+                    <div class="total-box">
+                        TOTAL DEUDA CONSOLIDADA: ${{ number_format($granTotalDeuda, 2, ',', '.') }}
+                    </div>
+                </td>
+            </tr>
+        </table>
+    @endif
+
+    <div class="manual-pro">
+        <div class="manual-header">
+            Guía Rápida de Pagos
+        </div>
+
+        <div class="evitar-salto">
+            <div class="opcion-pago-title">Opción 1: Pago en Línea (AvalPay Center)</div>
+            <table class="step-table">
+                <tr>
+                    <td class="step-num-container"><span class="step-num">1</span></td>
+                    <td class="step-text">
+                        <strong>Inicie su pago:</strong> Haga clic en el número de factura subrayado en la tabla superior o ingrese al portal oficial <hr> <a href="https://corpentunida.org.co/" target="_blank" class="btn-portal">corpentunida.org.co</a>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">2</span></td>
+                    <td class="step-text">
+                        <strong>Valide el destinatario:</strong> Asegúrese de que el portal de AvalPay Center indique el servicio correcto: <span class="highlight-box">Corpentunida Nit 8605094515</span>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">3</span></td>
+                    <td class="step-text">
+                        <strong>Identifique su obligación:</strong> En el campo <strong>Número referencia de pago *</strong>, pegue o digite exactamente el número de la factura.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">4</span></td>
+                    <td class="step-text">
+                        <strong>Confirme y pague:</strong> El sistema validará la estructura y desplegará automáticamente el <strong>Valor a pagar</strong> y las <strong>Fechas límite</strong>.
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="evitar-salto">
+            <div class="opcion-pago-title">Opción 2: Consignación Presencial (Banco de Bogotá)</div>
+            <table class="step-table">
+                <tr>
+                    <td class="step-num-container"><span class="step-num">1</span></td>
+                    <td class="step-text">
+                        <strong>Solicite el formato:</strong> Pida un "Comprobante de Pago Universal Individual" en cualquier sucursal del Banco de Bogotá.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">2</span></td>
+                    <td class="step-text">
+                        <strong>Diligencie los datos de la cuenta:</strong> Marque la casilla de <strong>Cuenta Corriente</strong> e ingrese el número <strong>019134618</strong>. En el nombre del convenio, escriba: <strong>ASOCIACIÓN GREMIAL DE MINISTROS IPUC</strong>.
+                    </td>
+                </tr>
+                <tr>
+                    <td class="step-num-container"><span class="step-num">3</span></td>
+                    <td class="step-text">
+                        <strong>Referencias de pago vitales:</strong><br>
+                        • <strong>Referencia 1:</strong> Escriba el NÚMERO DE CÉDULA PASTOR.<br>
+                        • <strong>Referencia 2:</strong> Escriba el NÚMERO REFERENCIA DE PAGO (Número de la factura).
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="evitar-salto" style="text-align: center; margin-top: 10px;">
+            <img src="{{ resource_path('views/certificados/pdf/model_pago.png') }}" class="img-banco" alt="Modelo Consignación Banco de Bogotá">
+        </div>
+    </div>
+
+    <div class="evitar-salto">
+        <br><br><br><br><br><br><br>
+        <div class="content" style="font-size: 8.5pt; color: #475569; margin-bottom: 25px; line-height: 1.4;">
+            Este documento es de carácter informativo y refleja el saldo de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
+            Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
+        </div>
+        <br><br><br>
+        <table width="250px" style="border-collapse: collapse;">
+            <tr>
+                <td style="border-top: 2px solid #0f172a; text-align: center; padding-top: 6px;">
+                    <strong style="color: #0f172a; font-size: 9.5pt;">Área de Cartera</strong><br>
+                    <span style="font-size: 8.5pt; color: #475569; font-weight: bold;">CORPENTUNIDA</span>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</body>
+</html>

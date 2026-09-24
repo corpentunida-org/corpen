@@ -50,12 +50,13 @@ COPY . /var/www/html/
 
 RUN git config --global --add safe.directory /var/www/html
 
-RUN composer install --optimize-autoloader --no-dev
+# RUN composer install --optimize-autoloader --no-dev
+RUN composer install --optimize-autoloader --no-dev --no-scripts
 RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build
 
-RUN php artisan view:cache
-RUN php artisan route:cache
+# RUN php artisan view:cache
+# RUN php artisan route:cache
 
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod 755 /var/www/html
@@ -78,6 +79,9 @@ COPY docker/default.conf /etc/apache2/sites-enabled/000-default.conf
 # en cada arranque del contenedor sin depender de que el host ya lo tenga bien.
 CMD chown -R www-data:www-data storage bootstrap/cache \
   && chmod -R 775 storage bootstrap/cache \
+  && php artisan package:discover --ansi \
   && php artisan config:cache \
+  && php artisan route:cache \
+  && php artisan view:cache \
   && exec apache2ctl -D FOREGROUND
 
