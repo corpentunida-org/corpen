@@ -671,6 +671,7 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
 Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinSoportePago'])->name('reservas.cancelar.auto');
 
 // ==========================================
+
 //   MÓDULO DE RESERVAS RSV
 // ==========================================
 Route::middleware(['auth'])
