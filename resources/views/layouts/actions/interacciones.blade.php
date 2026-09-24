@@ -56,6 +56,11 @@
                         <i class="bi bi-calendar2-check me-2"></i> Próxima Acción
                     </a>
                 </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.lineas.index') }}">
+                        <i class="bi bi-list-ul me-2"></i> Líneas
+                    </a>
+                </li>
 
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.chat.index') }}">

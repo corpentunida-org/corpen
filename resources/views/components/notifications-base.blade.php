@@ -34,8 +34,8 @@
             role="region" aria-labelledby="notificationDropdownButton" aria-live="polite">
             <div class="notifications-header">
                 <div class="d-flex justify-content-between align-items-center notifications-head">
-                    <h6 class="fw-bold text-dark mb-0">Centro de Soportes</h6>
-                    <div>
+                    <h6 class="fw-bold mb-0">Centro de Soportes</h6>
+                    <div class="flex-shrink-0 d-flex">
                         <button class="btn btn-sm btn-icon me-1" id="speechToggle"
                             title="Activar/Desactivar lectura por voz" aria-label="Activar lectura por voz"
                             aria-pressed="false">
@@ -151,39 +151,47 @@
         animation: blink 1.5s infinite;
     }
 
+    /* Mismo tamaño en escritorio y en celular (440px) — igual que la campanita de Alertas de
+       Interacciones, así ninguna de las dos queda más angosta que su propio contenido. */
+    /* !important porque el tema trae ".nxl-header .header-wrapper .nxl-h-dropdown{width:
+       225px}" (selector de 3 clases, más específico que ".notification-panel" solo) — sin esto
+       ESE 225px es el que de verdad se estaba aplicando, no el tamaño que se ve más abajo. */
     .notification-panel {
-        width: 380px;
-        max-height: 500px;
-        border-radius: 12px;
-        border: 1px solid var(--border-light);
+        width: 440px !important;
+        max-height: 520px !important;
+        border-radius: 14px;
+        border: none;
         box-shadow: var(--shadow-md);
         overflow: hidden;
         animation: slideIn 0.3s ease;
     }
 
+    /* Banner de color propio (no gris) — mismo patrón que la campanita de Alertas de
+       Interacciones, pero en azul: este panel es de Soportes, no de urgencias de Daytrack. */
     .notifications-header {
-        padding: 15px;
-        background: linear-gradient(135deg, var(--pastel-gray) 0%, white 100%);
-        border-bottom: 1px solid var(--border-light);
+        padding: 16px 16px 14px 16px;
+        background: linear-gradient(135deg, #0c3572 0%, #1d4ed8 55%, #2563eb 100%);
+        border-bottom: none;
     }
 
     .notifications-head h6 {
         font-size: 1rem;
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .btn-icon {
-        background: none;
-        border: none;
-        padding: 4px;
+        background: rgba(255, 255, 255, .18);
+        border: 1px solid rgba(255, 255, 255, .25);
+        padding: 5px 7px;
         border-radius: 6px;
-        color: var(--text-secondary);
+        color: #fff;
         transition: var(--transition);
+        flex-shrink: 0;
     }
 
     .btn-icon:hover {
-        background: var(--pastel-gray);
-        color: var(--text-primary);
+        background: rgba(255, 255, 255, .25);
+        color: #fff;
     }
 
     .btn-icon.spinning i {
@@ -212,18 +220,23 @@
         border-radius: 3px;
     }
 
+    /* flex:1 reparte el ancho disponible entre las 4 pestañas a partes iguales — así SIEMPRE
+       caben las 4 dentro del panel sin desbordarse ni necesitar scroll horizontal, sin importar
+       el ancho de pantalla (antes tenían min-width:70px fijo, así que en celular "Cerrados" no
+       cabía y quedaba cortado en el borde). overflow-x:auto en .notification-tabs se deja como
+       respaldo por si algún día se agrega una quinta pestaña. */
     .tab-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 8px 10px;
+        padding: 8px 6px;
         border-radius: 10px;
         background: white;
         border: 1px solid var(--border-light);
         cursor: pointer;
         transition: var(--transition);
-        min-width: 70px;
-        flex-shrink: 0;
+        flex: 1 1 0;
+        min-width: 0;
     }
 
     .tab-item:hover {
@@ -231,9 +244,11 @@
         box-shadow: var(--shadow-sm);
     }
 
+    /* Pestaña activa en azul sólido y saturado (no pastel) — mismo criterio "de semáforo" que
+       la campanita de Alertas de Interacciones: colores claros y con contraste, no lavados. */
     .tab-item.active {
-        background: linear-gradient(135deg, var(--pastel-blue), #B6D4FE);
-        border-color: #B6D4FE;
+        background: #2563eb;
+        border-color: transparent;
         transform: translateY(-2px);
         box-shadow: var(--shadow-sm);
     }
@@ -246,7 +261,7 @@
     }
 
     .tab-item.active .tab-icon {
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .tab-label {
@@ -254,10 +269,14 @@
         font-weight: 500;
         color: var(--text-secondary);
         text-align: center;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .tab-item.active .tab-label {
-        color: var(--text-primary);
+        color: #fff;
     }
 
     .tab-count {
@@ -273,7 +292,7 @@
     }
 
     .tab-item.active .tab-count {
-        background: #073B4C;
+        background: rgba(255, 255, 255, .3);
     }
 
     .notifications-list {
@@ -620,9 +639,12 @@
     }
 
     @media (max-width: 576px) {
+        /* Igual que Alertas de Interacciones: se ajusta al ancho real de pantalla (con margen a
+           los lados) sin pasar de 440px, en vez de quedar fijo y angosto en 320px. */
         .notification-panel {
-            width: 320px;
-            max-height: 450px;
+            width: calc(100vw - 24px) !important;
+            max-width: 440px !important;
+            max-height: 70vh !important;
         }
 
         .notification-tabs {
@@ -630,8 +652,7 @@
         }
 
         .tab-item {
-            min-width: 60px;
-            padding: 6px 8px;
+            padding: 6px 4px;
         }
 
         .tab-icon {
@@ -732,6 +753,131 @@
             setupKeyboardNavigation(); // MEJORA 20
             updateLastSyncTimestamp();
             ejecutarCancelacionDiaria(); // Ejecutar función de cancelación diaria
+            iniciarAvisoForzadoSoportes(); // Aviso forzado (soportes asignados a mí, sin cerrar)
+        }
+
+        // ============================================
+        // AVISO FORZADO DE SOPORTES ASIGNADOS SIN CERRAR
+        // Réplica del mismo mecanismo de Interacciones (components/alertas-interacciones.blade.php):
+        // cada tantas horas (configurable en Admin → Configuración de Alertas de Soportes) se
+        // fuerza a elegir "Responder Ahora" o "Posponer" — 3 (configurable) días seguidos
+        // posponiendo sin responder ninguno escala a superadmin/admindesarrollo.
+        // ============================================
+        let avisoSoportesIntervaloMs = 3 * 60 * 60 * 1000;
+        let avisoSoportesUltimosDatos = [];
+        const AVISO_SOPORTES_LS_KEY = 'soportes_ultimo_aviso_pendientes';
+
+        function iniciarAvisoForzadoSoportes() {
+            consultarPendientesSoportes(true);
+            setInterval(() => consultarPendientesSoportes(true), 5 * 60 * 1000);
+        }
+
+        function consultarPendientesSoportes(evaluarAviso) {
+            fetch('{{ route('soportes.alertas.pendientes') }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    avisoSoportesUltimosDatos = data.pendientes || [];
+                    if (data.aviso_intervalo_horas) {
+                        avisoSoportesIntervaloMs = data.aviso_intervalo_horas * 60 * 60 * 1000;
+                    }
+                    if (evaluarAviso) {
+                        evaluarAvisoForzadoSoportes(data.pendientes_count ?? 0);
+                    }
+                })
+                .catch(err => console.error('Error consultando pendientes de soportes:', err));
+        }
+
+        function registrarDecisionSoporte(decision) {
+            return fetch('{{ route('soportes.alertas.decision') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ decision }),
+            }).then(r => r.json()).catch(err => {
+                console.error('Error registrando decisión de alerta de soporte:', err);
+                return { streak: null, escalado: false };
+            });
+        }
+
+        function evaluarAvisoForzadoSoportes(countPendientes) {
+            if (countPendientes <= 0) return;
+
+            let ultimoAviso = 0;
+            try {
+                ultimoAviso = parseInt(localStorage.getItem(AVISO_SOPORTES_LS_KEY) || '0', 10);
+            } catch (e) { /* almacenamiento no disponible — se sigue igual */ }
+
+            const ahora = Date.now();
+            if (ahora - ultimoAviso < avisoSoportesIntervaloMs) return;
+            if (typeof Swal === 'undefined') return;
+
+            const itemsHtml = avisoSoportesUltimosDatos.slice(0, 5).map(item => `
+                <div style="text-align:left; padding:8px 10px; margin-bottom:6px; background:#fff; border:1px solid #f1f1f1; border-left:3px solid #1d4ed8; border-radius:6px;">
+                    <div style="font-size:13px; font-weight:600; color:#212529;">${item.detalle}</div>
+                    <div style="font-size:11.5px; color:#6c757d; margin-top:2px;">
+                        ${item.estado} · <span style="color:#1d4ed8; font-weight:700;">${item.prioridad}</span>
+                    </div>
+                </div>`).join('');
+            const masTexto = countPendientes > 5 ? `<div style="text-align:center; font-size:12px; color:#6c757d;">y ${countPendientes - 5} más...</div>` : '';
+
+            Swal.fire({
+                html: `
+                    <div style="margin:-20px -24px 16px -24px; padding:16px 24px 14px 24px; background:linear-gradient(135deg,#0c3572 0%,#1d4ed8 55%,#2563eb 100%); color:#fff; border-radius:8px 8px 0 0;">
+                        <div style="font-weight:700; font-size:16px;">Centro de Soportes</div>
+                        <div style="font-size:12px; opacity:.85; margin-top:2px;">Tienes ${countPendientes} soporte(s) asignado(s) sin cerrar — decide qué hacer</div>
+                    </div>
+                    <div style="max-height:220px; overflow-y:auto; padding:0 2px;">${itemsHtml}${masTexto}</div>
+                `,
+                showConfirmButton: true,
+                confirmButtonText: 'Responder Ahora',
+                confirmButtonColor: '#16a34a',
+                showDenyButton: true,
+                denyButtonText: 'Posponer',
+                denyButtonColor: '#d97706',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showCloseButton: false,
+                width: 420,
+                padding: '20px 24px 24px 24px',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    registrarDecisionSoporte('responder');
+                    window.location.href = '{{ route('soportes.soportes.index') }}';
+                    return;
+                }
+                if (result.isDenied) {
+                    registrarDecisionSoporte('posponer').then((r) => {
+                        let mensaje = 'Te lo recordaremos más tarde.';
+                        let icono = 'info';
+                        if (r.escalado) {
+                            mensaje = `Llevas ${r.streak} días seguidos posponiendo — se notificó a superadmin/admindesarrollo.`;
+                            icono = 'warning';
+                        } else if (r.streak >= 2) {
+                            mensaje = `Llevas ${r.streak} días seguidos posponiendo. Si llegas al umbral configurado, se escala.`;
+                            icono = 'warning';
+                        }
+                        Swal.fire({
+                            icon: icono,
+                            title: 'Pospuesto',
+                            text: mensaje,
+                            timer: 5000,
+                            timerProgressBar: true,
+                            confirmButtonText: 'Entendido',
+                            confirmButtonColor: '#6c757d',
+                        });
+                    });
+                }
+            });
+
+            try {
+                localStorage.setItem(AVISO_SOPORTES_LS_KEY, String(ahora));
+            } catch (e) { /* ignorar si no hay almacenamiento disponible */ }
         }
 
         // ============================================

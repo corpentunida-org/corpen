@@ -85,6 +85,67 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Buscar un cliente puntual: esto es un CRM, y el historial de un asociado debe
+                 poder verse completo sin importar qué usuario lo atendió (ej. responder una
+                 reclamación) — a diferencia de las pestañas de abajo, que son exclusivas de cada
+                 usuario. Busca en TODO el historial (sin restricción de fecha ni de agente) y
+                 muestra el resultado aquí mismo, sin salir de esta pantalla. --}}
+            <hr class="my-3 opacity-25">
+            <form id="formBuscarCliente" class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <label class="form-label fw-semibold text-muted small mb-1">
+                        <i class="feather-user me-1"></i>Buscar un cliente (todo su historial, lo haya atendido quien sea)
+                    </label>
+                    <input type="text" id="inputBuscarCliente" class="form-control form-control-sm pastel-input"
+                        placeholder="Nombre o cédula del cliente">
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="feather-search me-1"></i>Buscar cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Resultados de "Buscar cliente" — oculto hasta que se busque algo --}}
+    <div class="card shadow-sm mb-3 glassmorphism-card d-none" id="cardResultadosCliente">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h6 class="mb-0 fw-bold"><i class="feather-user me-2"></i>Historial de <span id="clienteBuscadoLabel"></span></h6>
+                    <p class="text-muted mb-0 small">Todas sus interacciones registradas, de cualquier agente.</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-light" id="cerrarResultadosCliente">
+                    <i class="feather-x me-1"></i>Cerrar
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle w-100" id="tablaResultadosCliente">
+                    <thead class="table-light pastel-thead">
+                        <tr>
+                            <th class="py-2">ID</th>
+                            <th class="py-2">Usuario</th>
+                            <th class="py-2">Cliente</th>
+                            <th class="py-2">Distrito</th>
+                            <th class="py-2">Fecha</th>
+                            <th class="py-2">Canal</th>
+                            <th class="py-2">Tiempo</th>
+                            <th class="py-2">Motivo</th>
+                            <th class="py-2">Línea y Resultado</th>
+                            <th class="d-none">Línea 1</th>
+                            <th class="d-none">Línea 2</th>
+                            <th class="d-none">Línea 3</th>
+                            <th class="d-none">Línea 4</th>
+                            <th class="d-none">Línea 5</th>
+                            <th class="d-none">Resultado Export</th>
+                            <th class="py-2 text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -170,28 +231,6 @@
                 prometió una próxima acción y cuándo — <strong>según la gestión más reciente</strong> de cada
                 interacción. "Próximos a vencer" mira los siguientes 3 días.
             </p>
-
-            @if ($puedeVerArea || $puedeVerTodos)
-                {{-- "Ver": por defecto SIEMPRE "Mis interacciones", sin importar el permiso — hay
-                     que elegir activamente ver más. Recarga la página con ?modo=... (conserva los
-                     demás parámetros de la URL que hubiera). --}}
-                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                    <span class="text-muted fs-13 fw-semibold">Ver:</span>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'propias'])) }}"
-                           class="btn {{ $modo === 'propias' ? 'btn-primary' : 'btn-outline-secondary' }}">Mis interacciones</a>
-                        @if ($puedeVerArea)
-                            <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'area'])) }}"
-                               class="btn {{ $modo === 'area' ? 'btn-primary' : 'btn-outline-secondary' }}">Mi área</a>
-                        @endif
-                        @if ($puedeVerTodos)
-                            <a href="{{ route('interactions.index', array_merge(request()->except('modo'), ['modo' => 'todos'])) }}"
-                               class="btn {{ $modo === 'todos' ? 'btn-primary' : 'btn-outline-secondary' }}">Todos</a>
-                        @endif
-                    </div>
-                </div>
-            @endif
-            <input type="hidden" id="modoActual" value="{{ $modo }}">
 
             {{-- Contenido limpio de las tablas (DataTables llenará los tbody mediante AJAX) --}}
             <div class="tab-content" id="interactionTabsContent">
@@ -468,10 +507,6 @@
                             url: window.location.pathname,
                             data: function(d) {
                                 d.tab = tabType;
-                                // El modo ("propias"/"area"/"todos") elegido arriba en "Ver" —
-                                // el AJAX pega solo a window.location.pathname (sin query string),
-                                // así que sin esto cada pestaña volvería a "propias" sola.
-                                d.modo = $('#modoActual').val();
                                 // Exitosos tiene su propio rango de fechas (por defecto el último
                                 // mes), independiente del filtro general de arriba — así cambiar de
                                 // pestaña nunca filtra "Todos" o "Vencidos" por accidente.
@@ -608,6 +643,108 @@
                         else if (targetPaneId === '#tab-overdue') initializeDataTable('#tablaVencidos', 'overdue');
                         else if (targetPaneId === '#tab-upcoming') initializeDataTable('#tablaProximos', 'upcoming');
                     });
+                });
+
+                // Buscar Cliente (CRM): historial completo, sin importar quién lo atendió — se
+                // muestra aquí mismo, sin salir de la pantalla. Tabla aparte de las pestañas
+                // (currentTable), initComplete-libre (sin botones de exportar, es una consulta
+                // rápida puntual, no un reporte).
+                let tablaCliente = null;
+                $('#formBuscarCliente').on('submit', function(e) {
+                    e.preventDefault();
+                    const termino = $('#inputBuscarCliente').val().trim();
+                    if (!termino) return;
+
+                    $('#cardResultadosCliente').removeClass('d-none');
+                    $('#clienteBuscadoLabel').text('"' + termino + '"');
+
+                    if (tablaCliente) {
+                        tablaCliente.ajax.url("{{ route('interactions.buscar-cliente') }}").load();
+                        return;
+                    }
+
+                    tablaCliente = $('#tablaResultadosCliente').DataTable({
+                        serverSide: true,
+                        processing: true,
+                        deferRender: true,
+                        ajax: {
+                            url: "{{ route('interactions.buscar-cliente') }}",
+                            data: function(d) { d.cliente = $('#inputBuscarCliente').val().trim(); }
+                        },
+                        columns: [
+                            {
+                                data: 'id',
+                                render: function(data, type, row) {
+                                    let html = `<a class="interaction-id fw-bold text-decoration-none pastel-link"
+                                        href="#" data-id="${row.id}" data-fecha="${row.fecha}" data-cliente="${row.cliente_nombre}"
+                                        data-client-id="${row.cliente_cc}" data-agent="${row.agente}" data-motivo="${row.motivo}"
+                                        data-duracion="${row.duracion}" data-outcome="${row.resultado}" data-notas="${row.notas}"
+                                        data-linea="${row.linea_1 || '—'}" data-asignado="${row.asignado}" data-llamante-nombre="${row.llamante_nombre}"
+                                        data-llamante-cedula="${row.llamante_cedula}" data-llamante-celular="${row.llamante_celular}"
+                                        data-llamante-parentesco="${row.llamante_parentesco}">
+                                        #${row.id}
+                                    </a>`;
+                                    if (row.archivo) {
+                                        html += `<a href="${row.archivo}" target="_blank" class="ms-2 text-info"><i class="fas fa-paperclip"></i></a>`;
+                                    }
+                                    return html;
+                                }
+                            },
+                            {
+                                data: 'agente',
+                                render: (data, type, row) => `<span class="fw-semibold mb-1">${row.agente}</span>
+                                        <span class="badge bg-soft-primary text-primary ms-2">${row.agente_area}</span>
+                                        <p class="fs-12 text-muted mb-0">${row.agente_cargo}</p>`
+                            },
+                            {
+                                data: 'cliente_nombre',
+                                render: (data, type, row) => `<span class="fw-semibold mb-1">${row.cliente_nombre}</span>
+                                        <p class="fs-12 fw-semibold mb-0">CC : ${row.cliente_cc}</p>`
+                            },
+                            { data: 'distrito', render: data => `<span class="small">${data}</span>` },
+                            { data: 'fecha' },
+                            { data: 'canal' },
+                            { data: 'duracion' },
+                            { data: 'motivo', render: data => `<span class="small text-dark fw-medium">${data}</span>` },
+                            {
+                                data: 'resultado',
+                                render: function(data, type, row) {
+                                    let lineasHtml = row.lineas_array.map(l => `<span style="display:block;">${l}</span>`).join('');
+                                    let color = priorityColors[row.outcome_val] || 'secondary';
+                                    return `<div class="small mb-1 text-truncate-2-lines text-dark">${lineasHtml}</div>
+                                            <span class="badge bg-soft-${color} text-${color}">${row.resultado}</span>`;
+                                }
+                            },
+                            { data: 'linea_1', visible: false },
+                            { data: 'linea_2', visible: false },
+                            { data: 'linea_3', visible: false },
+                            { data: 'linea_4', visible: false },
+                            { data: 'linea_5', visible: false },
+                            { data: 'resultado', visible: false },
+                            {
+                                data: null,
+                                orderable: false,
+                                className: 'text-end py-2',
+                                render: function(data, type, row) {
+                                    let url = "{{ route('interactions.show', ':interaction') }}".replace(':interaction', row.id);
+                                    return `<div class="btn-group btn-group-sm">
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="${url}">
+                                                    <i class="feather-eye"></i>
+                                                </a>
+                                            </div>`;
+                                }
+                            }
+                        ],
+                        dom: 'rtip',
+                        pageLength: 10,
+                        order: [[0, 'desc']],
+                        language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" }
+                    });
+                });
+
+                $('#cerrarResultadosCliente').on('click', function() {
+                    $('#cardResultadosCliente').addClass('d-none');
+                    $('#inputBuscarCliente').val('');
                 });
 
                 // Botones de filtro

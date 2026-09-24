@@ -10,6 +10,9 @@
             <a class="nxl-link" href="{{route('creditos.credito.index')}}">Créditos</a>
         </li>
         <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('lineas_credito.index') }}">Líneas de Crédito</a>
+        </li>
+        <li class="nxl-item">
             <a class="nxl-link" href="#">Análisis</a>
         </li>
         <li class="nxl-item">

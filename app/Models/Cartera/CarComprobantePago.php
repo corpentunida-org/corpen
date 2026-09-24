@@ -47,6 +47,7 @@ class CarComprobantePago extends Model
         'pr',
         'cco',
         'numero_cuota',
+        'hasta_cuota',
         'tipo_pago',
         'observacion'
     ];

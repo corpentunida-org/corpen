@@ -25,23 +25,19 @@
             class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
     </div>
 
-    {{-- "Ver": por defecto SIEMPRE "Individual" (lo propio), igual que en Listado/Auditoría — hay
-         que elegir activamente ver más. --}}
-    @if ($puedeVerArea || $puedeVerTodos)
-        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-            <span class="text-muted fs-13 fw-semibold">Ver:</span>
-            <div class="btn-group btn-group-sm" role="group">
-                <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'propias'])) }}"
-                   class="btn {{ ($modo ?? 'propias') === 'propias' ? 'btn-primary' : 'btn-outline-secondary' }}">Individual</a>
-                @if ($puedeVerArea)
-                    <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'area'])) }}"
-                       class="btn {{ ($modo ?? '') === 'area' ? 'btn-primary' : 'btn-outline-secondary' }}">Mi área</a>
-                @endif
-                @if ($puedeVerTodos)
-                    <a href="{{ route('interactions.report', array_merge(request()->except(['modo', 'agent_id']), ['modo' => 'todos'])) }}"
-                       class="btn {{ ($modo ?? '') === 'todos' ? 'btn-primary' : 'btn-outline-secondary' }}">Todos</a>
-                @endif
-            </div>
+    {{-- El Informe abierto desde el menú es SIEMPRE personal — no tiene selector propio para
+         verlo por área o de todos (eso vive en Auditoría, ver el botón "Ver Informe" allá). Si
+         se llegó aquí desde Auditoría con un alcance más amplio ya elegido (modo=area/todos en
+         la URL), se respeta y se avisa aquí, con un link de vuelta para ajustarlo. --}}
+    @if (($modo ?? 'propias') !== 'propias')
+        <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3 py-2">
+            <span class="fs-13">
+                <i class="feather-info me-1"></i>
+                Viendo el informe de <strong>{{ $modo === 'todos' ? 'Todos' : 'Mi Área' }}</strong> — heredado desde Auditoría.
+            </span>
+            <a href="{{ route('interactions.auditoria') }}" class="btn btn-sm btn-outline-secondary">
+                Ajustar en Auditoría
+            </a>
         </div>
     @endif
 
@@ -60,46 +56,13 @@
         </div>
         <div class="card-body p-3">
             <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
-                {{-- Los selects de Ver/Agente/Área navegan con GET, así que hay que conservar el
-                     modo elegido arriba al enviar el formulario de filtros. --}}
+                {{-- El alcance (modo/área/agente) ya no se elige aquí — se hereda tal cual de la
+                     URL con la que se llegó (desde el menú siempre "propias"; desde Auditoría, lo
+                     que allá se tenía seleccionado). Se conserva como campos ocultos para que los
+                     demás filtros de este formulario no lo pierdan al enviarse. --}}
                 <input type="hidden" name="modo" value="{{ $modo ?? 'propias' }}">
-
-                {{-- Filtro: Agente --}}
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
-                    @if ($puedeVerArea)
-                        <select name="agent_id" class="form-select form-select-sm select2-search"
-                            data-placeholder="Todos">
-                            <option value=""></option>
-                            @foreach ($listAgentes as $agente)
-                                <option value="{{ $agente->id }}"
-                                    {{ ($filtroAgente ?? '') == $agente->id ? 'selected' : '' }}>
-                                    {{ $agente->name ?? 'Agente ' . $agente->id }}
-                                </option>
-                            @endforeach
-                        </select>
-                    @else
-                        <input type="text" class="form-control form-control-sm" value="{{ auth()->user()->name }}"
-                            disabled>
-                        <input type="hidden" name="agent_id" value="{{ auth()->id() }}">
-                    @endif
-                </div>
-
-                {{-- Filtro: Área — solo con informes.todosagentes tiene sentido elegir cuál (con
-                     informes.area ya está fija en la propia). --}}
-                @if ($puedeVerTodos && in_array($modo ?? 'propias', ['area', 'todos'], true))
-                    <div class="col-md-2">
-                        <label class="form-label fw-semibold text-muted small mb-1">Área</label>
-                        <select name="area_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
-                            <option value=""></option>
-                            @foreach ($listAreas as $area)
-                                <option value="{{ $area }}" {{ request('area_id') === $area ? 'selected' : '' }}>
-                                    {{ strtoupper($area) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
+                <input type="hidden" name="agent_id" value="{{ request('agent_id') }}">
+                <input type="hidden" name="area_id" value="{{ request('area_id') }}">
 
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
@@ -160,15 +123,15 @@
                     </select>
                 </div>
 
-                {{-- Filtro: Línea de Crédito --}}
+                {{-- Filtro: Línea --}}
                 <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Línea de Crédito</label>
+                    <label class="form-label fw-semibold text-muted small mb-1">Línea</label>
                     <select name="linea_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
                         <option value=""></option>
                         @foreach ($listLineas as $linea)
                             <option value="{{ $linea->id }}"
                                 {{ ($filtroLinea ?? '') == $linea->id ? 'selected' : '' }}>
-                                {{ $linea->nombre ?? 'Línea ' . $linea->id }}
+                                {{ $linea->name ?? 'Línea ' . $linea->id }}
                             </option>
                         @endforeach
                     </select>
@@ -241,6 +204,31 @@
                 </div>
             </div>
         </a>
+    </div>
+
+    {{-- Interacciones por Día — tendencia dentro del rango elegido. A diferencia de los
+         comparativos entre agentes, esta sí aplica igual en el informe individual que en el de
+         área/todos: en individual muestra el propio ritmo de trabajo, en área/todos el volumen
+         del equipo. Fila completa (no a la mitad como las demás) porque una serie de tiempo
+         necesita más ancho para leerse bien. --}}
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-header py-3 border-bottom-0 bg-transparent d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h6 class="mb-0 fw-bold"><i class="feather-trending-up me-2 text-primary"></i>Interacciones por Día</h6>
+                    @php $diasSinRegistro = $chartInteraccionesPorDia['dias_habiles_sin_registro'] ?? 0; @endphp
+                    <span class="badge {{ $diasSinRegistro > 0 ? 'bg-soft-danger text-danger' : 'bg-soft-success text-success' }} fs-13 fw-semibold px-3 py-2">
+                        <i class="feather-calendar me-1"></i>
+                        {{ $diasSinRegistro }} día(s) hábil(es) sin registrar interacciones
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 260px; width: 100%;">
+                        <canvas id="chartInteraccionesPorDia"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Indicadores por Área — solo aporta cuando el alcance cubre más de una (Ver: Mi área con
@@ -520,6 +508,39 @@
             const vencidasData = @json($chartAccionesAgentes['vencidas'] ?? []);
             const areasLabels = @json($chartAreas['labels'] ?? []);
             const areasData = @json($chartAreas['data'] ?? []);
+            const porDiaLabels = @json($chartInteraccionesPorDia['labels'] ?? []);
+            const porDiaData = @json($chartInteraccionesPorDia['data'] ?? []);
+
+            // 0. Interacciones por Día (línea de tendencia) — aplica igual en individual que en
+            // área/todos, por eso va primero, antes que los demás gráficos.
+            const ctxPorDia = document.getElementById('chartInteraccionesPorDia').getContext('2d');
+            new Chart(ctxPorDia, {
+                type: 'line',
+                data: {
+                    labels: porDiaLabels,
+                    datasets: [{
+                        label: 'Interacciones',
+                        data: porDiaData,
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        backgroundColor: createGradient(ctxPorDia, 'rgba(52, 152, 219, 0.35)', 'rgba(52, 152, 219, 0.02)'),
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: porDiaLabels.length > 45 ? 0 : 3,
+                        pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                        pointHoverRadius: 5,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: elegantTooltip
+                    },
+                    scales: cleanScales
+                }
+            });
 
             // 1. Canales (Barras Verticales)
             const ctxCanales = document.getElementById('chartCanales').getContext('2d');
