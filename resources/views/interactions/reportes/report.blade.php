@@ -65,13 +65,13 @@
                 <input type="hidden" name="area_id" value="{{ request('area_id') }}">
 
                 <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
+                    <label class="form-label fw-semibold text-muted small mb-1">Asociado</label>
                     <select name="client_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
                         <option value=""></option>
                         @foreach ($listClientes as $cliente)
                             <option value="{{ $cliente->cod_ter }}"
                                 {{ ($filtroCliente ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
-                                {{ $cliente->nom_ter ?? 'Cliente ' . $cliente->cod_ter }}
+                                {{ $cliente->nom_ter ?? 'Asociado ' . $cliente->cod_ter }}
                             </option>
                         @endforeach
                     </select>
@@ -283,7 +283,7 @@
         </div>
     </div>
 
-    {{-- Segunda Fila de Gráficos: Agentes y Clientes --}}
+    {{-- Segunda Fila de Gráficos: Agentes y Asociados --}}
     <div class="row g-3">
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
@@ -302,7 +302,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-briefcase me-2 text-warning"></i>Top 5 Clientes</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-briefcase me-2 text-warning"></i>Top 5 Asociados</h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -343,22 +343,9 @@
         </div>
     </div>
 
-    {{-- Cuarta Fila de Gráficos: Seguimientos Agentes (NUEVA) --}}
+    {{-- Cuarta Fila de Gráficos: Vencidas y Pendientes --}}
     <div class="row g-3">
-        <div class="col-md-6">
-            <div class="card shadow-sm" style="border-radius: 12px;">
-                <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-user-check me-2" style="color: #14b8a6;"></i>Top 5
-                        Agentes (Seguimientos)</h6>
-                </div>
-                <div class="card-body">
-                    <div style="position: relative; height: 300px; width: 100%;">
-                        <canvas id="chartSeguimientosAgentes"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
+        <div class="col-12">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
                     <h6 class="mb-0 fw-bold"><i class="feather-user-check bi bi-bookmark-x me-2 text-warning"></i>Vencidas
@@ -372,6 +359,26 @@
             </div>
         </div>
     </div>
+
+    {{-- Quinta Fila: Motivos de No Efectivo — solo se muestra si hay al menos una interacción con
+         motivo asignado en el rango (interacciones anteriores a esta funcionalidad no lo tienen). --}}
+    @if (count($chartMotivosNoEfectivo['labels'] ?? []) > 0)
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card shadow-sm" style="border-radius: 12px;">
+                    <div class="card-header py-3 border-bottom-0 bg-transparent">
+                        <h6 class="mb-0 fw-bold"><i class="feather-x-circle me-2 text-danger"></i>Motivos de No
+                            Efectivo</h6>
+                    </div>
+                    <div class="card-body">
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="chartMotivosNoEfectivo"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <style>
         .stat-card {
@@ -493,6 +500,8 @@
             const canalesData = @json($chartCanales['data'] ?? []);
             const resultadosLabels = @json($chartResultados['labels'] ?? []);
             const resultadosData = @json($chartResultados['data'] ?? []);
+            const motivosNoEfectivoLabels = @json($chartMotivosNoEfectivo['labels'] ?? []);
+            const motivosNoEfectivoData = @json($chartMotivosNoEfectivo['data'] ?? []);
             const agentesLabels = @json($chartAgentes['labels'] ?? []);
             const agentesData = @json($chartAgentes['data'] ?? []);
             const clientesLabels = @json($chartClientes['labels'] ?? []);
@@ -501,8 +510,6 @@
             const lineasData = @json($chartLineas['data'] ?? []);
             const distritosLabels = @json($chartDistritos['labels'] ?? []);
             const distritosData = @json($chartDistritos['data'] ?? []);
-            const seguimientosAgentesLabels = @json($chartSeguimientosAgentes['labels'] ?? []);
-            const seguimientosAgentesData = @json($chartSeguimientosAgentes['data'] ?? []);
             const vencidasPendientesLabels = @json($chartAccionesAgentes['labels'] ?? []);
             const pendientesData = @json($chartAccionesAgentes['pendientes'] ?? []);
             const vencidasData = @json($chartAccionesAgentes['vencidas'] ?? []);
@@ -662,8 +669,12 @@
                 'rgba(52, 152, 219, 0.2)');
             createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)',
                 'rgba(46, 204, 113, 0.2)');
-            createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
-                'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
+            // Motivos No Efectivo — solo se crea si la tarjeta está en el DOM (la vista la oculta
+            // cuando no hay ninguna interacción con motivo asignado en el rango).
+            if (document.getElementById('chartMotivosNoEfectivo')) {
+                createHBar('chartMotivosNoEfectivo', motivosNoEfectivoLabels, motivosNoEfectivoData,
+                    'rgba(231, 76, 60, 0.8)', 'rgba(231, 76, 60, 0.2)');
+            }
             // Por Área — solo se crea si la tarjeta está en el DOM (la vista la oculta cuando el
             // alcance cubre una sola área/agente).
             if (document.getElementById('chartAreas')) {

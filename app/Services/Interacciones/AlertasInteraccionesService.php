@@ -6,6 +6,7 @@ use App\Mail\Interacciones\InteraccionesEscalacionPosponerMail;
 use App\Models\Interacciones\IntAlertaConfig;
 use App\Models\Interacciones\IntAlertaDecision;
 use App\Models\Interacciones\IntAlertaEscalacion;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\User;
 use Carbon\Carbon;
@@ -83,15 +84,43 @@ class AlertasInteraccionesService
     }
 
     /**
+     * Interacciones cuya próxima acción vence HOY (todavía no vencidas — para el recordatorio
+     * matutino, distinto del aviso de vencidas: esto es "ojo, esto es para hoy", no "ya se pasó
+     * la fecha"). Reutiliza la misma base de "pendientes" (abierta, sin vencer) acotada al día
+     * calendario de hoy.
+     */
+    public function venceHoyDeUsuario(int $userId): Collection
+    {
+        return $this->queryBase($userId, vencida: false)
+            ->whereDate('next_action_date', Carbon::today())
+            ->with(['interaction.client', 'nextAction'])
+            ->orderBy('next_action_date')
+            ->get();
+    }
+
+    public function contarVenceHoyDeUsuario(int $userId): int
+    {
+        return $this->queryBase($userId, vencida: false)
+            ->whereDate('next_action_date', Carbon::today())
+            ->count();
+    }
+
+    /**
      * Todos los usuarios activos (ni bloqueados ni borrados) con acceso al módulo de
      * Interacciones (permiso menu.interacciones), sin importar el área — usado para el correo
      * diario de vencidas, que aplica a cualquier agente del módulo.
      */
     public function usuariosConAccesoInteracciones(): Collection
     {
+        // Excluye a quien esté en la lista de "omitir correos" (Admin → Configuración de
+        // Alertas → Agentes Omitidos) — este es el único correo que le llega directo al propio
+        // agente, los demás (informe semanal, inactividad, escalación) van a los admon.
+        $omitidosCorreo = IntAlertaOmitido::idsOmitidos('correo');
+
         return User::whereNull('deleted_at')
             ->where(fn ($q) => $q->where('bloqueado', false)->orWhereNull('bloqueado'))
             ->whereHas('permissions', fn ($q) => $q->where('name', 'menu.interacciones'))
+            ->whereNotIn('id', $omitidosCorreo)
             ->get();
     }
 

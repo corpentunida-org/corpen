@@ -61,6 +61,29 @@
                             </div>
                             <small class="text-muted">Si el agente elige "Posponer" todos los días sin responder ninguno, al llegar a este número se avisa al admon de su área (y de nuevo cada tantos días adicionales si sigue sin responder).</small>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Recordatorio matutino — hora</label>
+                            <input type="time" name="recordatorio_matutino_hora"
+                                class="form-control @error('recordatorio_matutino_hora') is-invalid @enderror"
+                                value="{{ old('recordatorio_matutino_hora', \Carbon\Carbon::parse($config->recordatorio_matutino_hora)->format('H:i')) }}">
+                            <small class="text-muted">Una vez al día (no forzado, con sonido), al abrir la app después de esta hora si tiene interacciones que vencen <strong>hoy</strong>.</small>
+                            @error('recordatorio_matutino_hora')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Pulso de atención en el ícono</label>
+                            <div class="input-group">
+                                <input type="number" name="pulso_intervalo_minutos" min="1" max="120"
+                                    class="form-control @error('pulso_intervalo_minutos') is-invalid @enderror"
+                                    value="{{ old('pulso_intervalo_minutos', $config->pulso_intervalo_minutos) }}">
+                                <span class="input-group-text">minutos</span>
+                                @error('pulso_intervalo_minutos')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <small class="text-muted">Cada cuánto el ícono de Alertas cambia de tamaño/color y suena, mientras haya vencidas o algo por vencer hoy (no interrumpe, solo llama la atención).</small>
+                        </div>
                     </div>
 
                     <hr class="my-4">
@@ -184,6 +207,19 @@
                             </div>
                             <small class="text-muted">Si elige "Posponer" todos los días sin responder ninguno, al llegar a este número se avisa a superadmin/admindesarrollo.</small>
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Pulso de atención en el ícono</label>
+                            <div class="input-group">
+                                <input type="number" name="pulso_intervalo_minutos" min="1" max="120"
+                                    class="form-control @error('pulso_intervalo_minutos') is-invalid @enderror"
+                                    value="{{ old('pulso_intervalo_minutos', $configSoportes->pulso_intervalo_minutos) }}">
+                                <span class="input-group-text">minutos</span>
+                                @error('pulso_intervalo_minutos')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                            <small class="text-muted">Cada cuánto el ícono de Soportes cambia de tamaño/color y suena, mientras haya soportes asignados sin cerrar.</small>
+                        </div>
                     </div>
 
                     <div class="mt-4">
@@ -195,4 +231,168 @@
             </div>
         </div>
     </div>
+
+    {{-- Agentes Omitidos — lista compartida entre Interacciones y Soportes, separada por tipo:
+         "correo" tapa el correo diario de vencidas (Interacciones); "pantalla" tapa el modal
+         forzado en los dos módulos por igual; "informe" tapa solo la fila de ese agente en el
+         informe semanal por área. Ninguno de los tres afecta la alerta de inactividad ni la
+         escalación por posponer — esas son de supervisión, no un aviso al propio agente. --}}
+    <div class="col-12 mb-4">
+        <div class="card border-0 shadow-sm stretch stretch-full rounded-4">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    <div class="avatar-text avatar-lg bg-soft-secondary text-secondary rounded-3 shadow-sm icon">
+                        <i class="feather-user-x fs-3"></i>
+                    </div>
+                    <div>
+                        <h2 class="fs-4 fw-bold text-dark mb-1">Agentes Omitidos</h2>
+                        <span class="text-muted fs-13">
+                            Agentes exentos de las alertas forzadas — lista compartida entre Interacciones y Soportes.
+                            No afecta la alerta de inactividad ni la escalación por posponer, que son de supervisión.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    {{-- Omitir Correos --}}
+                    <div class="col-lg-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <h6 class="fw-bold text-dark mb-1"><i class="feather-mail-off me-1"></i>Omitir Correos</h6>
+                            <p class="text-muted fs-13 mb-3">No recibe el correo diario de vencidas de Interacciones.</p>
+
+                            <form method="POST" action="{{ route('admin.alertas-omitidos.store') }}" class="d-flex gap-2 mb-3">
+                                @csrf
+                                <input type="hidden" name="tipo" value="correo">
+                                <select name="user_id" class="form-select form-select-sm select2-omitir" required style="flex: 1;">
+                                    <option value=""></option>
+                                    @foreach ($candidatos as $candidato)
+                                        <option value="{{ $candidato->id }}">{{ $candidato->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                    <i class="feather-plus"></i> Omitir
+                                </button>
+                            </form>
+
+                            @forelse (($omitidos['correo'] ?? []) as $omitido)
+                                <div class="d-flex justify-content-between align-items-center py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                    <div class="fs-13">
+                                        <strong>{{ $omitido->usuario->name ?? 'Usuario eliminado' }}</strong>
+                                        <div class="text-muted fs-12">
+                                            Agregado por {{ $omitido->creadoPor->name ?? 'desconocido' }} el {{ $omitido->created_at->format('d/m/Y') }}
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ route('admin.alertas-omitidos.destroy', $omitido->id) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-light border text-success">
+                                            <i class="feather-rotate-ccw me-1"></i>Reactivar
+                                        </button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-muted fs-13 mb-0 text-center py-2">Nadie omitido de este correo.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    {{-- Omitir Pantalla --}}
+                    <div class="col-lg-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <h6 class="fw-bold text-dark mb-1"><i class="feather-monitor me-1"></i>Omitir Pantalla</h6>
+                            <p class="text-muted fs-13 mb-3">No se le fuerza el modal (Interacciones ni Soportes) — sigue viendo su campanita si quiere.</p>
+
+                            <form method="POST" action="{{ route('admin.alertas-omitidos.store') }}" class="d-flex gap-2 mb-3">
+                                @csrf
+                                <input type="hidden" name="tipo" value="pantalla">
+                                <select name="user_id" class="form-select form-select-sm select2-omitir" required style="flex: 1;">
+                                    <option value=""></option>
+                                    @foreach ($candidatos as $candidato)
+                                        <option value="{{ $candidato->id }}">{{ $candidato->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                    <i class="feather-plus"></i> Omitir
+                                </button>
+                            </form>
+
+                            @forelse (($omitidos['pantalla'] ?? []) as $omitido)
+                                <div class="d-flex justify-content-between align-items-center py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                    <div class="fs-13">
+                                        <strong>{{ $omitido->usuario->name ?? 'Usuario eliminado' }}</strong>
+                                        <div class="text-muted fs-12">
+                                            Agregado por {{ $omitido->creadoPor->name ?? 'desconocido' }} el {{ $omitido->created_at->format('d/m/Y') }}
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ route('admin.alertas-omitidos.destroy', $omitido->id) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-light border text-success">
+                                            <i class="feather-rotate-ccw me-1"></i>Reactivar
+                                        </button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-muted fs-13 mb-0 text-center py-2">Nadie omitido de este aviso.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    {{-- Omitir Informe --}}
+                    <div class="col-lg-4">
+                        <div class="border rounded-3 p-3 h-100">
+                            <h6 class="fw-bold text-dark mb-1"><i class="feather-file-minus me-1"></i>Omitir Informe</h6>
+                            <p class="text-muted fs-13 mb-3">No sale en la fila del informe semanal que reciben los admon de su área (sigue recibiendo su correo diario y el modal normalmente).</p>
+
+                            <form method="POST" action="{{ route('admin.alertas-omitidos.store') }}" class="d-flex gap-2 mb-3">
+                                @csrf
+                                <input type="hidden" name="tipo" value="informe">
+                                <select name="user_id" class="form-select form-select-sm select2-omitir" required style="flex: 1;">
+                                    <option value=""></option>
+                                    @foreach ($candidatos as $candidato)
+                                        <option value="{{ $candidato->id }}">{{ $candidato->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-secondary text-nowrap">
+                                    <i class="feather-plus"></i> Omitir
+                                </button>
+                            </form>
+
+                            @forelse (($omitidos['informe'] ?? []) as $omitido)
+                                <div class="d-flex justify-content-between align-items-center py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                    <div class="fs-13">
+                                        <strong>{{ $omitido->usuario->name ?? 'Usuario eliminado' }}</strong>
+                                        <div class="text-muted fs-12">
+                                            Agregado por {{ $omitido->creadoPor->name ?? 'desconocido' }} el {{ $omitido->created_at->format('d/m/Y') }}
+                                        </div>
+                                    </div>
+                                    <form method="POST" action="{{ route('admin.alertas-omitidos.destroy', $omitido->id) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-light border text-success">
+                                            <i class="feather-rotate-ccw me-1"></i>Reactivar
+                                        </button>
+                                    </form>
+                                </div>
+                            @empty
+                                <p class="text-muted fs-13 mb-0 text-center py-2">Nadie omitido de este informe.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('.select2-omitir').select2({
+                    placeholder: 'Busca un agente...',
+                    width: '100%',
+                    dropdownParent: $('body')
+                });
+            });
+        </script>
+    @endpush
 </x-base-layout>

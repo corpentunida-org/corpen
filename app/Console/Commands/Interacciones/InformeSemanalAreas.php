@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Interacciones;
 
 use App\Mail\Interacciones\InteraccionesInformeSemanalMail;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Services\Interacciones\AlertasInteraccionesService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -27,6 +28,7 @@ class InformeSemanalAreas extends Command
 
         $areasEnviadas = 0;
         $areasSinAdmin = [];
+        $omitidosInforme = IntAlertaOmitido::idsOmitidos('informe');
 
         foreach ($servicio->areasConInteracciones() as $area) {
             $admins = $servicio->adminsDelArea($area);
@@ -36,9 +38,13 @@ class InformeSemanalAreas extends Command
                 continue;
             }
 
-            $usuarios = $servicio->usuariosDelArea($area);
-            // Clave del pedido: TODOS los agentes del área salen en la fila, así no hayan
-            // registrado nada esta semana (en ese caso el total queda en 0, no se omiten).
+            // Clave del pedido original: TODOS los agentes del área salen en la fila, así no
+            // hayan registrado nada esta semana (en ese caso el total queda en 0, no se omiten)
+            // — salvo quien esté explícitamente en la lista de "omitir informe" (Admin →
+            // Configuración de Alertas → Agentes Omitidos), que no aparece en esta fila aunque
+            // siga recibiendo su propio correo diario y el modal forzado con normalidad.
+            $usuarios = $servicio->usuariosDelArea($area)
+                ->reject(fn ($usuario) => in_array($usuario->id, $omitidosInforme, true));
             $filas = $usuarios->map(function ($usuario) use ($servicio, $desde, $hasta) {
                 return (object) [
                     'usuario' => $usuario,

@@ -12,6 +12,8 @@ class IntAlertaConfig extends Model
 
     protected $fillable = [
         'aviso_intervalo_horas',
+        'recordatorio_matutino_hora',
+        'pulso_intervalo_minutos',
         'dias_posponer_para_escalar',
         'correo_diario_hora',
         'informe_semanal_dia',
@@ -22,6 +24,7 @@ class IntAlertaConfig extends Model
 
     protected $casts = [
         'aviso_intervalo_horas' => 'integer',
+        'pulso_intervalo_minutos' => 'integer',
         'dias_posponer_para_escalar' => 'integer',
         'informe_semanal_dia' => 'integer',
     ];
@@ -42,6 +45,8 @@ class IntAlertaConfig extends Model
         return Cache::remember('int_alerta_config', 3600, function () {
             return self::first() ?? new self([
                 'aviso_intervalo_horas' => 3,
+                'recordatorio_matutino_hora' => '08:00:00',
+                'pulso_intervalo_minutos' => 10,
                 'dias_posponer_para_escalar' => 3,
                 'correo_diario_hora' => '08:00:00',
                 'informe_semanal_dia' => 1,
