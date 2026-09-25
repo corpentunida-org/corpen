@@ -369,34 +369,19 @@
     {{-- Comparativo entre agentes — solo tiene sentido con más de uno en el alcance; en el
          informe individual se omite (sería una sola barra comparándose contra nadie). --}}
     @if ($modo !== 'propias')
-        <table class="two-col">
-            <tr>
-                <td class="col-half-cell">
-                    @include('interactions.reportes.partials._pdf_bar_chart', [
-                        'titulo' => 'Top 5 Agentes (Interacciones)',
-                        'labels' => $agentesAuditoria->take(5)->pluck('nombre')->toArray(),
-                        'data' => $agentesAuditoria->take(5)->pluck('total')->toArray(),
-                        'color' => '#9b59b6',
-                    ])
-                </td>
-                <td class="col-spacer-cell"></td>
-                <td class="col-half-cell">
-                    @include('interactions.reportes.partials._pdf_bar_chart', [
-                        'titulo' => 'Top 5 Agentes (Seguimientos)',
-                        'labels' => $chartSeguimientosAgentes['labels'] ?? [],
-                        'data' => $chartSeguimientosAgentes['data'] ?? [],
-                        'color' => '#14b8a6',
-                    ])
-                </td>
-            </tr>
-        </table>
+        @include('interactions.reportes.partials._pdf_bar_chart', [
+            'titulo' => 'Top 5 Agentes (Interacciones)',
+            'labels' => $agentesAuditoria->take(5)->pluck('nombre')->toArray(),
+            'data' => $agentesAuditoria->take(5)->pluck('total')->toArray(),
+            'color' => '#9b59b6',
+        ])
     @endif
 
     <table class="two-col">
         <tr>
             <td class="col-half-cell">
                 @include('interactions.reportes.partials._pdf_bar_chart', [
-                    'titulo' => 'Top 5 Clientes',
+                    'titulo' => 'Top 5 Asociados',
                     'labels' => $chartClientes['labels'] ?? [],
                     'data' => $chartClientes['data'] ?? [],
                     'color' => '#f39c12',
@@ -464,6 +449,17 @@
             </td>
         </tr>
     </table>
+
+    {{-- Motivos de No Efectivo — solo aparece si hay al menos una interacción con motivo
+         asignado en el rango (interacciones anteriores a esta funcionalidad no lo tienen). --}}
+    @if (count($chartMotivosNoEfectivo['labels'] ?? []) > 0)
+        @include('interactions.reportes.partials._pdf_bar_chart', [
+            'titulo' => 'Motivos de No Efectivo',
+            'labels' => $chartMotivosNoEfectivo['labels'] ?? [],
+            'data' => $chartMotivosNoEfectivo['data'] ?? [],
+            'color' => '#e74c3c',
+        ])
+    @endif
 
     <div class="footer">
         <strong>CORPENTUNIDA</strong> • Impreso por {{ $impresoPor }} el {{ \Carbon\Carbon::now()->format('d/m/Y h:i A') }} • Documento Confidencial de Auditoría Operativa

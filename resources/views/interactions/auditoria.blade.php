@@ -242,6 +242,8 @@
                                         Obligación</small><span id="modal-linea"></span></div>
                                 <div class="col-md-4 my-2"><small class="text-muted d-block">Resultado</small><span
                                         id="modal-outcome"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Motivo No
+                                        Efectivo</small><span id="modal-motivo-no-efectivo">—</span></div>
                                 <div class="col-md-4 my-2"><small class="text-muted d-block">Asignado a</small><span
                                         id="modal-asignado"></span></div>
                             </div>
@@ -328,6 +330,7 @@
                                     href="#" data-id="${row.id}" data-fecha="${row.fecha}" data-cliente="${row.cliente_nombre}"
                                     data-client-id="${row.cliente_cc}" data-agent="${row.agente}" data-motivo="${row.motivo}"
                                     data-duracion="${row.duracion}" data-outcome="${row.resultado}" data-notas="${row.notas}"
+                                    data-motivo-no-efectivo="${row.motivo_no_efectivo || ''}"
                                     data-linea="${row.linea_1 || '—'}" data-asignado="${row.asignado}" data-llamante-nombre="${row.llamante_nombre}"
                                     data-llamante-cedula="${row.llamante_cedula}" data-llamante-celular="${row.llamante_celular}"
                                     data-llamante-parentesco="${row.llamante_parentesco}">
@@ -510,6 +513,7 @@
                     document.getElementById('modal-llamante-parentesco').textContent = el.llamanteParentesco || '—';
                     document.getElementById('modal-linea').textContent = el.linea || '—';
                     document.getElementById('modal-outcome').textContent = el.outcome || '—';
+                    document.getElementById('modal-motivo-no-efectivo').textContent = el.motivoNoEfectivo || '—';
                     document.getElementById('modal-asignado').textContent = el.asignado || '—';
                     document.getElementById('modal-notas').textContent = el.notas || 'Sin notas.';
 

@@ -121,6 +121,7 @@ use App\Http\Controllers\Interacciones\IntTypeController;
 use App\Http\Controllers\Interacciones\IntLineaController;
 use App\Http\Controllers\Interacciones\IntOutcomeController;
 use App\Http\Controllers\Interacciones\IntNextActionController;
+use App\Http\Controllers\Interacciones\IntMotivoNoEfectivoController;
 use App\Http\Controllers\Interacciones\IntSeguimientoController;
 use App\Http\Controllers\Interacciones\IntWorkspaceController;
 use App\Http\Controllers\Interacciones\IntConversationController;
@@ -1044,6 +1045,19 @@ Route::prefix('interactions')
                     Route::get('/{linea}/edit', [IntLineaController::class, 'edit'])->name('edit');
                     Route::put('/{linea}', [IntLineaController::class, 'update'])->name('update');
                     Route::delete('/{linea}', [IntLineaController::class, 'destroy'])->name('destroy');
+                });
+
+            // --- 📡 GRUPO DE RUTAS PARA MOTIVOS NO EFECTIVO ---
+            Route::prefix('motivos_no_efectivo')
+                ->name('motivos_no_efectivo.')
+                ->group(function () {
+                    Route::get('/', [IntMotivoNoEfectivoController::class, 'index'])->name('index');
+                    Route::get('/create', [IntMotivoNoEfectivoController::class, 'create'])->name('create');
+                    Route::post('/', [IntMotivoNoEfectivoController::class, 'store'])->name('store');
+                    Route::get('/{motivo}', [IntMotivoNoEfectivoController::class, 'show'])->name('show');
+                    Route::get('/{motivo}/edit', [IntMotivoNoEfectivoController::class, 'edit'])->name('edit');
+                    Route::put('/{motivo}', [IntMotivoNoEfectivoController::class, 'update'])->name('update');
+                    Route::delete('/{motivo}', [IntMotivoNoEfectivoController::class, 'destroy'])->name('destroy');
                 });
         });
 

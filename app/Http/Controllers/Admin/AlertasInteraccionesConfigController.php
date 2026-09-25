@@ -44,6 +44,8 @@ class AlertasInteraccionesConfigController extends Controller
     {
         $validado = $request->validate([
             'aviso_intervalo_horas' => 'required|integer|min:1|max:24',
+            'recordatorio_matutino_hora' => 'required|date_format:H:i',
+            'pulso_intervalo_minutos' => 'required|integer|min:1|max:120',
             'dias_posponer_para_escalar' => 'required|integer|min:1|max:30',
             'correo_diario_hora' => 'required|date_format:H:i',
             'informe_semanal_dia' => 'required|integer|min:1|max:7',
@@ -67,6 +69,7 @@ class AlertasInteraccionesConfigController extends Controller
     {
         $validado = $request->validate([
             'aviso_intervalo_horas' => 'required|integer|min:1|max:24',
+            'pulso_intervalo_minutos' => 'required|integer|min:1|max:120',
             'dias_posponer_para_escalar' => 'required|integer|min:1|max:30',
         ]);
 
@@ -86,7 +89,7 @@ class AlertasInteraccionesConfigController extends Controller
     {
         $validado = $request->validate([
             'user_id' => 'required|integer|exists:users,id',
-            'tipo' => 'required|in:correo,pantalla',
+            'tipo' => 'required|in:correo,pantalla,informe',
         ]);
 
         // firstOrCreate respeta el UNIQUE(user_id, tipo) — si ya estaba omitido no duplica.

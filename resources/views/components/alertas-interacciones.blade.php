@@ -59,6 +59,19 @@
         .alertas-int-bell { transition: transform .2s ease; }
         .alertas-int-bell:hover { transform: scale(1.05); }
 
+        /* Pulso de atención — cada tantos minutos (configurable), mientras haya algo vencido o
+           por vencer hoy, el ícono crece y se pone más rojo por un momento, sin interrumpir nada
+           (a diferencia del modal forzado, esto no bloquea ni exige elegir). */
+        @keyframes alertasIntPulso {
+            0%, 100% { transform: scale(1); color: inherit; }
+            25% { transform: scale(1.35); color: #dc2626; }
+            50% { transform: scale(1); color: #dc2626; }
+            75% { transform: scale(1.2); color: #dc2626; }
+        }
+        .alertas-int-bell.pulso-atencion {
+            animation: alertasIntPulso 1.4s ease-in-out 2;
+        }
+
         /* Mismo tamaño en escritorio y en celular (440px) — en escritorio hay espacio de sobra
            así que no tiene sentido que quede más angosto que la versión mobile.
            !important porque el tema trae ".nxl-header .header-wrapper .nxl-h-dropdown{width:
@@ -185,9 +198,15 @@
             // Interacciones. 3h es solo el valor por defecto mientras llega la primera carga.
             let AVISO_INTERVALO_MS = 3 * 60 * 60 * 1000;
             const LS_KEY = 'daytrack_ultimo_aviso_vencidas';
+            const LS_KEY_MATUTINO = 'daytrack_recordatorio_matutino_fecha';
 
-            let datos = { vencidas: [], pendientes: [] };
+            let recordatorioMatutinoHora = '08:00';
+            let pulsoIntervaloMs = 10 * 60 * 1000;
+            let ultimoPulso = 0;
+
+            let datos = { vencidas: [], pendientes: [], venceHoy: [] };
             let tabActual = 'vencidas';
+            let pantallaOmitidaActual = false;
 
             function cargarAlertas(mostrarAvisoSiToca) {
                 return fetch('{{ route('interactions.alertas.index') }}', {
@@ -197,10 +216,13 @@
                     .then(data => {
                         datos.vencidas = data.vencidas || [];
                         datos.pendientes = data.pendientes || [];
+                        datos.venceHoy = data.vence_hoy || [];
 
                         if (data.aviso_intervalo_horas) {
                             AVISO_INTERVALO_MS = data.aviso_intervalo_horas * 60 * 60 * 1000;
                         }
+                        if (data.recordatorio_matutino_hora) recordatorioMatutinoHora = data.recordatorio_matutino_hora;
+                        if (data.pulso_intervalo_minutos) pulsoIntervaloMs = data.pulso_intervalo_minutos * 60 * 1000;
 
                         countVencidas.textContent = data.vencidas_count ?? 0;
                         countPendientes.textContent = data.pendientes_count ?? 0;
@@ -215,10 +237,13 @@
 
                         renderLista();
                         // Si está en la lista de "omitir pantalla" (Admin → Configuración de
-                        // Alertas → Agentes Omitidos), no se le fuerza el modal — sigue viendo su
-                        // campanita normalmente si quiere consultarla.
+                        // Alertas → Agentes Omitidos), no se le fuerza NADA visual/sonoro en
+                        // pantalla — ni el modal cada N horas, ni el recordatorio matutino, ni
+                        // el pulso del ícono. Sigue viendo su campanita normalmente si quiere.
+                        pantallaOmitidaActual = !!data.pantalla_omitida;
                         if (mostrarAvisoSiToca && !data.pantalla_omitida) {
                             evaluarAvisoPeriodico(totalUrgente);
+                            evaluarRecordatorioMatutino(data.vence_hoy_count ?? 0);
                         }
                         return data;
                     })
@@ -283,6 +308,14 @@
 
                 const ahora = Date.now();
                 if (ahora - ultimoAviso >= AVISO_INTERVALO_MS) {
+                    // Si ya hay un modal forzado abierto (ej. el de Soportes, que corre en
+                    // paralelo e independiente) NO se dispara este encima — dos Swal.fire() casi
+                    // al mismo tiempo se pisan entre sí a medio renderizar y el botón de
+                    // "Posponer" puede quedar roto. Sin marcar el aviso como mostrado, así que
+                    // se reintenta en el siguiente sondeo (5 min) en vez de perder el turno.
+                    if (typeof Swal !== 'undefined' && Swal.isVisible && Swal.isVisible()) {
+                        return;
+                    }
                     if (typeof Swal !== 'undefined') {
                         // Modal "de esta misma ventana" (mismo degradado rojo) que NO se puede
                         // cerrar haciendo clic afuera ni con Esc — obliga a elegir un botón.
@@ -318,7 +351,15 @@
                         }).then((result) => {
                             if (result.isConfirmed) {
                                 registrarDecision('responder');
-                                window.location.href = '{{ route('interactions.index') }}';
+                                // Si hay una sola vencida, va directo a su pantalla de gestión
+                                // (edición, con cronómetro) — no tiene sentido mandarla al
+                                // listado general cuando ya se sabe exactamente cuál es.
+                                // Con varias, no hay una sola a la cual ir, así que cae al
+                                // listado (ya queda filtrado a lo propio).
+                                const vencidasActuales = datos.vencidas || [];
+                                window.location.href = vencidasActuales.length === 1
+                                    ? vencidasActuales[0].url
+                                    : '{{ route('interactions.index') }}';
                                 return;
                             }
                             if (result.isDenied) {
@@ -351,6 +392,95 @@
                 }
             }
 
+            // Sonido corto (Web Audio API, sin archivo externo) — mismo enfoque que ya usa
+            // Centro de Soportes. Los navegadores bloquean el autoplay de audio hasta que haya
+            // habido alguna interacción de la persona con la página en esa sesión; si el
+            // navegador lo rechaza, se ignora en silencio (no rompe nada).
+            function reproducirSonido(frecuencia, duracionMs) {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = frecuencia;
+                    gain.gain.value = 0.12;
+                    osc.start();
+                    osc.stop(ctx.currentTime + duracionMs / 1000);
+                } catch (e) { /* audio no disponible/bloqueado — se ignora */ }
+            }
+
+            // Recordatorio matutino: UNA vez al día (se compara por fecha, no por intervalo),
+            // al abrir/recargar la app después de la hora configurada, si hay algo que vence
+            // HOY (todavía no vencido — eso ya lo cubre el aviso cada N horas). No es forzado:
+            // se puede cerrar con normalidad, solo suena y muestra la lista.
+            function evaluarRecordatorioMatutino(countVenceHoy) {
+                if (countVenceHoy <= 0) return;
+                if (typeof Swal === 'undefined') return;
+
+                const hoy = new Date();
+                const fechaHoy = hoy.toISOString().slice(0, 10);
+
+                let yaMostradoHoy = null;
+                try {
+                    yaMostradoHoy = localStorage.getItem(LS_KEY_MATUTINO);
+                } catch (e) { /* almacenamiento no disponible — se sigue igual */ }
+                if (yaMostradoHoy === fechaHoy) return;
+
+                const [horaCfg, minCfg] = recordatorioMatutinoHora.split(':').map(Number);
+                const horaActualEnMinutos = hoy.getHours() * 60 + hoy.getMinutes();
+                const horaCfgEnMinutos = (horaCfg || 0) * 60 + (minCfg || 0);
+                if (horaActualEnMinutos < horaCfgEnMinutos) return;
+
+                const itemsHtml = (datos.venceHoy || []).slice(0, 5).map(item => `
+                    <div style="text-align:left; padding:8px 10px; margin-bottom:6px; background:#fff; border:1px solid #f1f1f1; border-left:3px solid #d97706; border-radius:6px;">
+                        <div style="font-size:13px; font-weight:600; color:#212529;">${item.cliente}</div>
+                        <div style="font-size:11.5px; color:#6c757d; margin-top:2px;">Hoy: ${item.next_action_date ?? '—'}</div>
+                    </div>`).join('');
+                const masTexto = countVenceHoy > 5 ? `<div style="text-align:center; font-size:12px; color:#6c757d;">y ${countVenceHoy - 5} más...</div>` : '';
+
+                reproducirSonido(880, 0.15);
+                setTimeout(() => reproducirSonido(1046, 0.15), 180);
+
+                Swal.fire({
+                    html: `
+                        <div style="margin:-20px -24px 16px -24px; padding:16px 24px 14px 24px; background:linear-gradient(135deg,#7f1d1d 0%,#c2410c 55%,#d97706 100%); color:#fff; border-radius:8px 8px 0 0;">
+                            <div style="font-weight:700; font-size:16px;">☀️ Buenos días</div>
+                            <div style="font-size:12px; opacity:.9; margin-top:2px;">Tienes ${countVenceHoy} interacción(es) que vencen HOY</div>
+                        </div>
+                        <div style="max-height:220px; overflow-y:auto; padding:0 2px;">${itemsHtml}${masTexto}</div>
+                    `,
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#c2410c',
+                    width: 420,
+                    padding: '20px 24px 24px 24px',
+                });
+
+                try {
+                    localStorage.setItem(LS_KEY_MATUTINO, fechaHoy);
+                } catch (e) { /* ignorar si no hay almacenamiento disponible */ }
+            }
+
+            // Pulso de atención en el ícono — cada tantos minutos (configurable), mientras haya
+            // vencidas o algo por vencer hoy, el ícono se anima y suena un blip corto. No
+            // interrumpe nada (no es un modal), solo llama la atención de reojo.
+            function evaluarPulsoAtencion(totalUrgente, pantallaOmitida) {
+                if (pantallaOmitida || totalUrgente <= 0) return;
+
+                const ahora = Date.now();
+                if (ultimoPulso !== 0 && ahora - ultimoPulso < pulsoIntervaloMs) return;
+                ultimoPulso = ahora;
+
+                const icono = document.querySelector('.alertas-int-bell');
+                if (icono) {
+                    icono.classList.remove('pulso-atencion');
+                    void icono.offsetWidth; // fuerza el reinicio de la animación si ya estaba
+                    icono.classList.add('pulso-atencion');
+                    setTimeout(() => icono.classList.remove('pulso-atencion'), 3000);
+                }
+                reproducirSonido(660, 0.12);
+            }
+
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
                     tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
@@ -369,6 +499,14 @@
             // Carga inicial y refresco cada 5 minutos revisando también si ya toca el aviso.
             cargarAlertas(true);
             setInterval(() => cargarAlertas(true), 5 * 60 * 1000);
+
+            // El pulso del ícono se revisa aparte, cada 30s, con los últimos datos ya cargados
+            // (sin pedirle nada nuevo al servidor) — así el intervalo configurado (que puede ser
+            // más corto que los 5 minutos del sondeo de datos) se respeta de verdad.
+            setInterval(() => {
+                const totalUrgente = (datos.vencidas?.length || 0) + (datos.venceHoy?.length || 0);
+                evaluarPulsoAtencion(totalUrgente, pantallaOmitidaActual);
+            }, 30 * 1000);
         });
     </script>
 @endcandirect

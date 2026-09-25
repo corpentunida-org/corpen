@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Cache;
 
 /**
  * Agentes exentos de las alertas forzadas — compartida entre Interacciones y Soportes, separada
- * por tipo ('correo'/'pantalla'). Ver la migración crear_alertas_omitidos para el detalle de qué
- * cubre cada tipo.
+ * por tipo ('correo'/'pantalla'/'informe'). Ver la migración crear_alertas_omitidos (y
+ * agregar_tipo_informe_a_alertas_omitidos) para el detalle de qué cubre cada tipo.
  */
 class IntAlertaOmitido extends Model
 {
@@ -44,5 +44,6 @@ class IntAlertaOmitido extends Model
     {
         Cache::forget('int_alerta_omitidos_correo');
         Cache::forget('int_alerta_omitidos_pantalla');
+        Cache::forget('int_alerta_omitidos_informe');
     }
 }

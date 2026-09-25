@@ -18,7 +18,12 @@ class IntSeguimiento extends Model
         'agent_id',
         'id_user_asignacion',
         'outcome',
-        'next_action_type', 
+        'motivo_no_efectivo_id',
+        // Tiempo NUEVO que contabilizó ESTA gestión puntual (ver InteractionController::report():
+        // los informes ahora cuentan por seguimiento, no por interacción) — distinto de
+        // interactions.duration, que siempre refleja solo la última sesión.
+        'duration',
+        'next_action_type',
         'next_action_date', 
         'next_action_notes', 
         'attachment_urls',
@@ -80,9 +85,14 @@ class IntSeguimiento extends Model
     }
 
     // NOTA: Renombrado a 'outcomeRelation' para no chocar con la columna 'outcome'
-    public function outcomeRelation() 
+    public function outcomeRelation()
     {
         return $this->belongsTo(IntOutcome::class, 'outcome');
+    }
+
+    public function motivoNoEfectivo()
+    {
+        return $this->belongsTo(IntMotivoNoEfectivo::class, 'motivo_no_efectivo_id');
     }
 
     public function nextAction()

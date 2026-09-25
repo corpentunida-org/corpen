@@ -127,6 +127,19 @@
         color: #073B4C;
     }
 
+    /* Pulso de atención — cada tantos minutos (configurable en Admin → Configuración de Alertas
+       de Soportes), mientras haya soportes asignados sin cerrar, el ícono crece y se pone azul
+       intenso por un momento. No interrumpe nada, es solo un llamado de atención de reojo. */
+    @keyframes soportesPulsoAtencion {
+        0%, 100% { transform: scale(1); color: inherit; }
+        25% { transform: scale(1.35); color: #1d4ed8; }
+        50% { transform: scale(1); color: #1d4ed8; }
+        75% { transform: scale(1.2); color: #1d4ed8; }
+    }
+    .notification-bell.pulso-atencion-soportes {
+        animation: soportesPulsoAtencion 1.4s ease-in-out 2;
+    }
+
     .pulse-animation {
         background: linear-gradient(135deg, #FFD166, #F77F00) !important;
         animation: pulse 2s infinite;
@@ -765,11 +778,20 @@
         // ============================================
         let avisoSoportesIntervaloMs = 3 * 60 * 60 * 1000;
         let avisoSoportesUltimosDatos = [];
+        let pulsoSoportesIntervaloMs = 10 * 60 * 1000;
+        let ultimoPulsoSoportes = 0;
+        let soportesPantallaOmitida = false;
         const AVISO_SOPORTES_LS_KEY = 'soportes_ultimo_aviso_pendientes';
 
         function iniciarAvisoForzadoSoportes() {
             consultarPendientesSoportes(true);
             setInterval(() => consultarPendientesSoportes(true), 5 * 60 * 1000);
+            // El pulso se revisa aparte cada 30s, con los últimos datos ya cargados — así el
+            // intervalo configurado (que puede ser más corto que los 5 min del sondeo) se
+            // respeta de verdad, sin pedirle nada nuevo al servidor.
+            setInterval(() => {
+                evaluarPulsoAtencionSoportes(avisoSoportesUltimosDatos.length, soportesPantallaOmitida);
+            }, 30 * 1000);
         }
 
         function consultarPendientesSoportes(evaluarAviso) {
@@ -782,6 +804,10 @@
                     if (data.aviso_intervalo_horas) {
                         avisoSoportesIntervaloMs = data.aviso_intervalo_horas * 60 * 60 * 1000;
                     }
+                    if (data.pulso_intervalo_minutos) {
+                        pulsoSoportesIntervaloMs = data.pulso_intervalo_minutos * 60 * 1000;
+                    }
+                    soportesPantallaOmitida = !!data.pantalla_omitida;
                     // Lista compartida con Interacciones — si está en "omitir pantalla" no se le
                     // fuerza el modal en ningún módulo.
                     if (evaluarAviso && !data.pantalla_omitida) {
@@ -789,6 +815,39 @@
                     }
                 })
                 .catch(err => console.error('Error consultando pendientes de soportes:', err));
+        }
+
+        // Sonido corto (Web Audio API) para el pulso — sin archivo externo. Si el navegador aún
+        // no permitió audio en esta sesión (falta interacción previa), se ignora en silencio.
+        function reproducirBlipSoportes(frecuencia, duracionMs) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = frecuencia;
+                gain.gain.value = 0.12;
+                osc.start();
+                osc.stop(ctx.currentTime + duracionMs / 1000);
+            } catch (e) { /* audio no disponible/bloqueado — se ignora */ }
+        }
+
+        function evaluarPulsoAtencionSoportes(totalPendientes, pantallaOmitida) {
+            if (pantallaOmitida || totalPendientes <= 0) return;
+
+            const ahora = Date.now();
+            if (ultimoPulsoSoportes !== 0 && ahora - ultimoPulsoSoportes < pulsoSoportesIntervaloMs) return;
+            ultimoPulsoSoportes = ahora;
+
+            const icono = document.querySelector('#notificationDropdownButton .notification-bell');
+            if (icono) {
+                icono.classList.remove('pulso-atencion-soportes');
+                void icono.offsetWidth;
+                icono.classList.add('pulso-atencion-soportes');
+                setTimeout(() => icono.classList.remove('pulso-atencion-soportes'), 3000);
+            }
+            reproducirBlipSoportes(523, 0.12);
         }
 
         function registrarDecisionSoporte(decision) {
@@ -818,6 +877,12 @@
             const ahora = Date.now();
             if (ahora - ultimoAviso < avisoSoportesIntervaloMs) return;
             if (typeof Swal === 'undefined') return;
+            // Si ya hay un modal forzado abierto (ej. el de Interacciones, que corre en paralelo
+            // e independiente) NO se dispara este encima — dos Swal.fire() casi al mismo tiempo
+            // se pisan entre sí a medio renderizar y el botón de "Posponer" puede quedar roto.
+            // Sin marcar el aviso como mostrado (return antes de tocar localStorage), así que se
+            // reintenta en el siguiente sondeo (5 min) en vez de perder el turno.
+            if (Swal.isVisible && Swal.isVisible()) return;
 
             const itemsHtml = avisoSoportesUltimosDatos.slice(0, 5).map(item => `
                 <div style="text-align:left; padding:8px 10px; margin-bottom:6px; background:#fff; border:1px solid #f1f1f1; border-left:3px solid #1d4ed8; border-radius:6px;">
@@ -850,7 +915,13 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     registrarDecisionSoporte('responder');
-                    window.location.href = '{{ route('soportes.soportes.index') }}';
+                    // Con un solo soporte pendiente, directo a su pantalla de gestión (ya trae
+                    // el formulario de Nueva Observación / Actualizar Estado). Con varios, cae
+                    // al listado — no hay uno solo al cual ir.
+                    const pendientesActuales = avisoSoportesUltimosDatos || [];
+                    window.location.href = pendientesActuales.length === 1
+                        ? pendientesActuales[0].url
+                        : '{{ route('soportes.soportes.index') }}';
                     return;
                 }
                 if (result.isDenied) {
