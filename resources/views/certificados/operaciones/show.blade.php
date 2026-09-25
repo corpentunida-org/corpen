@@ -1390,7 +1390,7 @@
                                     </div>
                                 </div>
                                 @if($operacion->lineas && $operacion->lineas->count() > 0)
-                                
+
                                     @php
                                         // REORDENAMIENTO DE LA COLECCIÓN SEGÚN COLOR DEL ICONO
                                         $historialTipos = $historialTipos->sortBy(function($registro) {
@@ -2689,14 +2689,13 @@
     <!-- 3. MODAL B: PREVISUALIZACIÓN Y HOJA DE CÁLCULO (Google Sheets UI)  -->
     <!-- ================================================================= -->
     <div class="modal fade" id="modalGestion" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 99vw; width: 100%;">
-            <form id="formGestionManual" action="{{ route('certificados.operaciones.gestion_manual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-3">
+        <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 95vw;">
+            <form id="formGestionManual" action="{{ route('certificados.operaciones.gestion_manual', $operacion->id) }}" method="POST" class="modal-content border-0 shadow-lg rounded-3" onsubmit="prepararEnvioFormulario(event, this.querySelector('button[type=submit]'))">
                 @csrf
 
                 {{-- Input oculto que recibe dinámicamente el ID del tipo seleccionado en el Modal A --}}
                 <input type="hidden" name="tipo_certificado" id="inputTipoCertificado" value="">
-                {{-- NUEVO BLOQUE DINÁMICO ÚNICO (Evita desbordamiento numérico usando string/timestamp) --}}
-                <input type="hidden" name="numero_bloque" value="{{ now()->format('YmdHis') }}">
+                <input type="hidden" name="numero_bloque" value="{{ $operacion->numero_bloque }}">
 
                 {{-- Header Estilo Hoja de Cálculo --}}
                 <div class="modal-header border-bottom pb-2 pt-3 px-4 bg-light rounded-top-3 d-flex justify-content-between align-items-center">
@@ -2706,66 +2705,42 @@
                         </div>
                         <div>
                             <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.85rem;">Hoja de Trabajo Masiva - car_sia_operaciones_lineas</h6>
-                            <span class="text-muted" style="font-size: 0.65rem;">Radicado: <strong>{{ $operacion->numero_radicado ?? 'N/A' }}</strong> | Bloque: {{ now()->format('YmdHis') }}</span>
+                            <span class="text-muted" style="font-size: 0.65rem;">Radicado: <strong>{{ $operacion->numero_radicado ?? 'N/A' }}</strong> | Bloque: {{ $operacion->numero_bloque }}</span>
                         </div>
                     </div>
                     <button type="button" class="btn-close" style="font-size: 0.7rem;" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
-                {{-- ENCABEZADO PADRE: Muestra el Tipo de Certificado Principal seleccionado --}}
-                <div class="alert alert-primary py-2 px-4 mb-0 rounded-0 border-0 border-bottom d-flex align-items-center justify-content-between shadow-sm" style="font-size: 0.75rem; background-color: #e2e8f0;">
-                    <div class="d-flex align-items-center gap-2">
+                {{-- ENCABEZADO PADRE --}}
+                <div class="alert alert-primary py-2 px-4 mb-0 rounded-0 border-0 border-bottom d-flex flex-wrap align-items-center justify-content-between shadow-sm" style="font-size: 0.75rem; background-color: #e2e8f0;">
+                    <div class="d-flex align-items-center gap-2 mb-1 mb-md-0">
                         <i class="fas fa-certificate text-primary fs-6"></i>
                         <span class="fw-bold text-dark">Tipo de Certificado (Padre Global):</span>
                         <span id="labelTipoCertificadoPadre" class="badge bg-dark text-warning font-monospace px-2 py-1" style="font-size: 0.7rem;">No seleccionado</span>
                     </div>
-                    <span class="text-muted" style="font-size: 0.68rem;"><i class="fas fa-info-circle me-1"></i> Este tipo aplica de forma general a todas las líneas y facturas del bloque.</span>
+                    <span class="text-muted" style="font-size: 0.68rem;"><i class="fas fa-info-circle me-1"></i> Este tipo aplica de forma general a todas las líneas.</span>
                 </div>
 
                 <div class="modal-body p-0">
                     {{-- Barra de Herramientas Informativa --}}
-                    <div class="px-3 py-2 bg-white border-bottom d-flex justify-content-between align-items-center" style="font-size: 0.7rem;">
-                        <span class="text-muted"><i class="fas fa-asterisk text-danger me-1"></i> Todos los campos marcados son obligatorios. Las filas vacías se descartarán automáticamente.</span>
-                        <span class="badge bg-light text-secondary border font-monospace" id="contadorFilasInfo">Gestión por Bloques</span>
+                    <div class="px-3 py-2 bg-white border-bottom d-flex flex-wrap justify-content-between align-items-center" style="font-size: 0.7rem;">
+                        <span class="text-muted"><i class="fas fa-asterisk text-danger me-1"></i> Las filas vacías se descartarán automáticamente.</span>
+                        <span class="badge bg-light text-secondary border font-monospace mt-1 mt-md-0" id="contadorFilasInfo">Gestión por Bloques</span>
                     </div>
 
-                    {{-- Contenedor Principal de Bloques (Tarjetas por Línea) --}}
-                    <div id="contenedorBloquesLineas" class="d-flex flex-column gap-3 p-3 bg-light" style="max-height: 54vh; overflow-y: auto; border: 1px solid #dee2e6;">
+                    {{-- Contenedor Principal de Bloques --}}
+                    <div id="contenedorBloquesLineas" class="d-flex flex-column gap-3 p-3 bg-light" style="max-height: 58vh; overflow-y: auto; border: 1px solid #dee2e6;">
 
                         @php
-                            // 1. Buscamos el historial y filtramos para obtener solo el registro más reciente por cada id_factura única
                             $facturasList = \App\Models\Certificados\CarSiaOperacionLinea::whereHas('operacion', function($q) use ($operacion) {
                                 $q->where('id_tercero', $operacion->id_tercero);
-                            })
-                            ->orderBy('created_at', 'desc')
-                            ->get()
-                            ->unique('id_factura');
+                            })->orderBy('created_at', 'desc')->get()->unique('id_factura');
 
-                            // 2. Si no hay registros previos, creamos un bloque vacío por defecto
                             if ($facturasList->isEmpty()) {
-                                $facturasList = collect([ (object)[
-                                    'id' => '',
-                                    'id_factura' => '',
-                                    'id_car_sia_lineas' => '',
-                                    'observacion' => '',
-                                    'calificacion' => 'Bueno',
-                                    'fecha_venci' => null,
-                                    'id_car_sia_estados' => 3,
-                                    'fecha_ultimo_recordatorio' => null,
-                                    'dias_mora_automaticos' => 0,
-                                    'id_user' => auth()->id(),
-                                    'hash_certificado' => '',
-                                    'metadata' => '{"config_base": true}',
-                                    'estadoApi' => '0',
-                                    'payload_documento' => '{"tipo_emision": "manual", "version": "1.0"}'
-                                ] ]);
+                                $facturasList = collect([ (object)[ 'id' => '', 'id_factura' => '', 'id_car_sia_lineas' => '', 'observacion' => '', 'calificacion' => 'Bueno', 'fecha_venci' => null, 'id_car_sia_estados' => 3, 'dias_mora_automaticos' => 0, 'id_user' => auth()->id(), 'hash_certificado' => '', 'metadata' => '{}', 'estadoApi' => '0', 'payload_documento' => '{}', 'id_car_sia_tipos' => '' ] ]);
                             } else {
-                                foreach($facturasList as $fac) {
-                                    $fac->id = ''; // Limpiamos ID para obligar la inserción de un registro nuevo
-                                }
+                                foreach($facturasList as $fac) { $fac->id = ''; }
                             }
-
-                            // Agrupamos por la cuenta/línea para mantener la estructura de tarjetas visuales
                             $lineasAgrupadas = $facturasList->groupBy('id_car_sia_lineas');
                         @endphp
 
@@ -2777,18 +2752,14 @@
                             @endphp
 
                             <div class="card border shadow-sm rounded-3 bloque-linea" data-linea-index="{{ $loop->index }}">
-
-                                {{-- Header del Bloque: Selectores Superiores Obligatorios --}}
+                                {{-- Header del Bloque --}}
                                 <div class="card-header bg-white py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
                                     <div class="d-flex align-items-center gap-3 flex-wrap">
-
-                                        {{-- id_car_sia_lineas --}}
+                                        <!-- Cuenta -->
                                         <div class="d-flex align-items-center gap-1">
-                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                                <i class="fas fa-layer-group text-primary me-1"></i> Cuenta <span class="text-danger">*</span>:
-                                            </span>
-                                            <select name="bloques[{{ $loop->index }}][id_car_sia_lineas]" class="form-select form-select-sm fw-bold text-primary shadow-none" style="width: 220px; font-size: 0.7rem;" required>
-                                                <option value="">-- Seleccione Cuenta --</option>
+                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-layer-group text-primary me-1"></i> Cuenta <span class="text-danger">*</span>:</span>
+                                            <select name="bloques[{{ $loop->index }}][id_car_sia_lineas]" class="form-select form-select-sm fw-bold text-primary shadow-none" style="width: 200px; font-size: 0.7rem;" required>
+                                                <option value="">-- Seleccione --</option>
                                                 @isset($lineasDisponibles)
                                                     @foreach($lineasDisponibles as $lineaCredito)
                                                         <option value="{{ $lineaCredito->cuenta }}" {{ $cuentaId == $lineaCredito->cuenta ? 'selected' : '' }}>
@@ -2798,121 +2769,98 @@
                                                 @endisset
                                             </select>
                                         </div>
-
-                                        {{-- id_car_sia_estados --}}
+                                        <!-- Estado -->
                                         <div class="d-flex align-items-center gap-1">
-                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                                <i class="fas fa-tasks text-success me-1"></i> Estado <span class="text-danger">*</span>:
-                                            </span>
-                                            <select name="bloques[{{ $loop->index }}][id_car_sia_estados]" class="form-select form-select-sm fw-semibold text-success shadow-none" style="width: 180px; font-size: 0.7rem;" required>
-                                                <option value="">Seleccione estado...</option>
+                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-tasks text-success me-1"></i> Estado <span class="text-danger">*</span>:</span>
+                                            <select name="bloques[{{ $loop->index }}][id_car_sia_estados]" class="form-select form-select-sm fw-semibold text-success shadow-none" style="width: 140px; font-size: 0.7rem;" required>
+                                                <option value="">Seleccione...</option>
                                                 @isset($estados)
                                                     @foreach($estados as $est)
-                                                        <option value="{{ $est->id }}" {{ $estadoGlobalBloque == $est->id ? 'selected' : '' }}>
-                                                            {{ $est->nombre }} (ID: {{ $est->id }})
-                                                        </option>
+                                                        <option value="{{ $est->id }}" {{ $estadoGlobalBloque == $est->id ? 'selected' : '' }}>{{ $est->nombre }}</option>
                                                     @endforeach
                                                 @endisset
                                             </select>
                                         </div>
-
-                                        {{-- id_user --}}
+                                        <!-- Auditor -->
                                         <div class="d-flex align-items-center gap-1">
-                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                                <i class="fas fa-user text-dark me-1"></i> Auditor <span class="text-danger">*</span>:
-                                            </span>
-                                            <select name="bloques[{{ $loop->index }}][id_user]" class="form-select form-select-sm fw-semibold text-dark shadow-none" style="width: 160px; font-size: 0.7rem;" required>
-                                                <option value="">Seleccione usuario...</option>
+                                            <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-user text-dark me-1"></i> Auditor <span class="text-danger">*</span>:</span>
+                                            <select name="bloques[{{ $loop->index }}][id_user]" class="form-select form-select-sm fw-semibold text-dark shadow-none" style="width: 140px; font-size: 0.7rem;" required>
+                                                <option value="">Seleccione...</option>
                                                 @isset($usuarios)
                                                     @foreach($usuarios as $usr)
-                                                        <option value="{{ $usr->id }}" {{ $usuarioGlobalBloque == $usr->id ? 'selected' : '' }}>
-                                                            {{ $usr->name ?? 'Usuario '.$usr->id }}
-                                                        </option>
+                                                        <option value="{{ $usr->id }}" {{ $usuarioGlobalBloque == $usr->id ? 'selected' : '' }}>{{ $usr->name ?? 'Usuario '.$usr->id }}</option>
                                                     @endforeach
                                                 @endisset
                                             </select>
                                         </div>
-
                                     </div>
-
                                     <button type="button" class="btn btn-outline-danger btn-sm border-0 py-0 px-2" title="Eliminar todo este bloque" onclick="eliminarBloqueLinea(this)" style="font-size: 0.7rem;">
-                                        <i class="fas fa-trash-alt me-1"></i> Eliminar Línea Completa
+                                        <i class="fas fa-trash-alt me-1"></i> Eliminar
                                     </button>
                                 </div>
 
-                                {{-- Cuerpo del Bloque: Sub-tabla de Facturas --}}
+                                {{-- Cuerpo del Bloque: Tabla de Facturas --}}
                                 <div class="card-body p-0">
-                                    <div class="table-responsive">
-                                        <table class="table table-bordered table-sm align-middle mb-0 bg-white" style="font-size: 0.68rem; min-width: 1650px;">
+                                    <div class="table-responsive text-nowrap">
+                                        <table class="table table-bordered table-sm align-middle mb-0 bg-white" style="font-size: 0.68rem; width: 100%;">
                                             <thead class="table-light text-uppercase text-secondary text-center" style="font-size: 0.58rem;">
                                                 <tr>
-                                                    <th style="width: 2%;">#</th>
-                                                    <th style="width: 7%;">id_factura <span class="text-danger">*</span></th>
-                                                    <th style="width: 12%;">observacion</th>
-                                                    <th style="width: 8%;">calificacion</th>
-                                                    <th style="width: 8%;">fecha_venci</th>
-                                                    <th style="width: 6%;">dias_mora</th>
-                                                    <th style="width: 8%;">hash_certificado</th>
-                                                    <th style="width: 12%;">metadata (JSON)</th>
-                                                    <th style="width: 7%;">estadoApi</th>
-                                                    <th style="width: 12%;">payload_documento (JSON)</th>
-                                                    <th style="width: 3%;">🗑️</th>
+                                                    <th style="width: 30px;">#</th>
+                                                    <th style="min-width: 90px;">id_factura <span class="text-danger">*</span></th>
+                                                    <th style="min-width: 150px;">Observación</th>
+                                                    <th style="min-width: 110px;">Calificación</th>
+                                                    <th style="min-width: 110px;">Vencimiento</th>
+                                                    <th style="min-width: 80px;">Mora</th>
+                                                    <th style="min-width: 100px;">Estado API</th>
+                                                    <th style="min-width: 130px;">Datos (Payload)</th>
+                                                    <th style="width: 40px;">🗑️</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="cuerpo-tabla-facturas">
                                                 @foreach($facturasDeLaLinea as $fIndex => $fac)
                                                     @php
-                                                        $metadataVal = is_array($fac->metadata ?? null) ? json_encode($fac->metadata, JSON_UNESCAPED_UNICODE) : ($fac->metadata ?? '{}');
-                                                        $payloadVal = is_array($fac->payload_documento ?? null) ? json_encode($fac->payload_documento, JSON_UNESCAPED_UNICODE) : ($fac->payload_documento ?? '{}');
+                                                        $payloadArr = is_array($fac->payload_documento) ? $fac->payload_documento : json_decode($fac->payload_documento ?? '{}', true);
+                                                        $payloadJson = json_encode($payloadArr, JSON_UNESCAPED_UNICODE);
+                                                        $tipoCertificadoFila = $fac->id_car_sia_tipos ?? '';
                                                     @endphp
-                                                    <tr class="fila-factura">
-                                                        <td class="text-center text-muted fw-bold row-num bg-light">{{ $fIndex + 1 }}</td>
 
+                                                    {{-- Fila Principal --}}
+                                                    <tr class="fila-factura">
+                                                        <td class="text-center text-muted fw-bold bg-light">{{ $fIndex + 1 }}</td>
                                                         <td class="p-1">
                                                             <input type="hidden" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][id]" value="">
+                                                            <input type="hidden" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][id_car_sia_tipos]" value="{{ $tipoCertificadoFila }}">
                                                             <input type="number" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][id_factura]" value="{{ $fac->id_factura ?? '' }}" class="form-control form-control-sm border-0 fw-bold text-center" required placeholder="Ej: 101">
                                                         </td>
-
                                                         <td class="p-1">
                                                             <input type="text" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][observacion]" value="{{ $fac->observacion ?? '' }}" class="form-control form-control-sm border-0" placeholder="Escribir nota...">
                                                         </td>
-
                                                         <td class="p-1 text-center">
                                                             <select name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][calificacion]" class="form-select form-select-sm border-0 text-center">
                                                                 <option value="Bueno" {{ ($fac->calificacion ?? '') == 'Bueno' ? 'selected' : '' }}>Bueno</option>
                                                                 <option value="Regular" {{ ($fac->calificacion ?? '') == 'Regular' ? 'selected' : '' }}>Regular</option>
-                                                                <option value="Atencion Especial" {{ ($fac->calificacion ?? '') == 'Atencion Especial' ? 'selected' : '' }}>Atención Especial</option>
                                                                 <option value="Restringido" {{ ($fac->calificacion ?? '') == 'Restringido' ? 'selected' : '' }}>Restringido</option>
-                                                                <option value="Irregular" {{ ($fac->calificacion ?? '') == 'Irregular' ? 'selected' : '' }}>Irregular</option>
                                                             </select>
                                                         </td>
-
                                                         <td class="p-1 text-center">
                                                             <input type="date" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][fecha_venci]" value="{{ isset($fac->fecha_venci) ? \Carbon\Carbon::parse($fac->fecha_venci)->format('Y-m-d') : '' }}" class="form-control form-control-sm border-0 text-center">
                                                         </td>
-
                                                         <td class="p-1 text-center bg-light">
                                                             <input type="number" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][dias_mora_automaticos]" value="{{ $fac->dias_mora_automaticos ?? 0 }}" class="form-control form-control-sm border-0 bg-transparent text-center text-muted" readonly tabindex="-1">
                                                         </td>
-
-                                                        <td class="p-1 font-monospace bg-light">
-                                                            <input type="text" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][hash_certificado]" value="" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace text-center" readonly placeholder="Nuevo Hash Automático" style="font-size: 0.6rem;">
-                                                        </td>
-
-                                                        <td class="p-1 font-monospace">
-                                                            <textarea name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][metadata]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{{ $metadataVal }}</textarea>
-                                                        </td>
-
                                                         <td class="p-1 text-center">
-                                                            <select name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][estadoApi]" class="form-select form-select-sm border-0 text-center {{ ($fac->estadoApi ?? '0') == '1' ? 'text-success' : 'text-muted' }}">
+                                                            <select name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][estadoApi]" class="form-select form-select-sm border-0 text-center {{ ($fac->estadoApi ?? '0') == '1' ? 'text-success' : 'text-muted' }}" onchange="actualizarEstadoApiDirecto(this, '{{ $fac->id_factura }}', document.querySelector('input[name=numero_bloque]').value)">
                                                                 <option value="0" {{ ($fac->estadoApi ?? '0') == '0' ? 'selected' : '' }}>0 - Pendiente</option>
                                                                 <option value="1" {{ ($fac->estadoApi ?? '0') == '1' ? 'selected' : '' }}>1 - Pagado</option>
-                                                                <option value="2" {{ ($fac->estadoApi ?? '0') == '2' ? 'selected' : '' }}>2 - Anulado</option>
                                                             </select>
                                                         </td>
 
-                                                        <td class="p-1 font-monospace">
-                                                            <textarea name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][payload_documento]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{{ $payloadVal }}</textarea>
+                                                        {{-- PAYLOAD: BOTÓN EXPANDIBLE --}}
+                                                        <td class="p-1 text-center bg-light">
+                                                            <input type="hidden" name="bloques[{{ $loop->parent->index }}][facturas][{{ $fIndex }}][payload_documento]" class="input-payload-json" value="{{ $payloadJson }}">
+                                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-1 py-1 px-2 shadow-none w-100 fw-medium" data-bs-toggle="collapse" data-bs-target="#collapsePayload_{{ $loop->parent->index }}_{{ $fIndex }}">
+                                                                <i class="fas fa-sliders-h"></i> <span style="font-size: 0.6rem;">Definir Valores</span>
+                                                            </button>
                                                         </td>
 
                                                         <td class="text-center p-1 bg-white">
@@ -2921,16 +2869,30 @@
                                                             </button>
                                                         </td>
                                                     </tr>
+
+                                                    {{-- FILA EXPANSIBLE (ACORDEÓN) CONECTADA A LA FÁBRICA DE PLANTILLAS --}}
+                                                    <tr id="collapsePayload_{{ $loop->parent->index }}_{{ $fIndex }}" class="collapse bg-white border-bottom shadow-inner">
+                                                        <td colspan="9" class="p-3">
+                                                            <div class="d-flex align-items-center mb-2">
+                                                                <i class="fas fa-cogs text-primary me-2"></i>
+                                                                <strong class="text-dark" style="font-size: 0.75rem;">Estructura de Datos del Certificado (Payload Dinámico)</strong>
+                                                                <small class="text-muted ms-auto">Los datos se adaptan automáticamente según el tipo de certificado seleccionado.</small>
+                                                            </div>
+
+                                                            <!-- Contenedor dinámico inicializado con la Fábrica de Plantillas -->
+                                                            <div class="row g-2 contenedor-campos-payload auto-init-payload" data-tipo="{{ $tipoCertificadoFila }}" data-payload="{{ $payloadJson }}">
+                                                                <!-- Se inyectará automáticamente sin romper el hilo de JS -->
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
-
                                 <div class="card-footer bg-white py-2 px-3 d-flex justify-content-between align-items-center border-top">
-                                    <span class="text-muted" style="font-size: 0.62rem;"><i class="fas fa-info-circle text-info"></i> Facturas adicionales para esta cuenta.</span>
                                     <button type="button" class="btn btn-sm btn-outline-success fw-medium rounded-1 py-1 px-2" style="font-size: 0.65rem;" onclick="agregarFacturaEnBloque(this)">
-                                        <i class="fas fa-plus me-1"></i> Agregar Factura a esta Línea
+                                        <i class="fas fa-plus me-1"></i> Agregar Factura
                                     </button>
                                 </div>
                             </div>
@@ -2939,7 +2901,7 @@
 
                     <div class="px-3 py-2 bg-white border-top d-flex align-items-center">
                         <button type="button" class="btn btn-sm btn-outline-primary fw-bold rounded-1 shadow-sm" onclick="agregarNuevoBloqueLinea()">
-                            <i class="fas fa-folder-plus me-1"></i> Agregar Nueva Línea / Cuenta Completa
+                            <i class="fas fa-folder-plus me-1"></i> Agregar Nueva Cuenta Completa
                         </button>
                     </div>
                 </div>
@@ -2950,11 +2912,11 @@
                         <i class="fas fa-shield-alt text-success me-1"></i> Campos obligatorios requeridos (*).
                     </div>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-secondary px-3 fw-medium rounded-1" onclick="volverASeleccion()">
-                            <i class="fas fa-arrow-left me-1"></i> Atrás
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3 fw-medium rounded-1" data-bs-dismiss="modal">
+                            Cancelar
                         </button>
-                        <button type="submit" class="btn btn-sm btn-dark px-4 fw-bold rounded-1 shadow-sm" onclick="prepararEnvioFormulario(event, this)">
-                            <i class="fas fa-cogs me-1 text-warning"></i> Ejecutar Motor & Generar Certificado
+                        <button type="submit" class="btn btn-sm btn-dark px-4 fw-bold rounded-1 shadow-sm">
+                            <i class="fas fa-cogs me-1 text-warning"></i> Guardar y Generar
                         </button>
                     </div>
                 </div>
@@ -3137,408 +3099,1121 @@
         </div>
     </div>
 
+    <!-- Modal de Errores -->
+    <div class="modal fade" id="modalErroresFormulario" tabindex="-1" aria-labelledby="modalErroresLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalErroresLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i> Atención / Error en el Proceso
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Contenedor donde se inyectarán los errores dinámicamente -->
+                    <div id="contenidoErroresModal" class="alert alert-danger mb-0">
+                        Ocurrió un error inesperado.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
-@push('scripts')
-    <script>
-        $(document).ready(function() {
-            const $modal =$('#modalEditarTercero');
-            const $selects =$('.select2-buscador');
 
-            if ($selects.length > 0) {$selects.select2({
-                    theme: 'bootstrap-5',
-                    width: '100%',
-                    placeholder: 'Seleccione o busque...',
-                    allowClear: true,
-                    dropdownParent: $modal
-                });
-            }
+    <!-- LIBRERÍA CHART.JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-            function setSelect2Flexible($element, targetValue) {
-                if (!targetValue || targetValue.trim() === '') {
-                    let bladeSelected = $element.find('option[selected]').val();
-                    if (bladeSelected) {
-                        $element.val(bladeSelected).trigger('change.select2');
+    @push('scripts')
+        <script>
+            $(document).ready(function() {
+                const $modal =$('#modalEditarTercero');
+                const $selects =$('.select2-buscador');
+
+                if ($selects.length > 0) {$selects.select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        placeholder: 'Seleccione o busque...',
+                        allowClear: true,
+                        dropdownParent: $modal
+                    });
+                }
+
+                function setSelect2Flexible($element, targetValue) {
+                    if (!targetValue || targetValue.trim() === '') {
+                        let bladeSelected = $element.find('option[selected]').val();
+                        if (bladeSelected) {
+                            $element.val(bladeSelected).trigger('change.select2');
+                        }
+                        return;
                     }
+
+                    let cleanTarget = $.trim(targetValue);
+                    let matchingOption = null;
+
+                    $element.find('option').each(function() {
+                        if ($.trim($(this).val()) === cleanTarget) {
+                            matchingOption = $(this).val();
+                            return false;
+                        }
+                    });
+
+                    if (matchingOption !== null) {
+                        $element.val(matchingOption).trigger('change.select2');
+                    } else {
+                        console.warn("Select2: No se encontró opción coincidente para el valor:", cleanTarget);
+                    }
+                }
+
+                $modal.on('shown.bs.modal', function () {
+                    let distVal = "{{ trim($operacion->tercero->cod_dist ?? '') }}";
+                    let tipoVal = "{{ trim($operacion->tercero->tip_prv ?? '') }}";
+                    let congVal = "{{ trim($operacion->tercero->congrega ?? '') }}";
+
+                    setSelect2Flexible($('#select_cod_dist'), distVal);
+                    setSelect2Flexible($('#select_tip_prv'), tipoVal);
+                    setSelect2Flexible($('#select_congrega'), congVal);
+                });
+            });
+
+            const catLineasCredito     = @json($lineasDisponibles ?? []);
+            const catUsuarios          = @json($usuarios ?? []);
+            const catEstados           = @json($estados ?? []);
+            const catTiposGestion      = @json($tiposGestion ?? []);
+            const catTiposCertificados = @json($tiposCertificados ?? []);
+
+            function validarYContinuarGestion() {
+                const select = document.getElementById('selectTipoGestionModal');
+                const tipoId = select.value;
+
+                if (!tipoId) {
+                    alert('Por favor, seleccione un tipo de certificado antes de continuar.');
+                    select.focus();
                     return;
                 }
 
-                let cleanTarget = $.trim(targetValue);
-                let matchingOption = null;
+                // Asignar al input oculto principal
+                document.getElementById('inputTipoCertificado').value = tipoId;
+                actualizarLabelTipoPadre(tipoId);
 
-                $element.find('option').each(function() {
-                    if ($.trim($(this).val()) === cleanTarget) {
-                        matchingOption = $(this).val();
-                        return false;
+                // CORRECCIÓN: Cambiar 'select' por 'input' en el querySelectorAll
+                document.querySelectorAll('input[name*="[id_car_sia_tipos]"]').forEach(inputFila => {
+                    inputFila.value = tipoId;
+                });
+
+                // Inyectar dinámicamente la plantilla de la Fábrica según el tipo seleccionado
+                document.querySelectorAll('.fila-factura').forEach(fila => {
+                    const filaAcordeon = fila.nextElementSibling;
+                    if (filaAcordeon && filaAcordeon.classList.contains('collapse')) {
+                        const contenedorCampos = filaAcordeon.querySelector('.contenedor-campos-payload');
+                        const inputOcultoJson = fila.querySelector('.input-payload-json');
+
+                        let datosPrevios = {};
+                        if (inputOcultoJson && inputOcultoJson.value) {
+                            try { datosPrevios = JSON.parse(inputOcultoJson.value); } catch(e) {}
+                        }
+
+                        if (contenedorCampos) {
+                            contenedorCampos.innerHTML = generarPlantillaPayload(tipoId, datosPrevios);
+                        }
                     }
                 });
 
-                if (matchingOption !== null) {
-                    $element.val(matchingOption).trigger('change.select2');
-                } else {
-                    console.warn("Select2: No se encontró opción coincidente para el valor:", cleanTarget);
-                }
-            }
-
-            $modal.on('shown.bs.modal', function () {
-                let distVal = "{{ trim($operacion->tercero->cod_dist ?? '') }}";
-                let tipoVal = "{{ trim($operacion->tercero->tip_prv ?? '') }}";
-                let congVal = "{{ trim($operacion->tercero->congrega ?? '') }}";
-
-                setSelect2Flexible($('#select_cod_dist'), distVal);
-                setSelect2Flexible($('#select_tip_prv'), tipoVal);
-                setSelect2Flexible($('#select_congrega'), congVal);
-            });
-        });
-
-        const catLineasCredito     = @json($lineasDisponibles ?? []);
-        const catUsuarios          = @json($usuarios ?? []);
-        const catEstados           = @json($estados ?? []);
-        const catTiposGestion      = @json($tiposGestion ?? []);
-        const catTiposCertificados = @json($tiposCertificados ?? []);
-
-        function validarYContinuarGestion() {
-            const select = document.getElementById('selectTipoGestionModal');
-            const tipoId = select.value;
-
-            if (!tipoId) {
-                alert('Por favor, seleccione un tipo de certificado antes de continuar.');
-                select.focus();
-                return;
-            }
-
-            // Asignar al input oculto
-            document.getElementById('inputTipoCertificado').value = tipoId;
-
-            // Actualizar visualmente el nombre del Padre en el Modal B
-            actualizarLabelTipoPadre(tipoId);
-
-            // Transición de modales
-            const elModalA = document.getElementById('modalSeleccionTipo');
-            const modalA = bootstrap.Modal.getInstance(elModalA) || new bootstrap.Modal(elModalA);
-            modalA.hide();
-
-            setTimeout(() => {
-                const elModalB = document.getElementById('modalGestion');
-                const modalB = bootstrap.Modal.getInstance(elModalB) || new bootstrap.Modal(elModalB);
-                modalB.show();
-            }, 150);
-        }
-
-        // Función para inyectar el texto del tipo de certificado padre seleccionado
-        function actualizarLabelTipoPadre(tipoId) {
-            const label = document.getElementById('labelTipoCertificadoPadre');
-            if (!label) return;
-
-            let nombreEncontrado = '';
-
-            // Buscar en catTiposGestion
-            Object.values(catTiposGestion).forEach(tg => {
-                if (tg.id == tipoId) nombreEncontrado = tg.nombre;
-            });
-
-            // Si no está, buscar en catTiposCertificados
-            if (!nombreEncontrado) {
-                Object.values(catTiposCertificados).forEach(tc => {
-                    if (tc.id == tipoId) nombreEncontrado = tc.nombre;
-                });
-            }
-
-            label.textContent = nombreEncontrado ? `${nombreEncontrado} (ID: ${tipoId})` : `Tipo ID: ${tipoId}`;
-        }
-
-        function volverASeleccion() {
-            const elModalB = document.getElementById('modalGestion');
-            const modalB = bootstrap.Modal.getInstance(elModalB);
-            if(modalB) modalB.hide();
-
-            setTimeout(() => {
+                // Transición de modales
                 const elModalA = document.getElementById('modalSeleccionTipo');
                 const modalA = bootstrap.Modal.getInstance(elModalA) || new bootstrap.Modal(elModalA);
-                modalA.show();
-            }, 150);
-        }
+                modalA.hide();
 
-        // Valida campos nativos obligatorios ANTES de congelar el botón
-        function prepararEnvioFormulario(event, btn) {
-            const form = document.getElementById('formGestionManual');
-
-            // 1. Validar si el navegador detecta campos [required] vacíos
-            if (!form.checkValidity()) {
-                event.preventDefault(); // Detiene el envío
-                form.reportValidity();  // Muestra los avisos nativos en rojo sobre los campos faltantes
-                return;
+                setTimeout(() => {
+                    const elModalB = document.getElementById('modalGestion');
+                    const modalB = bootstrap.Modal.getInstance(elModalB) || new bootstrap.Modal(elModalB);
+                    modalB.show();
+                }, 150);
             }
 
-            const bloques = document.querySelectorAll('.bloque-linea');
-            if (bloques.length === 0) {
+            function actualizarLabelTipoPadre(tipoId) {
+                const label = document.getElementById('labelTipoCertificadoPadre');
+                if (!label) return;
+
+                let nombreEncontrado = '';
+
+                Object.values(catTiposGestion).forEach(tg => {
+                    if (tg.id == tipoId) nombreEncontrado = tg.nombre;
+                });
+
+                if (!nombreEncontrado) {
+                    Object.values(catTiposCertificados).forEach(tc => {
+                        if (tc.id == tipoId) nombreEncontrado = tc.nombre;
+                    });
+                }
+
+                label.textContent = nombreEncontrado ? `${nombreEncontrado} (ID: ${tipoId})` : `Tipo ID: ${tipoId}`;
+            }
+
+            function volverASeleccion() {
+                const elModalB = document.getElementById('modalGestion');
+                const modalB = bootstrap.Modal.getInstance(elModalB);
+                if(modalB) modalB.hide();
+
+                setTimeout(() => {
+                    const elModalA = document.getElementById('modalSeleccionTipo');
+                    const modalA = bootstrap.Modal.getInstance(elModalA) || new bootstrap.Modal(elModalA);
+                    modalA.show();
+                }, 150);
+            }
+
+            function prepararEnvioFormulario(event, btn) {
+                // 1. Evitamos el envío por defecto para controlarlo con AJAX
                 event.preventDefault();
-                alert('Debe agregar al menos una línea con sus facturas.');
-                return;
-            }
 
-            // Limpiar filas secundarias vacías accidentales
-            bloques.forEach(bloque => {
-                const filas = bloque.querySelectorAll('.fila-factura');
-                filas.forEach(fila => {
-                    const inputFactura = fila.querySelector('input[name*="[id_factura]"]');
-                    if (inputFactura && !inputFactura.value.trim() && filas.length > 1) {
-                        fila.remove();
-                    }
-                });
-            });
+                const form = document.getElementById('formGestionManual');
 
-            reindexarBloquesYFacturas();
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
 
-            // Bloquear botón visualmente solo si pasó todas las validaciones correctamente
-            btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Procesando Motor...`;
-            btn.classList.add('disabled');
-            btn.style.pointerEvents = 'none';
-        }
+                const bloques = document.querySelectorAll('.bloque-linea');
+                if (bloques.length === 0) {
+                    alert('Debe agregar al menos una línea con sus facturas.');
+                    return;
+                }
 
-        function agregarNuevoBloqueLinea() {
-            const contenedor = document.getElementById('contenedorBloquesLineas');
-            const bloqueIndex = contenedor.querySelectorAll('.bloque-linea').length;
-
-            let opcionesLineas = '<option value="">-- Seleccione Cuenta --</option>';
-            Object.values(catLineasCredito).forEach(lin => {
-                let nombreMostrar = lin.nombre_cuenta || lin.nombre || `Cuenta: ${lin.cuenta}`;
-                opcionesLineas += `<option value="${lin.cuenta}">${nombreMostrar}</option>`;
-            });
-
-            let opcionesEstados = '<option value="">Seleccione estado...</option>';
-            Object.values(catEstados).forEach(est => {
-                opcionesEstados += `<option value="${est.id}" ${est.id == 3 ? 'selected' : ''}>${est.nombre} (ID: ${est.id})</option>`;
-            });
-
-            let opcionesUsuarios = '<option value="">Seleccione usuario...</option>';
-            Object.values(catUsuarios).forEach(usr => {
-                opcionesUsuarios += `<option value="${usr.id}" ${usr.id == "{{ auth()->id() }}" ? 'selected' : ''}>${usr.name}</option>`;
-            });
-
-            const cardDiv = document.createElement('div');
-            cardDiv.className = 'card border shadow-sm rounded-3 bloque-linea';
-            cardDiv.setAttribute('data-linea-index', bloqueIndex);
-
-            cardDiv.innerHTML = `
-                <div class="card-header bg-white py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
-                    <div class="d-flex align-items-center gap-3 flex-wrap">
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                <i class="fas fa-layer-group text-primary me-1"></i> Cuenta <span class="text-danger">*</span>:
-                            </span>
-                            <select name="bloques[${bloqueIndex}][id_car_sia_lineas]" class="form-select form-select-sm fw-bold text-primary shadow-none" style="width: 220px; font-size: 0.7rem;" required>
-                                ${opcionesLineas}
-                            </select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                <i class="fas fa-tasks text-success me-1"></i> Estado <span class="text-danger">*</span>:
-                            </span>
-                            <select name="bloques[${bloqueIndex}][id_car_sia_estados]" class="form-select form-select-sm fw-semibold text-success shadow-none" style="width: 180px; font-size: 0.7rem;" required>
-                                ${opcionesEstados}
-                            </select>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="fw-bold text-dark" style="font-size: 0.7rem;">
-                                <i class="fas fa-user text-dark me-1"></i> Auditor <span class="text-danger">*</span>:
-                            </span>
-                            <select name="bloques[${bloqueIndex}][id_user]" class="form-select form-select-sm fw-semibold text-dark shadow-none" style="width: 160px; font-size: 0.7rem;" required>
-                                ${opcionesUsuarios}
-                            </select>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-outline-danger btn-sm border-0 py-0 px-2" title="Eliminar todo este bloque" onclick="eliminarBloqueLinea(this)" style="font-size: 0.7rem;">
-                        <i class="fas fa-trash-alt me-1"></i> Eliminar Línea Completa
-                    </button>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-sm align-middle mb-0 bg-white" style="font-size: 0.68rem; min-width: 1650px;">
-                            <thead class="table-light text-uppercase text-secondary text-center" style="font-size: 0.58rem;">
-                                <tr>
-                                    <th style="width: 2%;">#</th>
-                                    <th style="width: 7%;">id_factura <span class="text-danger">*</span></th>
-                                    <th style="width: 12%;">observacion</th>
-                                    <th style="width: 8%;">calificacion</th>
-                                    <th style="width: 8%;">fecha_venci</th>
-                                    <th style="width: 6%;">dias_mora</th>
-                                    <th style="width: 8%;">hash_certificado</th>
-                                    <th style="width: 12%;">metadata (JSON)</th>
-                                    <th style="width: 7%;">estadoApi</th>
-                                    <th style="width: 12%;">payload_documento (JSON)</th>
-                                    <th style="width: 3%;">🗑️</th>
-                                </tr>
-                            </thead>
-                            <tbody class="cuerpo-tabla-facturas">
-                                <tr class="fila-factura">
-                                    <td class="text-center text-muted fw-bold row-num bg-light">1</td>
-                                    <td class="p-1">
-                                        <input type="hidden" name="bloques[${bloqueIndex}][facturas][0][id]" value="">
-                                        <input type="number" name="bloques[${bloqueIndex}][facturas][0][id_factura]" class="form-control form-control-sm border-0 fw-bold text-center" required placeholder="Ej: 101">
-                                    </td>
-                                    <td class="p-1">
-                                        <input type="text" name="bloques[${bloqueIndex}][facturas][0][observacion]" value="" class="form-control form-control-sm border-0" placeholder="Escribir nota...">
-                                    </td>
-                                    <td class="p-1 text-center">
-                                        <select name="bloques[${bloqueIndex}][facturas][0][calificacion]" class="form-select form-select-sm border-0 text-center">
-                                            <option value="Bueno" selected>Bueno</option>
-                                            <option value="Regular">Regular</option>
-                                            <option value="Atencion Especial">Atención Especial</option>
-                                            <option value="Restringido">Restringido</option>
-                                            <option value="Irregular">Irregular</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-1 text-center">
-                                        <input type="date" name="bloques[${bloqueIndex}][facturas][0][fecha_venci]" class="form-control form-control-sm border-0 text-center">
-                                    </td>
-                                    <td class="p-1 text-center bg-light">
-                                        <input type="number" name="bloques[${bloqueIndex}][facturas][0][dias_mora_automaticos]" value="0" class="form-control form-control-sm border-0 bg-transparent text-center text-muted" readonly tabindex="-1">
-                                    </td>
-                                    <td class="p-1 font-monospace bg-light">
-                                        <input type="text" name="bloques[${bloqueIndex}][facturas][0][hash_certificado]" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace text-center" readonly placeholder="Auto" style="font-size: 0.6rem;">
-                                    </td>
-                                    <td class="p-1 font-monospace">
-                                        <textarea name="bloques[${bloqueIndex}][facturas][0][metadata]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"config_base": true}</textarea>
-                                    </td>
-                                    <td class="p-1 text-center">
-                                        <select name="bloques[${bloqueIndex}][facturas][0][estadoApi]" class="form-select form-select-sm border-0 text-center text-muted">
-                                            <option value="0" selected>0 - Pendiente</option>
-                                            <option value="1">1 - Pagado</option>
-                                            <option value="2">2 - Anulado</option>
-                                        </select>
-                                    </td>
-                                    <td class="p-1 font-monospace">
-                                        <textarea name="bloques[${bloqueIndex}][facturas][0][payload_documento]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"tipo_emision": "manual", "version": "1.0"}</textarea>
-                                    </td>
-                                    <td class="text-center p-1 bg-white">
-                                        <button type="button" class="btn btn-sm text-danger border-0 p-0 shadow-none" title="Eliminar Factura" onclick="eliminarFilaFactura(this)">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="card-footer bg-white py-2 px-3 d-flex justify-content-between align-items-center border-top">
-                    <span class="text-muted" style="font-size: 0.62rem;"><i class="fas fa-info-circle text-info"></i> Facturas adicionales para esta cuenta.</span>
-                    <button type="button" class="btn btn-sm btn-outline-success fw-medium rounded-1 py-1 px-2" style="font-size: 0.65rem;" onclick="agregarFacturaEnBloque(this)">
-                        <i class="fas fa-plus me-1"></i> Agregar Factura a esta Línea
-                    </button>
-                </div>
-            `;
-
-            contenedor.appendChild(cardDiv);
-            reindexarBloquesYFacturas();
-        }
-
-        function agregarFacturaEnBloque(btn) {
-            const card = btn.closest('.bloque-linea');
-            const tbody = card.querySelector('.cuerpo-tabla-facturas');
-            const bloqueIndex = Array.from(document.querySelectorAll('.bloque-linea')).indexOf(card);
-            const facturaIndex = tbody.children.length;
-
-            const tr = document.createElement('tr');
-            tr.className = 'fila-factura';
-            tr.innerHTML = `
-                <td class="text-center text-muted fw-bold row-num bg-light">${facturaIndex + 1}</td>
-                <td class="p-1">
-                    <input type="hidden" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][id]" value="">
-                    <input type="number" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][id_factura]" class="form-control form-control-sm border-0 fw-bold text-center" required placeholder="Ej: 101">
-                </td>
-                <td class="p-1">
-                    <input type="text" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][observacion]" value="" class="form-control form-control-sm border-0" placeholder="Escribir nota...">
-                </td>
-                <td class="p-1 text-center">
-                    <select name="bloques[${bloqueIndex}][facturas][${facturaIndex}][calificacion]" class="form-select form-select-sm border-0 text-center">
-                        <option value="Bueno" selected>Bueno</option>
-                        <option value="Regular">Regular</option>
-                        <option value="Atencion Especial">Atención Especial</option>
-                        <option value="Restringido">Restringido</option>
-                        <option value="Irregular">Irregular</option>
-                    </select>
-                </td>
-                <td class="p-1 text-center">
-                    <input type="date" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][fecha_venci]" class="form-control form-control-sm border-0 text-center">
-                </td>
-                <td class="p-1 text-center bg-light">
-                    <input type="number" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][dias_mora_automaticos]" value="0" class="form-control form-control-sm border-0 bg-transparent text-center text-muted" readonly tabindex="-1">
-                </td>
-                <td class="p-1 font-monospace bg-light">
-                    <input type="text" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][hash_certificado]" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace text-center" readonly placeholder="Auto" style="font-size: 0.6rem;">
-                </td>
-                <td class="p-1 font-monospace">
-                    <textarea name="bloques[${bloqueIndex}][facturas][${facturaIndex}][metadata]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"config_base": true}</textarea>
-                </td>
-                <td class="p-1 text-center">
-                    <select name="bloques[${bloqueIndex}][facturas][${facturaIndex}][estadoApi]" class="form-select form-select-sm border-0 text-center text-muted">
-                        <option value="0" selected>0 - Pendiente</option>
-                        <option value="1">1 - Pagado</option>
-                        <option value="2">2 - Anulado</option>
-                    </select>
-                </td>
-                <td class="p-1 font-monospace">
-                    <textarea name="bloques[${bloqueIndex}][facturas][${facturaIndex}][payload_documento]" rows="1" class="form-control form-control-sm border-0 bg-transparent text-muted p-0 font-monospace" style="font-size: 0.6rem; resize: vertical;" placeholder='{}'>{"tipo_emision": "manual", "version": "1.0"}</textarea>
-                </td>
-                <td class="text-center p-1 bg-white">
-                    <button type="button" class="btn btn-sm text-danger border-0 p-0 shadow-none" title="Eliminar Factura" onclick="eliminarFilaFactura(this)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-            `;
-
-            tbody.appendChild(tr);
-        }
-
-        function eliminarBloqueLinea(btn) {
-            const card = btn.closest('.bloque-linea');
-            if (document.querySelectorAll('.bloque-linea').length === 1) {
-                alert('Debe mantener al menos una Línea activa en el certificado.');
-                return;
-            }
-            card.remove();
-            reindexarBloquesYFacturas();
-        }
-
-        function eliminarFilaFactura(btn) {
-            const tr = btn.closest('.fila-factura');
-            const tbody = tr.parentNode;
-            if (tbody.children.length === 1) {
-                alert('Cada línea debe tener al menos una factura asociada.');
-                return;
-            }
-            tr.remove();
-            reindexarBloquesYFacturas();
-        }
-
-        function reindexarBloquesYFacturas() {
-            document.querySelectorAll('.bloque-linea').forEach((card, bIndex) => {
-                card.querySelectorAll('select[name*="[id_car_sia_lineas]"], select[name*="[id_car_sia_estados]"], select[name*="[id_user]"]').forEach(el => {
-                    let name = el.getAttribute('name');
-                    if(name) {
-                        let nuevoNombre = name.replace(/bloques\[\d+\]/, `bloques[${bIndex}]`);
-                        el.setAttribute('name', nuevoNombre);
-                    }
-                });
-
-                card.querySelectorAll('.fila-factura').forEach((fila, fIndex) => {
-                    const rowNum = fila.querySelector('.row-num');
-                    if(rowNum) rowNum.textContent = fIndex + 1;
-
-                    fila.querySelectorAll('input, select, textarea').forEach(el => {
-                        let name = el.getAttribute('name');
-                        if(name) {
-                            let nuevoNombre = name.replace(/bloques\[\d+\]/, `bloques[${bIndex}]`)
-                                                  .replace(/facturas\[\d+\]/, `facturas[${fIndex}]`);
-                            el.setAttribute('name', nuevoNombre);
+                bloques.forEach(bloque => {
+                    const filas = bloque.querySelectorAll('.fila-factura');
+                    filas.forEach(fila => {
+                        const inputFactura = fila.querySelector('input[name*="[id_factura]"]');
+                        if (inputFactura && !inputFactura.value.trim() && filas.length > 1) {
+                            const collapseTr = fila.nextElementSibling;
+                            if (collapseTr && collapseTr.classList.contains('collapse')) {
+                                collapseTr.remove();
+                            }
+                            fila.remove();
                         }
                     });
                 });
+
+                reindexarBloquesYFacturas();
+
+                // Cambiamos visualmente el botón a estado de carga
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i> Procesando Motor...`;
+                btn.classList.add('disabled');
+                btn.style.pointerEvents = 'none';
+
+                // 2. Recolectamos los datos del formulario
+                const formData = new FormData(form);
+                const actionUrl = form.getAttribute('action') || window.location.href;
+
+                // 3. Enviamos por FETCH para capturar errores de servidor en tiempo real
+                fetch(actionUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                })
+                .then(async response => {
+                    const contentType = response.headers.get("content-type");
+                    let data = {};
+
+                    if (contentType && contentType.indexOf("application/json") !== -1) {
+                        data = await response.json();
+                    } else {
+                        data = { message: await response.text() };
+                    }
+
+                    if (!response.ok) {
+                        // Si hay errores de validación de Laravel (422) u otro error HTTP
+                        let mensajeHtml = "";
+
+                        if (response.status === 422 && data.errors) {
+                            mensajeHtml = "<ul class='mb-0 ps-3'>";
+                            for (let campo in data.errors) {
+                                data.errors[campo].forEach(error => {
+                                    mensajeHtml += `<li>${error}</li>`;
+                                });
+                            }
+                            mensajeHtml += "</ul>";
+                        } else {
+                            mensajeHtml = data.message || `Error en el servidor (Código: ${response.status})`;
+                        }
+
+                        mostrarErrorEnModal(mensajeHtml);
+                        restaurarBoton(btn);
+                    } else {
+                        // Si todo salió bien, puedes recargar la página o redirigir según tu lógica
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        } else {
+                            location.reload();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error de red:", error);
+                    mostrarErrorEnModal("No se pudo conectar con el servidor. Revisa tu conexión a internet.");
+                    restaurarBoton(btn);
+                });
+            }
+
+            // Función auxiliar para mostrar el modal
+            function mostrarErrorEnModal(htmlMensaje) {
+                document.getElementById('contenidoErroresModal').innerHTML = htmlMensaje;
+                const modalElement = document.getElementById('modalErroresFormulario');
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+
+            // Función auxiliar para devolver el botón a su estado normal si falla
+            function restaurarBoton(btn) {
+                btn.innerHTML = `Procesar Motor`; // Cambia esto por el texto original de tu botón
+                btn.classList.remove('disabled');
+                btn.style.pointerEvents = 'auto';
+            }
+
+            // =======================================================================
+            // FUNCIONES DE MANIPULACIÓN DEL DOM ACTUALIZADAS CON PAYLOAD
+            // =======================================================================
+
+            function agregarNuevoBloqueLinea() {
+                const contenedor = document.getElementById('contenedorBloquesLineas');
+                const bloqueIndex = contenedor.querySelectorAll('.bloque-linea').length;
+
+                let opcionesLineas = '<option value="">-- Seleccione Cuenta --</option>';
+                Object.values(catLineasCredito).forEach(lin => {
+                    let nombreMostrar = lin.nombre_cuenta || lin.nombre || `Cuenta: ${lin.cuenta}`;
+                    opcionesLineas += `<option value="${lin.cuenta}">${nombreMostrar}</option>`;
+                });
+
+                let opcionesEstados = '<option value="">Seleccione estado...</option>';
+                Object.values(catEstados).forEach(est => {
+                    opcionesEstados += `<option value="${est.id}" ${est.id == 3 ? 'selected' : ''}>${est.nombre} (ID: ${est.id})</option>`;
+                });
+
+                let opcionesUsuarios = '<option value="">Seleccione usuario...</option>';
+                Object.values(catUsuarios).forEach(usr => {
+                    opcionesUsuarios += `<option value="${usr.id}" ${usr.id == "{{ auth()->id() }}" ? 'selected' : ''}>${usr.name}</option>`;
+                });
+
+                const tipoIdActual = document.getElementById('inputTipoCertificado').value || '';
+                const htmlPlantillaInicial = generarPlantillaPayload(tipoIdActual, {});
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card border shadow-sm rounded-3 bloque-linea';
+                cardDiv.setAttribute('data-linea-index', bloqueIndex);
+
+                cardDiv.innerHTML = `
+                    <div class="card-header bg-white py-2 px-3 d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-layer-group text-primary me-1"></i> Cuenta <span class="text-danger">*</span>:</span>
+                                <select name="bloques[${bloqueIndex}][id_car_sia_lineas]" class="form-select form-select-sm fw-bold text-primary shadow-none" style="width: 200px; font-size: 0.7rem;" required>${opcionesLineas}</select>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-tasks text-success me-1"></i> Estado <span class="text-danger">*</span>:</span>
+                                <select name="bloques[${bloqueIndex}][id_car_sia_estados]" class="form-select form-select-sm fw-semibold text-success shadow-none" style="width: 140px; font-size: 0.7rem;" required>${opcionesEstados}</select>
+                            </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="fw-bold text-dark" style="font-size: 0.7rem;"><i class="fas fa-user text-dark me-1"></i> Auditor <span class="text-danger">*</span>:</span>
+                                <select name="bloques[${bloqueIndex}][id_user]" class="form-select form-select-sm fw-semibold text-dark shadow-none" style="width: 140px; font-size: 0.7rem;" required>${opcionesUsuarios}</select>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-danger btn-sm border-0 py-0 px-2" onclick="eliminarBloqueLinea(this)" style="font-size: 0.7rem;">
+                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive text-nowrap">
+                            <table class="table table-bordered table-sm align-middle mb-0 bg-white" style="font-size: 0.68rem; width: 100%;">
+                                <thead class="table-light text-uppercase text-secondary text-center" style="font-size: 0.58rem;">
+                                    <tr>
+                                        <th style="width: 30px;">#</th>
+                                        <th style="min-width: 90px;">id_factura <span class="text-danger">*</span></th>
+                                        <th style="min-width: 150px;">Observación</th>
+                                        <th style="min-width: 110px;">Calificación</th>
+                                        <th style="min-width: 110px;">Vencimiento</th>
+                                        <th style="min-width: 80px;">Mora</th>
+                                        <th style="min-width: 100px;">Estado API</th>
+                                        <th style="min-width: 130px;">Datos (Payload)</th>
+                                        <th style="width: 40px;">🗑️</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="cuerpo-tabla-facturas">
+                                    <tr class="fila-factura">
+                                        <td class="text-center text-muted fw-bold row-num bg-light">1</td>
+                                        <td class="p-1">
+                                            <input type="hidden" name="bloques[${bloqueIndex}][facturas][0][id]" value="">
+                                            <input type="number" name="bloques[${bloqueIndex}][facturas][0][id_factura]" class="form-control form-control-sm border-0 fw-bold text-center" required placeholder="Ej: 101">
+                                        </td>
+                                        <td class="p-1"><input type="text" name="bloques[${bloqueIndex}][facturas][0][observacion]" class="form-control form-control-sm border-0" placeholder="Escribir nota..."></td>
+                                        <td class="p-1 text-center">
+                                            <select name="bloques[${bloqueIndex}][facturas][0][calificacion]" class="form-select form-select-sm border-0 text-center">
+                                                <option value="Bueno" selected>Bueno</option>
+                                                <option value="Regular">Regular</option>
+                                                <option value="Restringido">Restringido</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-1 text-center"><input type="date" name="bloques[${bloqueIndex}][facturas][0][fecha_venci]" class="form-control form-control-sm border-0 text-center"></td>
+                                        <td class="p-1 text-center bg-light"><input type="number" name="bloques[${bloqueIndex}][facturas][0][dias_mora_automaticos]" value="0" class="form-control form-control-sm border-0 bg-transparent text-center text-muted" readonly tabindex="-1"></td>
+                                        <td class="p-1 text-center">
+                                            <select name="bloques[${bloqueIndex}][facturas][0][estadoApi]" class="form-select form-select-sm border-0 text-center text-muted" onchange="actualizarEstadoApiDirecto(this, this.closest('tr').querySelector('input[name*=\\'[id_factura]\\']').value, document.querySelector('input[name=numero_bloque]').value)">
+                                                <option value="0" selected>0 - Pendiente</option>
+                                                <option value="1">1 - Pagado</option>
+                                            </select>
+                                        </td>
+                                        <td class="p-1 text-center bg-light">
+                                            <input type="hidden" name="bloques[${bloqueIndex}][facturas][0][payload_documento]" class="input-payload-json" value="{}">
+                                            <button type="button" class="btn btn-sm btn-outline-primary rounded-1 py-1 px-2 shadow-none w-100 fw-medium" data-bs-toggle="collapse" data-bs-target="#collapsePayload_${bloqueIndex}_0">
+                                                <i class="fas fa-sliders-h"></i> <span style="font-size: 0.6rem;">Definir Valores</span>
+                                            </button>
+                                        </td>
+                                        <td class="text-center p-1 bg-white">
+                                            <button type="button" class="btn btn-sm text-danger border-0 p-0 shadow-none" onclick="eliminarFilaFactura(this)"><i class="fas fa-times"></i></button>
+                                        </td>
+                                    </tr>
+                                    <tr id="collapsePayload_${bloqueIndex}_0" class="collapse bg-white border-bottom shadow-inner">
+                                        <td colspan="9" class="p-3">
+                                            <div class="row g-2 contenedor-campos-payload">
+                                                ${htmlPlantillaInicial}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white py-2 px-3 d-flex justify-content-between align-items-center border-top">
+                        <button type="button" class="btn btn-sm btn-outline-success fw-medium rounded-1 py-1 px-2" style="font-size: 0.65rem;" onclick="agregarFacturaEnBloque(this)">
+                            <i class="fas fa-plus me-1"></i> Agregar Factura
+                        </button>
+                    </div>
+                `;
+
+                contenedor.appendChild(cardDiv);
+                reindexarBloquesYFacturas();
+            }
+
+            function agregarFacturaEnBloque(btn) {
+                const card = btn.closest('.bloque-linea');
+                const tbody = card.querySelector('.cuerpo-tabla-facturas');
+                const bloqueIndex = Array.from(document.querySelectorAll('.bloque-linea')).indexOf(card);
+
+                const facturaIndex = tbody.querySelectorAll('.fila-factura').length;
+                const tipoIdActual = document.getElementById('inputTipoCertificado').value || '';
+                const htmlPlantillaFila = generarPlantillaPayload(tipoIdActual, {});
+
+                const htmlFilas = `
+                    <tr class="fila-factura">
+                        <td class="text-center text-muted fw-bold row-num bg-light">${facturaIndex + 1}</td>
+                        <td class="p-1">
+                            <input type="hidden" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][id]" value="">
+                            <input type="number" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][id_factura]" class="form-control form-control-sm border-0 fw-bold text-center" required placeholder="Ej: 101">
+                        </td>
+                        <td class="p-1"><input type="text" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][observacion]" class="form-control form-control-sm border-0" placeholder="Escribir nota..."></td>
+                        <td class="p-1 text-center">
+                            <select name="bloques[${bloqueIndex}][facturas][${facturaIndex}][calificacion]" class="form-select form-select-sm border-0 text-center">
+                                <option value="Bueno" selected>Bueno</option>
+                                <option value="Regular">Regular</option>
+                                <option value="Restringido">Restringido</option>
+                            </select>
+                        </td>
+                        <td class="p-1 text-center"><input type="date" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][fecha_venci]" class="form-control form-control-sm border-0 text-center"></td>
+                        <td class="p-1 text-center bg-light"><input type="number" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][dias_mora_automaticos]" value="0" class="form-control form-control-sm border-0 bg-transparent text-center text-muted" readonly tabindex="-1"></td>
+                        <td class="p-1 text-center">
+                            <select name="bloques[${bloqueIndex}][facturas][${facturaIndex}][estadoApi]" class="form-select form-select-sm border-0 text-center text-muted" onchange="actualizarEstadoApiDirecto(this, this.closest('tr').querySelector('input[name*=\\'[id_factura]\\']').value, document.querySelector('input[name=numero_bloque]').value)">
+                                <option value="0" selected>0 - Pendiente</option>
+                                <option value="1">1 - Pagado</option>
+                            </select>
+                        </td>
+                        <td class="p-1 text-center bg-light">
+                            <input type="hidden" name="bloques[${bloqueIndex}][facturas][${facturaIndex}][payload_documento]" class="input-payload-json" value="{}">
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-1 py-1 px-2 shadow-none w-100 fw-medium" data-bs-toggle="collapse" data-bs-target="#collapsePayload_${bloqueIndex}_${facturaIndex}">
+                                <i class="fas fa-sliders-h"></i> <span style="font-size: 0.6rem;">Definir Valores</span>
+                            </button>
+                        </td>
+                        <td class="text-center p-1 bg-white">
+                            <button type="button" class="btn btn-sm text-danger border-0 p-0 shadow-none" onclick="eliminarFilaFactura(this)"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                    <tr id="collapsePayload_${bloqueIndex}_${facturaIndex}" class="collapse bg-white border-bottom shadow-inner">
+                        <td colspan="9" class="p-3">
+                            <div class="row g-2 contenedor-campos-payload">
+                                ${htmlPlantillaFila}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+
+                tbody.insertAdjacentHTML('beforeend', htmlFilas);
+            }
+
+            function eliminarBloqueLinea(btn) {
+                const card = btn.closest('.bloque-linea');
+                if (document.querySelectorAll('.bloque-linea').length === 1) {
+                    alert('Debe mantener al menos una Línea activa en el certificado.');
+                    return;
+                }
+                card.remove();
+                reindexarBloquesYFacturas();
+            }
+
+            function eliminarFilaFactura(btn) {
+                const tr = btn.closest('.fila-factura');
+                const tbody = tr.parentNode;
+
+                if (tbody.querySelectorAll('.fila-factura').length === 1) {
+                    alert('Cada línea debe tener al menos una factura asociada.');
+                    return;
+                }
+
+                const collapseTr = tr.nextElementSibling;
+                if (collapseTr && collapseTr.classList.contains('collapse')) {
+                    collapseTr.remove();
+                }
+
+                tr.remove();
+                reindexarBloquesYFacturas();
+            }
+
+            function reindexarBloquesYFacturas() {
+                document.querySelectorAll('.bloque-linea').forEach((card, bIndex) => {
+
+                    card.querySelectorAll('select[name*="[id_car_sia_lineas]"], select[name*="[id_car_sia_estados]"], select[name*="[id_user]"]').forEach(el => {
+                        let name = el.getAttribute('name');
+                        if(name) {
+                            let nuevoNombre = name.replace(/bloques\[\d+\]/, `bloques[${bIndex}]`);
+                            el.setAttribute('name', nuevoNombre);
+                        }
+                    });
+
+                    card.querySelectorAll('.fila-factura').forEach((fila, fIndex) => {
+                        const rowNum = fila.querySelector('.row-num');
+                        if(rowNum) rowNum.textContent = fIndex + 1;
+
+                        fila.querySelectorAll('input, select, textarea').forEach(el => {
+                            let name = el.getAttribute('name');
+                            if(name) {
+                                let nuevoNombre = name.replace(/bloques\[\d+\]/, `bloques[${bIndex}]`)
+                                                    .replace(/facturas\[\d+\]/, `facturas[${fIndex}]`);
+                                el.setAttribute('name', nuevoNombre);
+                            }
+                        });
+
+                        const btnCollapse = fila.querySelector('[data-bs-toggle="collapse"]');
+                        const filaAcordeon = fila.nextElementSibling;
+
+                        if(btnCollapse && filaAcordeon && filaAcordeon.classList.contains('collapse')) {
+                            const newId = `collapsePayload_${bIndex}_${fIndex}`;
+                            btnCollapse.setAttribute('data-bs-target', `#${newId}`);
+                            filaAcordeon.id = newId;
+                        }
+                    });
+                });
+            }
+        </script>
+
+        <!-- MÓDULO 2: UTILIDADES GLOBALES -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // 1. Bloqueo global de formularios con Timeout para evitar aborto del request
+                document.querySelectorAll('form').forEach(form => {
+                    form.addEventListener('submit', function (e) {
+                        if (form.classList.contains('form-is-submitting')) {
+                            e.preventDefault();
+                            return;
+                        }
+                        form.classList.add('form-is-submitting');
+
+                        const submitBtn = form.querySelector('[type="submit"]');
+                        if (submitBtn) {
+                            // SOLUCIÓN: setTimeout de 10ms para permitir que el POST salga al servidor
+                            setTimeout(() => {
+                                submitBtn.disabled = true;
+                                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Procesando...';
+                            }, 10);
+                        }
+
+                        if (form.id === 'formGenerarCertificado') {
+                            document.getElementById('btnCancelCertificado').classList.add('d-none');
+                            document.getElementById('loadingCertificado').classList.remove('d-none');
+                        }
+                    });
+                });
+
+                // 2. Lógica de Pestañas (Session Storage)
+                const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+                const sessionKey = 'activeTab_Operacion_{{ $operacion->id }}';
+                const activeTabId = sessionStorage.getItem(sessionKey);
+
+                if (activeTabId) {
+                    const targetTab = document.querySelector(`button[data-bs-target="${activeTabId}"]`);
+                    if (targetTab) {
+                        targetTab.click();
+                    }
+                }
+
+                tabButtons.forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function (event) {
+                        const targetId = event.target.getAttribute('data-bs-target');
+                        sessionStorage.setItem(sessionKey, targetId);
+                    });
+                });
             });
-        }
-    </script>
-@endpush
+
+            function enviarFormularioRemoto(formId, btn) {
+                const form = document.getElementById(formId);
+                if (!form || form.classList.contains('form-is-submitting')) return;
+
+                form.classList.add('form-is-submitting');
+
+                // SOLUCIÓN también aplicada aquí por seguridad
+                setTimeout(() => {
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Guardando...';
+                    const btnCancel = btn.previousElementSibling;
+                    if (btnCancel) btnCancel.style.display = 'none';
+                }, 10);
+
+                form.submit();
+            }
+
+            function bloquearBotonUI(btn, loadingText = '') {
+                if (btn.classList.contains('form-is-submitting')) return false;
+
+                const originalContent = btn.innerHTML;
+                btn.classList.add('form-is-submitting');
+                btn.style.pointerEvents = 'none';
+                btn.innerHTML = `<i class='fas fa-spinner fa-spin ${loadingText ? "me-2" : ""}'></i> ${loadingText}`;
+
+                setTimeout(() => {
+                    btn.classList.remove('form-is-submitting');
+                    btn.style.pointerEvents = 'auto';
+                    btn.innerHTML = originalContent;
+                }, 3000);
+
+                return true;
+            }
+
+            function toggleMode(mode, certId) {
+                const btnPdf = document.getElementById('btnModePdf_' + certId);
+                const btnData = document.getElementById('btnModeData_' + certId);
+                const containerPdf = document.getElementById('pdfViewerContainer_' + certId);
+                const containerData = document.getElementById('dataEditorContainer_' + certId);
+
+                if (mode === 'pdf') {
+                    btnPdf.classList.replace('btn-light', 'btn-danger');
+                    btnPdf.classList.replace('text-danger', 'text-white');
+                    btnData.classList.replace('btn-success', 'btn-light');
+                    btnData.classList.replace('text-white', 'text-success');
+                    containerPdf.classList.remove('d-none');
+                    containerData.classList.add('d-none');
+                } else {
+                    btnData.classList.replace('btn-light', 'btn-success');
+                    btnData.classList.replace('text-success', 'text-white');
+                    btnPdf.classList.replace('btn-danger', 'btn-light');
+                    btnPdf.classList.replace('text-white', 'text-danger');
+                    containerData.classList.remove('d-none');
+                    containerPdf.classList.add('d-none');
+                }
+            }
+        </script>
+
+        <!-- MÓDULO 3: GRÁFICOS Y ESTADÍSTICAS -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctxCartera = document.getElementById('chartCartera');
+                if (ctxCartera) {
+                    // Prevenir error de "Canvas is already in use"
+                    let chartStatus = Chart.getChart("chartCartera");
+                    if (chartStatus != undefined) {
+                        chartStatus.destroy();
+                    }
+
+                    new Chart(ctxCartera.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Procesado', 'Pendiente', 'Anulado'],
+                            datasets: [{
+                                data: [
+                                    {{ $chartCarteraData['Procesado'] ?? 0 }},
+                                    {{ $chartCarteraData['Pendiente'] ?? 0 }},
+                                    {{ $chartCarteraData['Anulado'] ?? 0 }}
+                                ],
+                                backgroundColor: ['#10b981', '#64748b', '#ef4444'],
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'bottom' }
+                            },
+                            cutout: '70%'
+                        }
+                    });
+                }
+
+                const ctxEventos = document.getElementById('chartEventos');
+                if (ctxEventos) {
+                    let chartEventosStatus = Chart.getChart("chartEventos");
+                    if (chartEventosStatus != undefined) {
+                        chartEventosStatus.destroy();
+                    }
+
+                    const eventosLabels = {!! json_encode($chartEventosData->keys() ?? []) !!};
+                    const eventosData = {!! json_encode($chartEventosData->values() ?? []) !!};
+
+                    new Chart(ctxEventos.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: eventosLabels,
+                            datasets: [{
+                                label: 'Cantidad de Eventos',
+                                data: eventosData,
+                                backgroundColor: '#3b82f6',
+                                borderRadius: 6,
+                                barPercentage: 0.5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: { precision: 0 }
+                                },
+                                x: {
+                                    grid: { display: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+
+        <!-- MÓDULO 4: INTERACTIVIDAD Y FETCH -->
+        <script>
+            function toggleParametros(targetId, element) {
+                var targetRow = document.getElementById(targetId);
+                var icon = element.querySelector('.icon-toggle');
+
+                if (targetRow.style.display === 'none' || targetRow.style.display === '') {
+                    targetRow.style.display = 'table-row';
+                    if (icon) {
+                        icon.classList.remove('fa-chevron-circle-down');
+                        icon.classList.add('fa-chevron-circle-up');
+                    }
+                } else {
+                    targetRow.style.display = 'none';
+                    if (icon) {
+                        icon.classList.remove('fa-chevron-circle-up');
+                        icon.classList.add('fa-chevron-circle-down');
+                    }
+                }
+            }
+
+            function actualizarEstadoApiDirecto(selectElement, idFactura, numeroBloque) {
+                // Validación de seguridad para evitar enviar peticiones rotas al backend
+                if (!idFactura || idFactura.trim() === '') {
+                    alert('⚠️ Debe ingresar un ID de factura válido antes de cambiar el estado.');
+                    selectElement.value = "0"; // Devolver a Pendiente visualmente
+                    return;
+                }
+
+                const nuevoEstado = selectElement.value;
+                const fila = selectElement.closest('tr');
+
+                // Actualización optimista de la interfaz
+                if (nuevoEstado == '1') {
+                    selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-bold w-100 rounded-0 bg-transparent py-1 text-success';
+
+                    if (fila) {
+                        const inputMora = fila.querySelector('input[name*="[dias_mora_automaticos]"]');
+                        if (inputMora) {
+                            inputMora.value = 0;
+                            inputMora.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+
+                        const selectCalificacion = fila.querySelector('select[name*="[calificacion]"]');
+                        if (selectCalificacion) {
+                            selectCalificacion.value = 'Bueno';
+                            selectCalificacion.className = 'form-select form-select-sm border-0 shadow-none bg-transparent px-1 text-center text-success';
+                            selectCalificacion.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        const inputUltRec = fila.querySelector('input[name*="[fecha_ultimo_recordatorio]"]');
+                        if (inputUltRec) {
+                            const hoy = new Date();
+                            const anio = hoy.getFullYear();
+                            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                            const dia = String(hoy.getDate()).padStart(2, '0');
+                            inputUltRec.value = `${anio}-${mes}-${dia}`;
+                        }
+
+                        const inputObservacion = fila.querySelector('input[name*="[observacion]"]');
+                        if (inputObservacion) {
+                            const fechaActualFormateada = new Date().toLocaleDateString();
+                            let textoActual = inputObservacion.value.trim();
+                            const mensajePago = `Pago registrado el ${fechaActualFormateada}. Calificado como Bueno, mora ajustada a 0.`;
+
+                            if (textoActual !== '' && !textoActual.includes('Pago registrado')) {
+                                inputObservacion.value = textoActual + " - " + mensajePago;
+                            } else if (textoActual === '') {
+                                inputObservacion.value = mensajePago;
+                            }
+                            inputObservacion.setAttribute('title', inputObservacion.value);
+                        }
+                    }
+                } else {
+                    selectElement.className = 'form-select form-select-sm border-0 shadow-none text-center fw-semibold w-100 rounded-0 bg-transparent py-1 text-muted';
+                }
+
+                // Petición al servidor (Fetch)
+                const url = `{{ route('certificados.operaciones.estado_api.bloque', ['idFactura' => ':id', 'numeroBloque' => ':bloque']) }}`
+                            .replace(':id', idFactura)
+                            .replace(':bloque', numeroBloque);
+
+                fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ estadoApi: nuevoEstado !== "" ? nuevoEstado : null })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Error al actualizar el estado API: ' + (data.message || 'Error desconocido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error de red al actualizar estado API:', error);
+                    alert('Ocurrió un error de red al intentar actualizar el estado API.');
+                });
+            }
+        </script>
+
+        <!-- MÓDULO 5: NAVEGACIÓN ENTRE MODALES ANIDADOS -->
+        <script>
+            function abrirPrevisualizacion(tipoId) {
+                document.getElementById('inputTipoCertificado').value = tipoId;
+                let modalSeleccion = bootstrap.Modal.getInstance(document.getElementById('modalSeleccionTipo'));
+                if(modalSeleccion) modalSeleccion.hide();
+
+                setTimeout(() => {
+                    let modalGestion = new bootstrap.Modal(document.getElementById('modalGestion'));
+                    modalGestion.show();
+                }, 150);
+            }
+        </script>
+
+        <!-- MÓDULO 6: CONSTRUCTOR JSON DINÁMICO E INICIALIZADOR -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                // ==============================================================
+                // NUEVO: INICIALIZADOR AUTOMÁTICO AL CARGAR LA PÁGINA
+                // ==============================================================
+                document.querySelectorAll('.auto-init-payload').forEach(function(contenedor) {
+                    let tipo = contenedor.getAttribute('data-tipo');
+                    let payloadData = {};
+                    try {
+                        payloadData = JSON.parse(contenedor.getAttribute('data-payload') || '{}');
+                    } catch(e) {}
+
+                    // Inyecta el HTML ahora que la función SÍ existe en memoria
+                    if(typeof generarPlantillaPayload === 'function') {
+                        contenedor.innerHTML = generarPlantillaPayload(tipo, payloadData);
+                    }
+                });
+
+
+                // Lógica de actualización del JSON al escribir
+                function actualizarJsonPayload(elementoDisparador) {
+                    const filaAcordeon = elementoDisparador.closest('tr.collapse');
+                    if (!filaAcordeon) return;
+
+                    const contenedorCampos = filaAcordeon.querySelector('.contenedor-campos-payload');
+                    const filaPrincipal = filaAcordeon.previousElementSibling;
+                    const inputJsonOculto = filaPrincipal.querySelector('.input-payload-json');
+
+                    if (!inputJsonOculto) return;
+
+                    let payloadObject = {};
+
+                    const inputs = contenedorCampos.querySelectorAll('.trigger-payload');
+                    inputs.forEach(input => {
+                        const llave = input.getAttribute('data-llave');
+                        const valor = input.value;
+                        if(valor !== '') payloadObject[llave] = valor;
+                    });
+
+                    const checkboxes = contenedorCampos.querySelectorAll('.trigger-payload-checkbox');
+                    checkboxes.forEach(chk => {
+                        const llave = chk.getAttribute('data-llave');
+                        payloadObject[llave] = chk.checked;
+                    });
+
+                    inputJsonOculto.value = JSON.stringify(payloadObject);
+                }
+
+                document.body.addEventListener('input', function (e) {
+                    if (e.target.classList.contains('trigger-payload')) {
+                        actualizarJsonPayload(e.target);
+                    }
+                });
+
+                document.body.addEventListener('change', function (e) {
+                    if (e.target.classList.contains('trigger-payload') || e.target.classList.contains('trigger-payload-checkbox')) {
+                        actualizarJsonPayload(e.target);
+                    }
+                });
+            });
+        </script>
+
+        <!-- MÓDULO 7: FÁBRICA DE PLANTILLAS DINÁMICAS (ESTILO MINIMALISTA MÓVIL)   -->
+        <script>
+            function generarPlantillaPayload(tipoCertificadoId, payloadData = {}) {
+                const tipo = String(tipoCertificadoId || '').trim();
+                const val = (llave) => payloadData[llave] !== undefined && payloadData[llave] !== null ? payloadData[llave] : '';
+                const isChecked = (llave) => payloadData[llave] === true || payloadData[llave] === 'true' ? 'checked' : '';
+
+                // Contenedor envolvente con estilo tarjeta limpia y moderna
+                const wrap = (content) => `
+                    <div class="col-12 p-3 bg-light rounded-4 border shadow-sm my-1">
+                        <div class="row g-3 align-items-center">
+                            ${content}
+                        </div>
+                    </div>
+                `;
+
+                switch (tipo) {
+
+                    // -----------------------------------------------------
+                    // ID 1 & 2: POSTULACIÓN / PAZ Y SALVO
+                    // -----------------------------------------------------
+                    case '1':
+                    case '2':
+                        return wrap(`
+                            <div class="col-12 text-center py-1">
+                                <span class="badge bg-white text-dark border px-3 py-2 rounded-pill shadow-sm" style="font-size: 0.75rem;">
+                                    <i class="fas fa-check-circle text-success me-1"></i> Este certificado utiliza los datos estándar del sistema automáticamente.
+                                </span>
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // ID 3: COMPROMISOS EN ACTIVO
+                    // -----------------------------------------------------
+                    case '3':
+                        return wrap(`
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-user-edit me-1 text-primary"></i> Quién Solicita</label>
+                                <input type="text" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="quien_solicita" value="${val('quien_solicita')}" placeholder="Ej: Pastor, Tesorero">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-calendar-alt me-1 text-primary"></i> Fecha de Corte</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_corte" value="${val('fecha_corte')}">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-dollar-sign me-1 text-success"></i> Saldo Capital</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm fw-bold text-success trigger-payload" data-llave="saldo_capital" value="${val('saldo_capital')}" placeholder="0.00">
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // ID 4: ESTADO DE CUENTA
+                    // -----------------------------------------------------
+                    case '4':
+                        return wrap(`
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-wallet me-1 text-primary"></i> Saldo Capital</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm fw-bold text-primary trigger-payload" data-llave="saldo_capital" value="${val('saldo_capital')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-chart-line me-1 text-danger"></i> Intereses Vencidos</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="intereses_vencidos" value="${val('intereses_vencidos')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-receipt me-1 text-danger"></i> N° Cuotas Vencidas</label>
+                                <input type="number" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="cuotas_vencidas" value="${val('cuotas_vencidas')}" placeholder="0">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-calendar-day me-1 text-primary"></i> Fecha de Corte</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_corte" value="${val('fecha_corte')}">
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // ID 5: ACUERDOS DE PAGO
+                    // -----------------------------------------------------
+                    case '5':
+                        return wrap(`
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-file-contract me-1 text-primary"></i> Pagaré N°</label>
+                                <input type="text" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="pagare_numero" value="${val('pagare_numero')}" placeholder="Ej: 10719">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-coins me-1 text-success"></i> Valor del Acuerdo (Capital)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm fw-bold text-success trigger-payload" data-llave="valor_acuerdo" value="${val('valor_acuerdo')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;"><i class="fas fa-exclamation-triangle me-1 text-danger"></i> Deuda Atrasada / Mora</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm fw-bold text-danger trigger-payload" data-llave="saldo_mora" value="${val('saldo_mora')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">N° Cuotas</label>
+                                <input type="number" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="numero_cuotas" value="${val('numero_cuotas')}" placeholder="84">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Tipo de Cuota</label>
+                                <select class="form-select form-select-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="tipo_cuota">
+                                    <option value="">Seleccione...</option>
+                                    <option value="Fija" ${val('tipo_cuota') === 'Fija' ? 'selected' : ''}>Fija</option>
+                                    <option value="Variable" ${val('tipo_cuota') === 'Variable' ? 'selected' : ''}>Variable</option>
+                                    <option value="No Aplica" ${val('tipo_cuota') === 'No Aplica' ? 'selected' : ''}>No Aplica (Seguros)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Valor 1ra Cuota</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="valor_primera_cuota" value="${val('valor_primera_cuota')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Tarifa Base (Seguros)</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="tarifa_mensual_base" value="${val('tarifa_mensual_base')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Inicio de Pagos</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_inicio_pagos" value="${val('fecha_inicio_pagos')}">
+                            </div>
+                            <div class="col-12 col-md-8 d-flex align-items-center pt-3">
+                                <div class="form-check form-switch ps-5">
+                                    <input class="form-check-input trigger-payload-checkbox" type="checkbox" role="switch" id="firmaEsposa5" value="true" ${isChecked('requiere_firma_esposa')} style="width: 2.5em; height: 1.25em;">
+                                    <label class="form-check-label text-secondary fw-semibold ms-2" for="firmaEsposa5" style="font-size: 0.75rem;">Incluir espacio para Firma de Esposa</label>
+                                </div>
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // ID 6: CUENTA DE CRÉDITO
+                    // -----------------------------------------------------
+                    case '6':
+                        return wrap(`
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Quién Solicita</label>
+                                <input type="text" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="quien_solicita" value="${val('quien_solicita')}" placeholder="Tercero, Pastor...">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Fecha de Corte</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_corte" value="${val('fecha_corte')}">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Saldo Capital</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="saldo_capital" value="${val('saldo_capital')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">N° Cuotas Vencidas</label>
+                                <input type="number" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="cuotas_vencidas" value="${val('cuotas_vencidas')}" placeholder="0">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Intereses Vencidos</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="intereses_vencidos" value="${val('intereses_vencidos')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Seguro Vencido</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="seguro_vencido" value="${val('seguro_vencido')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Seguro Hogar Vencido</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-danger trigger-payload" data-llave="seguro_hogar_vencido" value="${val('seguro_hogar_vencido')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-bold text-dark mb-1" style="font-size: 0.7rem;">VALOR TOTAL</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-warning-subtle shadow-sm fw-bold text-dark trigger-payload" data-llave="valor_total" value="${val('valor_total')}" placeholder="0.00">
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // ID 7: REFINANCIACIÓN
+                    // -----------------------------------------------------
+                    case '7':
+                        return wrap(`
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Pagaré N°</label>
+                                <input type="text" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="pagare_numero" value="${val('pagare_numero')}" placeholder="Ej: 11337">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Capital Refinanciado</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm fw-bold text-primary trigger-payload" data-llave="valor_refinanciado" value="${val('valor_refinanciado')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-2">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">N° Cuotas</label>
+                                <input type="number" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="numero_cuotas" value="${val('numero_cuotas')}" placeholder="180">
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Tipo de Cuota</label>
+                                <select class="form-select form-select-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="tipo_cuota">
+                                    <option value="">Seleccione...</option>
+                                    <option value="Fija" ${val('tipo_cuota') === 'Fija' ? 'selected' : ''}>Fija</option>
+                                    <option value="Variable" ${val('tipo_cuota') === 'Variable' ? 'selected' : ''}>Variable</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Valor 1ra Cuota</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm text-success fw-bold trigger-payload" data-llave="valor_primera_cuota" value="${val('valor_primera_cuota')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Inicio de Pagos</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_inicio_pagos" value="${val('fecha_inicio_pagos')}">
+                            </div>
+                            <div class="col-12 col-md-6 d-flex align-items-center pt-3">
+                                <div class="form-check form-switch ps-5">
+                                    <input class="form-check-input trigger-payload-checkbox" type="checkbox" role="switch" id="firmaEsposa7" value="true" ${isChecked('requiere_firma_esposa')} style="width: 2.5em; height: 1.25em;">
+                                    <label class="form-check-label text-secondary fw-semibold ms-2" for="firmaEsposa7" style="font-size: 0.75rem;">Incluir espacio para Firma de Esposa</label>
+                                </div>
+                            </div>
+                        `);
+
+                    // -----------------------------------------------------
+                    // DEFAULT: CARTERA ESTÁNDAR
+                    // -----------------------------------------------------
+                    default:
+                        return wrap(`
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Intereses</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="intereses" value="${val('intereses')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Capital</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="capital" value="${val('capital')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Gastos Cobranza</label>
+                                <input type="number" step="0.01" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="gastos_cobranza" value="${val('gastos_cobranza')}" placeholder="0.00">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label text-secondary fw-semibold mb-1" style="font-size: 0.7rem;">Fecha de Corte Adicional</label>
+                                <input type="date" class="form-control form-control-sm rounded-pill px-3 py-2 border-0 bg-white shadow-sm trigger-payload" data-llave="fecha_corte_adicional" value="${val('fecha_corte_adicional')}">
+                            </div>
+                        `);
+                }
+            }
+        </script>
+    @endpush
 
     <script>
         /**
@@ -3676,9 +4351,6 @@
             }
         }
     </script>
-
-    <!-- LIBRERÍA CHART.JS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         /**
@@ -3969,6 +4641,70 @@
             button.innerHTML = `<i class="fas fa-spinner fa-spin me-1"></i> ${texto}`;
             button.closest('form').submit();
         }
+    </script>
+
+    <script>
+        /**
+         * =======================================================================
+         * MÓDULO 6: CONSTRUCTOR JSON DINÁMICO (PAYLOAD DOCUMENTO)
+         * =======================================================================
+         */
+        document.addEventListener('DOMContentLoaded', function () {
+
+            function actualizarJsonPayload(elementoDisparador) {
+                // 1. Encontrar la fila colapsable (acordeón) actual
+                const filaAcordeon = elementoDisparador.closest('tr.collapse');
+                if (!filaAcordeon) return;
+
+                // 2. Buscar el contenedor de los campos de esta fila
+                const contenedorCampos = filaAcordeon.querySelector('.contenedor-campos-payload');
+
+                // 3. Buscar el input oculto en la fila principal (la fila de arriba)
+                const filaPrincipal = filaAcordeon.previousElementSibling;
+                const inputJsonOculto = filaPrincipal.querySelector('.input-payload-json');
+
+                if (!inputJsonOculto) return;
+
+                // 4. Recopilar valores y construir el objeto JSON
+                let payloadObject = {};
+
+                // A. Recoger Inputs y Selects normales (.trigger-payload)
+                const inputs = contenedorCampos.querySelectorAll('.trigger-payload');
+                inputs.forEach(input => {
+                    const llave = input.getAttribute('data-llave');
+                    const valor = input.value;
+
+                    if(valor !== '') {
+                        payloadObject[llave] = valor;
+                    }
+                });
+
+                // B. Recoger Checkboxes/Switches (.trigger-payload-checkbox)
+                const checkboxes = contenedorCampos.querySelectorAll('.trigger-payload-checkbox');
+                checkboxes.forEach(chk => {
+                    const llave = chk.getAttribute('data-llave');
+                    payloadObject[llave] = chk.checked; // Guarda true o false
+                });
+
+                // 5. Convertir a texto JSON e inyectar en el input oculto
+                inputJsonOculto.value = JSON.stringify(payloadObject);
+            }
+
+            // Escucha eventos de escritura (inputs de texto, números, fechas)
+            document.body.addEventListener('input', function (e) {
+                if (e.target.classList.contains('trigger-payload')) {
+                    actualizarJsonPayload(e.target);
+                }
+            });
+
+            // Escucha eventos de cambio (Selects y Checkboxes)
+            document.body.addEventListener('change', function (e) {
+                if (e.target.classList.contains('trigger-payload') || e.target.classList.contains('trigger-payload-checkbox')) {
+                    actualizarJsonPayload(e.target);
+                }
+            });
+
+        });
     </script>
 
 </x-base-layout>
