@@ -10,10 +10,11 @@ class ScpAlertaConfig extends Model
 {
     protected $table = 'scp_alerta_config';
 
-    protected $fillable = ['aviso_intervalo_horas', 'dias_posponer_para_escalar', 'updated_by'];
+    protected $fillable = ['aviso_intervalo_horas', 'pulso_intervalo_minutos', 'dias_posponer_para_escalar', 'updated_by'];
 
     protected $casts = [
         'aviso_intervalo_horas' => 'integer',
+        'pulso_intervalo_minutos' => 'integer',
         'dias_posponer_para_escalar' => 'integer',
     ];
 
@@ -27,6 +28,7 @@ class ScpAlertaConfig extends Model
         return Cache::remember('scp_alerta_config', 3600, function () {
             return self::first() ?? new self([
                 'aviso_intervalo_horas' => 3,
+                'pulso_intervalo_minutos' => 10,
                 'dias_posponer_para_escalar' => 3,
             ]);
         });

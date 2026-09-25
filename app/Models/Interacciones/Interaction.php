@@ -14,7 +14,7 @@ class Interaction extends Model
 {
     use HasFactory;
     protected $table = 'interactions';
-    protected $fillable = ['client_id', 'agent_id', 'interaction_date', 'interaction_channel', 'interaction_type', 'duration', 'outcome', 'notes', 'parent_interaction_id', 'id_linea_de_obligacion', 'id_user_asignacion', 'cedula_quien_llama', 'nombre_quien_llama', 'celular_quien_llama', 'parentesco_quien_llama'];
+    protected $fillable = ['client_id', 'agent_id', 'interaction_date', 'interaction_channel', 'interaction_type', 'duration', 'outcome', 'motivo_no_efectivo_id', 'notes', 'parent_interaction_id', 'id_linea_de_obligacion', 'id_user_asignacion', 'cedula_quien_llama', 'nombre_quien_llama', 'celular_quien_llama', 'parentesco_quien_llama'];
 
     protected $casts = [
         'interaction_date' => 'datetime',
@@ -65,6 +65,11 @@ class Interaction extends Model
     public function outcomeRelation()
     {
         return $this->belongsTo(IntOutcome::class, 'outcome', 'id');
+    }
+
+    public function motivoNoEfectivo()
+    {
+        return $this->belongsTo(IntMotivoNoEfectivo::class, 'motivo_no_efectivo_id');
     }
 
     public function lineaDeObligacion()

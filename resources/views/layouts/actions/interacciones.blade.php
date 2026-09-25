@@ -61,6 +61,11 @@
                         <i class="bi bi-list-ul me-2"></i> Líneas
                     </a>
                 </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.motivos_no_efectivo.index') }}">
+                        <i class="bi bi-x-circle me-2"></i> Motivos No Efectivo
+                    </a>
+                </li>
 
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.chat.index') }}">

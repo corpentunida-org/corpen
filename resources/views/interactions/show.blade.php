@@ -283,6 +283,13 @@
                             <span class="badge-soft" style="background: var(--p-green); color: #1e4620;">
                                 {{ $interaction->outcomeRelation->name ?? 'Finalizado' }}
                             </span>
+                            @if ($interaction->motivoNoEfectivo)
+                                <div class="mt-1">
+                                    <span class="badge-soft" style="background: var(--p-red-light, #fde2e1); color: #7a1a1a;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ $interaction->motivoNoEfectivo->name }}
+                                    </span>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="col-12 mt-4">
@@ -323,6 +330,11 @@
                                                     <i class="fas fa-check me-1"></i>
                                                     {{ $seguimiento->outcome->name ?? 'Gestión Realizada' }}
                                                 </span>
+                                                @if ($seguimiento->motivoNoEfectivo)
+                                                    <span class="badge-soft ms-1" style="background: var(--p-red-light, #fde2e1); color: #7a1a1a;">
+                                                        <i class="fas fa-exclamation-circle me-1"></i>{{ $seguimiento->motivoNoEfectivo->name }}
+                                                    </span>
+                                                @endif
                                             </div>
                                             <div class="text-end">
                                                 <div class="fw-bold small">
@@ -600,10 +612,21 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="data-label">Resultado <span class="text-danger">*</span></label>
-                                <select name="outcome" class="form-select form-control-pastel" required>
+                                <select name="outcome" id="modal-seguimiento-outcome" class="form-select form-control-pastel" required>
                                     <option value="">Seleccione...</option>
                                     @foreach ($outcomes as $out)
-                                        <option value="{{ $out->id }}">{{ $out->name }}</option>
+                                        <option value="{{ $out->id }}"
+                                            data-motivo-no-efectivo="{{ strtolower(trim($out->name)) === 'no efectivo' ? 'true' : 'false' }}">
+                                            {{ $out->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="modal-motivo-no-efectivo-wrap" style="display:none;">
+                                <label class="data-label">Motivo No Efectivo <span class="text-danger">*</span></label>
+                                <select name="motivo_no_efectivo_id" id="modal-motivo-no-efectivo" class="form-select form-control-pastel">
+                                    <option value="">Seleccione un motivo...</option>
+                                    @foreach ($motivosNoEfectivo as $motivo)
+                                        <option value="{{ $motivo->id }}">{{ $motivo->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -718,6 +741,24 @@
             }
         });
         document.addEventListener('DOMContentLoaded', function() {
+            // Mostrar/ocultar el select de Motivo No Efectivo según el Resultado elegido en el
+            // modal "Nuevo Seguimiento" (mismo criterio que interactions/form.blade.php: se
+            // detecta por el nombre exacto del resultado, no por su estado).
+            const $modalOutcome = $('#modal-seguimiento-outcome');
+            const $modalMotivoWrap = $('#modal-motivo-no-efectivo-wrap');
+            const $modalMotivoSelect = $('#modal-motivo-no-efectivo');
+            $modalOutcome.on('change', function() {
+                const esNoEfectivo = $(this).find(':selected').data('motivo-no-efectivo') === true ||
+                    $(this).find(':selected').data('motivo-no-efectivo') === 'true';
+                if (esNoEfectivo) {
+                    $modalMotivoWrap.slideDown();
+                    $modalMotivoSelect.prop('required', true);
+                } else {
+                    $modalMotivoWrap.slideUp();
+                    $modalMotivoSelect.prop('required', false).val('');
+                }
+            });
+
             const inputAttachment = document.getElementById('attachment');
             const feedbackDiv = document.getElementById('file-feedback');
             const feedbackText = feedbackDiv.querySelector('span');

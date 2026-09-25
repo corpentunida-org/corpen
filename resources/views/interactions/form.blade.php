@@ -853,6 +853,7 @@
                                             <input type="radio" class="btn-check outcome-radio" name="outcome"
                                                 id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
                                                 data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}"
+                                                data-motivo-no-efectivo="{{ strtolower(trim($outcome->name)) === 'no efectivo' ? 'true' : 'false' }}"
                                                 {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
                                                 required>
                                             <label class="btn btn-outline-secondary w-100 text-start "
@@ -913,6 +914,29 @@
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-4 mt-1" id="motivo-no-efectivo-section" style="display:none;">
+                    <div class="col-12">
+                        <div class="border h-100 bg-light" style="border-radius: 4px;">
+                            <div class="p-4">
+                                <label for="motivo_no_efectivo_id" class="form-label small text-muted mb-2">Motivo de
+                                    No Efectivo <span class="text-muted">*</span></label>
+                                <select class="form-select @error('motivo_no_efectivo_id') is-invalid @enderror"
+                                    id="motivo_no_efectivo_id" name="motivo_no_efectivo_id">
+                                    <option value="">Seleccione un motivo...</option>
+                                    @foreach ($motivosNoEfectivo as $motivo)
+                                        <option value="{{ $motivo->id }}"
+                                            {{ old('motivo_no_efectivo_id', $interaction->motivo_no_efectivo_id ?? '') == $motivo->id ? 'selected' : '' }}>
+                                            {{ $motivo->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('motivo_no_efectivo_id')
+                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -1870,6 +1894,16 @@
                 }).then((result) => {
                     if (result.isConfirmed || result.value || result === true) {
                         Timer.stop();
+                        // El botón se deshabilita justo aquí, al confirmar de verdad — no antes.
+                        // Antes había un listener aparte que lo deshabilitaba apenas se disparaba
+                        // el submit nativo (el primer clic en "Guardar", antes de este diálogo
+                        // siquiera abrirse). El problema: form.submit() llamado por código (como
+                        // aquí abajo) NO vuelve a disparar el evento "submit", así que si la
+                        // persona cancelaba el diálogo el botón quedaba deshabilitado para
+                        // siempre, sin nada que lo reactivara. Deshabilitarlo solo cuando SÍ se
+                        // va a enviar de verdad evita el problema de raíz.
+                        const btn = document.getElementById('btn-submit-interaccion');
+                        if (btn) btn.disabled = true;
                         document.querySelector(DOM.form).submit();
                     }
                 });
@@ -2003,6 +2037,17 @@
                     $('#planning-section').slideDown();
                 } else {
                     $('#planning-section').slideUp();
+                }
+
+                const esNoEfectivo = $(this).data('motivo-no-efectivo') === true || $(this).data(
+                    'motivo-no-efectivo') === 'true';
+                const $selectMotivo = $('#motivo_no_efectivo_id');
+                if (esNoEfectivo) {
+                    $('#motivo-no-efectivo-section').slideDown();
+                    $selectMotivo.prop('required', true);
+                } else {
+                    $('#motivo-no-efectivo-section').slideUp();
+                    $selectMotivo.prop('required', false).val('');
                 }
             });
 
@@ -2672,16 +2717,6 @@
             document.getElementById('home-tab').click();
         });
 
-        // Bloqueo del botón de interacción en submit
-        const interactionForm = document.getElementById('interaction-form');
-        if (interactionForm) {
-            interactionForm.addEventListener('submit', function(e) {
-                const btn = document.getElementById('btn-submit-interaccion');
-                if (this.checkValidity()) {
-                    btn.disabled = true;
-                }
-            });
-        }
 
         // Buscador Motivo / Tipificación
         const searchType = document.getElementById('search-type');

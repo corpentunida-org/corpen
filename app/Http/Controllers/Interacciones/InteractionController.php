@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Interacciones;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
 use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Cartera\CarComprobantePago;
@@ -11,6 +12,7 @@ use App\Models\Interacciones\IntLinea;
 use App\Models\Interacciones\IntChannel;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntNextAction;
+use App\Models\Interacciones\IntMotivoNoEfectivo;
 use App\Models\Interacciones\IntOutcome;
 //use App\Models\Maestras\MaeCongregacion; Sin uso actual.
 use App\Models\Interacciones\IntSeguimiento;
@@ -113,40 +115,55 @@ class InteractionController extends Controller
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
-        // 2. Query Base para interacciones dentro del rango
-        $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
+        // 2. Query Base — la UNIDAD que se cuenta ya NO es "una fila de interactions" sino "un
+        // seguimiento" (int_seguimiento): cada vez que alguien invierte tiempo nuevo en un caso
+        // (lo crea, o retoma uno "Pendiente" y le da una gestión), eso es trabajo real y debe
+        // sumar como una interacción más — aunque sea sobre el mismo caso (mismo id_interaction),
+        // sin duplicar la fila madre en `interactions`. Antes se contaba por `interaction_date`,
+        // que además se reescribe a "ahora" en cada edición: un caso creado el día 1 y resuelto el
+        // día 20 simplemente se "mudaba" de día en vez de sumar una segunda vez. Contar por
+        // int_seguimiento.created_at (que nunca se reescribe, cada fila es un hecho histórico
+        // fijo) resuelve eso de raíz.
+        $baseQuery = IntSeguimiento::whereBetween('created_at', [$start, $end]);
 
-        // Aplicar Filtro de Distrito (A través del cliente) si existe
+        // Aplicar Filtro de Distrito (a través del cliente de la interacción dueña del seguimiento)
         if ($filtroDistrito) {
-            $baseQuery->whereHas('client', function ($q) use ($filtroDistrito) {
+            $baseQuery->whereHas('interaction.client', function ($q) use ($filtroDistrito) {
                 $q->where('cod_dist', $filtroDistrito);
             });
         }
 
-        // Aplicar Filtro de Línea de Crédito si existe.
-        // id_linea_de_obligacion se guarda como arreglo JSON de ids en texto (ej. '["8"]', o
-        // '["8","12"]' cuando una interacción toca varias líneas — pasa en ~7% de los casos).
-        // Antes comparaba la columna completa contra un solo id ('where(...,$filtroLinea)'):
-        // eso compara '["8"]' = '8' a nivel de texto, que nunca es igual — el filtro no
-        // encontraba nada, en ningún reporte, para ningún valor. whereJsonContains() sí mira
-        // dentro del arreglo. (string) porque los ids se guardan como texto, no como número.
+        // Aplicar Filtro de Línea de Crédito si existe (vive en la interacción, no en el
+        // seguimiento). id_linea_de_obligacion se guarda como arreglo JSON de ids en texto (ej.
+        // '["8"]', o '["8","12"]' cuando una interacción toca varias líneas — pasa en ~7% de los
+        // casos). whereJsonContains() mira dentro del arreglo. (string) porque los ids se
+        // guardan como texto, no como número.
         if ($filtroLinea) {
-            $baseQuery->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+            $baseQuery->whereHas('interaction', function ($q) use ($filtroLinea) {
+                $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+            });
         }
 
-        // Alcance por agente/área (ver alcanceInformes arriba). null = sin restricción.
+        // Alcance por agente/área (ver alcanceInformes arriba) — por el agente que HIZO el
+        // seguimiento (agent_id de int_seguimiento), no por el dueño original del caso: si a
+        // alguien le reasignan un caso y lo gestiona, ese trabajo es suyo. null = sin restricción.
         if ($agentIds !== null) {
             $baseQuery->whereIn('agent_id', $agentIds);
         }
 
-        // NUEVO: Aplicar Filtro de Cliente si existe
+        // Filtro de Cliente (vive en la interacción)
         if ($filtroCliente) {
-            $baseQuery->where('client_id', $filtroCliente);
+            $baseQuery->whereHas('interaction', function ($q) use ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            });
         }
 
         // 3. Cálculos de Tarjetas (KPIs)
         $totalInteracciones = (clone $baseQuery)->count();
 
+        // Exitosas/Pendientes: el resultado de CADA gestión, no solo el estado actual del caso —
+        // si un caso quedó "Pendiente" y luego se resolvió "Efectivo", ambos hechos cuentan cada
+        // uno en lo suyo (una gestión pendiente registrada + una gestión exitosa registrada).
         $exitosas = (clone $baseQuery)
             ->whereHas('outcomeRelation', function ($q) {
                 $q->where('estado', 1);
@@ -159,7 +176,9 @@ class InteractionController extends Controller
             })
             ->count();
 
-        // NUEVO: Se agregaron $filtroAgente y $filtroCliente al use() de la subconsulta
+        // Vencidas: esto sigue siendo sobre el ESTADO ACTUAL de la agenda (qué casos tienen su
+        // último seguimiento con próxima acción ya vencida), no sobre volumen de trabajo — no
+        // cambia con este rediseño, se mantiene igual que antes.
         $vencidas = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
             $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
                 $q2->where('estado', '!=', 1)->orWhereNull('estado');
@@ -201,18 +220,25 @@ class InteractionController extends Controller
         // 4. Datos para Gráficos
 
         // a0. Interacciones por Día — tendencia dentro del rango, aplica igual en individual que
-        // en área/todos (ver chartInteraccionesPorDia()).
+        // en área/todos (ver chartInteraccionesPorDia()). Ahora agrupa por la fecha de cada
+        // seguimiento (created_at), no por interaction_date.
         $chartInteraccionesPorDia = $this->chartInteraccionesPorDia($baseQuery, $start, $end);
 
-        // a. Agrupación por Canal
-        $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
+        // a. Agrupación por Canal — el canal vive en la interacción dueña del seguimiento, no en
+        // el seguimiento mismo; se trae con eager load y se agrupa en PHP (mismo criterio ya
+        // usado abajo para Distritos).
+        $canalesAgrupados = (clone $baseQuery)->with('interaction.channel')->get()
+            ->groupBy(fn ($item) => optional(optional($item->interaction)->channel)->name ?? 'Desconocido')
+            ->map->count()
+            ->sortByDesc(fn ($total) => $total);
 
         $chartCanales = [
-            'labels' => $canalesData->map(fn ($item) => $item->channel->name ?? 'Desconocido')->toArray(),
-            'data' => $canalesData->pluck('total')->toArray(),
+            'labels' => $canalesAgrupados->keys()->toArray(),
+            'data' => $canalesAgrupados->values()->toArray(),
         ];
 
-        // b. Agrupación por Resultado (Outcome)
+        // b. Agrupación por Resultado (Outcome) — el resultado de CADA gestión (columna propia de
+        // int_seguimiento), no el actual de la interacción.
         $resultadosData = (clone $baseQuery)->select('outcome', DB::raw('count(*) as total'))->with('outcomeRelation')->groupBy('outcome')->get();
 
         $chartResultados = [
@@ -220,53 +246,75 @@ class InteractionController extends Controller
             'data' => $resultadosData->pluck('total')->toArray(),
         ];
 
-        // c. Top 5 Agentes con más interacciones
-        $agentesData = (clone $baseQuery)->select('agent_id', DB::raw('count(*) as total'))->with('agent')->groupBy('agent_id')->orderByDesc('total')->limit(5)->get();
+        // b2. Motivos de No Efectivo — también columna propia de int_seguimiento (motivo elegido
+        // en ESA gestión puntual). Top 8 para no saturar el gráfico.
+        $motivosData = (clone $baseQuery)
+            ->whereNotNull('motivo_no_efectivo_id')
+            ->select('motivo_no_efectivo_id', DB::raw('count(*) as total'))
+            ->with('motivoNoEfectivo')
+            ->groupBy('motivo_no_efectivo_id')
+            ->orderByDesc('total')
+            ->limit(8)
+            ->get();
+
+        $chartMotivosNoEfectivo = [
+            'labels' => $motivosData->map(fn ($item) => $item->motivoNoEfectivo->name ?? 'Sin especificar')->toArray(),
+            'data' => $motivosData->pluck('total')->toArray(),
+        ];
+
+        // c. Top 5 Agentes con más interacciones — por quién hizo cada gestión (agent_id propio
+        // del seguimiento, relación "creator"). Con este rediseño esto queda idéntico en
+        // contenido a "Top 5 Agentes por Seguimientos" (más abajo) — antes eran dos conceptos
+        // distintos (dueño del caso vs. quien gestionó), ahora ambos miden lo mismo: trabajo
+        // realizado. Se reutiliza la misma consulta para no duplicarla.
+        $agentesData = (clone $baseQuery)->select('agent_id', DB::raw('count(*) as total'))->with('creator')->groupBy('agent_id')->orderByDesc('total')->limit(5)->get();
 
         $chartAgentes = [
-            'labels' => $agentesData->map(fn ($item) => $item->agent->name ?? 'Sin Agente')->toArray(),
+            'labels' => $agentesData->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
             'data' => $agentesData->pluck('total')->toArray(),
         ];
 
-        // d. Top 5 Clientes
-        $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
+        // d. Top 5 Clientes — el cliente vive en la interacción; eager load + agrupación en PHP.
+        $clientesAgrupados = (clone $baseQuery)->with('interaction.client')->get()
+            ->groupBy(fn ($item) => optional($item->interaction)->client_id ?? 0)
+            ->map(fn ($grupo) => [
+                'nombre' => optional(optional($grupo->first()->interaction)->client)->nom_ter ?? ('Asociado '.$grupo->first()->interaction->client_id),
+                'total' => $grupo->count(),
+            ])
+            ->sortByDesc('total')
+            ->take(5);
 
         $chartClientes = [
-            'labels' => $clientesData->map(fn ($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(),
-            'data' => $clientesData->pluck('total')->toArray(),
+            'labels' => $clientesAgrupados->pluck('nombre')->toArray(),
+            'data' => $clientesAgrupados->pluck('total')->toArray(),
         ];
 
-        // e. Agrupación por Línea de Crédito (CORREGIDO PARA USAR CACHÉ Y EVITAR ERROR NULL)
+        // e. Agrupación por Línea de Crédito — también vive en la interacción.
         $allLineas = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
 
-        $lineasData = (clone $baseQuery)
-            ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
-            ->groupBy('id_linea_de_obligacion')
-            ->orderByDesc('total')
-            ->limit(5) // Top 5 para el gráfico
-            ->get();
+        $lineasAgrupadas = (clone $baseQuery)->with('interaction')->get()
+            ->groupBy(function ($item) use ($allLineas) {
+                $ids = is_array(optional($item->interaction)->id_linea_de_obligacion)
+                    ? $item->interaction->id_linea_de_obligacion
+                    : json_decode(optional($item->interaction)->id_linea_de_obligacion ?? '[]', true);
+
+                $primerId = $ids[0] ?? null;
+
+                return $primerId && isset($allLineas[$primerId]) ? $allLineas[$primerId] : 'Sin Línea';
+            })
+            ->map->count()
+            ->sortByDesc(fn ($total) => $total)
+            ->take(5);
 
         $chartLineas = [
-            'labels' => $lineasData->map(function ($item) use ($allLineas) {
-                // Verificamos si es string JSON y lo decodificamos, o si ya es array
-                $ids = is_array($item->id_linea_de_obligacion) 
-                        ? $item->id_linea_de_obligacion 
-                        : json_decode($item->id_linea_de_obligacion, true);
-                
-                $primerId = $ids[0] ?? null;
-                
-                return $primerId && isset($allLineas[$primerId]) ? $allLineas[$primerId] : 'Sin Línea';
-            })->toArray(),
-            'data' => $lineasData->pluck('total')->toArray(),
+            'labels' => $lineasAgrupadas->keys()->toArray(),
+            'data' => $lineasAgrupadas->values()->toArray(),
         ];
 
-        // f. Agrupación por Distrito (Relación anidada)
-        $distritosInteracciones = (clone $baseQuery)->with(['client.distrito'])->get();
-
-        $distritosAgrupados = $distritosInteracciones
+        // f. Agrupación por Distrito — también vive en la interacción (a través del cliente).
+        $distritosAgrupados = (clone $baseQuery)->with('interaction.client.distrito')->get()
             ->groupBy(function ($item) {
-                // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
-                return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
+                return optional(optional(optional($item->interaction)->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
             })
             ->map(function ($row) {
                 return $row->count();
@@ -281,37 +329,15 @@ class InteractionController extends Controller
             'data' => $distritosAgrupados->values()->toArray(),
         ];
 
-        // g. (NUEVO) Top 5 Agentes por Seguimientos
-        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
-            $q->whereBetween('interaction_date', [$start, $end]);
-            if ($filtroDistrito) {
-                $q->whereHas('client', function ($q3) use ($filtroDistrito) {
-                    $q3->where('cod_dist', $filtroDistrito);
-                });
-            }
-            if ($filtroLinea) {
-                $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
-            }
-            if ($agentIds !== null) {
-                $q->whereIn('agent_id', $agentIds);
-            }
-            if ($filtroCliente) {
-                $q->where('client_id', $filtroCliente);
-            }
-        })
-            ->select('agent_id', DB::raw('count(*) as total'))
-            ->with('creator')
-            ->groupBy('agent_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-
-        $chartSeguimientosAgentes = [
-            'labels' => $seguimientosAgentesData->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
-            'data' => $seguimientosAgentesData->pluck('total')->toArray(),
-        ];
-
+        // Vencidas y Pendientes por Agente: esto sigue siendo sobre el ESTADO ACTUAL de la
+        // agenda de cada agente (no sobre volumen de trabajo en el rango) — no cambia con este
+        // rediseño, se mantiene igual que antes.
         $accionesAgentes = IntSeguimiento::select('agent_id', DB::raw('SUM(CASE WHEN next_action_date >= NOW() THEN 1 ELSE 0 END) as pendientes'), DB::raw('SUM(CASE WHEN next_action_date < NOW() THEN 1 ELSE 0 END) as vencidas'))
+            // Solo el ÚLTIMO seguimiento de cada interacción (mismo criterio que $vencidas más
+            // arriba): sin esto, una interacción retomada varias veces (cada gestión con su
+            // propia next_action_date) se contaba una vez por CADA fecha vieja que alguna vez
+            // tuvo, en vez de una sola vez según su próxima acción actual.
+            ->whereIn('id', DB::table('int_seguimiento')->select(DB::raw('MAX(id)'))->groupBy('id_interaction'))
             ->whereNotNull('next_action_date')
             ->whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
                 $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
@@ -340,18 +366,19 @@ class InteractionController extends Controller
             ->groupBy('agent_id')
             ->orderByDesc('vencidas')
             ->get();
-            
+
         $chartAccionesAgentes = [
             'labels' => $accionesAgentes->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
             'pendientes' => $accionesAgentes->pluck('pendientes')->toArray(),
             'vencidas' => $accionesAgentes->pluck('vencidas')->toArray(),
         ];
 
-        // h. (NUEVO) Indicadores por Área — solo tiene sentido cuando el alcance cubre más de una
-        // (modo=todos, o modo=area con listado.todos eligiendo "Todas"); con una sola área en
-        // alcance simplemente sale una barra. Se resuelve el área de cada agente en un solo lote
-        // (no una consulta por agente) con el mismo criterio que areaDelUsuario(): prefiere un
-        // rol que SÍ tenga área sobre uno que no, para los perfiles legado con más de uno.
+        // h. Indicadores por Área — solo tiene sentido cuando el alcance cubre más de una (modo=
+        // todos, o modo=area con listado.todos eligiendo "Todas"); con una sola área en alcance
+        // simplemente sale una barra. Se resuelve el área de cada agente en un solo lote (no una
+        // consulta por agente) con el mismo criterio que areaDelUsuario(): prefiere un rol que SÍ
+        // tenga área sobre uno que no, para los perfiles legado con más de uno. Ahora agrupa por
+        // el agente que hizo cada seguimiento, igual que el resto de este rediseño.
         $porAgenteData = (clone $baseQuery)->select('agent_id', DB::raw('count(*) as total'))->groupBy('agent_id')->pluck('total', 'agent_id');
         $areaPorAgente = DB::table('actions')
             ->join('roles', 'roles.id', '=', 'actions.role_id')
@@ -408,11 +435,11 @@ class InteractionController extends Controller
                 'chartInteraccionesPorDia',
                 'chartCanales',
                 'chartResultados',
+                'chartMotivosNoEfectivo',
                 'chartAgentes',
                 'chartClientes',
                 'chartLineas',
                 'chartDistritos',
-                'chartSeguimientosAgentes',
                 'chartAccionesAgentes',
                 'chartAreas',
                 'startDate',
@@ -453,21 +480,28 @@ class InteractionController extends Controller
         $start = Carbon::parse($startDate)->startOfDay();
         $end = Carbon::parse($endDate)->endOfDay();
 
-        $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
+        // La unidad contada es el seguimiento, no la interacción — ver el comentario extenso en
+        // report() (misma justificación: cada gestión con tiempo nuevo cuenta como una
+        // interacción más, sin duplicar la fila madre en `interactions`).
+        $baseQuery = IntSeguimiento::whereBetween('created_at', [$start, $end]);
 
         if ($filtroDistrito) {
-            $baseQuery->whereHas('client', function ($q) use ($filtroDistrito) {
+            $baseQuery->whereHas('interaction.client', function ($q) use ($filtroDistrito) {
                 $q->where('cod_dist', $filtroDistrito);
             });
         }
         if ($filtroLinea) {
-            $baseQuery->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+            $baseQuery->whereHas('interaction', function ($q) use ($filtroLinea) {
+                $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
+            });
         }
         if ($agentIds !== null) {
             $baseQuery->whereIn('agent_id', $agentIds);
         }
         if ($filtroCliente) {
-            $baseQuery->where('client_id', $filtroCliente);
+            $baseQuery->whereHas('interaction', function ($q) use ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            });
         }
 
         // Interacciones por Día — misma tendencia que en pantalla, ver chartInteraccionesPorDia().
@@ -485,6 +519,8 @@ class InteractionController extends Controller
             })
             ->count();
 
+        // Vencidas: sigue siendo sobre el ESTADO ACTUAL de la agenda, no sobre volumen de
+        // trabajo — no cambia con este rediseño (ver mismo comentario en report()).
         $vencidas = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
             $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
                 $q2->where('estado', '!=', 1)->orWhereNull('estado');
@@ -521,74 +557,66 @@ class InteractionController extends Controller
 
         // --- Gráficos ---
 
-        $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
-        $chartCanales = ['labels' => $canalesData->map(fn ($item) => $item->channel->name ?? 'Desconocido')->toArray(), 'data' => $canalesData->pluck('total')->toArray()];
+        // Canal vive en la interacción dueña del seguimiento (mismo criterio que report()).
+        $canalesAgrupados = (clone $baseQuery)->with('interaction.channel')->get()
+            ->groupBy(fn ($item) => optional(optional($item->interaction)->channel)->name ?? 'Desconocido')
+            ->map->count()
+            ->sortByDesc(fn ($total) => $total);
+        $chartCanales = ['labels' => $canalesAgrupados->keys()->toArray(), 'data' => $canalesAgrupados->values()->toArray()];
 
         $resultadosData = (clone $baseQuery)->select('outcome', DB::raw('count(*) as total'))->with('outcomeRelation')->groupBy('outcome')->get();
         $chartResultados = ['labels' => $resultadosData->map(fn ($item) => $item->outcomeRelation->name ?? 'Sin Estado')->toArray(), 'data' => $resultadosData->pluck('total')->toArray()];
 
-        // CORRECCIÓN LÍNEA DE CRÉDITO (Punto del error)
-        $lineasData = (clone $baseQuery)
-            ->select(
-                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(id_linea_de_obligacion, "$[0]")) as primer_id'),
-                DB::raw('count(*) as total'),
-            )
-            ->groupBy('primer_id')
+        // Motivos de No Efectivo — mismo criterio que report() (ver chartMotivosNoEfectivo allá).
+        $motivosData = (clone $baseQuery)
+            ->whereNotNull('motivo_no_efectivo_id')
+            ->select('motivo_no_efectivo_id', DB::raw('count(*) as total'))
+            ->with('motivoNoEfectivo')
+            ->groupBy('motivo_no_efectivo_id')
             ->orderByDesc('total')
-            ->limit(5)
+            ->limit(8)
             ->get();
+        $chartMotivosNoEfectivo = ['labels' => $motivosData->map(fn ($item) => $item->motivoNoEfectivo->name ?? 'Sin especificar')->toArray(), 'data' => $motivosData->pluck('total')->toArray()];
 
-        // Obtenemos los nombres de las líneas manualmente para evitar el error de array key 0
-        $idsLineas = $lineasData->pluck('primer_id')->filter()->toArray();
-        $nombresLineasMap = IntLinea::whereIn('id', $idsLineas)->pluck('name', 'id');
+        // Línea de Crédito — también vive en la interacción; mismo criterio que report().
+        $allLineasPdf = Cache::remember('all_lineas_list_v2', 3600, fn () => IntLinea::pluck('name', 'id'));
+        $lineasAgrupadas = (clone $baseQuery)->with('interaction')->get()
+            ->groupBy(function ($item) use ($allLineasPdf) {
+                $ids = is_array(optional($item->interaction)->id_linea_de_obligacion)
+                    ? $item->interaction->id_linea_de_obligacion
+                    : json_decode(optional($item->interaction)->id_linea_de_obligacion ?? '[]', true);
+                $primerId = $ids[0] ?? null;
 
-        $chartLineas = [
-            'labels' => $lineasData->map(function ($item) use ($nombresLineasMap) {
-                return $nombresLineasMap[$item->primer_id] ?? 'Sin Línea';
-            })->toArray(),
-            'data' => $lineasData->pluck('total')->toArray(),
-        ];
+                return $primerId && isset($allLineasPdf[$primerId]) ? $allLineasPdf[$primerId] : 'Sin Línea';
+            })
+            ->map->count()
+            ->sortByDesc(fn ($total) => $total)
+            ->take(5);
+        $chartLineas = ['labels' => $lineasAgrupadas->keys()->toArray(), 'data' => $lineasAgrupadas->values()->toArray()];
 
-        $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
-        $chartClientes = ['labels' => $clientesData->map(fn ($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
+        // Cliente — también vive en la interacción; mismo criterio que report().
+        $clientesAgrupados = (clone $baseQuery)->with('interaction.client')->get()
+            ->groupBy(fn ($item) => optional($item->interaction)->client_id ?? 0)
+            ->map(fn ($grupo) => [
+                'nombre' => optional(optional($grupo->first()->interaction)->client)->nom_ter ?? ('Asociado '.$grupo->first()->interaction->client_id),
+                'total' => $grupo->count(),
+            ])
+            ->sortByDesc('total')
+            ->take(5);
+        $chartClientes = ['labels' => $clientesAgrupados->pluck('nombre')->toArray(), 'data' => $clientesAgrupados->pluck('total')->toArray()];
 
         // Top 5 Distritos — misma agrupación que report() (ver chartDistritos allá).
-        $distritosData = (clone $baseQuery)->with(['client.distrito'])->get()
-            ->groupBy(fn ($item) => optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito')
+        $distritosData = (clone $baseQuery)->with('interaction.client.distrito')->get()
+            ->groupBy(fn ($item) => optional(optional(optional($item->interaction)->client)->distrito)->NOM_DIST ?? 'Sin Distrito')
             ->map(fn ($row) => $row->count())
             ->sortByDesc(fn ($count) => $count)
             ->take(5);
         $chartDistritos = ['labels' => $distritosData->keys()->toArray(), 'data' => $distritosData->values()->toArray()];
 
-        // Top 5 Agentes por Seguimientos — misma consulta que report() (ver chartSeguimientosAgentes allá).
-        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
-            $q->whereBetween('interaction_date', [$start, $end]);
-            if ($filtroDistrito) {
-                $q->whereHas('client', fn ($q3) => $q3->where('cod_dist', $filtroDistrito));
-            }
-            if ($filtroLinea) {
-                $q->whereJsonContains('id_linea_de_obligacion', (string) $filtroLinea);
-            }
-            if ($agentIds !== null) {
-                $q->whereIn('agent_id', $agentIds);
-            }
-            if ($filtroCliente) {
-                $q->where('client_id', $filtroCliente);
-            }
-        })
-            ->select('agent_id', DB::raw('count(*) as total'))
-            ->with('creator')
-            ->groupBy('agent_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
-        $chartSeguimientosAgentes = [
-            'labels' => $seguimientosAgentesData->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
-            'data' => $seguimientosAgentesData->pluck('total')->toArray(),
-        ];
-
         // Vencidas y Pendientes por Agente — misma consulta que report() (ver chartAccionesAgentes allá).
         $accionesAgentesData = IntSeguimiento::select('agent_id', DB::raw('SUM(CASE WHEN next_action_date >= NOW() THEN 1 ELSE 0 END) as pendientes'), DB::raw('SUM(CASE WHEN next_action_date < NOW() THEN 1 ELSE 0 END) as vencidas'))
+            // Solo el ÚLTIMO seguimiento de cada interacción (ver mismo comentario en report()).
+            ->whereIn('id', DB::table('int_seguimiento')->select(DB::raw('MAX(id)'))->groupBy('id_interaction'))
             ->whereNotNull('next_action_date')
             ->whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $agentIds, $filtroCliente) {
                 $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
@@ -637,7 +665,9 @@ class InteractionController extends Controller
             $qAgente = (clone $baseQuery)->where('agent_id', $agente_id);
             $totalAgente = (clone $qAgente)->count();
 
-            // NUEVO: Sumar el tiempo total de las interacciones por agente
+            // Tiempo total: suma de int_seguimiento.duration (el tiempo NUEVO de cada gestión) en
+            // vez de interactions.duration (que solo reflejaba la última sesión) — ver la
+            // migración que agregó esta columna.
             $tiempoTotalAgente = (clone $qAgente)->sum('duration');
 
             $exitosasAgente = (clone $qAgente)->whereHas('outcomeRelation', fn ($q) => $q->where('estado', 1))->count();
@@ -658,6 +688,8 @@ class InteractionController extends Controller
                     $q->where('client_id', $filtroCliente);
                 }
             })
+                // Solo el ÚLTIMO seguimiento de cada interacción (ver mismo comentario en report()).
+                ->whereIn('id', DB::table('int_seguimiento')->select(DB::raw('MAX(id)'))->groupBy('id_interaction'))
                 ->whereNotNull('next_action_date')
                 ->where('next_action_date', '<', Carbon::now())
                 ->count();
@@ -723,7 +755,7 @@ class InteractionController extends Controller
         $agenteMasEfectivo = $agentesAuditoria->where('total', '>', 5)->sortByDesc('efectividad')->first();
         $tasaGlobal = $totalInteracciones > 0 ? round(($exitosas / $totalInteracciones) * 100, 1) : 0;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartInteraccionesPorDia', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 'chartDistritos', 'chartSeguimientosAgentes', 'chartAccionesAgentes', 'agentesAuditoria', 'areasAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal', 'modo', 'impresoPor'));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartInteraccionesPorDia', 'chartCanales', 'chartResultados', 'chartMotivosNoEfectivo', 'chartClientes', 'chartLineas', 'chartDistritos', 'chartAccionesAgentes', 'agentesAuditoria', 'areasAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal', 'modo', 'impresoPor'));
 
         $pdf->setPaper('A4', 'portrait');
 
@@ -790,10 +822,15 @@ class InteractionController extends Controller
      */
     private function chartInteraccionesPorDia($baseQuery, Carbon $start, Carbon $end): array
     {
+        // $baseQuery es sobre int_seguimiento (ver report()/reportPdf()): se agrupa por
+        // created_at (la fecha real en que se hizo CADA gestión, nunca se reescribe) y no por
+        // interaction_date (que sí se reescribe a "ahora" en cada edición) — así un caso creado
+        // el día 1 y resuelto el día 20 cuenta en los dos días, no solo en el último.
+        //
         // Conteo diario real — se necesita siempre, tanto para pintar el gráfico (si el rango es
         // corto) como para "días hábiles sin registrar" (sin importar el rango).
         $porDia = (clone $baseQuery)
-            ->selectRaw('DATE(interaction_date) as dia, count(*) as total')
+            ->selectRaw('DATE(created_at) as dia, count(*) as total')
             ->groupBy('dia')
             ->pluck('total', 'dia');
 
@@ -818,7 +855,7 @@ class InteractionController extends Controller
 
         if ($porSemana) {
             $agrupado = (clone $baseQuery)
-                ->selectRaw('YEARWEEK(interaction_date, 3) as semana, MIN(DATE(interaction_date)) as inicio_semana, count(*) as total')
+                ->selectRaw('YEARWEEK(created_at, 3) as semana, MIN(DATE(created_at)) as inicio_semana, count(*) as total')
                 ->groupBy('semana')
                 ->orderBy('semana')
                 ->get()
@@ -839,14 +876,20 @@ class InteractionController extends Controller
             return ['labels' => $labels, 'data' => $data, 'dias_habiles_sin_registro' => $diasHabilesSinRegistro];
         }
 
+        // Se omiten sábados, domingos y festivos del listado/gráfico — nadie trabaja esos días,
+        // así que solo aportaban filas en cero que no dicen nada (el "0 días hábiles sin
+        // registrar" de arriba ya deja claro que esos ceros son normales). El conteo de "días
+        // hábiles sin registro" arriba no cambia: sigue evaluando SOLO días hábiles.
         $labels = [];
         $data = [];
         $cursor = $start->copy()->startOfDay();
         $finCursor = $end->copy()->startOfDay();
         while ($cursor->lte($finCursor)) {
-            $clave = $cursor->toDateString();
-            $labels[] = $cursor->format('d/m');
-            $data[] = (int) ($porDia[$clave] ?? 0);
+            if ($cursor->isWeekday() && ! $calculadorFestivos->esFestivo($cursor)) {
+                $clave = $cursor->toDateString();
+                $labels[] = $cursor->format('d/m');
+                $data[] = (int) ($porDia[$clave] ?? 0);
+            }
             $cursor->addDay();
         }
 
@@ -945,6 +988,7 @@ class InteractionController extends Controller
             'motivo' => $item->type->name ?? 'N/A',
             'resultado' => $item->outcomeRelation->name ?? ' ',
             'outcome_val' => $item->outcome,
+            'motivo_no_efectivo' => optional($item->motivoNoEfectivo)->name,
             'lineas_array' => array_filter($nombresLineas), // Solo las que tienen datos
             'linea_1' => $nombresLineas[0],
             'linea_2' => $nombresLineas[1],
@@ -990,7 +1034,7 @@ class InteractionController extends Controller
         $buscar = $request->input('cliente');
 
         $query = Interaction::whereHas('client', fn ($q) => $q->where('nom_ter', 'LIKE', "%{$buscar}%")->orWhere('cod_ter', 'LIKE', "%{$buscar}%"))
-            ->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
+            ->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'motivoNoEfectivo', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
 
         $totalRecords = (clone $query)->count();
 
@@ -1021,22 +1065,34 @@ class InteractionController extends Controller
         $userId = Auth::id();
         $vencidas = $servicio->vencidasDeUsuario($userId);
         $pendientes = $servicio->pendientesDeUsuario($userId);
+        $venceHoy = $servicio->venceHoyDeUsuario($userId);
 
         $formatear = fn ($seguimiento, bool $vencida) => [
             'id_interaction' => $seguimiento->id_interaction,
             'cliente' => $seguimiento->interaction->client->nom_ter ?? ('Cliente '.$seguimiento->interaction->client_id),
             'next_action_date' => optional($seguimiento->next_action_date)->format('d/m/Y H:i'),
             'dias_vencida' => ($vencida && $seguimiento->next_action_date) ? (int) $seguimiento->next_action_date->diffInDays(now()) : null,
-            'url' => route('interactions.show', $seguimiento->id_interaction),
+            // A la pantalla de EDICIÓN, no al detalle de solo lectura — es la que tiene el
+            // cronómetro (contabiliza el tiempo) y la que, al guardar, crea un seguimiento
+            // nuevo con el historial (ver update()). El detalle (interactions.show) no trackea
+            // tiempo, así que responder una vencida desde ahí no debía ser la opción por defecto.
+            'url' => route('interactions.edit', $seguimiento->id_interaction),
         ];
+
+        $config = IntAlertaConfig::actual();
 
         return response()->json([
             'vencidas_count' => $vencidas->count(),
             'vencidas' => $vencidas->take(8)->map(fn ($s) => $formatear($s, true))->values(),
             'pendientes_count' => $pendientes->count(),
             'pendientes' => $pendientes->take(8)->map(fn ($s) => $formatear($s, false))->values(),
+            // Recordatorio matutino ("vence hoy") — distinto de vencidas, ver venceHoyDeUsuario().
+            'vence_hoy_count' => $venceHoy->count(),
+            'vence_hoy' => $venceHoy->take(8)->map(fn ($s) => $formatear($s, false))->values(),
             // Configurable desde Admin → Configuración de Alertas (antes era un 3 fijo en el JS).
-            'aviso_intervalo_horas' => IntAlertaConfig::actual()->aviso_intervalo_horas,
+            'aviso_intervalo_horas' => $config->aviso_intervalo_horas,
+            'recordatorio_matutino_hora' => \Carbon\Carbon::parse($config->recordatorio_matutino_hora)->format('H:i'),
+            'pulso_intervalo_minutos' => $config->pulso_intervalo_minutos,
             // Si está en la lista de "omitir pantalla" (Agentes Omitidos), el front no debe
             // forzar el modal — sigue viendo su propia campanita normalmente si quiere.
             'pantalla_omitida' => IntAlertaOmitido::estaOmitido($userId, 'pantalla'),
@@ -1089,7 +1145,7 @@ class InteractionController extends Controller
             // por agente (solo lo propio, sin el permiso "ver todos"). Antes esta tabla arrancaba
             // de cero y no la heredaba — cualquiera con acceso al módulo veía TODAS las
             // interacciones de TODOS los agentes en las 6 pestañas, tuviera o no el permiso.
-            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
+            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'motivoNoEfectivo', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
 
             // A) Filtro por pestaña activa
             $tab = $request->input('tab', 'all');
@@ -1216,7 +1272,7 @@ class InteractionController extends Controller
         $baseQuery->whereBetween('interaction_date', [$desde, $hasta]);
 
         if ($request->ajax()) {
-            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
+            $query = (clone $baseQuery)->with(['client.distrito', 'agent.cargoRelation', 'agent.roles', 'channel', 'type', 'outcomeRelation', 'motivoNoEfectivo', 'usuarioAsignado', 'seguimientos:id,id_interaction,attachment_urls']);
 
             // Filtro fino por usuario (dentro del área ya delimitada arriba) — cliente/distrito/
             // canal/motivo/resultado, que en Listado de Interacciones no cabían.
@@ -1308,10 +1364,12 @@ class InteractionController extends Controller
             'channel',
             'type',
             'outcomeRelation',
+            'motivoNoEfectivo',
             //'lineaDeObligacion',
             'usuarioAsignado',
             'comprobantes.banco',
             'seguimientos.outcomeRelation',
+            'seguimientos.motivoNoEfectivo',
             'seguimientos.creator',
             'seguimientos.assignedUser',
             'seguimientos.nextAction',
@@ -1360,9 +1418,11 @@ class InteractionController extends Controller
         // 4. DATOS PARA EL MODAL
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
+        $miAreaMotivos = $this->areaDelUsuario(Auth::id());
+        $motivosNoEfectivo = IntMotivoNoEfectivo::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaMotivos))->orderBy('name')->get();
         $users = User::orderBy('name')->get();
 
-        return view('interactions.show', compact('interaction', 'labels', 'totals', 'range', 'clientHistory', 'outcomes', 'nextActions', 'users'));
+        return view('interactions.show', compact('interaction', 'labels', 'totals', 'range', 'clientHistory', 'outcomes', 'nextActions', 'motivosNoEfectivo', 'users'));
     }
 
     /**
@@ -1378,6 +1438,9 @@ class InteractionController extends Controller
         $types = IntType::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos))->orderBy('name')->get();
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
+        // Igual que $types: solo los motivos de SU área (+ compartidos) para el select que
+        // aparece cuando el resultado elegido es "No Efectivo".
+        $motivosNoEfectivo = IntMotivoNoEfectivo::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos))->orderBy('name')->get();
 
         $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
         $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
@@ -1403,7 +1466,7 @@ class InteractionController extends Controller
             }
         }
 
-        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente', 'idBanco'));
+        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'motivosNoEfectivo', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente', 'idBanco'));
     }
 
     /**
@@ -1417,6 +1480,14 @@ class InteractionController extends Controller
             'interaction_channel' => 'required',
             'interaction_type' => 'required',
             'outcome' => 'required',
+            // Solo obligatorio cuando el resultado elegido es específicamente "No Efectivo" (no
+            // alcanza con estado=0: "Reasignado a otro Operador" también lo es y no necesita
+            // motivo). Se compara por nombre y no por ID fijo, por si el catálogo cambia.
+            'motivo_no_efectivo_id' => [
+                Rule::requiredIf(fn () => strtolower(trim(optional(IntOutcome::find($request->outcome))->name ?? '')) === 'no efectivo'),
+                'nullable',
+                'exists:int_motivos_no_efectivo,id',
+            ],
             'notes' => 'nullable|string',
             'next_action_date' => 'nullable|date',
             'next_action_type' => 'nullable',
@@ -1451,6 +1522,7 @@ class InteractionController extends Controller
             'interaction_type' => $validated['interaction_type'],
             'duration' => $validated['duration'] ?? 0,
             'outcome' => $validated['outcome'],
+            'motivo_no_efectivo_id' => $validated['motivo_no_efectivo_id'] ?? null,
             'notes' => $validated['notes'] ?? null,
             'parent_interaction_id' => $validated['parent_interaction_id'] ?? null,
             'id_linea_de_obligacion' => $validated['id_linea_de_obligacion'] ?? null,
@@ -1486,6 +1558,8 @@ class InteractionController extends Controller
             'agent_id' => $agentId,
             'id_user_asignacion' => $idAsignacion, // Usamos la variable segura
             'outcome' => $validated['outcome'],
+            'motivo_no_efectivo_id' => $validated['motivo_no_efectivo_id'] ?? null,
+            'duration' => $validated['duration'] ?? 0,
             'next_action_type' => $validated['next_action_type'] ?? 1,
             // Antes, sin fecha elegida, quedaba en now(): la agenda nacía vencida en el mismo
             // instante que se creaba, así que "vencidas" nunca distinguía "no necesita
@@ -1515,6 +1589,9 @@ class InteractionController extends Controller
             ->orderBy('name')->get();
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
+        // Igual que $types: su área + compartidos, y el motivo YA elegido aunque sea de otra área.
+        $motivosNoEfectivo = IntMotivoNoEfectivo::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaTipos)->orWhere('id', $interaction->motivo_no_efectivo_id))
+            ->orderBy('name')->get();
 
         $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
         $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
@@ -1542,7 +1619,7 @@ class InteractionController extends Controller
             }
         }
 
-        return view('interactions.edit', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente'));
+        return view('interactions.edit', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'motivosNoEfectivo', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente'));
     }
 
     /**
@@ -1557,6 +1634,11 @@ class InteractionController extends Controller
             'interaction_channel' => 'required|exists:int_channels,id',
             'interaction_type' => 'required|exists:int_types,id',
             'outcome' => 'required|exists:int_outcomes,id',
+            'motivo_no_efectivo_id' => [
+                Rule::requiredIf(fn () => strtolower(trim(optional(IntOutcome::find($request->outcome))->name ?? '')) === 'no efectivo'),
+                'nullable',
+                'exists:int_motivos_no_efectivo,id',
+            ],
             'notes' => 'nullable|string',
             'next_action_date' => 'nullable|date',
             'next_action_type' => 'nullable|exists:int_next_actions,id',
@@ -1585,6 +1667,7 @@ class InteractionController extends Controller
                 'interaction_type' => $validatedData['interaction_type'],
                 'duration' => $duration,
                 'outcome' => $validatedData['outcome'],
+                'motivo_no_efectivo_id' => $validatedData['motivo_no_efectivo_id'] ?? null,
                 'notes' => $validatedData['notes'] ?? $interaction->notes,
                 'parent_interaction_id' => $validatedData['parent_interaction_id'] ?? $interaction->parent_interaction_id,
                 'id_linea_de_obligacion' => $validatedData['id_linea_de_obligacion'] ?? null,
@@ -1610,6 +1693,11 @@ class InteractionController extends Controller
                     'agent_id' => Auth::id(), // Quien hizo la actualización
                     'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? Auth::id(),
                     'outcome' => $validatedData['outcome'],
+                    'motivo_no_efectivo_id' => $validatedData['motivo_no_efectivo_id'] ?? null,
+                    // El tiempo NUEVO que contó el Timer en ESTA sesión de edición — no el
+                    // acumulado histórico de interactions.duration (ver comentario en el fillable
+                    // de IntSeguimiento).
+                    'duration' => $validatedData['duration'] ?? 0,
                     'next_action_type' => $request->input('next_action_type') ?? 1,
                     'next_action_date' => $request->input('next_action_date'),
                     // El campo "Instrucciones" (duplicaba a Notas Finales) se quitó del

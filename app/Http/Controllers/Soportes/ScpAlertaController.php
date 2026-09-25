@@ -30,6 +30,7 @@ class ScpAlertaController extends Controller
                 'url' => route('soportes.soportes.show', $s->id),
             ])->values(),
             'aviso_intervalo_horas' => ScpAlertaConfig::actual()->aviso_intervalo_horas,
+            'pulso_intervalo_minutos' => ScpAlertaConfig::actual()->pulso_intervalo_minutos,
             // Lista compartida con Interacciones (Admin → Configuración de Alertas → Agentes
             // Omitidos) — "pantalla" tapa el modal forzado en los dos módulos por igual.
             'pantalla_omitida' => IntAlertaOmitido::estaOmitido($userId, 'pantalla'),

@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Interacciones;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Interacciones\Concerns\GuardaSoporteInteraccion;
+use App\Models\Interacciones\IntOutcome;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\Interaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class IntSeguimientoController extends Controller
 {
@@ -21,6 +23,14 @@ class IntSeguimientoController extends Controller
         $request->validate([
             'id_interaction' => 'required|exists:interactions,id',
             'outcome' => 'required',
+            // Solo obligatorio cuando el resultado elegido es específicamente "No Efectivo" (no
+            // alcanza con estado=0: "Reasignado a otro Operador" también lo es y no necesita
+            // motivo). Se compara por nombre y no por ID fijo, por si el catálogo cambia.
+            'motivo_no_efectivo_id' => [
+                Rule::requiredIf(fn () => strtolower(trim(optional(IntOutcome::find($request->outcome))->name ?? '')) === 'no efectivo'),
+                'nullable',
+                'exists:int_motivos_no_efectivo,id',
+            ],
             'next_action_notes' => 'required|string',
             'id_user_asignacion' => 'required|exists:users,id',
             'attachment' => $this->reglaValidacionSoporte(),
@@ -44,6 +54,7 @@ class IntSeguimientoController extends Controller
                     'agent_id'           => auth()->id(),
                     'id_user_asignacion' => $request->id_user_asignacion,
                     'outcome'            => $request->outcome,
+                    'motivo_no_efectivo_id' => $request->motivo_no_efectivo_id,
                     'next_action_type'   => $request->next_action_type,
                     'next_action_date'   => $request->next_action_date,
                     'next_action_notes'  => $request->next_action_notes,
@@ -55,6 +66,7 @@ class IntSeguimientoController extends Controller
                 // Refleja en la interacción el último resultado registrado.
                 Interaction::whereKey($request->id_interaction)->update([
                     'outcome' => $request->outcome,
+                    'motivo_no_efectivo_id' => $request->motivo_no_efectivo_id,
                     'id_user_asignacion' => $request->id_user_asignacion,
                 ]);
             });
