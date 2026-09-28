@@ -36,10 +36,8 @@
                         <span class="input-group-text"><i class="feather-layers"></i></span>
                         <select id="filterArea" class="form-select pastel-select">
                             <option value="">Todas</option>
-                            @foreach($soportes->pluck('cargo.gdoArea.nombre')->unique() as $area)
-                                @if($area)
-                                    <option value="{{ $area }}">{{ $area }}</option>
-                                @endif
+                            @foreach($opcionesArea as $area)
+                                <option value="{{ $area }}">{{ $area }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -50,10 +48,8 @@
                         <span class="input-group-text"><i class="feather-flag"></i></span>
                         <select id="filterPrioridad" class="form-select pastel-select">
                             <option value="">Todas</option>
-                            @foreach($soportes->pluck('prioridad.nombre')->unique() as $p)
-                                @if($p)
-                                    <option value="{{ $p }}">{{ $p }}</option>
-                                @endif
+                            @foreach($opcionesPrioridad as $p)
+                                <option value="{{ $p }}">{{ $p }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -64,10 +60,8 @@
                         <span class="input-group-text"><i class="feather-user"></i></span>
                         <select id="filterUsuario" class="form-select pastel-select">
                             <option value="">Todos</option>
-                            @foreach($soportes->pluck('usuario.name')->unique() as $u)
-                                @if($u)
-                                    <option value="{{ $u }}">{{ $u }}</option>
-                                @endif
+                            @foreach($opcionesUsuario as $u)
+                                <option value="{{ $u }}">{{ $u }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -78,11 +72,7 @@
                         <span class="input-group-text"><i class="feather-user-check"></i></span>
                         <select id="filterAsignado" class="form-select pastel-select">
                             <option value="">Todos</option>
-                            {{--@foreach($soportes->pluck('scpUsuarioAsignado.maeTercero.nom_ter')->unique()->filter() as $asignado)
-                            --}}                            
-                            @foreach($soportes->map(function($soporte) { 
-                                return $soporte->scpUsuarioAsignado ? $soporte->scpUsuarioAsignado->maeTercero->nom_ter : null; 
-                            })->filter()->unique() as $asignado)
+                            @foreach($opcionesAsignado as $asignado)
                                 <option value="{{ $asignado }}">{{ $asignado }}</option>
                             @endforeach
                         </select>
@@ -119,16 +109,21 @@
     {{-- Tabla mejorada --}}
     <div class="card shadow-sm mb-3 glassmorphism-card">
         <div class="card-body p-2">
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-2">
                 <div>
-                    <h5 class="fw-bold mb-1">Listado de Soportes</h5>
-                    <p class="text-muted mb-0 small">Gestiona y monitorea todos los soportes del sistema</p>
+                    <h5 class="fw-bold mb-1">{{ ($esVistaPersonal ?? false) ? 'Mis Soportes' : 'Listado de Soportes' }}</h5>
+                    <p class="text-muted mb-0 small">
+                        {{ ($esVistaPersonal ?? false) ? 'Soportes creados por ti o asignados a ti' : 'Gestiona y monitorea todos los soportes del sistema' }}
+                    </p>
                 </div>
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                <div class="w-100" style="max-width: 260px;">
+                    <select id="buscadorRapidoSoporte" class="form-select form-select-sm w-100"></select>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary flex-fill flex-lg-grow-0 text-nowrap" id="exportBtn">
                         <i class="feather-download me-1"></i>Exportar
                     </button>
-                    <a href="{{ route('soportes.soportes.create') }}" class="btn btn-success pastel-btn-gradient btnCrear">
+                    <a href="{{ route('soportes.soportes.create') }}" class="btn btn-success pastel-btn-gradient btnCrear flex-fill flex-lg-grow-0 text-nowrap">
                         <i class="feather-plus me-2"></i>
                         <span>Crear Nuevo Soporte</span>
                     </a>
@@ -149,15 +144,13 @@
                             aria-selected="false">
                         <i class="feather-inbox me-2"></i>
                         TODOS
-                        <span class="badge pastel-badge-globito ms-1" style="background-color: #F0F8FF !important; color: #4682B4 !important;">                                
-                            {{ $soportes->filter(function($soporte) {
-                                return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
-                            })->count() }}   
-                        </span>                        
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #F0F8FF !important; color: #4682B4 !important;">
+                            {{ $totalTodos }}
+                        </span>
                     </button>
-                </li>  
+                </li>
                 @endcandirect
-                @foreach ($categorias as $nombreCategoria => $soportesCategoria)
+                @foreach ($categorias as $nombreCategoria => $totalCategoria)
                     @php
                         $indice = $loop->index + 2;
                         $permiso = 'soporte.lista.' . strtolower($nombreCategoria);
@@ -169,7 +162,7 @@
                             'desarrollo' => 'feather-code',
                             default => 'feather-folder'
                         };
-                        
+
                         // Asignar colores pastel únicos para cada categoría
                         $colorPastel = match(strtolower($nombreCategoria)) {
                             'soporte' => '#F8E8FF',
@@ -179,7 +172,7 @@
                             'desarrollo' => '#FCE4EC',
                             default => '#F3E5F5'
                         };
-                        
+
                         $colorTexto = match(strtolower($nombreCategoria)) {
                             'soporte' => '#6B5B95',
                             'sistemas' => '#5C7CFA',
@@ -189,447 +182,56 @@
                             default => '#9C27B0'
                         };
                     @endphp
-                    @candirect($permiso)   
-                    <li class="nav-item" role="presentation">                  
-                        <button class="nav-link pastel-tab  @if($loop->index === 2)active @endif"
+                    @candirect($permiso)
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link pastel-tab @if($nombreCategoria === $categoriaActivaPorDefecto)active @endif"
                                 id="tab-{{ $indice }}-tab"
                                 data-bs-toggle="tab"
                                 data-bs-target="#tab-{{ $indice }}"
                                 type="button"
                                 role="tab"
                                 aria-controls="tab-{{ $indice }}"
-                                aria-selected="{{ $loop->first ? 'true' : 'false' }}">
+                                aria-selected="{{ $nombreCategoria === $categoriaActivaPorDefecto ? 'true' : 'false' }}">
                             <i class="{{ $icono }} me-2"></i>
                             {{ $nombreCategoria }}
                             <span class="badge pastel-badge-globito ms-1" style="background-color: {{ $colorPastel }} !important; color: {{ $colorTexto }} !important;">
-                                {{ $soportesCategoria->filter(function($soporte) {
-                                    return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
-                                })->count() }}                                
+                                {{ $totalCategoria }}
                             </span>
                         </button>
-                    </li> 
+                    </li>
                     @endcandirect
                 @endforeach
             </ul>
 
-            {{-- Contenido --}}
+            {{-- Contenido — cada tabla se llena por AJAX (server-side), no con filas ya
+                 renderizadas: se inicializa solo cuando su pestaña se muestra por primera vez
+                 (ver script más abajo), tanto por rendimiento como porque DataTables calcula mal
+                 el ancho de una tabla si se inicializa oculta dentro de una pestaña de Bootstrap. --}}
             <div class="tab-content" id="soporteTabsContent">
-                {{-- TAB todos --}}
+                {{-- TAB TODOS --}}
                 <div class="tab-pane fade" id="tab-1" role="tabpanel" aria-labelledby="tab-1-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle soporteTable pastel-table excel-table" id="tablaPrincipal">
-                            <thead class="table-light pastel-thead">
-                                <tr>
-                                    <th class="py-1">ID</th>
-                                    <th class="py-1">Fecha</th>
-                                    <th class="py-1">Creado Por</th>
-                                    <th class="py-1">Área</th>
-                                    <th class="py-1">Categoría</th>
-                                    <th class="py-1">Tipo</th>
-                                    <th class="py-1">Prioridad</th>
-                                    <th class="py-1">Descripción</th>
-                                    <th class="py-1">Asignado</th>
-                                    <th class="py-1">Estado</th>
-                                    <th class="py-1 text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($soportes as $soporte)
-                                    @php
-                                        $areaModal = $soporte->cargo->gdoArea->nombre ?? 'Soporte';
-                                        $prioridadNombre = $soporte->prioridad->nombre ?? '';
-                                        $prioridadIcono = '';
-                                        
-                                        // Sistema de colores pasteles SUAVES para prioridades
-                                        switch($prioridadNombre) {
-                                            case 'Alta':
-                                                $prioridadIcono = 'feather-alert-triangle';
-                                                break;
-                                            case 'Media':
-                                                $prioridadIcono = 'feather-alert-circle';
-                                                break;
-                                            case 'Baja':
-                                                $prioridadIcono = 'feather-info';
-                                                break;
-                                            default:
-                                                $prioridadIcono = 'feather-help-circle';
-                                        }
-                                        
-                                        $estadoNombre = $soporte->estadoSoporte->nombre ?? '';
-                                        $estadoIcono = '';
-                                        
-                                        switch($estadoNombre) {
-                                            case 'Pendiente':
-                                                $estadoIcono = 'feather-clock';
-                                                break;
-                                            case 'En Proceso':
-                                                $estadoIcono = 'feather-loader';
-                                                break;
-                                            case 'Cerrado':
-                                                $estadoIcono = 'feather-check-circle';
-                                                break;
-                                            default:
-                                                $estadoIcono = 'feather-help-circle';
-                                        }
-                                    @endphp
-                                    @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente'))
-                                    <tr class="table-row-hover pastel-row excel-row" data-prioridad="{{ $prioridadNombre }}">
-                                        {{-- ID --}}
-                                        <td class="py-1">
-                                            <a href="javascript:void(0)"
-                                               class="soporte-id fw-bold text-decoration-none pastel-link"
-                                               data-id="{{ $soporte->id }}"
-                                               data-fecha="{{ $soporte->created_at->format('d/m/Y H:i') }}"
-                                               data-creado="{{ $soporte->usuario->name ?? 'N/A' }}"
-                                               data-area="{{ $areaModal }}"
-                                               data-categoria="{{ $soporte->categoria->nombre ?? 'N/A' }}"
-                                               data-tipo="{{ $soporte->tipo->nombre ?? 'N/A' }}"
-                                               data-subtipo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
-                                               data-prioridad="{{ $prioridadNombre }}"
-                                               data-detalles="{{ $soporte->detalles_soporte }}"
-                                               data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
-                                               data-maetercero="{{ $soporte->maeTercero->nom_ter ?? 'N/A' }}"
-                                               data-escalado="{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Sin escalar' }}"
-                                               data-estado="{{ $estadoNombre }}">
-                                                #{{ $soporte->id }}
-                                            </a>
-                                        </td>
-
-                                        {{-- Fecha Creado --}}
-                                        <td class="py-1">
-                                            <div class="d-flex flex-column">
-                                                <span class="small">{{ $soporte->created_at->format('d/m/Y') }}</span>
-                                                <small class="text-muted" style="font-size: 0.65rem;">{{ $soporte->created_at->format('H:i') }}</small>
-                                            </div>
-                                        </td>
-
-                                        {{-- Creado Por --}}
-                                        <td class="py-1">
-                                            <div class="d-flex align-items-center">
-                                                <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
-                                                    {{ strtoupper(substr($soporte->usuario->name ?? 'N/A', 0, 1)) }}
-                                                </div>
-                                                <span class="small">{{ $soporte->usuario->name ?? 'N/A' }}</span>
-                                            </div>
-                                        </td>
-
-                                        {{-- Área - COLORES PASTELES SUAVES --}}
-                                        <td class="py-1">
-                                            <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
-                                                {{ $areaModal }}
-                                            </span>
-                                        </td>
-
-                                        {{-- Categoría --}}
-                                        <td class="py-1 small">{{ $soporte->categoria->nombre ?? 'N/A' }}</td>
-
-                                        {{-- Tipo --}}
-                                        <td class="py-1 small">{{ $soporte->tipo->nombre ?? 'N/A' }}</td>
-
-                                        {{-- Prioridad con colores pasteles SUAVES --}}
-                                        <td class="py-1">
-                                            <div style="min-width: 50px; text-align: center; transition: all 0.2s ease; position: relative; overflow: hidden; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
-                                                 @if($prioridadNombre === 'Alta')
-                                                     background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;
-                                                 @elseif($prioridadNombre === 'Media')
-                                                     background-color: #FFF4E6 !important; color: #FF9800 !important; border: 1px solid #FFE0B2 !important;
-                                                 @elseif($prioridadNombre === 'Baja')
-                                                     background-color: #E6F3FF !important; color: #5C7CFA !important; border: 1px solid #C5D9FF !important;
-                                                 @else
-                                                     background-color: #F3E5F5 !important; color: #9C27B0 !important; border: 1px solid #E1BEE7 !important;
-                                                 @endif
-                                                 padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="feather {{ $prioridadIcono }}" style="font-size: 8px; margin-right: 2px;"></i>
-                                                <span>{{ $prioridadNombre }}</span>
-                                            </div>
-                                        </td>
-
-                                        {{-- Descripción --}}
-                                        <td class="py-1">
-                                            <div class="description-cell-excel" 
-                                                 title="{{ $soporte->detalles_soporte }}" 
-                                                 data-bs-toggle="tooltip" 
-                                                 data-bs-placement="top">
-                                                <span class="small">{{ Str::limit($soporte->detalles_soporte, 35) }}</span>
-                                            </div>
-                                        </td>
-
-                                        {{-- Asignado --}}
-                                        <td class="py-1">
-                                            <div class="d-flex align-items-center">
-                                                @if($soporte->scpUsuarioAsignado)
-                                                    <div class="avatar-xs-excel pastel-avatar-success text-white rounded-circle d-flex align-items-center justify-content-center me-1">
-                                                        {{ strtoupper(substr($soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'N/A', 0, 1)) }}
-                                                    </div>
-                                                    <span class="small">{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'N/A' }}</span>
-                                                @else
-                                                    <span class="text-muted small">Sin asignar</span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        {{-- Estado con colores pasteles SUAVES --}}
-                                        <td class="py-1">
-                                            <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
-                                                 @if($estadoNombre === 'Pendiente')
-                                                     background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;
-                                                 @elseif($estadoNombre === 'En Proceso')
-                                                     background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;
-                                                 @elseif($estadoNombre === 'Cerrado')
-                                                     background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;
-                                                 @else
-                                                     background-color: #FCE4EC !important; color: #C2185B !important; border: 1px solid #F8BBD0 !important;
-                                                 @endif
-                                                 padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
-                                                <i class="feather {{ $estadoIcono }}" style="font-size: 8px; margin-right: 2px;"></i>
-                                                <span>{{ $estadoNombre }}</span>
-                                            </div>
-                                        </td>
-
-                                        {{-- Acciones - DROPUP SIMPLE --}}
-                                        <td class="text-end">
-                                            <div>
-                                                <button type="button"
-                                                        class="btn btn-sm btn-light"
-                                                        style="padding: 2px 6px; font-size: 0.7rem;"
-                                                        onclick="window.location.href='{{ route('soportes.soportes.show', ['scpSoporte' => $soporte->id]) }}'">
-                                                    <i class="feather-eye me-1"></i> Ver
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    @endif
-                                @empty
-                                    <tr>
-                                        <td colspan="11" class="text-center py-4">
-                                            <div class="empty-state">
-                                                <i class="feather-inbox empty-icon"></i>
-                                                <h6 class="mt-2">No hay soportes registrados</h6>
-                                                <p class="text-muted">Comienza creando un nuevo soporte</p>
-                                                <a href="{{ route('soportes.soportes.create') }}" class="btn btn-sm pastel-btn-gradient">
-                                                    <i class="feather-plus me-1"></i> Crear Soporte
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
+                        <table class="table table-hover align-middle soporteTable pastel-table excel-table" id="tablaPrincipal" data-tab="">
+                            @include('soportes.soportes._tabla_thead')
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
                 {{-- fin tab Todos --}}
-                @foreach ($categorias as $nombreCategoria => $soportesCategoria)
-                @php 
-                    $permiso = 'soporte.lista.' . strtolower($nombreCategoria);
-                    $icono = match(strtolower($nombreCategoria)) {
-                        'soporte' => 'feather-help-circle',
-                        'sistemas' => 'feather-server',
-                        'infraestructura' => 'feather-hard-drive',
-                        'redes' => 'feather-wifi',
-                        'desarrollo' => 'feather-code',
-                        default => 'feather-folder'
-                    };
-                @endphp
-                @candirect($permiso)   
-                    <div class="tab-pane fade @if($loop->index === 2)show active @endif" 
-                         id="tab-{{ $loop->index + 2 }}" 
-                         role="tabpanel" 
-                         aria-labelledby="tab-{{ $loop->index + 2 }}-tab">
+                @foreach ($categorias as $nombreCategoria => $totalCategoria)
+                    @php
+                        $indice = $loop->index + 2;
+                        $permiso = 'soporte.lista.' . strtolower($nombreCategoria);
+                    @endphp
+                    @candirect($permiso)
+                    <div class="tab-pane fade @if($nombreCategoria === $categoriaActivaPorDefecto)show active @endif"
+                         id="tab-{{ $indice }}"
+                         role="tabpanel"
+                         aria-labelledby="tab-{{ $indice }}-tab">
                         <div class="table-responsive">
-                            <table class="table table-hover align-middle soporteTable pastel-table excel-table">
-                                <thead class="table-light pastel-thead">
-                                    <tr>
-                                        <th class="py-1">ID</th>
-                                        <th class="py-1">Fecha</th>
-                                        <th class="py-1">Creado Por</th>
-                                        <th class="py-1">Área</th>
-                                        <th class="py-1">Categoría</th>
-                                        <th class="py-1">Tipo</th>
-                                        <th class="py-1">Prioridad</th>
-                                        <th class="py-1">Descripción</th>
-                                        <th class="py-1">Asignado</th>
-                                        <th class="py-1">Estado</th>
-                                        <th class="py-1 text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>   
-                                    @forelse ($soportesCategoria as $soporte)
-                                        @php
-                                            $areaModal = $soporte->cargo->gdoArea->nombre ?? 'Soporte';
-                                            $prioridadNombre = $soporte->prioridad->nombre ?? '';
-                                            $prioridadIcono = '';
-                                            
-                                            // Sistema de colores pasteles SUAVES para prioridades
-                                            switch($prioridadNombre) {
-                                                case 'Alta':
-                                                    $prioridadIcono = 'feather-alert-triangle';
-                                                    break;
-                                                case 'Media':
-                                                    $prioridadIcono = 'feather-alert-circle';
-                                                    break;
-                                                case 'Baja':
-                                                    $prioridadIcono = 'feather-info';
-                                                    break;
-                                                default:
-                                                    $prioridadIcono = 'feather-help-circle';
-                                            }
-                                            
-                                            $estadoNombre = $soporte->estadoSoporte->nombre ?? '';
-                                            $estadoIcono = '';
-                                            
-                                            switch($estadoNombre) {
-                                                case 'Pendiente':
-                                                    $estadoIcono = 'feather-clock';
-                                                    break;
-                                                case 'En Proceso':
-                                                    $estadoIcono = 'feather-loader';
-                                                    break;
-                                                case 'Cerrado':
-                                                    $estadoIcono = 'feather-check-circle';
-                                                    break;
-                                                default:
-                                                    $estadoIcono = 'feather-help-circle';
-                                            }
-                                        @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente'))                                        
-                                        <tr class="table-row-hover pastel-row excel-row" data-prioridad="{{ $prioridadNombre }}">
-                                            {{-- ID --}}
-                                            <td class="py-1">
-                                                <a href="javascript:void(0)"
-                                                   class="soporte-id fw-bold text-decoration-none pastel-link"
-                                                   data-id="{{ $soporte->id }}"
-                                                   data-fecha="{{ $soporte->created_at->format('d/m/Y H:i') }}"
-                                                   data-creado="{{ $soporte->usuario->name ?? 'N/A' }}"
-                                                   data-area="{{ $areaModal }}"
-                                                   data-categoria="{{ $soporte->categoria->nombre ?? 'N/A' }}"
-                                                   data-tipo="{{ $soporte->tipo->nombre ?? 'N/A' }}"
-                                                   data-subtipo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
-                                                   data-prioridad="{{ $prioridadNombre }}"
-                                                   data-detalles="{{ $soporte->detalles_soporte }}"
-                                                   data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
-                                                   data-maetercero="{{ $soporte->maeTercero->nom_ter ?? 'N/A' }}"
-                                                   data-escalado="{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Sin escalar' }}"
-                                                   data-estado="{{ $estadoNombre }}">
-                                                    #{{ $soporte->id }}
-                                                </a>
-                                            </td>
-
-                                            {{-- Fecha Creado --}}
-                                            <td class="py-1">
-                                                <div class="d-flex flex-column">
-                                                    <span class="small">{{ $soporte->created_at->format('d/m/Y') }}</span>
-                                                    <small class="text-muted" style="font-size: 0.65rem;">{{ $soporte->created_at->format('H:i') }}</small>
-                                                </div>
-                                            </td>
-
-                                            {{-- Creado Por --}}
-                                            <td class="py-1">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
-                                                        {{ strtoupper(substr($soporte->usuario->name ?? 'N/A', 0, 1)) }}
-                                                    </div>
-                                                    <span class="small">{{ $soporte->usuario->name ?? 'N/A' }}</span>
-                                                </div>
-                                            </td>
-
-                                            {{-- Área - COLORES PASTELES SUAVES --}}
-                                            <td class="py-1">
-                                                <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
-                                                    {{ $areaModal }}
-                                                </span>
-                                            </td>
-
-                                            {{-- Categoría --}}
-                                            <td class="py-1 small">{{ $soporte->categoria->nombre ?? 'N/A' }}</td>
-
-                                            {{-- Tipo --}}
-                                            <td class="py-1 small">{{ $soporte->tipo->nombre ?? 'N/A' }}</td>
-
-                                            {{-- Prioridad con colores pasteles SUAVES --}}
-                                            <td class="py-1">
-                                                <div style="min-width: 50px; text-align: center; transition: all 0.2s ease; position: relative; overflow: hidden; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
-                                                     @if($prioridadNombre === 'Alta')
-                                                         background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;
-                                                     @elseif($prioridadNombre === 'Media')
-                                                         background-color: #FFF4E6 !important; color: #FF9800 !important; border: 1px solid #FFE0B2 !important;
-                                                     @elseif($prioridadNombre === 'Baja')
-                                                         background-color: #E6F3FF !important; color: #5C7CFA !important; border: 1px solid #C5D9FF !important;
-                                                     @else
-                                                         background-color: #F3E5F5 !important; color: #9C27B0 !important; border: 1px solid #E1BEE7 !important;
-                                                     @endif
-                                                     padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
-                                                    <i class="feather {{ $prioridadIcono }}" style="font-size: 8px; margin-right: 2px;"></i>
-                                                    <span>{{ $prioridadNombre }}</span>
-                                                </div>
-                                            </td>
-
-                                            {{-- Descripción --}}
-                                            <td class="py-1">
-                                                <div class="description-cell-excel" 
-                                                     title="{{ $soporte->detalles_soporte }}" 
-                                                     data-bs-toggle="tooltip" 
-                                                     data-bs-placement="top">
-                                                    <span class="small">{{ Str::limit($soporte->detalles_soporte, 35) }}</span>
-                                                </div>
-                                            </td>
-
-                                            {{-- Asignado --}}
-                                            <td class="py-1">
-                                                <div class="d-flex align-items-center">
-                                                    @if($soporte->scpUsuarioAsignado)
-                                                        <div class="avatar-xs-excel pastel-avatar-success text-white rounded-circle d-flex align-items-center justify-content-center me-1">
-                                                            {{ strtoupper(substr($soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'N/A', 0, 1)) }}
-                                                        </div>
-                                                        <span class="small">{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'N/A' }}</span>
-                                                    @else
-                                                        <span class="text-muted small">Sin asignar</span>
-                                                    @endif
-                                                </div>
-                                            </td>
-
-                                            {{-- Estado con colores pasteles SUAVES --}}
-                                            <td class="py-1">
-                                                <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
-                                                     @if($estadoNombre === 'Pendiente')
-                                                         background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;
-                                                     @elseif($estadoNombre === 'En Proceso')
-                                                         background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;
-                                                     @elseif($estadoNombre === 'Cerrado')
-                                                         background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;
-                                                     @else
-                                                         background-color: #FCE4EC !important; color: #C2185B !important; border: 1px solid #F8BBD0 !important;
-                                                     @endif
-                                                     padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
-                                                    <i class="feather {{ $estadoIcono }}" style="font-size: 8px; margin-right: 2px;"></i>
-                                                    <span>{{ $estadoNombre }}</span>
-                                                </div>
-                                            </td>
-
-                                            {{-- Acciones - DROPUP SIMPLE --}}
-                                            <td class="text-end">
-                                                <div>
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-light"
-                                                            style="padding: 2px 6px; font-size: 0.7rem;"
-                                                            onclick="window.location.href='{{ route('soportes.soportes.show', ['scpSoporte' => $soporte->id]) }}'">
-                                                        <i class="feather-eye me-1"></i> Ver
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        @endif
-                                    @empty
-                                        <tr>
-                                            <td colspan="11" class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="{{ $icono }} empty-icon"></i>
-                                                    <h6 class="mt-2">No hay soportes en {{ $nombreCategoria }}</h6>
-                                                    <p class="text-muted">No se encontraron soportes en esta categoría</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
+                            <table class="table table-hover align-middle soporteTable pastel-table excel-table" data-tab="{{ $nombreCategoria }}">
+                                @include('soportes.soportes._tabla_thead')
+                                <tbody></tbody>
                             </table>
                         </div>
                     </div>
@@ -638,6 +240,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- Leyenda de colores pasteles -->
     <div class="card shadow-sm mb-3 glassmorphism-card">
@@ -743,7 +346,7 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <small class="text-muted d-block">Jefe de Área</small>
+                                    <small class="text-muted d-block">Área del Creador</small>
                                     <span id="modal-maeTercero"></span>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -1089,6 +692,29 @@
                 let currentSoporteId = null;
 
                 // =================================================================
+                // == BUSCADOR RÁPIDO (Select2 AJAX) — va directo al ticket elegido ==
+                // =================================================================
+                $('#buscadorRapidoSoporte').select2({
+                    theme: 'bootstrap-5',
+                    width: '100%',
+                    placeholder: 'Buscar por # o texto...',
+                    allowClear: true,
+                    minimumInputLength: 1,
+                    ajax: {
+                        url: @json(route('soportes.buscar.rapido')),
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term }),
+                        processResults: data => data,
+                    }
+                }).on('select2:select', function (e) {
+                    const id = e.params.data.id;
+                    if (id) {
+                        window.location.href = @json(route('soportes.soportes.show', ':id')).replace(':id', id);
+                    }
+                });
+
+                // =================================================================
                 // == MANEJO DEL MODAL PARA VER DETALLES RÁPIDOS ==
                 // =================================================================
                 document.addEventListener('click', function (e) {
@@ -1187,120 +813,181 @@
                     </div>`;
                 }
 
-                // Inicializar todas las tablas con clase .soporteTable
-                $('.soporteTable').each(function () {
-                    if (!$.fn.dataTable.isDataTable(this)) {
-                        let t = $(this).DataTable({
-                            dom: 'Bfrtip',
-                            buttons: [
-                                { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
-                                { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
-                                { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
-                            ],
-                            pageLength: 20,
-                            order: [[0, 'desc']],
-                            language: {
-                                url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                                emptyTable: "No hay datos disponibles en la tabla",
-                                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                                infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                                lengthMenu: "Mostrar _MENU_ registros",
-                                loadingRecords: "Cargando...",
-                                processing: "Procesando...",
-                                search: "Buscar:",
-                                zeroRecords: "No se encontraron resultados coincidentes",
-                                paginate: {
-                                    first: "Primero",
-                                    last: "Último",
-                                    next: "Siguiente",
-                                    previous: "Anterior"
-                                }
-                            },
-                            initComplete: function() {
-                                // Añadir indicadores de color pastel SUAVE al filtro de prioridad
-                                $('#filterPrioridad option').each(function() {
-                                    const value = $(this).val();
-                                    if (value) {
-                                        let bgColor = '';
-                                        switch(value) {
-                                            case 'Alta': 
-                                                bgColor = '#FFD6E0'; 
-                                                break;
-                                            case 'Media': 
-                                                bgColor = '#FFF4E6'; 
-                                                break;
-                                            case 'Baja': 
-                                                bgColor = '#E6F3FF'; 
-                                                break;
-                                        }
-                                        if (bgColor) {
-                                            $(this).css({
-                                                'background': bgColor,
-                                                'color': '#2c3e50',
-                                                'font-weight': '600'
-                                            });
-                                        }
-                                    }
-                                });
-                            }
+                // =================================================================
+                // == TABLAS SERVER-SIDE (una por pestaña) ==
+                // =================================================================
+                // Antes: TODAS las filas de TODAS las pestañas viajaban en el HTML inicial y
+                // DataTables paginaba/filtraba en el navegador (con 202 registros ya eran 222
+                // consultas y toda esa HTML de más, especialmente pesado en celular). Ahora cada
+                // tabla pide su propia página al servidor, y encima cada tabla se inicializa
+                // SOLO cuando su pestaña se muestra por primera vez — DataTables calcula mal el
+                // ancho de una tabla inicializada mientras su pestaña está oculta.
+                const urlListado = window.location.pathname; // misma ruta que index() / misSoportes(), ambas soportan AJAX
+
+                // =================================================================
+                // == EXPORTAR TODO LO FILTRADO (no solo la página visible) ==
+                // =================================================================
+                // Patrón oficial de DataTables para "exportar todo" con serverSide=true: pide
+                // TODA la data filtrada (length=-1, el backend lo entiende como "sin límite",
+                // ver ScpSoporteController), dispara la exportación real sobre eso, y vuelve a la
+                // paginación normal — sin esto, Excel/PDF/Imprimir solo sacarían la página
+                // actual (ej. 20 filas) en vez de todo lo que el filtro está mostrando.
+                function exportarTodoFiltrado(nombreExtend) {
+                    return function (e, dt, button, config) {
+                        const self = this;
+                        dt.one('preXhr', function () {
+                            dt.page.len(-1);
                         });
-                        tables.push(t);
-                    } else {
-                        tables.push($(this).DataTable());
-                    }
-                });
+                        dt.one('draw', function () {
+                            $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            dt.one('preXhr', function () {
+                                setTimeout(function () {
+                                    dt.page.len(20);
+                                    dt.draw();
+                                }, 0);
+                            });
+                        });
+                        dt.draw();
+                    };
+                }
 
-                // Función auxiliar para aplicar filtros en todas las tablas
-                function aplicarFiltro(colIndex, value) {
-                    tables.forEach(function (t) {
-                        t.column(colIndex).search(value).draw();
+                function initTablaSoporte($tabla) {
+                    if (!$tabla.length || $.fn.dataTable.isDataTable($tabla[0])) {
+                        return $tabla.length ? $tabla.DataTable() : null;
+                    }
+
+                    const tab = $tabla.data('tab') || '';
+                    let t;
+
+                    try {
+                        t = $tabla.DataTable({
+                        serverSide: true,
+                        processing: true,
+                        dom: 'Bfrtip',
+                        buttons: [
+                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel', action: exportarTodoFiltrado('excelHtml5') },
+                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF', action: exportarTodoFiltrado('pdfHtml5') },
+                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir', action: exportarTodoFiltrado('print') }
+                        ],
+                        pageLength: 20,
+                        // Ninguna columna es "orderable" (son HTML ya armado en el servidor, no
+                        // texto plano ordenable) y el backend siempre ordena por fecha de
+                        // creación descendente sin importar lo que mande el cliente — por eso se
+                        // desactiva el ordenamiento de la UI en vez de declarar un order[] que
+                        // apunte a una columna no ordenable (eso rompía la inicialización de la
+                        // tabla por completo: se veían los encabezados pero nunca cargaba ni una
+                        // fila, ni al hacer clic en ninguna pestaña).
+                        ordering: false,
+                        ajax: {
+                            url: urlListado,
+                            data: function (d) {
+                                d.tab = tab;
+                                d.area = $('#filterArea').val();
+                                d.prioridad = $('#filterPrioridad').val();
+                                d.usuario = $('#filterUsuario').val();
+                                d.asignado = $('#filterAsignado').val();
+                                d.fecha = $('#filterFecha').val();
+                            },
+                            error: function (xhr, status, error) {
+                                console.error('Error cargando soportes:', status, error, xhr.responseText);
+                            }
+                        },
+                        columns: [
+                            { data: 'id_col' },
+                            { data: 'fecha_col' },
+                            { data: 'creado_col' },
+                            { data: 'area_col' },
+                            { data: 'categoria_col' },
+                            { data: 'tipo_col' },
+                            { data: 'prioridad_col' },
+                            { data: 'descripcion_col' },
+                            { data: 'asignado_col' },
+                            { data: 'estado_col' },
+                            { data: 'acciones_col' },
+                        ],
+                        language: {
+                            url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                            emptyTable: "No hay datos disponibles en la tabla",
+                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                            lengthMenu: "Mostrar _MENU_ registros",
+                            loadingRecords: "Cargando...",
+                            processing: "Procesando...",
+                            search: "Buscar:",
+                            zeroRecords: "No se encontraron resultados coincidentes",
+                            paginate: {
+                                first: "Primero",
+                                last: "Último",
+                                next: "Siguiente",
+                                previous: "Anterior"
+                            }
+                        },
+                        drawCallback: function () {
+                            updateResultCount();
+                            // Reactivar tooltips en las filas que acaban de llegar por AJAX
+                            [].slice.call(this.api().table().container().querySelectorAll('[data-bs-toggle="tooltip"]'))
+                                .forEach(el => new bootstrap.Tooltip(el, { trigger: 'hover focus', delay: { show: 300, hide: 100 } }));
+                        }
+                        });
+                    } catch (err) {
+                        console.error('No se pudo inicializar la tabla de soportes (tab="' + tab + '"):', err);
+                        return null;
+                    }
+
+                    tables.push(t);
+                    return t;
+                }
+
+                // Ojo con las exportaciones (Excel/PDF/Imprimir): con serverSide=true, DataTables
+                // exporta por defecto lo que hay en la página ACTUAL visible (ej. 20 filas), no
+                // todo el listado filtrado — es el comportamiento esperado de DataTables en modo
+                // servidor, distinto a como se comportaba antes (todo ya estaba en el DOM).
+
+                // Inicializar solo la tabla de la pestaña que arranca visible.
+                initTablaSoporte($('.tab-pane.show.active .soporteTable').first());
+
+                // Inicializar cada tabla la primera vez que su pestaña se muestra.
+                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tabBtn => {
+                    tabBtn.addEventListener('shown.bs.tab', function () {
+                        const destino = this.getAttribute('data-bs-target');
+                        initTablaSoporte($(destino + ' .soporteTable'));
+                        setTimeout(updateResultCount, 100);
                     });
-                    updateResultCount();
-                }
-
-                // Actualizar contador de resultados
-                function updateResultCount() {
-                    const activeTable = $('.tab-pane.active .soporteTable').DataTable();
-                    const info = activeTable.page.info();
-                    document.getElementById('resultCount').textContent = 
-                        `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
-                }
-
-                // Filtros (área, prioridad, usuario, fecha)
-                $('#filterArea').on('change', function () {
-                    aplicarFiltro(3, this.value);
                 });
 
-                $('#filterPrioridad').on('change', function () {
-                    aplicarFiltro(6, this.value);
-                });
-
-                $('#filterUsuario').on('change', function () {
-                    aplicarFiltro(2, this.value);
-                });
-                
-                $('#filterAsignado').on('change', function () {
-                    aplicarFiltro(8, this.value); // Columna 8 es "Asignado"
-                });
-                
-                $('#filterFecha').on('change', function () {
-                    let val = this.value;
-                    if (val) {
-                        let partes = val.split("-");
-                        let fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
-                        aplicarFiltro(1, fechaFormateada);
-                    } else {
-                        aplicarFiltro(1, "");
+                // Colores pastel en las opciones del filtro de prioridad (no depende de datos, se
+                // hace una sola vez al cargar).
+                $('#filterPrioridad option').each(function () {
+                    const value = $(this).val();
+                    let bgColor = { 'Alta': '#FFD6E0', 'Media': '#FFF4E6', 'Baja': '#E6F3FF' }[value];
+                    if (bgColor) {
+                        $(this).css({ 'background': bgColor, 'color': '#2c3e50', 'font-weight': '600' });
                     }
                 });
+
+                // Actualizar contador de resultados (de la pestaña visible)
+                function updateResultCount() {
+                    const $activa = $('.tab-pane.active .soporteTable, .tab-pane.show .soporteTable').first();
+                    if (!$activa.length || !$.fn.dataTable.isDataTable($activa[0])) return;
+                    const info = $activa.DataTable().page.info();
+                    document.getElementById('resultCount').textContent =
+                        `Mostrando ${info.recordsDisplay ? (info.end - info.start) : 0} de ${info.recordsTotal} resultados` +
+                        (info.recordsTotal !== info.recordsDisplay ? ` (${info.recordsDisplay} filtrados)` : '');
+                }
+
+                // Recargar TODAS las tablas ya inicializadas (las que aún no se han abierto se
+                // inicializan solas cuando se muestren, y ya toman el filtro actual desde el ajax.data).
+                function recargarTablas() {
+                    tables.forEach(t => t.ajax.reload(null, false));
+                    setTimeout(updateResultCount, 200);
+                }
+
+                $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado, #filterFecha').on('change', recargarTablas);
 
                 // Limpiar filtros
                 $('#clearFilters').on('click', function() {
                     $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado, #filterFecha').val('');
-                    tables.forEach(function(t) {
-                        t.search('').columns().search('').draw();
-                    });
-                    updateResultCount();
+                    recargarTablas();
                 });
 
                 // Cambiar vista (tabla/tarjetas)
@@ -1312,8 +999,10 @@
 
                 // Botón exportar
                 $('#exportBtn').on('click', function() {
-                    const activeTable = $('.tab-pane.active .soporteTable').DataTable();
-                    activeTable.button(0).trigger();
+                    const $activa = $('.tab-pane.active .soporteTable, .tab-pane.show .soporteTable').first();
+                    if ($activa.length && $.fn.dataTable.isDataTable($activa[0])) {
+                        $activa.DataTable().button(0).trigger();
+                    }
                 });
 
                 // SweetAlert — confirmaciones
@@ -1397,30 +1086,9 @@
                     }
                 });
 
-                // Actualizar contador de resultados al cambiar de pestaña
-                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-                    tab.addEventListener('shown.bs.tab', function() {
-                        setTimeout(updateResultCount, 100);
-                    });
-                });
-
                 // Inicializar contador
                 updateResultCount();
-                
-                // Efecto de entrada para las filas
-                $('.excel-row').each(function(index) {
-                    $(this).css({
-                        'opacity': '0',
-                        'transform': 'translateY(5px)'
-                    });
-                    setTimeout(() => {
-                        $(this).animate({
-                            'opacity': '1',
-                            'transform': 'translateY(0)'
-                        }, 200);
-                    }, index * 20);
-                });
-                
+
                 // Efecto de entrada para las cards
                 $('.glassmorphism-card').each(function(index) {
                     $(this).addClass('fade-in-up');

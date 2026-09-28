@@ -56,7 +56,12 @@ class ScpEstadoController extends Controller
             'color' => 'nullable|string|max:20',
         ]);
 
+        // ScpEstado::idPorNombre() cachea por nombre — si el nombre cambia, hay que olvidar
+        // también el nombre VIEJO (no solo llamar olvidarCache(), que solo recorre los actuales).
+        \Illuminate\Support\Facades\Cache::forget('scp_estado_id_'.strtolower($scpEstado->nombre));
+
         $scpEstado->update($request->all());
+        ScpEstado::olvidarCache();
 
         return redirect()->route('soportes.estados.index')
                          ->with('success', 'Estado actualizado correctamente.');
@@ -65,6 +70,7 @@ class ScpEstadoController extends Controller
     // Eliminar un estado
     public function destroy(ScpEstado $scpEstado)
     {
+        \Illuminate\Support\Facades\Cache::forget('scp_estado_id_'.strtolower($scpEstado->nombre));
         $scpEstado->delete();
 
         return redirect()->route('soportes.estados.index')

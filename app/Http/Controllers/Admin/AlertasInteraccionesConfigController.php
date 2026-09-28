@@ -10,18 +10,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 
 /**
- * Una sola pantalla ("Configuración de Alertas") con dos secciones — Interacciones (Daytrack) y
- * Soportes — cada una con su propio formulario/endpoint de guardado, mismo permiso para las dos
- * (admin.alertas_interacciones.config; no se creó un permiso aparte para Soportes, son la misma
- * pantalla de administración global). También administra los "Agentes Omitidos", una lista
- * compartida entre los dos módulos (ver IntAlertaOmitido).
+ * Configuración de Alertas — Interacciones (Daytrack) y Soportes tienen cada una su PROPIA
+ * pantalla (mismo permiso para las dos: admin.alertas_interacciones.config; no se creó uno
+ * aparte para Soportes, son la misma administración global), enlazadas por separado desde el
+ * menú Admin. Los "Agentes Omitidos" (correo/pantalla) son una lista compartida entre los dos
+ * módulos (ver IntAlertaOmitido) — vive en la pantalla de Interacciones para no duplicar el
+ * punto de edición; la de Soportes solo enlaza hacia allá.
  */
 class AlertasInteraccionesConfigController extends Controller
 {
     public function edit()
     {
         $config = IntAlertaConfig::actual();
-        $configSoportes = ScpAlertaConfig::actual();
 
         $omitidos = IntAlertaOmitido::with(['usuario:id,name,email', 'creadoPor:id,name'])
             ->orderByDesc('created_at')
@@ -37,7 +37,14 @@ class AlertasInteraccionesConfigController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('admin.interacciones.alertas-config', compact('config', 'configSoportes', 'omitidos', 'candidatos'));
+        return view('admin.interacciones.alertas-config', compact('config', 'omitidos', 'candidatos'));
+    }
+
+    public function editSoportes()
+    {
+        $configSoportes = ScpAlertaConfig::actual();
+
+        return view('admin.soportes.alertas-config', compact('configSoportes'));
     }
 
     public function update(Request $request)
@@ -71,6 +78,7 @@ class AlertasInteraccionesConfigController extends Controller
             'aviso_intervalo_horas' => 'required|integer|min:1|max:24',
             'pulso_intervalo_minutos' => 'required|integer|min:1|max:120',
             'dias_posponer_para_escalar' => 'required|integer|min:1|max:30',
+            'dias_cierre_automatico' => 'required|integer|min:1|max:60',
         ]);
 
         $config = ScpAlertaConfig::first() ?? new ScpAlertaConfig();
@@ -80,7 +88,7 @@ class AlertasInteraccionesConfigController extends Controller
 
         ScpAlertaConfig::olvidarCache();
 
-        return redirect()->route('admin.alertas-interacciones.config.edit')
+        return redirect()->route('admin.alertas-soportes.config.edit')
             ->with('success', 'Configuración de alertas de Soportes guardada correctamente.');
     }
 
