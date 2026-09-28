@@ -299,6 +299,31 @@
                 const priorityColors = { '1': 'success', '2': 'warning', '3': 'danger' };
                 let fechaHoy = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
 
+                // Patrón oficial de DataTables para "exportar todo" con serverSide=true: pide
+                // TODA la data filtrada (length=-1, el backend lo entiende como "sin límite", ver
+                // InteractionController::auditoria()), dispara la exportación real sobre eso, y
+                // vuelve a la paginación normal — sin esto, Excel/PDF/CSV solo exportarían la
+                // página visible en pantalla (ej. 20 filas) en vez de todo el rango de fechas
+                // filtrado.
+                function exportarTodoFiltrado(nombreExtend) {
+                    return function(e, dt, button, config) {
+                        const self = this;
+                        dt.one('preXhr', function() {
+                            dt.page.len(-1);
+                        });
+                        dt.one('draw', function() {
+                            $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            dt.one('preXhr', function() {
+                                setTimeout(function() {
+                                    dt.page.len(20);
+                                    dt.draw();
+                                }, 0);
+                            });
+                        });
+                        dt.draw();
+                    };
+                }
+
                 const table = $('#tablaAuditoria').DataTable({
                     serverSide: true,
                     processing: true,
@@ -401,7 +426,8 @@
                             className: 'buttons-excel',
                             title: 'Auditoría de Interacciones',
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarTodoFiltrado('excelHtml5')
                         },
                         {
                             extend: 'pdfHtml5',
@@ -410,13 +436,15 @@
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
                             orientation: 'landscape',
                             pageSize: 'LEGAL',
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarTodoFiltrado('pdfHtml5')
                         },
                         {
                             extend: 'csvHtml5',
                             className: 'buttons-csv',
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarTodoFiltrado('csvHtml5')
                         }
                     ],
                     initComplete: function() {
@@ -425,10 +453,23 @@
                     }
                 });
 
-                // Cualquier filtro (selects, fechas) recarga la tabla al cambiar; "Aplicar
-                // Filtros"/Enter cubre la búsqueda general y el campo de cliente (texto libre).
-                $('#filterAgente, #filterArea, #filterDistrito, #filterCanal, #filterMotivo, #filterResultado, #filterFechaInicio, #filterFechaFin')
+                // Cualquier filtro (selects) recarga la tabla al cambiar; "Aplicar Filtros"/Enter
+                // cubre la búsqueda general y el campo de cliente (texto libre).
+                $('#filterAgente, #filterArea, #filterDistrito, #filterCanal, #filterMotivo, #filterResultado')
                     .on('change', function () { table.draw(); });
+
+                // Fechas aparte, con debounce: un <input type="date"> dispara "change" en cuanto
+                // CUALQUIER segmento (día/mes/año) queda con un valor válido, no solo al terminar
+                // de escribir la fecha completa — si ya había una fecha cargada, escribir un
+                // nuevo día ya compone una fecha "válida" con el mes/año viejos y dispara change,
+                // luego el mes hace lo mismo, y así, disparando una consulta por cada dígito. El
+                // debounce espera a que el usuario deje de tocar el campo un momento antes de
+                // buscar de verdad.
+                let fechaDebounceTimer = null;
+                $('#filterFechaInicio, #filterFechaFin').on('change', function () {
+                    clearTimeout(fechaDebounceTimer);
+                    fechaDebounceTimer = setTimeout(() => table.draw(), 600);
+                });
 
                 $('#applyFilters').on('click', function() {
                     table.search($('#filterSearch').val()).draw();

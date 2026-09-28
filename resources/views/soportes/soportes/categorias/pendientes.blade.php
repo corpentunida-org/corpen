@@ -168,8 +168,14 @@
                 $('#filterUsuario').on('change', function() {
                     table.column(2).search(this.value).draw();
                 });
+                // Debounce: un <input type="date"> ya con valor dispara "change" por cada
+                // segmento (día/mes/año) que queda válido al reescribirlo, no solo al terminar la
+                // fecha completa.
+                let filterFechaDebounceTimer = null;
                 $('#filterFecha').on('change', function() {
-                    table.column(1).search(this.value).draw();
+                    clearTimeout(filterFechaDebounceTimer);
+                    const valor = this.value;
+                    filterFechaDebounceTimer = setTimeout(() => table.column(1).search(valor).draw(), 600);
                 });
             });
         </script>

@@ -982,7 +982,17 @@
                     setTimeout(updateResultCount, 200);
                 }
 
-                $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado, #filterFecha').on('change', recargarTablas);
+                $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado').on('change', recargarTablas);
+
+                // #filterFecha aparte, con debounce: un <input type="date"> ya con valor dispara
+                // "change" por cada segmento (día/mes/año) que queda válido al reescribirlo, no
+                // solo al terminar la fecha completa — sin esto, se recargarían todas las tablas
+                // por cada dígito tecleado.
+                let filterFechaDebounceTimer = null;
+                $('#filterFecha').on('change', function () {
+                    clearTimeout(filterFechaDebounceTimer);
+                    filterFechaDebounceTimer = setTimeout(recargarTablas, 600);
+                });
 
                 // Limpiar filtros
                 $('#clearFilters').on('click', function() {

@@ -210,7 +210,8 @@
 
             function cargarAlertas(mostrarAvisoSiToca) {
                 return fetch('{{ route('interactions.alertas.index') }}', {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                        silent: true,
                     })
                     .then(r => r.json())
                     .then(data => {
