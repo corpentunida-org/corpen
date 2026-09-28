@@ -43,6 +43,41 @@
         .content { margin-bottom: 14px; font-size: 9.5pt; color: #334155; }
         strong { color: #0f172a; }
 
+        /* ========================================================
+           ESTILOS PARA LA CAJA DE CONDICIONES (TIPO 6)
+           ======================================================== */
+        .acuerdo-box {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .acuerdo-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-size: 9pt;
+            font-weight: bold;
+            padding: 6px 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table-acuerdo {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        .table-acuerdo td {
+            padding: 8px 12px;
+            border-bottom: 1px dashed #cbd5e1;
+            border-right: 1px dashed #cbd5e1;
+            color: #475569;
+        }
+        .table-acuerdo tr:last-child td { border-bottom: none; }
+        .table-acuerdo td:last-child { border-right: none; }
+        .table-acuerdo strong { color: #0f172a; display: block; font-size: 7.5pt; text-transform: uppercase; margin-bottom: 2px; }
+
         /* 4. TABLAS CON JERARQUÍA VISIBLE */
         .table-container { margin-bottom: 15px; page-break-inside: auto; }
 
@@ -142,6 +177,30 @@
     </style>
 </head>
 <body>
+
+    {{-- =========================================================
+         EXTRACCIÓN DINÁMICA DEL PAYLOAD DEL CERTIFICADO (TIPO 6)
+         ========================================================= --}}
+    @php
+        $payload = [];
+        if(isset($lineas) && $lineas->count() > 0) {
+            $primeraLinea = $lineas->first();
+            $payload = is_string($primeraLinea->payload_documento) ? json_decode($primeraLinea->payload_documento, true) : (array) ($primeraLinea->payload_documento ?? []);
+        }
+
+        // Mapeo seguro de las variables del Tipo 6
+        $pagare_numero         = $payload['pagare_numero'] ?? 'N/A';
+        $valor_acuerdo         = isset($payload['valor_acuerdo']) ? number_format((float)$payload['valor_acuerdo'], 2, ',', '.') : '0,00';
+        $saldo_mora            = isset($payload['saldo_mora']) ? number_format((float)$payload['saldo_mora'], 2, ',', '.') : '0,00';
+        $numero_cuotas         = $payload['numero_cuotas'] ?? 'N/A';
+        $tipo_cuota            = $payload['tipo_cuota'] ?? 'N/A';
+        $valor_primera_cuota   = isset($payload['valor_primera_cuota']) ? number_format((float)$payload['valor_primera_cuota'], 2, ',', '.') : '0,00';
+        $tarifa_mensual_base   = isset($payload['tarifa_mensual_base']) ? number_format((float)$payload['tarifa_mensual_base'], 2, ',', '.') : '0,00';
+        $fecha_inicio_pagos    = !empty($payload['fecha_inicio_pagos']) ? \Carbon\Carbon::parse($payload['fecha_inicio_pagos'])->format('d/m/Y') : 'N/A';
+
+        $requiere_firma_esposa = filter_var($payload['requiere_firma_esposa'] ?? false, FILTER_VALIDATE_BOOLEAN);
+    @endphp
+
     <div id="fondo-plantilla">
         <img src="{{ resource_path('views/certificados/pdf/fondo_pdf.jpg') }}" alt="Fondo">
     </div>
@@ -151,15 +210,38 @@
         <span class="page-number"></span>
     </div>
     <br><br>
+
     <div class="header">
         <div class="title">ASOCIACIÓN GREMIAL DE MINISTROS DE LA IGLESIA PENTECOSTAL UNIDA DE COLOMBIA<br></div>
         <div class="subtitle">Estado de Cuenta de Créditos</div>
     </div>
     <br><br>
+
     <div class="content">
         El presente documento certifica que el(la) asociado(a) <strong>{{ strtoupper($operacion->tercero->nom_ter ?? '') }} {{ strtoupper($operacion->tercero->apl1 ?? '') }} {{ strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
         identificado(a) con cédula de ciudadanía No. <strong>{{ $operacion->tercero->cod_ter ?? 'N/A' }}</strong>,
-        registra el siguiente estado de cuenta detallado de sus créditos con la Asociación a la fecha de corte:
+        registra el siguiente estado de cuenta detallado y condiciones asociadas de sus créditos con la Asociación a la fecha de corte:
+    </div>
+
+    {{-- CAJA DE CONDICIONES DEL CRÉDITO (INYECCIÓN DEL PAYLOAD TIPO 6) --}}
+    <div class="acuerdo-box evitar-salto">
+        <div class="acuerdo-header"><i class="fas fa-file-invoice-dollar"></i> Condiciones del Crédito / Estado de Cuenta</div>
+        <table class="table-acuerdo">
+            <tr>
+                <td width="33%"><strong>Pagaré N°</strong> {{ $pagare_numero }}</td>
+                <td width="33%"><strong>Valor del Acuerdo (Capital)</strong> ${{ $valor_acuerdo }}</td>
+                <td width="34%"><strong>Saldo en Mora</strong> <span style="color: #b91c1c; font-weight: bold;">${{ $saldo_mora }}</span></td>
+            </tr>
+            <tr>
+                <td><strong>N° de Cuotas</strong> {{ $numero_cuotas }} Cuotas</td>
+                <td><strong>Tipo de Cuota</strong> {{ $tipo_cuota }}</td>
+                <td><strong>Valor 1ra Cuota</strong> ${{ $valor_primera_cuota }}</td>
+            </tr>
+            <tr>
+                <td><strong>Tarifa Base (Seguros)</strong> ${{ $tarifa_mensual_base }}</td>
+                <td colspan="2"><strong>Fecha de Inicio de Pagos</strong> {{ $fecha_inicio_pagos }}</td>
+            </tr>
+        </table>
     </div>
 
     @php
@@ -366,18 +448,39 @@
     </div>
 
     <div class="evitar-salto">
-        <br><br><br><br><br><br><br>
-        <div class="content" style="font-size: 8.5pt; color: #475569; margin-bottom: 25px; line-height: 1.4;">
-            Este documento es de carácter informativo y refleja el saldo de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
+        <br><br><br><br>
+        <div class="content" style="font-size: 8.5pt; color: #475569; margin-bottom: 45px; line-height: 1.4;">
+            Este documento es de carácter informativo y refleja el estado de cuenta y saldos de cartera al momento de su generación. Si presenta alguna inconsistencia, por favor comuníquese con el área de cartera de CORPENTUNIDA.<br>
             Expedido a los <strong>{{ now()->format('d') }}</strong> días del mes de <strong>{{ ucfirst(now()->locale('es')->monthName) }}</strong> de <strong>{{ now()->format('Y') }}</strong>.
         </div>
-        <br><br><br>
-        <table width="250px" style="border-collapse: collapse;">
+
+        {{-- PANEL DE FIRMAS RESPONSIVO (2 O 3 COLUMNAS) --}}
+        <table width="100%" style="border-collapse: collapse; page-break-inside: avoid;">
             <tr>
-                <td style="border-top: 2px solid #0f172a; text-align: center; padding-top: 6px;">
+                <!-- 1. Firma de Cartera -->
+                <td width="{{ $requiere_firma_esposa ? '30%' : '40%' }}" style="border-top: 1px solid #0f172a; text-align: center; padding-top: 6px; vertical-align: top;">
                     <strong style="color: #0f172a; font-size: 9.5pt;">Área de Cartera</strong><br>
                     <span style="font-size: 8.5pt; color: #475569; font-weight: bold;">CORPENTUNIDA</span>
                 </td>
+
+                <td width="{{ $requiere_firma_esposa ? '5%' : '20%' }}"></td>
+
+                <!-- 2. Firma del Asociado / Deudor Principal -->
+                <td width="{{ $requiere_firma_esposa ? '30%' : '40%' }}" style="border-top: 1px solid #0f172a; text-align: center; padding-top: 6px; vertical-align: top;">
+                    <strong style="color: #0f172a; font-size: 9.5pt;">El Asociado</strong><br>
+                    <span style="font-size: 8pt; color: #475569;">{{ mb_strtoupper($operacion->tercero->nom_ter ?? '') }} {{ mb_strtoupper($operacion->tercero->apl1 ?? '') }}</span><br>
+                    <span style="font-size: 8pt; color: #475569;">C.C. {{ $operacion->tercero->cod_ter ?? 'N/A' }}</span>
+                </td>
+
+                <!-- 3. Firma de Cónyuge / Codeudor (Opcional) -->
+                @if($requiere_firma_esposa)
+                    <td width="5%"></td>
+                    <td width="30%" style="border-top: 1px solid #0f172a; text-align: center; padding-top: 6px; vertical-align: top;">
+                        <strong style="color: #0f172a; font-size: 9.5pt;">Cónyuge / Codeudor</strong><br>
+                        <span style="font-size: 8pt; color: #475569;">Firma</span><br>
+                        <span style="font-size: 8pt; color: #475569;">C.C. ___________________</span>
+                    </td>
+                @endif
             </tr>
         </table>
     </div>

@@ -36,10 +36,6 @@
         .badge-status { padding: 0.4rem 0.8rem; font-weight: 600; font-size: 0.75rem; border-radius: 6px; }
         .btn-action { border-radius: 8px; padding: 0.4rem 1rem; font-size: 0.85rem; font-weight: 500; transition: all 0.2s; }
         .btn-action:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        
-        .dropdown-menu-custom { border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 12px; padding: 0.5rem; }
-        .dropdown-menu-custom .dropdown-item { border-radius: 6px; font-size: 0.85rem; padding: 0.5rem 1rem; color: #475569; }
-        .dropdown-menu-custom .dropdown-item:hover { background-color: #f1f5f9; color: #0f172a; }
 
         /* Modal Minimalista */
         .modal-content-minimal { border: none; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
@@ -48,9 +44,9 @@
     </style>
 
     <div class="container py-5 max-w-7xl">
-        
+
         {{-- HEADER MINIMALISTA --}}
-        <div class="d-flex justify-content-between align-items-center mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center gap-3">
                 <div class="rounded-circle bg-soft-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                     <i class="fas fa-user-circle fs-4"></i>
@@ -68,11 +64,57 @@
             </form>
         </div>
 
+        {{-- BARRA DE FILTROS POR MES Y AÑO --}}
+        <div class="card card-minimal mb-4">
+            <div class="card-body p-3">
+                <form method="GET" action="{{ route('certificados.frontdesk.dashboard') }}" class="row g-3 align-items-center">
+                    <div class="col-md-4">
+                        <label for="mes" class="form-label small text-muted fw-bold mb-1">Filtrar por Mes</label>
+                        <select name="mes" id="mes" class="form-select form-select-sm rounded-pill">
+                            <option value="">Todos los meses</option>
+                            @foreach([
+                                1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
+                                5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
+                                9 => 'Septiembre', 10 => 'Octubre', 11 => 'Noviembre', 12 => 'Diciembre'
+                            ] as $numMes => $nombreMes)
+                                <option value="{{ $numMes }}" {{ $mesSeleccionado == $numMes ? 'selected' : '' }}>
+                                    {{ $nombreMes }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="anio" class="form-label small text-muted fw-bold mb-1">Filtrar por Año</label>
+                        <select name="anio" id="anio" class="form-select form-select-sm rounded-pill">
+                            @foreach($aniosDisponibles as $anio)
+                                <option value="{{ $anio }}" {{ $anioSeleccionado == $anio ? 'selected' : '' }}>
+                                    {{ $anio }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-md-4 d-flex align-items-end gap-2 pt-2 pt-md-0">
+                        <button type="submit" class="btn btn-sm btn-primary rounded-pill px-4 w-100 shadow-sm">
+                            <i class="fas fa-filter me-1"></i> Aplicar Filtros
+                        </button>
+                        <a href="{{ route('certificados.frontdesk.dashboard') }}" class="btn btn-sm btn-light rounded-pill px-3 text-secondary w-100">
+                            Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         {{-- TARJETA DE OPERACIONES --}}
         <div class="card card-minimal mb-4">
             <div class="card-body p-4 p-md-5">
-                <div class="d-flex align-items-center mb-4">
+                <div class="d-flex align-items-center justify-content-between mb-4">
                     <h3 class="h6 fw-bold text-slate-800 mb-0">Historial de Certificados</h3>
+                    <span class="badge bg-soft-primary text-primary px-3 py-2 rounded-pill">
+                        Total registros: {{ $operaciones->count() }}
+                    </span>
                 </div>
 
                 <div class="table-responsive">
@@ -83,7 +125,7 @@
                                 <th>Fecha Solicitud</th>
                                 <th>Estado</th>
                                 <th>Obligaciones</th>
-                                <th class="text-end pe-3">Documento</th>
+                                <th class="text-end pe-3">Documentos Disponibles</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -118,23 +160,17 @@
                                         </button>
                                     </td>
                                     <td class="text-end pe-3">
-                                        <div class="dropdown">
-                                            <button class="btn btn-action btn-primary border-0 dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                                Descargar
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end dropdown-menu-custom">
-                                                <li><h6 class="dropdown-header text-muted small">Elija el formato</h6></li>
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => 4]) }}" target="_blank">
-                                                        <i class="fas fa-file-invoice me-2 text-primary"></i> Estado de Cuenta
+                                        {{-- SECCIÓN DE DESCARGA DIRECTA DINÁMICA (SE VEN DE UNA) --}}
+                                        <div class="d-flex flex-wrap justify-content-end gap-1.5">
+                                            @forelse($operacion->historialTiposDisponibles as $regTipo)
+                                                @if($regTipo->tipo)
+                                                    <a href="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => $regTipo->tipo->id, 'hash' => $regTipo->hashActual]) }}" target="_blank" class="btn btn-sm btn-light border text-primary fw-medium rounded-pill px-2.5 py-1 shadow-sm d-inline-flex align-items-center" style="font-size: 0.75rem;" title="Descargar {{ $regTipo->tipo->nombre }}">
+                                                        <i class="fas fa-file-pdf me-1 text-danger"></i> {{ $regTipo->tipo->nombre }}
                                                     </a>
-                                                </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="{{ route('certificados.operaciones.pdf_individual', ['id' => $operacion->id, 'tipo_id' => 2]) }}" target="_blank">
-                                                        <i class="fas fa-certificate me-2 text-success"></i> Paz y Salvo
-                                                    </a>
-                                                </li>
-                                            </ul>
+                                                @endif
+                                            @empty
+                                                <span class="text-muted small fst-italic">Sin documentos</span>
+                                            @endforelse
                                         </div>
                                     </td>
                                 </tr>
@@ -145,7 +181,7 @@
                                             <i class="fas fa-folder-open fa-3x text-muted"></i>
                                         </div>
                                         <h5 class="fw-medium text-dark">No hay certificados generados</h5>
-                                        <p class="text-muted small">Sus operaciones procesadas aparecerán aquí.</p>
+                                        <p class="text-muted small">Sus operaciones procesadas en este periodo aparecerán aquí.</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -169,7 +205,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-4">
-                        
+
                         @if($operacion->lineas->isEmpty())
                             <div class="text-center py-4 text-muted">
                                 No se encontraron facturas registradas en este bloque.
