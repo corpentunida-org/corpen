@@ -96,7 +96,13 @@
                                     <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small>
                                 </div>
                                 <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
-                                
+
+                                @if($obs->archivo)
+                                    <a href="{{ route('soportes.observaciones.adjunto', $obs->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary mb-2">
+                                        <i class="feather-paperclip me-1"></i> Ver adjunto
+                                    </a>
+                                @endif
+
                                 {{-- Mostrar calificación si existe --}}
                                 @if($obs->calcification)
                                     <div class="d-flex align-items-center mb-2">
@@ -154,7 +160,7 @@
                     </h2>
                     <div id="collapseForm" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionForm">
                         <div class="accordion-body">
-                            <form action="{{ route('soportes.observaciones.store', $soporte->id) }}" method="POST">
+                            <form action="{{ route('soportes.observaciones.store', $soporte->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="mb-3">
                                     <label for="observacion" class="form-label fw-semibold">Nueva Observación:</label>
@@ -222,6 +228,11 @@
                                         </div>
                                         <span class="ms-3 text-muted" id="ratingText">Seleccione una calificación</span>
                                     </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="adjunto" class="form-label fw-semibold">Adjuntar evidencia (opcional):</label>
+                                    <input type="file" id="adjunto" name="adjunto" class="form-control" accept=".pdf,image/*">
                                 </div>
 
                                 <button type="submit" class="btn btn-success">
@@ -295,6 +306,34 @@
                             {{-- {{ $soporte->observaciones()->latest('id')->first()?->scpUsuarioAsignado?->maeTercero->nom_ter ?? 'No disponible' }} --}}
                         </p>
                     </div>
+
+                    @if(auth()->user()->hasDirectPermission('soporte.lista.agente') || auth()->user()->hasDirectPermission('soporte.lista.administrador'))
+                        <div class="d-flex flex-column flex-sm-row gap-2 mb-3">
+                            <form action="{{ route('soportes.asignar', $soporte->id) }}" method="POST" class="flex-fill">
+                                @csrf
+                                <select name="id_scp_usuario_asignado" class="form-select form-select-sm mb-1" onchange="this.form.submit()">
+                                    <option value="">Reasignar a...</option>
+                                    @foreach($usuariosEscalamiento as $u)
+                                        <option value="{{ $u->id }}" {{ $soporte->usuario_escalado == $u->id ? 'selected' : '' }}>
+                                            {{ $u->maeTercero->nom_ter ?? ('Usuario #' . $u->id) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
+                            <form action="{{ route('soportes.cambiarEstado', $soporte->id) }}" method="POST" class="flex-fill">
+                                @csrf
+                                <select name="estado" class="form-select form-select-sm mb-1" onchange="this.form.submit()">
+                                    <option value="">Cambiar estado a...</option>
+                                    @foreach($estados as $e)
+                                        <option value="{{ $e->id }}" {{ $soporte->estado == $e->id ? 'selected' : '' }}>
+                                            {{ $e->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </form>
+                        </div>
+                        <small class="text-muted d-block mb-3">Acción rápida: cambia al instante, sin escribir una observación.</small>
+                    @endif
 
                     <h6 class="text-muted fw-bold mb-3">Solicitante</h6>
                     <div class="mb-3">

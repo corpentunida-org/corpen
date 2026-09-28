@@ -43,3 +43,10 @@ Schedule::command('interacciones:alertar-inactividad-diaria')
     ->weekdays()
     ->dailyAt(Carbon::parse($alertaConfig->inactividad_hora)->format('H:i'))
     ->timezone('America/Bogota');
+
+// Cierre automático de Soportes (ver CierreAutomaticoService) — mismo caso que arriba: registrado
+// para cuando haya cron/supervisor real. Mientras tanto, ScpSoporteController::index() ya lo
+// dispara como respaldo (con caché de 1 hora, para no pagar la consulta en cada visita), así que
+// el cierre automático de 5 días en "En Revisión" sigue funcionando aunque este scheduler no
+// corra solo todavía.
+Schedule::command('soportes:cerrar-automatico')->hourly();

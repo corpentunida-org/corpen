@@ -130,15 +130,25 @@ class ScpEstadisticaController extends Controller
         $csatScore = $this->calculateCsatScore($baseQuery);
         $avgFirstResponseTime = $this->calculateAvgFirstResponseTime($baseQuery);
         $slaCompliance = $this->calculateSlaCompliance($baseQuery);
-        $avgFirstResponse = $this->calculateAvgFirstResponse($baseQuery);
 
-        // Gráfico Mensual (Evolución)
+        // Gráfico Mensual (Evolución) — antes hacía un COUNT() por cada mes del rango (81
+        // consultas para un rango de ~7 años, por ejemplo); una sola consulta agrupada por
+        // año/mes y luego se arma el arreglo en PHP, igual que chartInteraccionesPorDia() en
+        // Interacciones.
         $labelsMes = [];
         $dataMes = [];
         $period = CarbonPeriod::create($startDate->copy()->startOfMonth(), '1 month', $endDate->copy()->endOfMonth());
+
+        $porMes = (clone $baseQuery)
+            ->selectRaw('YEAR(scp_soportes.created_at) as anio, MONTH(scp_soportes.created_at) as mes, COUNT(*) as total')
+            ->groupBy('anio', 'mes')
+            ->get()
+            ->keyBy(fn ($fila) => $fila->anio.'-'.$fila->mes);
+
         foreach ($period as $date) {
             $labelsMes[] = $date->format('M Y');
-            $dataMes[] = (clone $baseQuery)->whereMonth('scp_soportes.created_at', $date->month)->whereYear('scp_soportes.created_at', $date->year)->count();
+            $clave = $date->year.'-'.$date->month;
+            $dataMes[] = (int) ($porMes[$clave]->total ?? 0);
         }
 
         // --- GRÁFICOS RESTANTES ---
@@ -179,7 +189,7 @@ class ScpEstadisticaController extends Controller
 
         // Tabla Completa Registros
         $actividadReciente = (clone $baseQuery)
-            ->with(['estadoSoporte', 'usuario', 'maeTercero', 'prioridad', 'scpUsuarioAsignado'])
+            ->with(['estadoSoporte', 'usuario', 'prioridad', 'scpUsuarioAsignado.maeTercero'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -193,7 +203,6 @@ class ScpEstadisticaController extends Controller
             'avgResolutionTime' => $avgResolutionTime,
             'escalationRate' => $escalationRate,
             'slaCompliance' => $slaCompliance,
-            'avgFirstResponse' => $avgFirstResponse,
             'csatScore' => $csatScore,
             'reopenRate' => $reopenRate,
             'firstResponseRate' => $firstResponseRate,
@@ -254,29 +263,54 @@ class ScpEstadisticaController extends Controller
         return ($totalDentroSLA / $totalQuery) * 100;
     }
 
-    private function calculateAvgFirstResponse($baseQuery)
-    {
-        $avgTime = (clone $baseQuery)
-            ->join('scp_observaciones', 'scp_soportes.id', '=', 'scp_observaciones.id_scp_soporte')
-            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, scp_soportes.created_at, scp_observaciones.created_at)) as avg_time')
-            ->value('avg_time');
-
-        return $avgTime ? round($avgTime, 1) . ' hrs' : '0 hrs';
-    }
-
+    /**
+     * CSAT real: promedio de las calificaciones (1-5 estrellas, scp_observaciones.calcification)
+     * que de verdad se registran al cerrar un ticket (ver "Calificación del servicio" en
+     * show.blade.php). Antes devolvía siempre 4.8 fijo ("// Simulado"), sin importar el periodo
+     * ni los datos reales — cualquiera que mirara este número en el tablero estaba viendo un
+     * dato inventado.
+     */
     private function calculateCsatScore($baseQuery)
     {
-        return 4.8; // Simulado
+        $promedio = (clone $baseQuery)
+            ->join('scp_observaciones', 'scp_soportes.id', '=', 'scp_observaciones.id_scp_soporte')
+            ->whereNotNull('scp_observaciones.calcification')
+            ->where('scp_observaciones.calcification', '!=', '')
+            ->avg('scp_observaciones.calcification');
+
+        return $promedio ? round($promedio, 1) : 0;
     }
 
+    /**
+     * "Reabierto" de verdad: el ticket tuvo una observación en Cerrado y, DESPUÉS, otra en un
+     * estado distinto — es decir, se cerró y alguien volvió a tocarlo. Antes esto calculaba
+     * exactamente la misma fórmula que escalationRate (porcentaje de escalados), sin ninguna
+     * relación con reaperturas reales.
+     */
     private function calculateReopenRate($baseQuery)
     {
         $total = (clone $baseQuery)->count();
         if ($total === 0) {
             return 0;
         }
-        $escalados = (clone $baseQuery)->whereNotNull('usuario_escalado')->count();
-        return round(($escalados / $total) * 100, 1);
+
+        $reabiertos = (clone $baseQuery)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('scp_observaciones as cierre')
+                    ->whereColumn('cierre.id_scp_soporte', 'scp_soportes.id')
+                    ->where('cierre.id_scp_estados', self::ESTADO_CERRADO)
+                    ->whereExists(function ($query2) {
+                        $query2->select(DB::raw(1))
+                            ->from('scp_observaciones as reapertura')
+                            ->whereColumn('reapertura.id_scp_soporte', 'cierre.id_scp_soporte')
+                            ->where('reapertura.id_scp_estados', '!=', self::ESTADO_CERRADO)
+                            ->whereColumn('reapertura.created_at', '>', 'cierre.created_at');
+                    });
+            })
+            ->count();
+
+        return round(($reabiertos / $total) * 100, 1);
     }
 
     private function calculateFirstResponseRate($baseQuery)
@@ -293,9 +327,27 @@ class ScpEstadisticaController extends Controller
         return round(($ticketsWithFirstResponse / $totalTickets) * 100, 1);
     }
 
+    /**
+     * Tiempo promedio hasta la PRIMERA respuesta — antes hacía join directo contra
+     * scp_observaciones y promediaba el tiempo hasta TODAS las observaciones de cada ticket, no
+     * solo la primera: un ticket con muchas observaciones a lo largo de semanas inflaba el
+     * promedio de "primera respuesta" con datos de gestiones muy posteriores. Se agrupa primero
+     * por ticket (MIN de created_at) y se promedia sobre eso.
+     */
     private function calculateAvgFirstResponseTime($baseQuery)
     {
-        $avgTime = (clone $baseQuery)->join('scp_observaciones', 'scp_soportes.id', '=', 'scp_observaciones.id_scp_soporte')->selectRaw('AVG(TIMESTAMPDIFF(HOUR, scp_soportes.created_at, scp_observaciones.created_at)) as avg_time')->value('avg_time');
+        $avgTime = (clone $baseQuery)
+            ->joinSub(
+                DB::table('scp_observaciones')
+                    ->select('id_scp_soporte', DB::raw('MIN(created_at) as primera_respuesta'))
+                    ->groupBy('id_scp_soporte'),
+                'primera',
+                'primera.id_scp_soporte',
+                '=',
+                'scp_soportes.id'
+            )
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, scp_soportes.created_at, primera.primera_respuesta)) as avg_time')
+            ->value('avg_time');
 
         return $avgTime ? round($avgTime, 1) . ' hrs' : '0 hrs';
     }

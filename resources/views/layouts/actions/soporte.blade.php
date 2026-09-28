@@ -21,6 +21,13 @@
             </a>
         </li>
 
+        <!-- Mis Soportes (creados por mí o asignados a mí) -->
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('soportes.mis-soportes') }}">
+                <i class="bi bi-person-check me-2"></i> Mis Soportes
+            </a>
+        </li>
+
         <!-- Opciones solo para Administrador -->
         @candirect('soporte.lista.administrador')
 

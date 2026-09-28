@@ -21,6 +21,7 @@
         @endcandirect
         @candirect('admin.alertas_interacciones.config')
         <li class="nxl-item"><a href="{{ route('admin.alertas-interacciones.config.edit') }}" class="nxl-link">Configuración de Alertas (Daytrack)</a></li>
+        <li class="nxl-item"><a href="{{ route('admin.alertas-soportes.config.edit') }}" class="nxl-link">Configuración de Alertas (Soportes)</a></li>
         @endcandirect
         @candirect('admin.auditoria.index')
         <!-- MENÚ INTEGRACIONES (Independiente) -->
