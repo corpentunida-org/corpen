@@ -5,8 +5,6 @@ namespace App\Models\Soportes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Models\Maestras\MaeTerceros;
-
 use App\Models\User;
 
 use App\Models\Archivo\GdoCargo;
@@ -106,12 +104,6 @@ class ScpSoporte extends Model
         return $this->belongsTo(User::class, 'id_users');
     }
 
-    // Usuario asignado o ESCALADO inicialmente (tabla mae_terceros)
-    public function maeTercero()
-    {
-        return $this->belongsTo(MaeTerceros::class, 'cod_ter_maeTercero', 'cod_ter');
-    }
-
     // Usuario escalado (tabla scp_usuarios)
     public function scpUsuarioAsignado()
     {
@@ -123,11 +115,6 @@ class ScpSoporte extends Model
         return $this->belongsTo(ScpCategoria::class, 'id_categoria');
     }
 
-    //CORREO
-    public function usuarioEscalado()
-    {
-        return $this->belongsTo(User::class, 'usuario_escalado', 'id');
-    }
     // MEJORA 1: Casting de fechas y booleanos
     // Esto convierte automáticamente 'timestam' a objeto Carbon para no tener que parsearlo manualmente.
     protected $casts = [

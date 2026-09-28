@@ -52,6 +52,7 @@ class ScpTipoObservacionController extends Controller
             'nombre' => 'required|string|max:255',
         ]);
 
+        \Illuminate\Support\Facades\Cache::forget('scp_tipo_observacion_id_'.strtolower($scpTipoObservacion->nombre));
         $scpTipoObservacion->update($request->all());
 
         return redirect()->route('soportes.tipoObservaciones.index')
@@ -61,6 +62,7 @@ class ScpTipoObservacionController extends Controller
     // Eliminar un tipo de observación
     public function destroy(ScpTipoObservacion $scpTipoObservacion)
     {
+        \Illuminate\Support\Facades\Cache::forget('scp_tipo_observacion_id_'.strtolower($scpTipoObservacion->nombre));
         $scpTipoObservacion->delete();
 
         return redirect()->route('soportes.tipoObservaciones.index')

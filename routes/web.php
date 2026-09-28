@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\Admin\AdjuntosInteraccionController;
 use App\Http\Controllers\Admin\AlertasInteraccionesConfigController;
 use App\Http\Controllers\IndexController;
+use App\Http\Controllers\System\SchedulerRunController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
@@ -206,6 +207,13 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/offline', [IndexController::class, 'offline']);
 
+// Disparador de `schedule:run` para plataformas sin cron propio (ej. Cloud Run + Google Cloud
+// Scheduler). Sin `auth` a propósito: lo llama un servicio externo a GCP, no un usuario logueado
+// — la seguridad la da el token (ver SchedulerRunController). `throttle` es defensa adicional.
+Route::get('/internal/schedule-run', SchedulerRunController::class)
+    ->middleware('throttle:10,1')
+    ->name('internal.schedule-run');
+
 Route::get('/base', [IndexController::class, 'base']);
 
 //ADMIN
@@ -245,6 +253,8 @@ Route::get('alertas-interacciones/config', [AlertasInteraccionesConfigController
     ->name('admin.alertas-interacciones.config.edit')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
 Route::put('alertas-interacciones/config', [AlertasInteraccionesConfigController::class, 'update'])
     ->name('admin.alertas-interacciones.config.update')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
+Route::get('alertas-soportes/config', [AlertasInteraccionesConfigController::class, 'editSoportes'])
+    ->name('admin.alertas-soportes.config.edit')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
 Route::put('alertas-soportes/config', [AlertasInteraccionesConfigController::class, 'updateSoportes'])
     ->name('admin.alertas-soportes.config.update')->middleware(['auth', 'candirect:admin.alertas_interacciones.config']);
 
@@ -1145,7 +1155,7 @@ Route::middleware('auth')
 // =============================
 //   MÓDULO DE SOPORTES
 // =============================
-Route::middleware('auth')
+Route::middleware(['auth', 'candirect:menu.soporte'])
     ->prefix('soportes')
     ->name('soportes.')
     ->group(function () {
@@ -1163,36 +1173,63 @@ Route::middleware('auth')
             ->name('estadisticas')
             ->middleware('candirect:soporte.lista.administrador');
 
-        // API AJAX para los gráficos (Sin middleware restrictivo para evitar bloqueos en fetch)
-        Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])->name('estadisticas.data');
+        // API AJAX para los gráficos — antes sin middleware ("para evitar bloqueos en fetch"),
+        // pero candirect responde 404 (no redirige), así que no rompe el fetch: cualquier
+        // usuario autenticado podía pedir este endpoint directo por URL y ver todos los KPIs y
+        // el detalle de tickets de todo el módulo, sin pasar por el permiso que sí protege la
+        // pantalla que lo consume.
+        Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+            ->name('estadisticas.data')
+            ->middleware('candirect:soporte.lista.administrador');
 
         // ---------------------------------------------------
         // 2. CONFIGURACIÓN Y PARAMÉTRICAS (RESOURCES)
         // ---------------------------------------------------
-        Route::resource('categorias', ScpCategoriaController::class)->parameters(['categorias' => 'scpCategoria']);
+        // Mismo permiso que Tablero/Estadísticas: estos CRUD son justamente lo que cuelga del
+        // menú "Parámetros de Soportes", ya marcado como solo-administrador — antes cualquier
+        // usuario autenticado podía crear/editar/borrar categorías, estados, prioridades, tipos,
+        // subtipos, tipos de observación y agentes sin ningún permiso de por medio.
+        Route::resource('categorias', ScpCategoriaController::class)
+            ->parameters(['categorias' => 'scpCategoria'])
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::resource('estados', ScpEstadoController::class)->parameters(['estados' => 'scpEstado']);
+        Route::resource('estados', ScpEstadoController::class)
+            ->parameters(['estados' => 'scpEstado'])
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::resource('prioridades', ScpPrioridadController::class)->parameters(['prioridades' => 'scpPrioridad']);
+        Route::resource('prioridades', ScpPrioridadController::class)
+            ->parameters(['prioridades' => 'scpPrioridad'])
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::resource('tipos', ScpTipoController::class)->parameters(['tipos' => 'scpTipo']);
+        Route::resource('tipos', ScpTipoController::class)
+            ->parameters(['tipos' => 'scpTipo'])
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::resource('subtipos', ScpSubTipoController::class)->parameters(['subtipos' => 'scpSubtipo']);
+        Route::resource('subtipos', ScpSubTipoController::class)
+            ->parameters(['subtipos' => 'scpSubtipo'])
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::resource('tipoObservaciones', ScpTipoObservacionController::class)->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
+        Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
+            ->parameters(['tipoObservaciones' => 'scpTipoObservacion'])
+            ->middleware('candirect:soporte.lista.administrador');
 
         // ---------------------------------------------------
         // 3. GESTIÓN DE USUARIOS (AGENTES)
         // ---------------------------------------------------
         // Rutas con Hash (Edit/Update) - IMPORTANTE: Deben ir antes del resource estándar
-        Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])->name('usuarios.edit');
+        Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
+            ->name('usuarios.edit')
+            ->middleware('candirect:soporte.lista.administrador');
 
-        Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])->name('usuarios.update');
+        Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
+            ->name('usuarios.update')
+            ->middleware('candirect:soporte.lista.administrador');
 
         // CRUD Base de usuarios (Excluyendo lo que manejan las rutas Hash)
         Route::resource('usuarios', ScpUsuarioController::class)
             ->parameters(['usuarios' => 'scpUsuario'])
-            ->except(['edit', 'update']);
+            ->except(['edit', 'update'])
+            ->middleware('candirect:soporte.lista.administrador');
 
         // ---------------------------------------------------
         // 4. GESTIÓN PRINCIPAL DE SOPORTES

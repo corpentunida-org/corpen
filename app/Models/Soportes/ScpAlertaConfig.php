@@ -10,12 +10,13 @@ class ScpAlertaConfig extends Model
 {
     protected $table = 'scp_alerta_config';
 
-    protected $fillable = ['aviso_intervalo_horas', 'pulso_intervalo_minutos', 'dias_posponer_para_escalar', 'updated_by'];
+    protected $fillable = ['aviso_intervalo_horas', 'pulso_intervalo_minutos', 'dias_posponer_para_escalar', 'dias_cierre_automatico', 'updated_by'];
 
     protected $casts = [
         'aviso_intervalo_horas' => 'integer',
         'pulso_intervalo_minutos' => 'integer',
         'dias_posponer_para_escalar' => 'integer',
+        'dias_cierre_automatico' => 'integer',
     ];
 
     public function actualizadoPor()
@@ -30,6 +31,7 @@ class ScpAlertaConfig extends Model
                 'aviso_intervalo_horas' => 3,
                 'pulso_intervalo_minutos' => 10,
                 'dias_posponer_para_escalar' => 3,
+                'dias_cierre_automatico' => 5,
             ]);
         });
     }

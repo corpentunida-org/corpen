@@ -5,6 +5,7 @@ namespace App\Models\Soportes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class ScpObservacion extends Model
 {
@@ -21,7 +22,18 @@ class ScpObservacion extends Model
         'id_users_asignado', //USUARIO A QUIEN ES ESCALADO
         'id_tipo_observacion',
         'calcification',
+        'archivo', // Adjunto propio de esta observación (distinto del adjunto del ticket)
     ];
+
+    public function getFile($nameFile)
+    {
+        $url = '#';
+        if ($nameFile && Storage::disk('s3')->exists($nameFile)) {
+            $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
+        }
+
+        return $url;
+    }
 
     /*
     |--------------------------------------------------------------------------

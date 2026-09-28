@@ -48,6 +48,15 @@ return [
     ],
 
     /*
+    | Token del endpoint /internal/schedule-run (ver routes/web.php y
+    | App\Http\Controllers\System\SchedulerRunController) — dispara `php artisan schedule:run`
+    | por HTTP, para cuando el servidor no tiene cron/supervisor propio (ej. Cloud Run: se
+    | configura Google Cloud Scheduler para llamar esta URL cada minuto, con este token). Mismo
+    | motivo que arriba: se centraliza aquí, nunca env() directo en el controlador.
+    */
+    'scheduler_token' => env('SCHEDULER_TOKEN'),
+
+    /*
     | API "Corpentunida CRM" — sistema distinto al de arriba (siasoft). Usa OAuth2
     | client_credentials: un token JWT que vence a las 4 horas y se debe renovar,
     | en vez de un token estático fijo como el de api_produccion.

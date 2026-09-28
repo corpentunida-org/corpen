@@ -12,17 +12,13 @@ Artisan::command('inspire', function () {
 
 Schedule::command('reservas:cancelar-vencidas')->daily();
 
-// Nota: este proyecto no tiene infraestructura de cron/supervisor invocando
-// `php artisan schedule:run` (verificado — ver riesgo 6 de la Fase 7 de SGRH en el plan). El
-// registro aquí deja el comando listo para cuando esa infraestructura se agregue; mientras
-// tanto no se ejecuta solo. Las alertas de contratos (sgrh.contrato.alertas) no dependen de
-// este comando — calculan "vencido" en vivo.
+// Corre solo: Cloud Scheduler llama a /internal/schedule-run cada minuto (ver
+// SchedulerRunController), que dispara `php artisan schedule:run` en el servidor. Las alertas
+// de contratos (sgrh.contrato.alertas) no dependen de este comando — calculan "vencido" en vivo.
 Schedule::command('sgrh:marcar-contratos-vencidos')->daily();
 
-// Alertas de Interacciones (Daytrack) — igual que arriba, quedan registradas pero NO se
-// ejecutan solas hasta que el servidor real tenga un cron/supervisor llamando
-// `php artisan schedule:run` cada minuto. Mientras tanto, cada comando se puede disparar a mano
-// (`php artisan interacciones:...`) para probarlo o para cubrir el envío del día manualmente.
+// Alertas de Interacciones (Daytrack) — igual que arriba, corren solas vía Cloud Scheduler.
+// Cada comando también se puede disparar a mano (`php artisan interacciones:...`) para pruebas.
 //
 // Los horarios NO están fijos en el código: se leen de int_alerta_config (editable desde Admin →
 // Configuración de Alertas de Interacciones). Esto no es un "leer una vez al desplegar" — Laravel
@@ -43,3 +39,8 @@ Schedule::command('interacciones:alertar-inactividad-diaria')
     ->weekdays()
     ->dailyAt(Carbon::parse($alertaConfig->inactividad_hora)->format('H:i'))
     ->timezone('America/Bogota');
+
+// Cierre automático de Soportes (ver CierreAutomaticoService) — corre solo cada hora vía Cloud
+// Scheduler. ScpSoporteController::index() también lo dispara como respaldo (con caché de 1
+// hora, para no pagar la consulta en cada visita), por si el scheduler llegara a fallar.
+Schedule::command('soportes:cerrar-automatico')->hourly();
