@@ -89,9 +89,9 @@
                     <hr class="my-4">
 
                     <h6 class="fw-bold text-dark mb-3"><i class="feather-mail me-1"></i>Correos programados</h6>
-                    <div class="alert alert-warning fs-13 d-flex align-items-center gap-2">
-                        <i class="feather-alert-circle"></i>
-                        <span>Estos horarios solo se aplican cuando el servidor tenga configurado un cron/supervisor llamando <code>php artisan schedule:run</code> cada minuto — pregúntale a tu equipo de infraestructura si ya está activo.</span>
+                    <div class="alert alert-light border fs-13 d-flex align-items-center gap-2">
+                        <i class="feather-check-circle text-success"></i>
+                        <span>Estos horarios se aplican automáticamente: Cloud Scheduler llama <code>/internal/schedule-run</code> cada minuto, que dispara <code>php artisan schedule:run</code> en el servidor.</span>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-4">

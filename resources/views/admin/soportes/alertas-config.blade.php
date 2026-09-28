@@ -80,9 +80,9 @@
                     <hr class="my-4">
 
                     <h6 class="fw-bold text-dark mb-3"><i class="feather-check-circle me-1"></i>Cierre automático por vencimiento</h6>
-                    <div class="alert alert-warning fs-13 d-flex align-items-center gap-2">
-                        <i class="feather-alert-circle"></i>
-                        <span>El cierre automático se dispara al abrir la lista de Soportes (con caché de 1 hora) y por el comando <code>soportes:cerrar-automatico</code>, que solo corre solo si el servidor tiene un cron/supervisor llamando <code>php artisan schedule:run</code> cada minuto.</span>
+                    <div class="alert alert-light border fs-13 d-flex align-items-center gap-2">
+                        <i class="feather-check-circle text-success"></i>
+                        <span>El cierre automático se dispara al abrir la lista de Soportes (con caché de 1 hora) y también por el comando <code>soportes:cerrar-automatico</code>, que corre cada minuto vía Cloud Scheduler llamando a <code>/internal/schedule-run</code>.</span>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
