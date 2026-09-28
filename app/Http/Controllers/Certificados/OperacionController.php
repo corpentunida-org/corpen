@@ -309,10 +309,10 @@ class OperacionController extends Controller
             $tipos = CarSiaTipo::all();
             $tiposAlerta = CarSiaTipoAlerta::all();
             // Tipos para el modal de Certificados Generales (#modalTipo)
-            $tiposCertificados = $tipos->whereIn('id', [3, 4]); //Asigancion Tipo de Certificados del Show
+            $tiposCertificados = $tipos->whereIn('id', [1, 2, 3, 4]); //Asigancion Tipo de Certificados del Show
             // Tipos independientes para el modal de Certificados de Gestión (#modalSeleccionTipo)
             // Cambia los números dentro del array [2, 5, 6] por los IDs reales que deseas mostrar en este modal
-            $tiposGestion = $tipos->whereIn('id', [2, 5, 6, 7]);
+            $tiposGestion = $tipos->whereIn('id', [5, 6, 7]);
 
             // ==============================================================================
             // CONSULTAR CATÁLOGO DE LÍNEAS PARA EL MODAL CERTIFICADOS DE GESTIÓN (#modalSeleccionTipo)
