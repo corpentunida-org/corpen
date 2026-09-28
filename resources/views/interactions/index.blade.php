@@ -757,10 +757,17 @@
                 // Filtro propio de Exitosos: cambiar las fechas o pulsar "Ver todos" vuelve a
                 // pedir los datos (currentTable.draw() relee los inputs vía ajax.data de arriba).
                 // Solo importa mientras esa pestaña está activa, que es cuando estos campos son
-                // visibles/alcanzables.
+                // visibles/alcanzables. Con debounce: un <input type="date"> ya con valor dispara
+                // "change" por cada segmento (día/mes/año) que queda válido al reescribirlo, no
+                // solo al terminar la fecha completa — sin esto, se pediría una consulta por
+                // dígito tecleado.
+                let fechaExitosoDebounceTimer = null;
                 $('#filterExitosoDesde, #filterExitosoHasta').on('change', function () {
-                    $('#exitosoFiltroTexto').text('Filtrado por fecha.');
-                    if (currentTable) currentTable.draw();
+                    clearTimeout(fechaExitosoDebounceTimer);
+                    fechaExitosoDebounceTimer = setTimeout(() => {
+                        $('#exitosoFiltroTexto').text('Filtrado por fecha.');
+                        if (currentTable) currentTable.draw();
+                    }, 600);
                 });
                 $('#verTodosExitosos').on('click', function () {
                     $('#filterExitosoDesde').val('');

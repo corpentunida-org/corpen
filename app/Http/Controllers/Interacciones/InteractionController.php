@@ -1311,7 +1311,15 @@ class InteractionController extends Controller
             $filteredRecords = $query->count();
 
             $start = $request->input('start', 0);
-            $length = $request->input('length', 20);
+            $length = (int) $request->input('length', 20);
+            // DataTables manda length=-1 para "exportar todo lo filtrado" (botones Excel/PDF/CSV,
+            // ver auditoria.blade.php: exportarTodoFiltrado()) — sin esto, esos botones solo
+            // exportarían la página visible (ej. 20 filas) en vez de todo el rango de fechas
+            // filtrado. Tope defensivo de 5000 para no materializar un histórico completo entero
+            // de una sola vez si alguien exporta sin acotar el rango de fechas.
+            if ($length < 0) {
+                $length = min($filteredRecords, 5000);
+            }
             $query->orderBy('id', 'desc');
 
             $data = $query->skip($start)->take($length)->get();

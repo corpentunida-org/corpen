@@ -583,6 +583,15 @@
 
         const fetchOriginal = window.fetch;
         window.fetch = function (...args) {
+            // Los sondeos silenciosos de fondo (alertas de Soportes/Interacciones cada 5 min,
+            // contador de notificaciones, cancelación diaria de reservas, etc.) pasan
+            // `{ silent: true }` en las opciones para NO disparar este overlay a pantalla
+            // completa — nadie está esperando esa petición, y mostrarlo cada pocos minutos sin
+            // que el usuario haya hecho nada se sentía como que la app se "recarga sola".
+            const opciones = args[1];
+            if (opciones && opciones.silent) {
+                return fetchOriginal.apply(this, args);
+            }
             mostrarCarga();
             return fetchOriginal.apply(this, args).finally(ocultarCarga);
         };
