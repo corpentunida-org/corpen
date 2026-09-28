@@ -35,9 +35,11 @@ services:
         command: php artisan queue:work database --queue=default --timeout=1800 --tries=3 --memory=512 -vvv
         restart: unless-stopped
 
-    # Reemplaza al cron del sistema (que este proyecto no tiene, ver routes/console.php): llama
-    # `schedule:run` cada 60 segundos en un bucle infinito dentro del propio contenedor, igual que
-    # `worker` ya hace con las colas. Sin esto, TODO lo registrado con Schedule::command() en
+    # Solo para uso LOCAL (branch/pruebas de código): este contenedor no tiene cron propio. En
+    # producción ya no hace falta esto — Cloud Scheduler llama /internal/schedule-run cada minuto
+    # (ver SchedulerRunController). Aquí, para pruebas locales, llama `schedule:run` cada 60
+    # segundos en un bucle infinito dentro del propio contenedor, igual que `worker` ya hace con
+    # las colas. Sin esto en local, TODO lo registrado con Schedule::command() en
     # routes/console.php (correo diario de vencidas, informe semanal, alerta de inactividad,
     # cierre automático de Soportes) queda registrado pero nunca se dispara solo.
     scheduler:
