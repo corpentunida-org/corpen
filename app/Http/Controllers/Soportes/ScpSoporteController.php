@@ -3,9 +3,7 @@
 namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
-use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
-use App\Models\Maestras\MaeTerceros;
 use App\Models\Soportes\ScpCategoria;
 use App\Models\Soportes\ScpEstado;
 use App\Models\Soportes\ScpObservacion;
@@ -350,12 +348,14 @@ class ScpSoporteController extends Controller
 
     public function create()
     {
+        // $tipos, $terceros, $usuarios y $cargos se cargaban aquí pero NUNCA se usan en
+        // create.blade.php/form.blade.php — el select de "Tipo" se llena por AJAX
+        // (getTiposByCategoria) y el cargo/usuario vienen de $usuario->cargo, no de estas
+        // listas. $terceros en particular traía las 26,209 filas de mae_terceros de TODA la ERP
+        // sin ningún filtro, cada vez que alguien abría "Nuevo Soporte" — esa era la causa real
+        // de que la pantalla se quedara cargando sin abrir nunca.
         $categorias = ScpCategoria::all();
-        $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = MaeTerceros::select('cod_ter', 'nom_ter')->get();
-        $usuarios = User::select('id', 'name')->get();
-        $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
         $lineas = LineaCredito::select('id', 'nombre')->get();
 
         $usuario = User::find(Auth::id());
@@ -369,11 +369,7 @@ class ScpSoporteController extends Controller
             'soportes.soportes.create',
             compact(
                 'categorias',
-                'tipos',
                 'prioridades',
-                'terceros',
-                'usuarios',
-                'cargos',
                 'lineas',
                 'usuario',
                 'proximoId', // 👈 este es nuevo
@@ -523,12 +519,11 @@ class ScpSoporteController extends Controller
     {
         $this->autorizarVerSoporte($scpSoporte);
 
-        $categorias = ScpCategoria::all(); // ← agrega esto
-        $tipos = ScpTipo::all();
+        // Mismo caso que create(): $tipos, $terceros, $usuarios y $cargos se cargaban aquí pero
+        // nunca se usan en edit.blade.php/form.blade.php — $terceros en particular traía las
+        // 26,209 filas de mae_terceros de toda la ERP en cada carga de esta pantalla.
+        $categorias = ScpCategoria::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = MaeTerceros::select('cod_ter', 'nom_ter')->get();
-        $usuarios = User::select('id', 'name')->get();
-        $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
         $lineas = LineaCredito::select('id', 'nombre')->get();
 
         $scpSoporte->load([
@@ -542,7 +537,7 @@ class ScpSoporteController extends Controller
 
         $usuario = User::find(Auth::id());
 
-        return view('soportes.soportes.edit', compact('scpSoporte', 'categorias', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'estados', 'tiposObservacion', 'usuario'));
+        return view('soportes.soportes.edit', compact('scpSoporte', 'categorias', 'prioridades', 'lineas', 'estados', 'tiposObservacion', 'usuario'));
     }
 
     public function update(Request $request, $id)

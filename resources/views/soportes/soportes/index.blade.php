@@ -694,25 +694,37 @@
                 // =================================================================
                 // == BUSCADOR RÁPIDO (Select2 AJAX) — va directo al ticket elegido ==
                 // =================================================================
-                $('#buscadorRapidoSoporte').select2({
-                    theme: 'bootstrap-5',
-                    width: '100%',
-                    placeholder: 'Buscar por # o texto...',
-                    allowClear: true,
-                    minimumInputLength: 1,
-                    ajax: {
-                        url: @json(route('soportes.buscar.rapido')),
-                        dataType: 'json',
-                        delay: 250,
-                        data: params => ({ q: params.term }),
-                        processResults: data => data,
-                    }
-                }).on('select2:select', function (e) {
-                    const id = e.params.data.id;
-                    if (id) {
-                        window.location.href = @json(route('soportes.soportes.show', ':id')).replace(':id', id);
-                    }
-                });
+                // Si Select2 no llegó a cargar en este navegador (bloqueador de anuncios,
+                // extensión, o que el CDN específico no respondió esa vez — se carga por
+                // duplicado desde CDN y desde assets/vendors en el layout base, cualquiera de
+                // los dos puede fallar sin que el otro compense si el orden/timing no ayuda), una
+                // excepción acá cortaba TODO lo que sigue en este mismo bloque — incluyendo el
+                // .on('change', ...) de los filtros de abajo, que nunca llegaba a registrarse.
+                // Por eso "no pasaba nada" al cambiar un filtro, sin ningún error visible de
+                // nuestro código en consola (el buscador rápido es secundario; los filtros no).
+                if (typeof $.fn.select2 === 'function') {
+                    $('#buscadorRapidoSoporte').select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        placeholder: 'Buscar por # o texto...',
+                        allowClear: true,
+                        minimumInputLength: 1,
+                        ajax: {
+                            url: @json(route('soportes.buscar.rapido')),
+                            dataType: 'json',
+                            delay: 250,
+                            data: params => ({ q: params.term }),
+                            processResults: data => data,
+                        }
+                    }).on('select2:select', function (e) {
+                        const id = e.params.data.id;
+                        if (id) {
+                            window.location.href = @json(route('soportes.soportes.show', ':id')).replace(':id', id);
+                        }
+                    });
+                } else {
+                    console.error('Select2 no está disponible — el buscador rápido de soportes queda deshabilitado, pero el resto de la pantalla (filtros, tablas) sigue funcionando.');
+                }
 
                 // =================================================================
                 // == MANEJO DEL MODAL PARA VER DETALLES RÁPIDOS ==
