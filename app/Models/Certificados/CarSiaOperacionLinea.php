@@ -47,8 +47,8 @@ class CarSiaOperacionLinea extends Model
         'fecha_ultimo_recordatorio' => 'datetime',
         'procesado_en'              => 'datetime',
         'dias_mora_automaticos'     => 'integer',
-        'metadata'                  => 'array', // Convierte automáticamente el JSON a Array de PHP
-        'payload_documento'         => 'array', // <-- Añadido para parsear el nuevo JSON automáticamente
+        'metadata'                  => 'array', // JSON
+        'payload_documento'         => 'array', // JSON
     ];
 
     // ---------------------------------------------------

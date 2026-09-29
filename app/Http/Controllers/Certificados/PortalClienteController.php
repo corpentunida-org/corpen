@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Certificados\CarSiaOperacion;
+use App\Models\Certificados\CarSiaTipoOperacion;
 
 class PortalClienteController extends Controller
 {
@@ -44,7 +45,7 @@ class PortalClienteController extends Controller
         }
     }
 
-    public function consultarLecturas()
+    public function consultarLecturas(Request $request)
     {
         $cod_ter = session('tercero_autenticado_cod');
 
@@ -53,22 +54,103 @@ class PortalClienteController extends Controller
         }
 
         try {
-            // Buscamos al tercero por su NIT para mostrar sus datos en la vista
+            // 1. Buscar al tercero para mostrar sus datos en la vista
             $tercero = MaeTerceros::where('cod_ter', $cod_ter)->firstOrFail();
 
-            // CORRECCIÓN: Volvemos a buscar las operaciones usando el NIT ($cod_ter) 
-            // que es como lo tenías originalmente y funcionaba.
-            $operaciones = CarSiaOperacion::with(['estados.estado', 'lineas'])
-                                          ->where('id_tercero', $cod_ter) 
-                                          ->orderBy('created_at', 'desc')
-                                          ->get();
+            // 2. Capturar filtros opcionales de Mes y Año desde la interfaz del cliente
+            $mesSeleccionado = $request->input('mes');
+            $anioSeleccionado = $request->input('anio', now()->year);
 
-            return view('certificados.frontdesk.dashboard', compact('tercero', 'operaciones'));
+            // 3. Consultar las operaciones base del tercero
+            $query = CarSiaOperacion::with(['estados.estado', 'lineas.lineaSia'])
+                ->where('id_tercero', $cod_ter);
+
+            // Filtrar por año si es provisto
+            if ($anioSeleccionado) {
+                $query->whereYear('created_at', $anioSeleccionado);
+            }
+
+            // Filtrar por mes si es provisto
+            if ($mesSeleccionado) {
+                $query->whereMonth('created_at', $mesSeleccionado);
+            }
+
+            $operaciones = $query->orderBy('created_at', 'desc')->get();
+
+            // 4. Enriquecer cada operación con sus tipos de certificados dinámicos e historial (Lógica adaptada de show)
+            $operaciones->each(function ($operacion) {
+                $primeraLinea = $operacion->lineas->sortByDesc('created_at')->first();
+                $ultimoHash = $primeraLinea?->hash_certificado ?? null;
+
+                if ($ultimoHash) {
+                    $tipoAsociado = CarSiaTipoOperacion::with('tipo')
+                        ->where('numero_bloque', $operacion->numero_bloque)
+                        ->where(function($q) use ($operacion) {
+                            $q->where('id_car_sia_operaciones', $operacion->id)
+                                ->orWhereNull('id_car_sia_operaciones');
+                        })
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+
+                    $operacion->ultimo_hash = $ultimoHash;
+                    $operacion->ultimo_tipo = optional($tipoAsociado)->tipo;
+                } else {
+                    $operacion->ultimo_hash = null;
+                    $operacion->ultimo_tipo = null;
+                }
+
+                // Cargar dinámicamente los tipos de certificados disponibles para esta operación (evitando duplicados)
+                $operacion->historialTiposDisponibles = CarSiaTipoOperacion::with('tipo')
+                    ->where('id_car_sia_operaciones', $operacion->id)
+                    ->orWhere(function($q) use ($operacion) {
+                        $q->where('numero_bloque', $operacion->numero_bloque)
+                        ->whereNull('id_car_sia_operaciones');
+                    })
+                    ->orderBy('created_at', 'desc')
+                    ->get()
+                    ->unique('id_car_sia_tipos')
+                    ->map(function ($registro) use ($operacion) {
+                        $lineasParaEsteTipo = collect($operacion->lineas)->filter(function($linea) use ($registro) {
+                            if ($linea->id_car_sia_tipos == $registro->id_car_sia_tipos) return true;
+                            if (empty($linea->id_car_sia_tipos) && !str_contains($linea->hash_certificado, '-TIPO-')) return true;
+                            if (str_contains($linea->hash_certificado, "-TIPO-{$registro->id_car_sia_tipos}-")) return true;
+                            return false;
+                        });
+
+                        $versionesDeEsteTipo = collect($lineasParaEsteTipo)->groupBy('hash_certificado')->map(function($grupo) {
+                            return collect($grupo)->first();
+                        })->sortByDesc('created_at');
+
+                        $registro->hashActual = $versionesDeEsteTipo->first()->hash_certificado ?? null;
+                        return $registro;
+                    });
+            });
+
+            // 5. Obtener los años disponibles para poblar el selector de filtros en la vista
+            $aniosDisponibles = CarSiaOperacion::where('id_tercero', $cod_ter)
+                ->whereNotNull('created_at')
+                ->selectRaw('YEAR(created_at) as anio')
+                ->groupBy('anio')
+                ->orderBy('anio', 'desc')
+                ->pluck('anio');
+
+            if ($aniosDisponibles->isEmpty()) {
+                $aniosDisponibles = collect([now()->year]);
+            }
+
+            return view('certificados.frontdesk.dashboard', compact(
+                'tercero',
+                'operaciones',
+                'aniosDisponibles',
+                'mesSeleccionado',
+                'anioSeleccionado'
+            ));
 
         } catch (\Exception $e) {
-            Log::error("CERTIFICADOS FrontDesk - Error consultando lecturas para NIT {$cod_ter}: " . $e->getMessage());
+            Log::error("CERTIFICADOS FrontDesk - Error consultando lecturas para NIT {$cod_ter}: " . $e->getMessage() . " en " . $e->getFile() . ":" . $e->getLine());
+
             return redirect()->route('certificados.frontdesk.index')
-                             ->with('error', 'No fue posible cargar las operaciones. Intente más tarde.');
+                         ->with('error', 'No fue posible cargar las operaciones. Intente más tarde.');
         }
     }
 
