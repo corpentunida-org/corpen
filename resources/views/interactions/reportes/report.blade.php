@@ -55,7 +55,7 @@
             </button>
         </div>
         <div class="card-body p-3">
-            <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
+            <form id="formFiltrosInforme" action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
                 {{-- El alcance (modo/área/agente) ya no se elige aquí — se hereda tal cual de la
                      URL con la que se llegó (desde el menú siempre "propias"; desde Auditoría, lo
                      que allá se tenía seleccionado). Se conserva como campos ocultos para que los
@@ -105,6 +105,20 @@
                                 class="feather-calendar text-primary"></i></span>
                         <input type="date" name="end_date" id="filtroFechaFin" class="form-control border-start-0 ps-0"
                             value="{{ $endDate ?? request('end_date') }}" />
+                    </div>
+                </div>
+
+                {{-- Acceso rápido para autoevaluación de desempeño: "¿cómo va mi trabajo esta
+                     semana/mes?" sin tener que calcular fechas a mano. A diferencia del selector
+                     "Mes" de arriba (que es un mes calendario completo, ej. septiembre 1-30), esto
+                     es una ventana móvil de los últimos N días terminando hoy. Llena las fechas y
+                     recarga el informe ya filtrado — el botón "Imprimir" de arriba hereda el rango
+                     automáticamente porque usa request()->all() en el siguiente cargue. --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted mb-1">Acceso rápido</label>
+                    <div class="btn-group w-100" role="group">
+                        <button type="button" id="btnUltimaSemana" class="btn btn-sm btn-outline-primary">Últ. Semana</button>
+                        <button type="button" id="btnUltimoMes" class="btn btn-sm btn-outline-primary">Últ. Mes</button>
                     </div>
                 </div>
 
@@ -412,6 +426,23 @@
                     document.getElementById('filtroFechaFin').value = aYMD(ultimoDia);
                 });
             }
+
+            // Accesos rápidos "Última Semana" / "Último Mes": ventana móvil de N días terminando
+            // hoy (para "¿cómo va mi trabajo reciente?"), distinta del selector "Mes" de arriba
+            // que es un mes calendario completo. Llenan las fechas y envían el formulario de una
+            // vez — el usuario no tiene que calcular fechas ni darle "Filtrar Datos" aparte.
+            function aplicarRangoRapido(dias) {
+                const hoy = new Date();
+                const desde = new Date();
+                desde.setDate(hoy.getDate() - dias);
+                const aYMD = (d) => d.toISOString().slice(0, 10);
+                document.getElementById('filtroFechaInicio').value = aYMD(desde);
+                document.getElementById('filtroFechaFin').value = aYMD(hoy);
+                if (filtroMes) filtroMes.value = ''; // evitar confusión con el mes calendario elegido antes
+                document.getElementById('formFiltrosInforme').submit();
+            }
+            document.getElementById('btnUltimaSemana')?.addEventListener('click', () => aplicarRangoRapido(7));
+            document.getElementById('btnUltimoMes')?.addEventListener('click', () => aplicarRangoRapido(30));
 
             // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
             Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";

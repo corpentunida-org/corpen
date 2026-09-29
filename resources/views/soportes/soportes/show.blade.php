@@ -414,12 +414,32 @@
                     $('#tipoObservacion').trigger('change');
                 }
                 
+                // Campo "Asignar a Usuario": antes solo se mostraba/exigía con tipo de
+                // observación "Escalamiento" — pero mover un ticket a estado "Revision" (id 3)
+                // es EXACTAMENTE lo mismo conceptualmente (se le pasa la responsabilidad a otra
+                // persona) y el único tipo disponible ahí es "Accion", que nunca revelaba este
+                // campo. Resultado real: el ticket quedaba en "Revision" pero usuario_escalado
+                // nunca cambiaba, así que la alerta de "soportes sin cerrar" seguía molestando a
+                // quien ya no tenía ninguna injerencia, y quien debía revisar nunca se enteraba.
+                function evaluarCampoAsignacion() {
+                    var estadoTexto = $('#estado').find('option:selected').text();
+                    var tipoTexto = $('#tipoObservacion').find('option:selected').text();
+                    var necesitaAsignar = estadoTexto.toLowerCase().includes('revision')
+                        || tipoTexto.toLowerCase().includes('escalamiento');
+
+                    $('#usuarioEscalamiento').toggleClass('d-none', !necesitaAsignar);
+                    $('#terceroAsignado').prop('required', necesitaAsignar);
+                    if (!necesitaAsignar) {
+                        $('#terceroAsignado').val('');
+                    }
+                }
+
                 // Evento change en el select de estado
                 $('#estado').on('change', function() {
                     var estado = $(this).val();
                     var estadoTexto = $(this).find('option:selected').text();
                     console.log("Estado seleccionado:", estado);
-                    
+
                     // Mostrar u ocultar el campo de calificación según el estado
                     if (estadoTexto.toLowerCase().includes("cerrado")) {
                         $('#calificacionCierre').removeClass('d-none');
@@ -428,22 +448,17 @@
                         $('input[name="calcification"]').prop('checked', false);
                         $('#ratingText').text('Seleccione una calificación');
                     }
-                    
+
+                    // actualizarTiposObservacion() ya dispara 'change' en #tipoObservacion al
+                    // final, lo que a su vez llama evaluarCampoAsignacion() — no hace falta
+                    // llamarla aparte aquí.
                     actualizarTiposObservacion(estado);
                 });
-                
+
                 // Evento change en el select de tipo de observación
                 $('#tipoObservacion').on('change', function() {
-                    var tipoSeleccionado = $(this).find('option:selected').text();
-                    console.log("Tipo de observación seleccionado:", tipoSeleccionado);
-                    
-                    // Mostrar u ocultar el campo de escalamiento según el tipo seleccionado
-                    if (tipoSeleccionado.toLowerCase().includes("escalamiento")) {
-                        $('#usuarioEscalamiento').removeClass('d-none');
-                    } else {
-                        $('#usuarioEscalamiento').addClass('d-none');
-                        $('#terceroAsignado').val(''); // Limpiar selección
-                    }
+                    console.log("Tipo de observación seleccionado:", $(this).find('option:selected').text());
+                    evaluarCampoAsignacion();
                 });
                 
                 // Actualizar texto de calificación cuando se selecciona una estrella
@@ -467,25 +482,10 @@
             });
 
             document.addEventListener("DOMContentLoaded", function () {
-                // Script para el campo de escalamiento en el formulario de observación
-                const tipoObservacionSelect = document.getElementById("tipoObservacion");
-                const usuarioEscalamientoDiv = document.getElementById("usuarioEscalamiento");
-
-                if (tipoObservacionSelect && usuarioEscalamientoDiv) {
-                    tipoObservacionSelect.addEventListener("change", function () {
-                        const isEscalamiento = tipoObservacionSelect.selectedOptions[0].text.toLowerCase().includes("escalamiento");
-                        usuarioEscalamientoDiv.classList.toggle("d-none", !isEscalamiento);
-
-                        if (!isEscalamiento) {
-                            const terceroAsignadoSelect = document.getElementById("terceroAsignado");
-                            if (terceroAsignadoSelect) {
-                                terceroAsignadoSelect.value = "";
-                            }
-                        }
-                    });
-                    // Ejecutar al cargar la página por si ya hay una opción seleccionada
-                    tipoObservacionSelect.dispatchEvent(new Event('change'));
-                }
+                // (El toggle del campo "Asignar a Usuario" ya lo maneja evaluarCampoAsignacion()
+                // más arriba, con jQuery — este bloque vanilla duplicaba la misma lógica pero solo
+                // miraba "Escalamiento", sin saber de la condición "Revision" nueva; dejarlo aquí
+                // pisaría ese arreglo cada vez que cambiara el tipo de observación.)
 
                 // Script para el efecto de expandir/colapsar la descripción del soporte
                 const descriptionContent = document.getElementById('descriptionContent');
