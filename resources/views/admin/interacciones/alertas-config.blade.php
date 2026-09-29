@@ -176,7 +176,7 @@
                     <div class="col-lg-4">
                         <div class="border rounded-3 p-3 h-100">
                             <h6 class="fw-bold text-dark mb-1"><i class="feather-mail-off me-1"></i>Omitir Correos</h6>
-                            <p class="text-muted fs-13 mb-3">No recibe el correo diario de vencidas de Interacciones.</p>
+                            <p class="text-muted fs-13 mb-3">No recibe el correo diario de vencidas, y tampoco aparece nombrado en el correo de inactividad que reciben los admon de su área.</p>
 
                             <form method="POST" action="{{ route('admin.alertas-omitidos.store') }}" class="d-flex gap-2 mb-3">
                                 @csrf

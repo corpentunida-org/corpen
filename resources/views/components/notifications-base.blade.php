@@ -25,7 +25,7 @@
         <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button"
             data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false" id="notificationDropdownButton">
             <i class="feather-bell notification-bell"></i>
-            <span class="badge bg-danger nxl-h-badge pulse-animation" id="contadorNotificaciones"
+            <span class="badge bg-danger nxl-h-badge pulse-animation d-none" id="contadorNotificaciones"
                 aria-label="Notificaciones no leídas"></span>
             <div class="notification-indicator" id="notificationIndicator" aria-hidden="true"></div>
         </div>
@@ -88,6 +88,9 @@
 
             <div class="text-center notifications-footer">
                 <small class="text-muted d-block mb-2" id="lastSyncTimestamp">Actualizando...</small>
+                <a href="{{ route('soportes.soportes.create') }}" class="btn btn-sm btn-primary w-100 mb-2">
+                    <i class="feather-plus me-1"></i> Nuevo Soporte
+                </a>
                 <a href="{{ route('soportes.soportes.index') }}" class="fs-13 fw-semibold text-dark view-all-link">
                     VER TODOS SOPORTES
                     <i class="feather-arrow-right"></i>
@@ -127,14 +130,24 @@
         color: #073B4C;
     }
 
+    /* Ícono de Soportes en azul permanente (distintivo del de Mensajes, que comparte la misma
+       clase .notification-bell — por eso el color va con el id del botón, no con la clase). */
+    #notificationDropdownButton .notification-bell {
+        color: #1d4ed8;
+    }
+    #notificationDropdownButton .notification-bell:hover {
+        color: #1e40af;
+    }
+
     /* Pulso de atención — cada tantos minutos (configurable en Admin → Configuración de Alertas
        de Soportes), mientras haya soportes asignados sin cerrar, el ícono crece y se pone azul
-       intenso por un momento. No interrumpe nada, es solo un llamado de atención de reojo. */
+       intenso por un momento. No interrumpe nada, es solo un llamado de atención de reojo.
+       Escala x2 respecto al original (1.35/1.2 → 2.7/2.4) para que se note bien de reojo. */
     @keyframes soportesPulsoAtencion {
-        0%, 100% { transform: scale(1); color: inherit; }
-        25% { transform: scale(1.35); color: #1d4ed8; }
+        0%, 100% { transform: scale(1); color: #1d4ed8; }
+        25% { transform: scale(2.7); color: #1d4ed8; }
         50% { transform: scale(1); color: #1d4ed8; }
-        75% { transform: scale(1.2); color: #1d4ed8; }
+        75% { transform: scale(2.4); color: #1d4ed8; }
     }
     .notification-bell.pulso-atencion-soportes {
         animation: soportesPulsoAtencion 1.4s ease-in-out 2;
@@ -1232,7 +1245,14 @@
         // ============================================
         function actualizarContadores(data) {
             const totalCount = data.total || 0;
-            contador.textContent = totalCount;
+            // Antes se mostraba siempre, incluso "0" — mismo criterio que la campanita de
+            // Interacciones (alertas-interacciones.blade.php): solo visible si hay algo real.
+            if (totalCount > 0) {
+                contador.textContent = totalCount > 99 ? '99+' : totalCount;
+                contador.classList.remove('d-none');
+            } else {
+                contador.classList.add('d-none');
+            }
 
             document.getElementById('countSinAsignar').textContent = data.sinAsignar_count || 0;
             document.getElementById('countEnProceso').textContent = data.enProceso_count || 0;
