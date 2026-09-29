@@ -1311,7 +1311,21 @@ class InteractionController extends Controller
             $filteredRecords = $query->count();
 
             $start = $request->input('start', 0);
-            $length = $request->input('length', 20);
+            $length = (int) $request->input('length', 20);
+            // DataTables manda length=-1 para "exportar todo lo filtrado" (botones Excel/PDF/CSV,
+            // ver auditoria.blade.php: exportarTodoFiltrado()) — sin esto, esos botones solo
+            // exportarían la página visible (ej. 20 filas) en vez de todo el rango de fechas
+            // filtrado. Tope defensivo de 2000: cada fila carga 9 relaciones (agente, cliente,
+            // distrito, canal, tipo, resultado, motivo, asignado, seguimientos) — con un rango muy
+            // amplio (semanas/meses) esto puede juntar miles de filas y tardar tanto que el
+            // servidor corta la petición a medio camino (ver max_execution_time), dejando el
+            // spinner de DataTables pegado para siempre sin avisar nada. 2000 es un techo más
+            // realista para que la respuesta llegue completa.
+            $huboRecorte = false;
+            if ($length < 0) {
+                $length = min($filteredRecords, 1500);
+                $huboRecorte = $filteredRecords > $length;
+            }
             $query->orderBy('id', 'desc');
 
             $data = $query->skip($start)->take($length)->get();
@@ -1325,6 +1339,7 @@ class InteractionController extends Controller
                 'recordsTotal' => $totalRecords,
                 'recordsFiltered' => $filteredRecords,
                 'data' => $data,
+                'hubo_recorte' => $huboRecorte,
             ]);
         }
 

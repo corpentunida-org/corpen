@@ -569,13 +569,23 @@ class ScpSoporteController extends Controller
     {
         $this->autorizarVerSoporte($scpSoporte);
 
+        // Mover un ticket a "Revision" es, en la práctica, pasarle la responsabilidad a otra
+        // persona — igual que "Escalamiento" — pero antes no exigía elegir a quién, así que
+        // usuario_escalado se quedaba con quien lo tenía antes (que ya no tiene ninguna
+        // injerencia) y la alerta de "soportes sin cerrar" seguía molestando a esa persona en vez
+        // de a quien debía revisar. Espejo del toggle de show.blade.php (evaluarCampoAsignacion).
+        $exigeAsignar = fn () => (int) $request->input('id_scp_estados') === ScpEstado::idPorNombre('Revision')
+            || (int) $request->input('id_tipo_observacion') === ScpTipoObservacion::idPorNombre('Escalamiento');
+
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
-            'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
+            'id_scp_usuario_asignado' => [Rule::requiredIf($exigeAsignar), 'nullable', 'integer', 'exists:scp_usuarios,id'],
             'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
             'adjunto' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
+        ], [
+            'id_scp_usuario_asignado.required' => 'Debes elegir a quién queda asignado el ticket (Revisión/Escalamiento no pueden quedar sin responsable).',
         ]);
 
         $observacionData = [

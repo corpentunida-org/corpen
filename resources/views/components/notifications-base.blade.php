@@ -796,7 +796,8 @@
 
         function consultarPendientesSoportes(evaluarAviso) {
             fetch('{{ route('soportes.alertas.pendientes') }}', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    silent: true,
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -998,6 +999,7 @@
             }
             fetch('{{ route('reservas.cancelar.auto') }}', {
                     method: 'GET',
+                    silent: true,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'
@@ -1199,6 +1201,7 @@
 
             return fetch('{{ route('soportes.notificaciones.detalladas') }}', {
                     method: 'GET',
+                    silent: true, // ya tiene su propio skeleton loader dentro del dropdown, arriba
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
                         'Accept': 'application/json'

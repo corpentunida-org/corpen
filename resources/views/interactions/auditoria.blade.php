@@ -299,12 +299,106 @@
                 const priorityColors = { '1': 'success', '2': 'warning', '3': 'danger' };
                 let fechaHoy = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
 
+                // Exporta TODA la data filtrada (no solo la página visible en pantalla). El
+                // cambio de tamaño de página se hace ANTES de disparar el draw (no dentro de un
+                // callback de 'preXhr'): la petición ajax ya arma sus parámetros con el tamaño de
+                // página vigente en ESE momento, así que cambiarlo dentro de 'preXhr' llega tarde
+                // y no alcanza a afectar la petición en curso — por eso antes exportaba solo 20
+                // filas aunque el backend sí soportara length=-1 (ver
+                // InteractionController::auditoria()).
+                function exportarTodoFiltrado(nombreExtend) {
+                    return function(e, dt, button, config) {
+                        const self = this;
+                        const paginaOriginal = dt.page.len();
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Generando exportación...',
+                                text: 'Esto puede tardar unos segundos si el rango es amplio.',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                showConfirmButton: false,
+                                didOpen: () => Swal.showLoading(),
+                            });
+                        }
+
+                        dt.one('draw', function() {
+                            // El backend recorta a un máximo (ver InteractionController::
+                            // auditoria()) si el rango filtrado trae más filas de las que es
+                            // razonable exportar de una sola vez — avisar en vez de exportar
+                            // "todo" silenciosamente cuando en realidad es solo una parte.
+                            const json = dt.ajax.json();
+                            if (typeof Swal !== 'undefined') Swal.close();
+                            if (json && json.hubo_recorte) {
+                                Swal.fire({
+                                    icon: 'warning',
+                                    title: 'Exportación parcial',
+                                    text: `El rango filtrado tiene ${json.recordsFiltered} resultados; se exportaron los primeros ${json.data.length} por ser un rango muy amplio. Acota las fechas para traer el resto.`,
+                                });
+                            }
+                            $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            dt.page.len(paginaOriginal).draw(false);
+                        });
+
+                        dt.page.len(-1).draw(false);
+                    };
+                }
+
+                // Antes de exportar, si hay más filas filtradas que las visibles en pantalla, se
+                // pregunta qué quiere el usuario en vez de asumir "todo" siempre — exportar todo
+                // el histórico filtrado puede ser lento/pesado si el rango es muy amplio.
+                function exportarConEleccion(nombreExtend) {
+                    return function(e, dt, button, config) {
+                        const self = this;
+                        const info = dt.page.info();
+                        const totalFiltrado = info.recordsDisplay;
+                        const enPantalla = info.end - info.start;
+
+                        if (typeof Swal === 'undefined' || totalFiltrado <= enPantalla) {
+                            return $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                        }
+
+                        Swal.fire({
+                            title: '¿Qué deseas exportar?',
+                            html: `El filtro actual tiene <b>${totalFiltrado}</b> resultados, pero en pantalla solo se ven ${enPantalla}.`,
+                            icon: 'question',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonText: `Todo lo filtrado (${totalFiltrado})`,
+                            denyButtonText: `Solo esta página (${enPantalla})`,
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#1d4ed8',
+                            denyButtonColor: '#6c757d',
+                        }).then(function(result) {
+                            if (result.isConfirmed) {
+                                // .call(self, ...) es necesario: una llamada normal aquí pierde
+                                // el "this" que DataTables Buttons necesita internamente (usa
+                                // this.processing()) porque este .then() de una Promise (Swal.fire)
+                                // ya no conserva el contexto original del clic del botón — sin
+                                // esto explota con "this.processing is not a function" a medio
+                                // camino, dejando el spinner de "Procesando..." pegado para
+                                // siempre aunque haya pocos registros.
+                                exportarTodoFiltrado(nombreExtend).call(self, e, dt, button, config);
+                            } else if (result.isDenied) {
+                                $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            }
+                        });
+                    };
+                }
+
                 const table = $('#tablaAuditoria').DataTable({
                     serverSide: true,
                     processing: true,
                     deferRender: true,
                     ajax: {
                         url: window.location.pathname,
+                        // Sin esto, una petición que el servidor deja sin responder (ej. un rango
+                        // de fechas tan amplio que se corta a medio camino por max_execution_time)
+                        // se queda esperando indefinidamente: $.ajax no tiene timeout por defecto,
+                        // así que nunca dispara éxito NI error, y el spinner de "Procesando..."
+                        // de DataTables queda pegado para siempre sin avisar nada. Con esto, a los
+                        // 45s se aborta y cae al error: de abajo.
+                        timeout: 45000,
                         data: function(d) {
                             d.agent_id = $('#filterAgente').val();
                             // El select de Área solo existe con listado.todos (ver la vista) —
@@ -320,6 +414,17 @@
                             d.start_date = $('#filterFechaInicio').val();
                             d.end_date = $('#filterFechaFin').val();
                             // d.search.value is handled by DataTables automatically
+                        },
+                        error: function(xhr, status) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: status === 'timeout' ? 'La consulta tardó demasiado' : 'Error al cargar los datos',
+                                    text: status === 'timeout'
+                                        ? 'El rango de fechas es muy amplio. Prueba acotándolo antes de exportar o consultar de nuevo.'
+                                        : 'Ocurrió un problema consultando el servidor. Intenta de nuevo.',
+                                });
+                            }
                         }
                     },
                     columns: [
@@ -401,7 +506,8 @@
                             className: 'buttons-excel',
                             title: 'Auditoría de Interacciones',
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarConEleccion('excelHtml5')
                         },
                         {
                             extend: 'pdfHtml5',
@@ -410,13 +516,15 @@
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
                             orientation: 'landscape',
                             pageSize: 'LEGAL',
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarConEleccion('pdfHtml5')
                         },
                         {
                             extend: 'csvHtml5',
                             className: 'buttons-csv',
                             filename: 'Auditoria_Interacciones_' + fechaHoy,
-                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] }
+                            exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14] },
+                            action: exportarConEleccion('csvHtml5')
                         }
                     ],
                     initComplete: function() {
@@ -425,10 +533,23 @@
                     }
                 });
 
-                // Cualquier filtro (selects, fechas) recarga la tabla al cambiar; "Aplicar
-                // Filtros"/Enter cubre la búsqueda general y el campo de cliente (texto libre).
-                $('#filterAgente, #filterArea, #filterDistrito, #filterCanal, #filterMotivo, #filterResultado, #filterFechaInicio, #filterFechaFin')
+                // Cualquier filtro (selects) recarga la tabla al cambiar; "Aplicar Filtros"/Enter
+                // cubre la búsqueda general y el campo de cliente (texto libre).
+                $('#filterAgente, #filterArea, #filterDistrito, #filterCanal, #filterMotivo, #filterResultado')
                     .on('change', function () { table.draw(); });
+
+                // Fechas aparte, con debounce: un <input type="date"> dispara "change" en cuanto
+                // CUALQUIER segmento (día/mes/año) queda con un valor válido, no solo al terminar
+                // de escribir la fecha completa — si ya había una fecha cargada, escribir un
+                // nuevo día ya compone una fecha "válida" con el mes/año viejos y dispara change,
+                // luego el mes hace lo mismo, y así, disparando una consulta por cada dígito. El
+                // debounce espera a que el usuario deje de tocar el campo un momento antes de
+                // buscar de verdad.
+                let fechaDebounceTimer = null;
+                $('#filterFechaInicio, #filterFechaFin').on('change', function () {
+                    clearTimeout(fechaDebounceTimer);
+                    fechaDebounceTimer = setTimeout(() => table.draw(), 600);
+                });
 
                 $('#applyFilters').on('click', function() {
                     table.search($('#filterSearch').val()).draw();
