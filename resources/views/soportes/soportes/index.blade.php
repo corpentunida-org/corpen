@@ -827,27 +827,76 @@
                 // =================================================================
                 // == EXPORTAR TODO LO FILTRADO (no solo la página visible) ==
                 // =================================================================
-                // Patrón oficial de DataTables para "exportar todo" con serverSide=true: pide
-                // TODA la data filtrada (length=-1, el backend lo entiende como "sin límite",
-                // ver ScpSoporteController), dispara la exportación real sobre eso, y vuelve a la
-                // paginación normal — sin esto, Excel/PDF/Imprimir solo sacarían la página
-                // actual (ej. 20 filas) en vez de todo lo que el filtro está mostrando.
+                // Exporta TODA la data filtrada. El cambio de tamaño de página se hace ANTES de
+                // disparar el draw (no dentro de un callback de 'preXhr'): la petición ajax ya
+                // arma sus parámetros con el tamaño de página vigente en ESE momento, así que
+                // cambiarlo dentro de 'preXhr' llega tarde y no alcanza a afectar la petición en
+                // curso — por eso antes exportaba solo la página visible aunque el backend sí
+                // soportara length=-1 (ver ScpSoporteController).
                 function exportarTodoFiltrado(nombreExtend) {
                     return function (e, dt, button, config) {
                         const self = this;
-                        dt.one('preXhr', function () {
-                            dt.page.len(-1);
-                        });
-                        dt.one('draw', function () {
-                            $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
-                            dt.one('preXhr', function () {
-                                setTimeout(function () {
-                                    dt.page.len(20);
-                                    dt.draw();
-                                }, 0);
+                        const paginaOriginal = dt.page.len();
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Generando exportación...',
+                                text: 'Esto puede tardar unos segundos si el filtro trae muchos resultados.',
+                                allowOutsideClick: false,
+                                allowEscapeKey: false,
+                                showConfirmButton: false,
+                                didOpen: () => Swal.showLoading(),
                             });
+                        }
+
+                        dt.one('draw', function () {
+                            if (typeof Swal !== 'undefined') Swal.close();
+                            $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            dt.page.len(paginaOriginal).draw(false);
                         });
-                        dt.draw();
+
+                        dt.page.len(-1).draw(false);
+                    };
+                }
+
+                // Antes de exportar, si hay más filas filtradas que las visibles en pantalla, se
+                // pregunta qué quiere el usuario en vez de asumir "todo" siempre.
+                function exportarConEleccion(nombreExtend) {
+                    return function (e, dt, button, config) {
+                        const self = this;
+                        const info = dt.page.info();
+                        const totalFiltrado = info.recordsDisplay;
+                        const enPantalla = info.end - info.start;
+
+                        if (typeof Swal === 'undefined' || totalFiltrado <= enPantalla) {
+                            return $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                        }
+
+                        Swal.fire({
+                            title: '¿Qué deseas exportar?',
+                            html: `El filtro actual tiene <b>${totalFiltrado}</b> resultados, pero en pantalla solo se ven ${enPantalla}.`,
+                            icon: 'question',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonText: `Todo lo filtrado (${totalFiltrado})`,
+                            denyButtonText: `Solo esta página (${enPantalla})`,
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#1d4ed8',
+                            denyButtonColor: '#6c757d',
+                        }).then(function (result) {
+                            if (result.isConfirmed) {
+                                // .call(self, ...) es necesario: una llamada normal aquí pierde
+                                // el "this" que DataTables Buttons necesita internamente (usa
+                                // this.processing()) porque este .then() de una Promise (Swal.fire)
+                                // ya no conserva el contexto original del clic del botón — sin
+                                // esto explota con "this.processing is not a function" a medio
+                                // camino, dejando el spinner de "Procesando..." pegado para
+                                // siempre aunque haya pocos registros.
+                                exportarTodoFiltrado(nombreExtend).call(self, e, dt, button, config);
+                            } else if (result.isDenied) {
+                                $.fn.dataTable.ext.buttons[nombreExtend].action.call(self, e, dt, button, config);
+                            }
+                        });
                     };
                 }
 
@@ -865,9 +914,9 @@
                         processing: true,
                         dom: 'Bfrtip',
                         buttons: [
-                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel', action: exportarTodoFiltrado('excelHtml5') },
-                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF', action: exportarTodoFiltrado('pdfHtml5') },
-                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir', action: exportarTodoFiltrado('print') }
+                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel', action: exportarConEleccion('excelHtml5') },
+                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF', action: exportarConEleccion('pdfHtml5') },
+                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir', action: exportarConEleccion('print') }
                         ],
                         pageLength: 20,
                         // Ninguna columna es "orderable" (son HTML ya armado en el servidor, no
@@ -880,6 +929,12 @@
                         ordering: false,
                         ajax: {
                             url: urlListado,
+                            // Sin esto, una petición que el servidor deja sin responder (ej. al
+                            // exportar "todo lo filtrado" con un rango muy amplio) se queda
+                            // esperando indefinidamente: $.ajax no tiene timeout por defecto, así
+                            // que nunca dispara éxito NI error, y el spinner de "Procesando..." de
+                            // DataTables queda pegado para siempre sin avisar nada.
+                            timeout: 45000,
                             data: function (d) {
                                 d.tab = tab;
                                 d.area = $('#filterArea').val();
@@ -890,6 +945,15 @@
                             },
                             error: function (xhr, status, error) {
                                 console.error('Error cargando soportes:', status, error, xhr.responseText);
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: status === 'timeout' ? 'La consulta tardó demasiado' : 'Error al cargar los datos',
+                                        text: status === 'timeout'
+                                            ? 'El filtro trae demasiados resultados. Prueba acotándolo antes de exportar o consultar de nuevo.'
+                                            : 'Ocurrió un problema consultando el servidor. Intenta de nuevo.',
+                                    });
+                                }
                             }
                         },
                         columns: [
