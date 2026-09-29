@@ -288,7 +288,7 @@ class OperacionController extends Controller
                     $fechaVencReal = $linea->fecha_venci ?? optional($linea->factura)->fecha_venci;
 
                     if ($fechaVencReal) {
-                        $fechaV = \Carbon\Carbon::parse($fechaVencReal);
+                        $fechaV = Carbon::parse($fechaVencReal);
                         $linea->diasMoraCalculados = now()->diffInDays($fechaV, false);
                         $linea->fechaVFormateada = $fechaV->format('d/m/Y');
                     } else {
@@ -312,7 +312,7 @@ class OperacionController extends Controller
             $tiposCertificados = $tipos->whereIn('id', [1, 2, 3, 4]); //Asigancion Tipo de Certificados del Show
             // Tipos independientes para el modal de Certificados de Gestión (#modalSeleccionTipo)
             // Cambia los números dentro del array [2, 5, 6] por los IDs reales que deseas mostrar en este modal
-            $tiposGestion = $tipos->whereIn('id', [5, 6, 7]);
+            $tiposGestion = $tipos->whereIn('id', [2, 5, 6, 7]);
 
             // ==============================================================================
             // CONSULTAR CATÁLOGO DE LÍNEAS PARA EL MODAL CERTIFICADOS DE GESTIÓN (#modalSeleccionTipo)
