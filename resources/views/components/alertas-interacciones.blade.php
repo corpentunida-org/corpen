@@ -14,7 +14,7 @@
         <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button"
             data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false" id="alertasIntButton"
             title="Alertas de Interacciones">
-            <i class="feather-alert-triangle alertas-int-bell"></i>
+            <i class="feather-phone-call alertas-int-bell"></i>
             <span class="badge bg-danger nxl-h-badge d-none" id="alertasIntBadge" aria-label="Alertas"></span>
         </div>
 
@@ -48,6 +48,9 @@
             </div>
 
             <div class="text-center alertas-int-footer">
+                <a href="{{ route('interactions.create') }}" class="btn btn-sm btn-danger w-100 mb-2">
+                    <i class="feather-plus me-1"></i> Nueva Interacción
+                </a>
                 <a href="{{ route('interactions.index') }}" class="fs-13 fw-semibold text-dark text-decoration-none">
                     Ver Mis Interacciones <i class="feather-arrow-right"></i>
                 </a>
@@ -56,17 +59,23 @@
     </div>
 
     <style>
-        .alertas-int-bell { transition: transform .2s ease; }
-        .alertas-int-bell:hover { transform: scale(1.05); }
+        /* Morado pastel permanente — distintivo del azul de Soportes en el header. El rojo queda
+           reservado para alertas/badges reales (ej. #alertasIntBadge, bg-danger), no para el
+           ícono en reposo. Mismo tono que .ui-pastel-purple ya usado en el resto de la app
+           (ver admin/users/edit.blade.php, matriz-roles-permisos.blade.php). */
+        .alertas-int-bell { transition: transform .2s ease, color .2s ease; color: #9333ea; }
+        .alertas-int-bell:hover { transform: scale(1.05); color: #7e22ce; }
 
         /* Pulso de atención — cada tantos minutos (configurable), mientras haya algo vencido o
-           por vencer hoy, el ícono crece y se pone más rojo por un momento, sin interrumpir nada
-           (a diferencia del modal forzado, esto no bloquea ni exige elegir). */
+           por vencer hoy, el ícono crece por un momento, sin interrumpir nada (a diferencia del
+           modal forzado, esto no bloquea ni exige elegir). Escala x2 respecto al original
+           (1.35/1.2 → 2.7/2.4) para que se note bien de reojo. Mismo morado pastel del reposo —
+           el rojo se reserva para las alertas/badges, no para este pulso.*/
         @keyframes alertasIntPulso {
-            0%, 100% { transform: scale(1); color: inherit; }
-            25% { transform: scale(1.35); color: #dc2626; }
-            50% { transform: scale(1); color: #dc2626; }
-            75% { transform: scale(1.2); color: #dc2626; }
+            0%, 100% { transform: scale(1); color: #9333ea; }
+            25% { transform: scale(2.7); color: #7e22ce; }
+            50% { transform: scale(1); color: #7e22ce; }
+            75% { transform: scale(2.4); color: #7e22ce; }
         }
         .alertas-int-bell.pulso-atencion {
             animation: alertasIntPulso 1.4s ease-in-out 2;
