@@ -636,7 +636,9 @@
                                     class="form-select form-control-pastel" required style="width: 100%;">
                                     <option value="{{ $interaction->id_user_asignacion }}" selected>Mantener actual
                                         ({{ $interaction->usuarioAsignado->name ?? 'Usuario' }})</option>
-                                    @foreach ($users as $u)
+                                    {{-- Sin el actual: si no, sale duplicado (una vez como "Mantener actual" y otra
+                                         con su nombre normal, mismo id en las dos opciones). --}}
+                                    @foreach ($users->where('id', '!=', $interaction->id_user_asignacion) as $u)
                                         <option value="{{ $u->id }}">{{ $u->name }}</option>
                                     @endforeach
                                 </select>

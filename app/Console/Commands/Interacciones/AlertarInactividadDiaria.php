@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Interacciones;
 
 use App\Mail\Interacciones\InteraccionesInactividadMail;
+use App\Models\Interacciones\IntAlertaOmitido;
 use App\Services\Interacciones\AlertasInteraccionesService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -34,11 +35,21 @@ class AlertarInactividadDiaria extends Command
         $finHoy = $hoy->copy()->endOfDay();
 
         $areasAlertadas = 0;
+        // "Omitir Correos" (Admin → Configuración de Alertas → Agentes Omitidos) solo excluía al
+        // correo de vencidas (que le llega directo al agente) — este correo de inactividad va a
+        // los admon del área, no al agente, pero igual lo NOMBRA en la lista. Quien queda
+        // exento de "correos" se entiende como exento de que Daytrack lo señale por email, no
+        // solo de recibir uno él mismo, así que también se excluye aquí.
+        $omitidosCorreo = IntAlertaOmitido::idsOmitidos('correo');
 
         foreach ($servicio->areasConInteracciones() as $area) {
             $usuarios = $servicio->usuariosDelArea($area);
 
-            $inactivos = $usuarios->filter(function ($usuario) use ($servicio, $inicioHoy, $finHoy) {
+            $inactivos = $usuarios->filter(function ($usuario) use ($servicio, $inicioHoy, $finHoy, $omitidosCorreo) {
+                if (in_array($usuario->id, $omitidosCorreo, true)) {
+                    return false;
+                }
+
                 return $servicio->interaccionesDelUsuarioEntre($usuario->id, $inicioHoy, $finHoy) === 0;
             })->values();
 
