@@ -1435,7 +1435,12 @@ class InteractionController extends Controller
         $nextActions = IntNextAction::all();
         $miAreaMotivos = $this->areaDelUsuario(Auth::id());
         $motivosNoEfectivo = IntMotivoNoEfectivo::where(fn ($q) => $q->whereNull('area')->orWhere('area', $miAreaMotivos))->orderBy('name')->get();
-        $users = User::orderBy('name')->get();
+        // Antes traía TODOS los usuarios del sistema (1080+, de Cartera, RRHH, Contabilidad, etc.)
+        // para el selector "Asignar a" del modal de seguimiento — encontrar al compañero correcto
+        // entre esa lista era prácticamente imposible. Solo tiene sentido reasignar a alguien con
+        // acceso a Interacciones (22 usuarios reales), mismo criterio que auditoria()/listAgentes.
+        $users = User::whereHas('permissions', fn ($q) => $q->where('name', 'menu.interacciones'))
+            ->orderBy('name')->get();
 
         return view('interactions.show', compact('interaction', 'labels', 'totals', 'range', 'clientHistory', 'outcomes', 'nextActions', 'motivosNoEfectivo', 'users'));
     }

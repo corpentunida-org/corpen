@@ -48,7 +48,7 @@
             </div>
 
             <div class="text-center alertas-int-footer">
-                <a href="{{ route('interactions.create') }}" class="btn btn-sm btn-danger w-100 mb-2">
+                <a href="{{ route('interactions.create') }}" class="btn btn-sm btn-alertas-int-accion w-100 mb-2">
                     <i class="feather-plus me-1"></i> Nueva Interacción
                 </a>
                 <a href="{{ route('interactions.index') }}" class="fs-13 fw-semibold text-dark text-decoration-none">
@@ -65,6 +65,11 @@
            (ver admin/users/edit.blade.php, matriz-roles-permisos.blade.php). */
         .alertas-int-bell { transition: transform .2s ease, color .2s ease; color: #9333ea; }
         .alertas-int-bell:hover { transform: scale(1.05); color: #7e22ce; }
+
+        /* Botón "Nueva Interacción" del footer — mismo morado del ícono, no rojo (el rojo queda
+           reservado para las alertas/badges reales). */
+        .btn-alertas-int-accion { background-color: #9333ea; border-color: #9333ea; color: #fff; }
+        .btn-alertas-int-accion:hover { background-color: #7e22ce; border-color: #7e22ce; color: #fff; }
 
         /* Pulso de atención — cada tantos minutos (configurable), mientras haya algo vencido o
            por vencer hoy, el ícono crece por un momento, sin interrumpir nada (a diferencia del
@@ -111,11 +116,13 @@
         }
 
         /* Banner con color propio (no gris) — mismo patrón que el informe de referencia:
-           degradado oscuro de cabecera + tarjetas claras debajo. Aquí en tonos rojo/naranja
-           porque este panel es, por definición, de urgencias (vencidas/pendientes). */
+           degradado oscuro de cabecera + tarjetas claras debajo. Morado (no rojo): este
+           encabezado es compartido por las dos pestañas (Vencidas Y Pendientes), así que no le
+           corresponde el rojo — ese queda solo para lo que es específicamente "vencida" (la
+           pestaña activa, el badge de vencidas, y el modal forzado que es 100% sobre vencidas). */
         .alertas-int-header {
             padding: 16px 16px 14px 16px;
-            background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 55%, #c2410c 100%);
+            background: linear-gradient(135deg, #581c87 0%, #7e22ce 55%, #9333ea 100%);
             color: #fff;
         }
         .alertas-int-header h6 { color: #fff; }
