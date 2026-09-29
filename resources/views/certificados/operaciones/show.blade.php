@@ -1638,8 +1638,8 @@
 
                                                                                             <td class="px-3 py-2 border-end bg-white">
                                                                                                 <div class="text-dark text-nowrap" style="font-size: 0.68rem;">{{ $linea->id_car_sia_lineas }}</div>
-                                                                                                <div class="text-muted text-truncate" style="font-size: 0.62rem; max-width: 130px;" title="{{ $linea->factura?->lineaSia?->nombre ?? 'N/A' }}">
-                                                                                                    {{ $linea->factura?->lineaSia?->nombre ?? 'N/A' }}
+                                                                                                <div class="text-muted text-truncate" style="font-size: 0.62rem; max-width: 130px;" title="{{ $linea->lineaSia?->nombre ?? 'N/A' }}">
+                                                                                                    {{ $linea->lineaSia?->nombre ?? 'N/A' }}
                                                                                                 </div>
                                                                                             </td>
 
@@ -2931,9 +2931,10 @@
                                                                     </div>
                                                                     <span class="text-muted font-monospace" style="font-size: 0.6rem;">Valores dinámicos del certificado</span>
                                                                 </div>
-                                                                <div class="p-2 bg-white border rounded-1 overflow-y-auto" style="max-height: 220px;">
+                                                                <!-- Cambia max-height: 220px por un espacio más cómodo como 350px o 400px -->
+                                                                <div class="p-2 bg-white border rounded-1 overflow-y-auto" style="max-height: 380px;">
                                                                     <div class="row g-2 contenedor-campos-payload auto-init-payload" data-tipo="{{ $tipoCertificadoFila }}" data-payload="{{ $payloadJson }}">
-                                                                        <!-- Inyección JS dinámica automática -->
+                                                                        <!-- Inyección JS -->
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -3832,16 +3833,45 @@
                 { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Inicio de Pagos', type: 'date', dataLlave: 'fecha_inicio_pagos' },
                 { tipoForm: 'checkbox', col: 'col-12 col-md-8', label: 'Incluir espacio para Firma de Esposa', dataLlave: 'requiere_firma_esposa', id: 'firmaEsposa5' }
             ]},
-            '6': { meta: { codigo: '06_cuenta_credito', titulo: 'Cuenta de Crédito', colorHex: '#00838f', colorClass: 'info' }, campos: [
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Quién Solicita', dataLlave: 'quien_solicita', placeholder: 'Tercero, Pastor...' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Fecha de Corte', type: 'date', dataLlave: 'fecha_corte' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Saldo Capital', type: 'number', step: '0.01', dataLlave: 'saldo_capital', classes: 'bg-white fw-bold text-primary shadow-sm', placeholder: '0.00' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'N° Cuotas Vencidas', type: 'number', dataLlave: 'cuotas_vencidas', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Intereses Vencidos', type: 'number', step: '0.01', dataLlave: 'intereses_vencidos', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Seguro Vencido', type: 'number', step: '0.01', dataLlave: 'seguro_vencido', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Seguro Hogar Vencido', type: 'number', step: '0.01', dataLlave: 'seguro_hogar_vencido', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
-                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'VALOR TOTAL', type: 'number', step: '0.01', dataLlave: 'valor_total', labelClasses: 'text-dark fw-bold', classes: 'bg-warning-subtle text-dark fw-bold shadow-sm', placeholder: '0.00' }
-            ]},
+            '6': {
+                meta: {
+                    codigo: '06_cuenta_credito',
+                    titulo: 'Cuenta de Crédito',
+                    colorHex: '#00838f',
+                    colorClass: 'info'
+                },
+                campos: [
+                    // ==========================================
+                    // FILA 1: Identificación y Solicitante
+                    // ==========================================
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Quién Solicita', dataLlave: 'quien_solicita', placeholder: 'Tercero, Pastor...' },
+                    { tipoForm: 'input', col: 'col-12 col-md-2', label: 'CCO', dataLlave: 'cco', placeholder: 'Ej: 1234' },
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Congregación', dataLlave: 'congregacion', placeholder: 'Ej: Central Soacha' },
+                    { tipoForm: 'input', col: 'col-12 col-md-2', label: 'Distrito', type: 'number', dataLlave: 'distrito', placeholder: 'Ej: 1' },
+
+                    // ==========================================
+                    // FILA 2: Valores Base, Corte y Totales
+                    // ==========================================
+                    { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Fecha de Corte', type: 'date', dataLlave: 'fecha_corte' },
+                    { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Saldo Capital', type: 'number', step: '0.01', dataLlave: 'saldo_capital', classes: 'bg-white fw-bold text-primary shadow-sm', placeholder: '0.00' },
+                    { tipoForm: 'input', col: 'col-12 col-md-3', label: 'N° Cuotas Vencidas', type: 'number', dataLlave: 'cuotas_vencidas', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0' },
+                    { tipoForm: 'input', col: 'col-12 col-md-3', label: 'VALOR TOTAL DEUDA', type: 'number', step: '0.01', dataLlave: 'valor_total', labelClasses: 'text-dark fw-bold', classes: 'bg-warning-subtle text-dark fw-bold shadow-sm border-warning', placeholder: '0.00' },
+
+                    // ==========================================
+                    // FILA 3: Vencidos (Normal)
+                    // ==========================================
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Intereses Vencidos', type: 'number', step: '0.01', dataLlave: 'intereses_vencidos', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Seguro Vencido', type: 'number', step: '0.01', dataLlave: 'seguro_vencido', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Seg. Todo Riesgo Vencido', type: 'number', step: '0.01', dataLlave: 'seguro_hogar_vencido', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
+
+                    // ==========================================
+                    // FILA 4: Acuerdo de Pago
+                    // ==========================================
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Interés (Acuerdo)', type: 'number', step: '0.01', dataLlave: 'intereses_acuerdo', classes: 'bg-light fw-semibold text-warning shadow-sm', placeholder: '0.00' },
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Seguro (Acuerdo)', type: 'number', step: '0.01', dataLlave: 'seguro_acuerdo', classes: 'bg-light fw-semibold text-warning shadow-sm', placeholder: '0.00' },
+                    { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Seg. Todo Riesgo (Acuerdo)', type: 'number', step: '0.01', dataLlave: 'seguro_hogar_acuerdo', classes: 'bg-light fw-semibold text-warning shadow-sm', placeholder: '0.00' }
+                ]
+            },
             '7': { meta: { codigo: '07_refinanciacion', titulo: 'Refinanciación', colorHex: '#2563eb', colorClass: 'primary' }, campos: [
                 { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Pagaré N°', dataLlave: 'pagare_numero', placeholder: 'Ej: 11337' },
                 { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Capital Refinanciado', type: 'number', step: '0.01', dataLlave: 'valor_refinanciado', classes: 'bg-white fw-bold text-primary shadow-sm', placeholder: '0.00' },
