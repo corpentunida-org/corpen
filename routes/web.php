@@ -1738,6 +1738,7 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         // 1. GESTIÓN DE CARTERA / BACKOFFICE
         // ---------------------------------------------------
+        Route::middleware('candirect:certificados.operaciones.index')->group(function () {
 
         // Matriz Principal del Motor de Operaciones
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
@@ -1800,10 +1801,13 @@ Route::middleware(['auth'])
         // CERTIFICADOS: Generación Individual (CORREGIDO AL OPERACION CONTROLLER)
         Route::get('operaciones/{id}/generar-pdf', [OperacionController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
 
+        }); // fin candirect:certificados.operaciones.index
+
 
         // ---------------------------------------------------
         // 2. PORTAL DE ATENCIÓN / FRONT DESK
         // ---------------------------------------------------
+        Route::middleware('candirect:certificados.frontdesk.index')->group(function () {
 
         // Vista de Login/Búsqueda (No protegida estrictamente por rol cliente aún, pero agrupada aquí)
         Route::get('frontdesk', [PortalClienteController::class, 'index'])->name('frontdesk.index');
@@ -1817,10 +1821,15 @@ Route::middleware(['auth'])
         // Cerrar sesión del portal
         Route::post('frontdesk/logout', [PortalClienteController::class, 'logout'])->name('frontdesk.logout');
 
+        }); // fin candirect:certificados.frontdesk.index
+
 
         // ---------------------------------------------------
         // 3. CONFIGURACIÓN CENTRAL Y CATÁLOGOS
         // ---------------------------------------------------
+        // catalogos.* y config.* comparten la misma pantalla (ConfiguracionController) — un
+        // único permiso para las dos, ver migración crear_permisos_de_certificados.
+        Route::middleware('candirect:certificados.catalogos.index')->group(function () {
 
         // Panel Central Unificado (Parámetros Core y Catálogos Base)
         Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('config.index');
@@ -1848,10 +1857,13 @@ Route::middleware(['auth'])
         Route::post('config/origen-evento', [ConfiguracionController::class, 'storeOrigenEvento'])->name('catalogos.store_origen_evento');
         Route::post('config/evento-auditoria', [ConfiguracionController::class, 'storeEventoAuditoria'])->name('catalogos.store_evento_auditoria');
 
+        }); // fin candirect:certificados.catalogos.index
+
 
         // ---------------------------------------------------
         // 4. ÁREA TÉCNICA / BACKSTAGE - INGESTA ERP
         // ---------------------------------------------------
+        Route::middleware('candirect:certificados.ingesta.index')->group(function () {
 
         // Panel de Lotes Crudos (Staging)
         Route::get('ingesta', [IngestaController::class, 'index'])->name('ingesta.index');
@@ -1876,10 +1888,13 @@ Route::middleware(['auth'])
         // Anulación MASIVA de todo un lote
         Route::put('ingesta/bloque/{bloque}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular_bloque');
 
+        }); // fin candirect:certificados.ingesta.index
+
 
         // ---------------------------------------------------
         // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA
         // ---------------------------------------------------
+        Route::middleware('candirect:certificados.auditoria.index')->group(function () {
 
         // Panel de Bitácora de Auditoría
         Route::get('auditoria', [AuditoriaCertificadosController::class, 'index'])->name('auditoria.index');
@@ -1894,19 +1909,23 @@ Route::middleware(['auth'])
         // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN
         Route::put('auditoria/origen/{id}', [AuditoriaCertificadosController::class, 'updateOrigenEvento'])->name('auditoria.update_origen');
         Route::put('auditoria/evento/{id}', [AuditoriaCertificadosController::class, 'updateEventoAuditoria'])->name('auditoria.update_evento');
-        
+
+        }); // fin candirect:certificados.auditoria.index
+
         // ---------------------------------------------------
-        // 6. MÓDULO DE INFORMES Y ESTADÍSTICAS (COMPLETADO)
+        // 6. MÓDULO DE INFORMES Y ESTADÍSTICAS
         // ---------------------------------------------------
-        Route::prefix('informes')->name('informes.')->group(function () {
+        // Quedó por accidente dentro del candirect de Auditoría (artefacto del merge que la
+        // trajo) — permiso propio, ver migración crear_permiso_certificados_informes.
+        Route::middleware('candirect:certificados.informes.index')->prefix('informes')->name('informes.')->group(function () {
             Route::get('/', [InformeController::class, 'index'])->name('index');
             Route::get('/{bloque}', [InformeController::class, 'show'])->name('show'); // Dashboard del Lote (Bloque)
-            Route::get('/{bloque}/download', [InformeController::class, 'download'])->name('download');
-            Route::post('/configurar', [InformeController::class, 'configurar'])->name('configurar');
-            Route::post('/programar', [InformeController::class, 'programar'])->name('programar');
-            Route::post('/generar-masivo', [InformeController::class, 'generarMasivo'])->name('generar_masivo');
-            Route::post('/store', [InformeController::class, 'store'])->name('store');
             Route::post('/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('exportar_pdf');
+            // download/configurar/programar/generar-masivo/store quedaron registradas apuntando
+            // a métodos que no existen en InformeController (download/configurar/programar/
+            // generarMasivo/store) — ninguna vista las usa hoy. Quitadas para no dejar rutas que
+            // truenan con 500 si alguien las llega a enlazar; re-agregar cuando el controlador
+            // tenga esos métodos.
         });
 
     });
