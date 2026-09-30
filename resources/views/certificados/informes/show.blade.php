@@ -23,16 +23,16 @@
         .bg-pastel-primary { background-color: var(--c-primary-soft) !important; color: var(--c-primary) !important; border: none; }
         .bg-pastel-success { background-color: var(--c-success-soft) !important; color: var(--c-success) !important; border: none; }
         .bg-pastel-warning { background-color: var(--c-warning-soft) !important; color: var(--c-warning) !important; border: none; }
-        
+
         .card-custom { border-radius: 20px; background: #ffffff; border: 1px solid #f0f0f0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .card-custom:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        
+
         .table-hover tbody tr:hover { background-color: #fcfdfe !important; transition: all 0.2s ease; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-        
+
         .progress-custom { height: 8px; border-radius: 10px; background-color: #f1f5f9; overflow: hidden; }
     </style>
 
@@ -44,7 +44,7 @@
          ============================================================================== --}}
     <div class="app-container py-4" style="min-height: 100vh; background: var(--c-bg);">
         <div class="container-fluid px-xl-4">
-            
+
             {{-- 3.1 NAVEGACIÓN, ENCABEZADO Y BOTÓN PDF --}}
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
                 <div class="d-flex align-items-center gap-3">
@@ -79,29 +79,6 @@
                             <i class="fas fa-file-pdf" id="pdfIcon"></i> <span id="pdfText">Descargar PDF</span>
                         </button>
                     </form>
-
-                    {{-- Script para evitar que el botón se quede cargando infinitamente --}}
-                    <script>
-                        document.getElementById('formDownloadPdf').addEventListener('submit', function () {
-                            const btn = document.getElementById('btnDownloadPdf');
-                            const icon = document.getElementById('pdfIcon');
-                            const text = document.getElementById('pdfText');
-
-                            // Cambiar icono temporalmente a modo carga
-                            icon.className = "fas fa-spinner fa-spin";
-                            text.innerText = "Generando...";
-                            btn.style.opacity = "0.7";
-
-                            // Como el navegador descarga el archivo en segundo plano, 
-                            // restauramos el botón a la normalidad a los 3 segundos.
-                            setTimeout(function () {
-                                icon.className = "fas fa-file-pdf";
-                                text.innerText = "Descargar PDF";
-                                btn.style.opacity = "1";
-                                btn.disabled = false;
-                            }, 3000);
-                        });
-                    </script>
                 </div>
             </div>
 
@@ -111,7 +88,7 @@
                 $totalVal      = $kpi['total_lineas'] ?? 0;
                 $generadosVal  = $kpi['generados'] ?? 0;
                 $pendientesVal = $kpi['pendientes'] ?? 0;
-                
+
                 $porcentajeGen = $totalVal > 0 ? round(($generadosVal / $totalVal) * 100, 1) : 0;
                 $porcentajePen = $totalVal > 0 ? round(($pendientesVal / $totalVal) * 100, 1) : 0;
             @endphp
@@ -282,7 +259,7 @@
 
                 {{-- 3.6 SECCIÓN LATERAL: TIPOS DE CERTIFICADOS / AUDITORÍA --}}
                 <div class="col-12 col-xl-4 d-flex flex-column gap-4">
-                    
+
                     {{-- Tipos de Certificados Generados en el Lote --}}
                     <div class="card card-custom shadow border-0">
                         <div class="card-header bg-white border-bottom p-3" style="border-radius: 20px 20px 0 0;">
@@ -333,7 +310,7 @@
                                         @foreach($historialBloque as $log)
                                             <div class="p-2 rounded bg-white border shadow-sm" style="font-size: 0.75rem;">
                                                 <div class="fw-bold text-dark">
-                                                    <i class="fas fa-circle text-primary" style="font-size: 5px; vertical-align: middle;"></i> 
+                                                    <i class="fas fa-circle text-primary" style="font-size: 5px; vertical-align: middle;"></i>
                                                     {{ optional($log->eventoAuditoria)->nombre ?? 'Evento' }}
                                                 </div>
                                                 <div class="text-muted mt-1">Usuario: {{ optional($log->usuario)->name ?? 'Sistema' }}</div>
@@ -358,69 +335,94 @@
     </div>
 
     {{-- ==============================================================================
-         SCRIPTS PARA RENDERIZAR LOS GRÁFICOS (CHART.JS)
+         SCRIPTS PARA RENDERIZAR LOS GRÁFICOS Y BOTÓN PDF
          ============================================================================== --}}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // 1. Gráfico de Eficiencia (Doughnut)
-            const ctxEficiencia = document.getElementById('chartEficiencia').getContext('2d');
-            new Chart(ctxEficiencia, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Generados / Completados', 'Pendientes'],
-                    datasets: [{
-                        data: [{{ $generadosVal }}, {{ $pendientesVal }}],
-                        backgroundColor: ['#2e7d32', '#f57f17'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: { boxWidth: 12, font: { size: 11 } }
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
+            // 1. Control del botón de descarga PDF para evitar bucle de carga
+            const formPdf = document.getElementById('formDownloadPdf');
+            if (formPdf) {
+                formPdf.addEventListener('submit', function () {
+                    const btn = document.getElementById('btnDownloadPdf');
+                    const icon = document.getElementById('pdfIcon');
+                    const text = document.getElementById('pdfText');
 
-            // 2. Gráfico de Métodos de Creación (Bar)
-            const ctxMetodos = document.getElementById('chartMetodos').getContext('2d');
-            new Chart(ctxMetodos, {
-                type: 'bar',
-                data: {
-                    labels: ['Automáticas', 'Manuales'],
-                    datasets: [{
-                        label: 'Operaciones',
-                        data: [{{ $chartMetodos['automaticas'] }}, {{ $chartMetodos['manuales'] }}],
-                        backgroundColor: ['#4a90e2', '#f57f17'],
-                        borderRadius: 8,
-                        barThickness: 35
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
+                    icon.className = "fas fa-spinner fa-spin";
+                    text.innerText = "Generando...";
+                    btn.style.opacity = "0.7";
+
+                    setTimeout(function () {
+                        icon.className = "fas fa-file-pdf";
+                        text.innerText = "Descargar PDF";
+                        btn.style.opacity = "1";
+                        btn.disabled = false;
+                    }, 2500);
+                });
+            }
+
+            // 2. Gráfico de Eficiencia (Doughnut)
+            const ctxEficiencia = document.getElementById('chartEficiencia');
+            if (ctxEficiencia) {
+                new Chart(ctxEficiencia.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Generados / Completados', 'Pendientes'],
+                        datasets: [{
+                            data: [{{ $generadosVal }}, {{ $pendientesVal }}],
+                            backgroundColor: ['#2e7d32', '#f57f17'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { precision: 0, font: { size: 11 } },
-                            grid: { color: '#f1f5f9' }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            }
                         },
-                        x: {
-                            grid: { display: false },
-                            ticks: { font: { size: 11 } }
+                        cutout: '70%'
+                    }
+                });
+            }
+
+            // 3. Gráfico de Métodos de Creación (Bar)
+            const ctxMetodos = document.getElementById('chartMetodos');
+            if (ctxMetodos) {
+                new Chart(ctxMetodos.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Automáticas', 'Manuales'],
+                        datasets: [{
+                            label: 'Operaciones',
+                            data: [{{ $chartMetodos['automaticas'] }}, {{ $chartMetodos['manuales'] }}],
+                            backgroundColor: ['#4a90e2', '#f57f17'],
+                            borderRadius: 8,
+                            barThickness: 35
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0, font: { size: 11 } },
+                                grid: { color: '#f1f5f9' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 11 } }
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         });
     </script>
 </x-base-layout>
