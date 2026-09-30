@@ -154,7 +154,7 @@ class ScpSoporteController extends Controller
      * en el navegador, para no duplicar toda la lógica de badges/colores en JS. DataTables no
      * escapa el contenido de las celdas por defecto, así que esto se renderiza tal cual.
      */
-    private function formatearFilaSoporteAjax(ScpSoporte $soporte, $areasPorCreador): array
+    private function formatearFilaSoporteAjax(ScpSoporte $soporte, $areasPorCreador, $estadosParaCambio = []): array
     {
         $areaModal = $soporte->cargo->gdoArea->nombre ?? 'Soporte';
         $prioridadNombre = $soporte->prioridad->nombre ?? '';
@@ -172,15 +172,21 @@ class ScpSoporteController extends Controller
             'Baja' => 'background-color: #E6F3FF !important; color: #5C7CFA !important; border: 1px solid #C5D9FF !important;',
             default => 'background-color: #F3E5F5 !important; color: #9C27B0 !important; border: 1px solid #E1BEE7 !important;',
         };
+        // Los nombres reales del catálogo son SinAsignar/EnProceso/Revision/Cerrado (sin
+        // espacios ni tildes, ver ScpEstado) — antes se comparaba contra 'Pendiente'/'En Proceso'
+        // (con espacio), que nunca coincidían con nada real, así que todo menos "Cerrado" caía
+        // siempre al color/ícono por defecto (rosa) sin importar el estado real.
         $estadoIcono = match ($estadoNombre) {
-            'Pendiente' => 'feather-clock',
-            'En Proceso' => 'feather-loader',
+            'SinAsignar' => 'feather-user-x',
+            'EnProceso' => 'feather-loader',
+            'Revision' => 'feather-eye',
             'Cerrado' => 'feather-check-circle',
             default => 'feather-help-circle',
         };
         $estadoEstilo = match ($estadoNombre) {
-            'Pendiente' => 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;',
-            'En Proceso' => 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;',
+            'SinAsignar' => 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;',
+            'EnProceso' => 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;',
+            'Revision' => 'background-color: #F3E5F5 !important; color: #9C27B0 !important; border: 1px solid #E1BEE7 !important;',
             'Cerrado' => 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;',
             default => 'background-color: #FCE4EC !important; color: #C2185B !important; border: 1px solid #F8BBD0 !important;',
         };
@@ -227,7 +233,23 @@ class ScpSoporteController extends Controller
         $estadoCol = '<div style="min-width: 60px; text-align: center; border-radius: 8px; font-weight: 500; font-size: 0.6rem; '.$estadoEstilo.' padding: 2px 6px; display: flex; align-items: center; justify-content: center;">'
             .'<i class="feather '.$estadoIcono.'" style="font-size: 8px; margin-right: 2px;"></i><span>'.e($estadoNombre).'</span></div>';
 
-        $accionesCol = '<button type="button" class="btn btn-sm btn-light" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.location.href=\''.route('soportes.soportes.show', ['scpSoporte' => $soporte->id]).'\'"><i class="feather-eye me-1"></i> Ver</button>';
+        // Cambio de estado rápido sin entrar al detalle: antes había que abrir el ticket,
+        // cambiar el estado ahí, y volver al listado — y si se volvía con el botón "Atrás" del
+        // navegador, a veces se veía una copia en caché de la fila desactualizada, dando la
+        // sensación de que "se graba pero sigue apareciendo" aunque el guardado sí funcionaba.
+        // Con esto se guarda por AJAX y se recarga solo esta tabla, sin navegar a ningún lado.
+        // "Revision" queda afuera a propósito: esa transición necesita elegir un revisor (ver
+        // cambiarEstado()), que no cabe en un clic rápido de una sola opción.
+        $itemsEstado = collect($estadosParaCambio)
+            ->filter(fn ($e) => $e->id != $soporte->estado)
+            ->map(fn ($e) => '<li><a class="dropdown-item cambiar-estado-rapido" href="javascript:void(0)" data-soporte-id="'.$soporte->id.'" data-estado-id="'.$e->id.'">'.e($e->nombre).'</a></li>')
+            ->implode('');
+
+        $accionesCol = '<div class="btn-group btn-group-sm">'
+            .'<button type="button" class="btn btn-sm btn-light" style="padding: 2px 6px; font-size: 0.7rem;" onclick="window.location.href=\''.route('soportes.soportes.show', ['scpSoporte' => $soporte->id]).'\'"><i class="feather-eye me-1"></i> Ver</button>'
+            .'<button type="button" class="btn btn-sm btn-light dropdown-toggle dropdown-toggle-split" style="padding: 2px 4px;" data-bs-toggle="dropdown" aria-expanded="false" title="Cambiar estado"><span class="visually-hidden">Cambiar estado</span></button>'
+            .'<ul class="dropdown-menu dropdown-menu-end">'.$itemsEstado.'</ul>'
+            .'</div>';
 
         return [
             'id_col' => $idCol,
@@ -290,7 +312,8 @@ class ScpSoporteController extends Controller
             }
 
             $areasPorCreador = $this->resolverAreasPorCreador($soportesPagina);
-            $data = $soportesPagina->map(fn ($s) => $this->formatearFilaSoporteAjax($s, $areasPorCreador))->values();
+            $estadosParaCambio = ScpEstado::where('nombre', '!=', 'Revision')->orderBy('nombre')->get(['id', 'nombre']);
+            $data = $soportesPagina->map(fn ($s) => $this->formatearFilaSoporteAjax($s, $areasPorCreador, $estadosParaCambio))->values();
 
             return response()->json([
                 'draw' => (int) $request->input('draw'),
@@ -802,6 +825,19 @@ class ScpSoporteController extends Controller
             'estado' => 'required|exists:scp_estados,id',
         ]);
 
+        // Mover a "Revision" es, en la práctica, pasarle la responsabilidad a otra persona —
+        // necesita elegir un revisor (ver storeObservacion() y usuario_escalado), campo que este
+        // endpoint no recibe. El cambio rápido desde el listado ya excluye esta opción del menú,
+        // pero se valida también aquí por si alguien la dispara directo sin pasar por la UI.
+        if ((int) $request->estado === ScpEstado::idPorNombre('Revision')) {
+            $mensaje = 'Para mover a "Revisión" hay que elegir quién revisa — entra al detalle del ticket.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['ok' => false, 'message' => $mensaje], 422);
+            }
+
+            return redirect()->back()->with('error', $mensaje);
+        }
+
         $estadoAnterior = $scpSoporte->estadoSoporte->nombre ?? 'Sin Estado';
         $scpSoporte->update(['estado' => $request->estado]);
         $scpSoporte->refresh();
@@ -813,6 +849,12 @@ class ScpSoporteController extends Controller
             'id_users' => Auth::id(),
             'id_tipo_observacion' => 2, // Accion
         ]);
+
+        // El cambio rápido desde el listado (formatearFilaSoporteAjax) llama esto por AJAX y
+        // recarga solo la tabla en vez de navegar — necesita JSON, no un redirect.
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['ok' => true, 'estado' => $scpSoporte->estadoSoporte->nombre ?? '']);
+        }
 
         return redirect()->back()->with('success', 'Estado actualizado correctamente.');
     }
@@ -847,7 +889,8 @@ class ScpSoporteController extends Controller
             }
 
             $areasPorCreador = $this->resolverAreasPorCreador($soportesPagina);
-            $data = $soportesPagina->map(fn ($s) => $this->formatearFilaSoporteAjax($s, $areasPorCreador))->values();
+            $estadosParaCambio = ScpEstado::where('nombre', '!=', 'Revision')->orderBy('nombre')->get(['id', 'nombre']);
+            $data = $soportesPagina->map(fn ($s) => $this->formatearFilaSoporteAjax($s, $areasPorCreador, $estadosParaCambio))->values();
 
             return response()->json([
                 'draw' => (int) $request->input('draw'),
