@@ -1909,22 +1909,24 @@ Route::middleware(['auth'])
         // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN
         Route::put('auditoria/origen/{id}', [AuditoriaCertificadosController::class, 'updateOrigenEvento'])->name('auditoria.update_origen');
         Route::put('auditoria/evento/{id}', [AuditoriaCertificadosController::class, 'updateEventoAuditoria'])->name('auditoria.update_evento');
-        
-        // ---------------------------------------------------
-        // 6. MÓDULO DE INFORMES Y ESTADÍSTICAS (COMPLETADO)
-        // ---------------------------------------------------
-        Route::prefix('informes')->name('informes.')->group(function () {
-            Route::get('/', [InformeController::class, 'index'])->name('index');
-            Route::get('/{bloque}', [InformeController::class, 'show'])->name('show'); // Dashboard del Lote (Bloque)
-            Route::get('/{bloque}/download', [InformeController::class, 'download'])->name('download');
-            Route::post('/configurar', [InformeController::class, 'configurar'])->name('configurar');
-            Route::post('/programar', [InformeController::class, 'programar'])->name('programar');
-            Route::post('/generar-masivo', [InformeController::class, 'generarMasivo'])->name('generar_masivo');
-            Route::post('/store', [InformeController::class, 'store'])->name('store');
-            Route::post('/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('exportar_pdf');
-        });
 
         }); // fin candirect:certificados.auditoria.index
+
+        // ---------------------------------------------------
+        // 6. MÓDULO DE INFORMES Y ESTADÍSTICAS
+        // ---------------------------------------------------
+        // Quedó por accidente dentro del candirect de Auditoría (artefacto del merge que la
+        // trajo) — permiso propio, ver migración crear_permiso_certificados_informes.
+        Route::middleware('candirect:certificados.informes.index')->prefix('informes')->name('informes.')->group(function () {
+            Route::get('/', [InformeController::class, 'index'])->name('index');
+            Route::get('/{bloque}', [InformeController::class, 'show'])->name('show'); // Dashboard del Lote (Bloque)
+            Route::post('/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('exportar_pdf');
+            // download/configurar/programar/generar-masivo/store quedaron registradas apuntando
+            // a métodos que no existen en InformeController (download/configurar/programar/
+            // generarMasivo/store) — ninguna vista las usa hoy. Quitadas para no dejar rutas que
+            // truenan con 500 si alguien las llega a enlazar; re-agregar cuando el controlador
+            // tenga esos métodos.
+        });
 
     });
 // FIN MÓDULO SIA CERTIFICADOS
