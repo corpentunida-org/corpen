@@ -27,6 +27,15 @@
                 <i class="bi bi-database-gear me-2"></i> Subir Excel / Archivos
             </a>
         </li>
+        
+        {{-- NUEVO BOTÓN DE INFORMES AGREGADO AQUÍ --}}
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('certificados.informes.index') }}">
+                <i class="bi bi-pie-chart me-2"></i> Informes y Analítica
+            </a>
+        </li>
+        {{-- FIN NUEVO BOTÓN --}}
+
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('certificados.auditoria.index') }}">
                 <i class="bi bi-terminal me-2"></i> Registro de Actividad
