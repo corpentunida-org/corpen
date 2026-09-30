@@ -1115,7 +1115,10 @@ class OperacionController extends Controller
                     5 => 'certificados.pdf.05_acuerdos_pago', //Color naranja
                     6 => 'certificados.pdf.06_cuenta_credito', //Color naranja
                     7 => 'certificados.pdf.07_refinanciacion', //Color naranja
-                    default => 'certificados.pdf.paz_y_salvo',
+                    // Antes apuntaba a 'certificados.pdf.paz_y_salvo' (sin el prefijo "02_"),
+                    // un archivo que no existe — si algún día llega un tipo fuera de 1-7, esto
+                    // se caía con un ViewNotFoundException en vez de mostrar el genérico.
+                    default => 'certificados.pdf.02_paz_y_salvo',
                 };
 
                 // 5. Renderizar vista a PDF

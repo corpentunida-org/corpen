@@ -216,7 +216,7 @@
     <br><br>
 
     <div class="content">
-        El presente documento certifica que el(la) asociado(a) <strong>{{ strtoupper($operacion->tercero->nom_ter ?? '') }} {{ strtoupper($operacion->tercero->apl1 ?? '') }} {{ strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
+        El presente documento certifica que el(la) asociado(a) <strong>{{ mb_strtoupper($operacion->tercero->nom_ter ?? '') }} {{ mb_strtoupper($operacion->tercero->apl1 ?? '') }} {{ mb_strtoupper($operacion->tercero->apl2 ?? '') }}</strong>,
         identificado(a) con cédula de ciudadanía No. <strong>{{ $operacion->tercero->cod_ter ?? 'N/A' }}</strong>,
         registra el siguiente estado y condiciones de refinanciación de sus obligaciones financieras con la Asociación a la fecha de corte:
     </div>
