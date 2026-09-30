@@ -1058,6 +1058,65 @@
                     setTimeout(updateResultCount, 200);
                 }
 
+                // Si se vuelve a esta pantalla con el botón "Atrás" del navegador (ej. desde el
+                // detalle de un ticket, después de moverlo a "Revisión" — la única transición que
+                // sigue necesitando entrar ahí), algunos navegadores restauran la página desde su
+                // caché (bfcache) tal cual estaba ANTES de irse, sin volver a pedir los datos —
+                // se veía como que el cambio de estado "se grababa pero seguía apareciendo" igual.
+                // event.persisted === true es la señal de que se restauró desde bfcache.
+                window.addEventListener('pageshow', function (event) {
+                    if (event.persisted) {
+                        recargarTablas();
+                    }
+                });
+
+                // Cambio de estado rápido desde el listado (botón junto a "Ver", ver
+                // formatearFilaSoporteAjax()) — delegado porque las filas se arman por AJAX,
+                // no existen en el DOM al cargar la página. Guarda sin navegar y recarga solo
+                // las tablas, así que no depende de "volver" a esta pantalla para nada — se
+                // acabó el problema de que el cambio se viera desactualizado al volver del
+                // detalle con el botón Atrás del navegador.
+                $(document).on('click', '.cambiar-estado-rapido', function (e) {
+                    e.preventDefault();
+                    const $item = $(this);
+                    const soporteId = $item.data('soporte-id');
+                    const estadoId = $item.data('estado-id');
+                    const nombreEstado = $item.text().trim();
+
+                    fetch(`/soportes/${soporteId}/cambiar-estado`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({ estado: estadoId }),
+                    })
+                        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                        .then(({ ok, data }) => {
+                            if (ok && data.ok) {
+                                recargarTablas();
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Estado actualizado',
+                                        text: `Ticket #${soporteId} → ${nombreEstado}`,
+                                        timer: 1800,
+                                        showConfirmButton: false,
+                                    });
+                                }
+                            } else if (typeof Swal !== 'undefined') {
+                                Swal.fire({ icon: 'warning', title: 'No se pudo cambiar', text: data.message || 'Intenta de nuevo.' });
+                            }
+                        })
+                        .catch(() => {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({ icon: 'error', title: 'Error de conexión', text: 'No se pudo cambiar el estado. Intenta de nuevo.' });
+                            }
+                        });
+                });
+
                 $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado').on('change', recargarTablas);
 
                 // #filterFecha aparte, con debounce: un <input type="date"> ya con valor dispara
