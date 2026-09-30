@@ -192,7 +192,7 @@ use App\Http\Controllers\Certificados\PortalClienteController;
 use App\Http\Controllers\Certificados\ConfiguracionController;
 use App\Http\Controllers\Certificados\IngestaController;
 use App\Http\Controllers\Certificados\AuditoriaController as AuditoriaCertificadosController;
-use App\Http\Controllers\Certificados\CertificadoController;
+use App\Http\Controllers\Certificados\InformeController;
 
 //ASOCIADO
 use App\Http\Controllers\Asociado\MaeAsociadoController;
@@ -1894,6 +1894,20 @@ Route::middleware(['auth'])
         // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN
         Route::put('auditoria/origen/{id}', [AuditoriaCertificadosController::class, 'updateOrigenEvento'])->name('auditoria.update_origen');
         Route::put('auditoria/evento/{id}', [AuditoriaCertificadosController::class, 'updateEventoAuditoria'])->name('auditoria.update_evento');
+        
+        // ---------------------------------------------------
+        // 6. MÓDULO DE INFORMES Y ESTADÍSTICAS (COMPLETADO)
+        // ---------------------------------------------------
+        Route::prefix('informes')->name('informes.')->group(function () {
+            Route::get('/', [InformeController::class, 'index'])->name('index');
+            Route::get('/{bloque}', [InformeController::class, 'show'])->name('show'); // Dashboard del Lote (Bloque)
+            Route::get('/{bloque}/download', [InformeController::class, 'download'])->name('download');
+            Route::post('/configurar', [InformeController::class, 'configurar'])->name('configurar');
+            Route::post('/programar', [InformeController::class, 'programar'])->name('programar');
+            Route::post('/generar-masivo', [InformeController::class, 'generarMasivo'])->name('generar_masivo');
+            Route::post('/store', [InformeController::class, 'store'])->name('store');
+            Route::post('/exportar-pdf', [InformeController::class, 'exportarPdf'])->name('exportar_pdf');
+        });
 
     });
 // FIN MÓDULO SIA CERTIFICADOS
