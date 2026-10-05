@@ -37,6 +37,7 @@ use App\Models\Maestras\MaeCongregacion;
 use App\Models\Certificados\CarSiaLinea;
 use App\Models\Asociado\MaeAsociado;
 use App\Models\Interacciones\Interaction;
+use App\Services\Certicados\CrmInteractionService;
 
 class OperacionController extends Controller
 {
@@ -843,23 +844,26 @@ class OperacionController extends Controller
         }
 
         /**
-         * 9. GENERACIÓN MASIVA (SOPORTE MULTI-TIPO)
+         * 9. GENERACIÓN MASIVA (SOPORTE MULTI-TIPO E INTEGRACIÓN CRM)
          *
          * Procesa lotes completos de facturas aplicando reglas de calificación por mora
          * DINÁMICAS (vía JSON), optimizado para grandes volúmenes mediante "chunks",
          * pre-carga de relaciones en memoria e inserciones masivas (upsert).
+         * Además, registra automáticamente una interacción masiva en el módulo CRM
+         * para dejar trazabilidad de la gestión realizada.
          *
          * @param Request $request
          * @return \Illuminate\Http\RedirectResponse
          */
         public function generarMasivo(Request $request)
         {
+            // 1. OBTENCIÓN DE DATOS DE ENTRADA
             $bloque = $request->input('bloque') ?? $request->input('numero_bloque');
 
-            // AHORA RECIBIMOS UN ARRAY DESDE EL MULTI-SELECT
+            // Recibimos un array desde el multi-select de tipos de certificados
             $tipos_seleccionados = $request->input('id_car_sia_tipos');
 
-            // Validaciones de entrada temprana (Early Returns)
+            // 2. VALIDACIONES TEMPRANAS (Early Returns)
             if (!$bloque) {
                 return back()->with('error', 'Debe seleccionar un lote (bloque) válido para procesar.');
             }
@@ -869,24 +873,26 @@ class OperacionController extends Controller
             }
 
             try {
-                // Iniciar transacción
+                // Iniciamos transacción para asegurar la integridad de la base de datos
                 DB::beginTransaction();
 
+                // Variables de entorno para el procesamiento
                 $ahora = now();
                 $timestamp = $ahora->timestamp;
                 $id_user = Auth::id();
                 $totalOperacionesProcesadas = 0;
 
                 // ==========================================
-                // Registrar eventos globales (Tipos seleccionados)
-                // Usamos firstOrCreate para evitar duplicar registros globales innecesarios.
+                // 3. REGISTRO DE EVENTOS GLOBALES (Tipos seleccionados)
+                // Usamos firstOrCreate en la tabla pivote para asociar los tipos al bloque.
+                // Esto evita duplicar registros si el usuario reprocesa el mismo lote.
                 // ==========================================
                 foreach ($tipos_seleccionados as $id_tipo) {
                     CarSiaTipoOperacion::firstOrCreate(
                         [
                             'numero_bloque'          => $bloque,
                             'id_car_sia_tipos'       => $id_tipo,
-                            'id_car_sia_operaciones' => null,
+                            'id_car_sia_operaciones' => null, // null porque es global para el bloque
                         ],
                         [
                             'id_user'    => $id_user,
@@ -896,22 +902,27 @@ class OperacionController extends Controller
                     );
                 }
 
-                // 2. Procesamiento por lotes (Chunks) de 500
+                // ==========================================
+                // 4. PROCESAMIENTO POR LOTES (CHUNKS)
+                // ChunkById procesa de a 500 registros para no saturar la memoria RAM del servidor.
+                // ==========================================
                 CarSiaOperacion::where('numero_bloque', $bloque)
-                    ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $bloque, &$totalOperacionesProcesadas) {
+                    ->chunkById(500, function ($operacionesChunk) use ($ahora, $timestamp, $id_user, $bloque, $tipos_seleccionados, &$totalOperacionesProcesadas) {
 
-                        // Extracción masiva de IDs
+                        // Extracción masiva de IDs del chunk actual
                         $tercerosIds = $operacionesChunk->pluck('id_tercero')->toArray();
                         $operacionesIds = $operacionesChunk->pluck('id')->toArray();
+
+                        // Mapeamos las operaciones por id_tercero para búsqueda rápida O(1)
                         $operacionesMap = $operacionesChunk->keyBy('id_tercero');
 
-                        // 3A. Pre-carga en memoria (Eager Loading manual) de los tipos individuales
+                        // 4.1. Pre-carga en memoria (Eager Loading manual) de los tipos individuales
                         $tiposIndividuales = CarSiaTipoOperacion::whereIn('id_car_sia_operaciones', $operacionesIds)
                             ->orderBy('created_at', 'desc')
                             ->get()
                             ->groupBy('id_car_sia_operaciones');
 
-                        // 3B. Pre-carga masiva en memoria de las CONFIGURACIONES (JSON)
+                        // 4.2. Pre-carga masiva en memoria de las CONFIGURACIONES (Reglas JSON)
                         $configuracionesMasivas = DB::table('car_sia_operaciones_config')
                             ->whereIn('id_car_sia_operaciones', $operacionesIds)
                             ->where('estado_activo', 1)
@@ -922,34 +933,41 @@ class OperacionController extends Controller
                             ->get()
                             ->groupBy('id_car_sia_operaciones');
 
-                        // Extraer todas las facturas de este chunk
+                        // 4.3. Extraemos todas las facturas asociadas a los terceros de este chunk
                         $facturasChunk = CarSiaApi::where('numero_bloque', $bloque)
                             ->whereIn('tercero', $tercerosIds)
                             ->get();
 
                         $lineasAInsertar = [];
 
-                        // 4. Bucle principal de evaluación
+                        // ==========================================
+                        // 5. BUCLE PRINCIPAL DE EVALUACIÓN
+                        // Iteramos sobre las facturas para aplicar las reglas de mora
+                        // ==========================================
                         foreach ($facturasChunk as $factura) {
                             $operacion = $operacionesMap[$factura->tercero] ?? null;
-                            if (!$operacion) continue;
+                            if (!$operacion) continue; // Si no hay operación asociada, saltamos la factura
 
-                            // Cálculo de mora
+                            // 5.1. Cálculo de mora en días
                             $diasMora = 0;
                             if ($factura->fecha_venci) {
                                 $fechaVencimiento = Carbon::parse($factura->fecha_venci);
                                 $diferencia = $ahora->diffInDays($fechaVencimiento, false);
+                                // Si la diferencia es negativa (pasada), es mora. Lo volvemos positivo.
                                 $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
                             }
 
-                            // 5. MOTOR DINÁMICO (Masivo)
+                            // 5.2. MOTOR DINÁMICO DE REGLAS
+                            // Obtenemos las configuraciones de la operación o una colección vacía
                             $configsOperacion = $configuracionesMasivas->get($operacion->id, collect());
                             $reglas = [];
 
+                            // Deserializamos el JSON de parámetros
                             foreach ($configsOperacion as $config) {
                                 $parametros = is_string($config->parametros) ? json_decode($config->parametros, true) : $config->parametros;
 
                                 if (is_array($parametros)) {
+                                    // Guardamos el JSON original crudo para auditoría
                                     $parametros['_json_original'] = is_string($config->parametros)
                                         ? $config->parametros
                                         : json_encode($config->parametros, JSON_UNESCAPED_UNICODE);
@@ -957,6 +975,7 @@ class OperacionController extends Controller
                                 }
                             }
 
+                            // Ordenamos las reglas de menor a mayor exigencia (mora_dias_max)
                             usort($reglas, function($a, $b) {
                                 return ($a['mora_dias_max'] ?? 0) <=> ($b['mora_dias_max'] ?? 0);
                             });
@@ -965,16 +984,19 @@ class OperacionController extends Controller
                             $observacion = '';
                             $metadataRegla = null;
 
+                            // 5.3. Aplicación de la regla correspondiente a los días de mora
                             if (count($reglas) > 0) {
                                 $reglaAplicada = null;
                                 foreach ($reglas as $regla) {
                                     $maxMora = (int)($regla['mora_dias_max'] ?? 0);
+                                    // Si los días de mora caen dentro del máximo de la regla, la aplicamos
                                     if ($diasMora <= $maxMora) {
                                         $reglaAplicada = $regla;
                                         break;
                                     }
                                 }
 
+                                // Si superó el máximo de todas las reglas, aplicamos la última (la más estricta)
                                 if (!$reglaAplicada) {
                                     $reglaAplicada = end($reglas);
                                 }
@@ -985,7 +1007,7 @@ class OperacionController extends Controller
                                 $metadataRegla = $reglaAplicada['_json_original'];
 
                             } else {
-                                // Fallback
+                                // 5.4. Fallback (Respaldo) en caso de que la operación no tenga reglas configuradas
                                 $calificacion = match(true) {
                                     $diasMora > 60 => 'Irregular',
                                     $diasMora > 30 => 'Regular',
@@ -993,6 +1015,7 @@ class OperacionController extends Controller
                                 };
                                 $observacion = "Calificación estándar generada por el sistema debido a $diasMora días de mora (Sin reglas activas).";
 
+                                // Generamos un JSON simulado para mantener la estructura de la base de datos
                                 $metadataRegla = json_encode([
                                     "dias_gracia" => 0, "mora_dias_max" => 0, "requiere_accion" => false,
                                     "observacion_fase" => $observacion, "bloqueo_automatico" => false,
@@ -1001,14 +1024,11 @@ class OperacionController extends Controller
                                 ], JSON_UNESCAPED_UNICODE);
                             }
 
-                            // ==========================================
-                            // HASH UNIFICADO Y FIN DEL BUCLE DE TIPOS
-                            // Quitamos el bucle interno por cada tipo de certificado.
-                            // El hash ya no lleva el tipo adentro, lo que evita que se dupliquen
-                            // las 10 facturas en car_sia_operaciones_lineas.
-                            // ==========================================
+                            // 5.5. HASH UNIFICADO
+                            // Creamos un hash único por operación/lote (Evita duplicidad si hay múltiples tipos)
                             $hash_certificado = "API-{$bloque}-OP-{$operacion->id}-TS-{$timestamp}";
 
+                            // Preparamos el array de datos para la inserción
                             $lineasAInsertar[] = [
                                 'id_car_sia_operaciones' => $operacion->id,
                                 'id_factura'             => $factura->id_factura,
@@ -1027,13 +1047,17 @@ class OperacionController extends Controller
                             ];
                         }
 
-                        // 6. Inserción Masiva (Upsert) de líneas únicas
+                        // ==========================================
+                        // 6. INSERCIÓN MASIVA (UPSERT)
+                        // Partimos el array en sub-chunks de 1000 para no reventar el límite de parámetros de MySQL.
+                        // Upsert actualiza si existe el hash, o inserta si es nuevo.
+                        // ==========================================
                         if (!empty($lineasAInsertar)) {
                             collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
                                 CarSiaOperacionLinea::upsert(
                                     $batch->toArray(),
-                                    ['id_car_sia_operaciones', 'id_factura', 'hash_certificado'],
-                                    [
+                                    ['id_car_sia_operaciones', 'id_factura', 'hash_certificado'], // Llaves únicas
+                                    [ // Columnas a actualizar si ya existe
                                         'id_car_sia_lineas', 'numero_bloque', 'observacion', 'calificacion', 'metadata',
                                         'fecha_venci', 'id_car_sia_estados', 'dias_mora_automaticos', 'procesado_en',
                                         'id_user', 'id_car_sia_tipos'
@@ -1042,28 +1066,45 @@ class OperacionController extends Controller
                             });
                         }
 
+                        // ==========================================
+                        // 7. INTEGRACIÓN CON CRM (Seguimientos)
+                        // Invocamos el servicio para registrar las interacciones masivas por cada operación.
+                        // ==========================================
+                        $crmService = new CrmInteractionService();
+                        $crmService->registrarLoteMasivo($operacionesChunk, $tipos_seleccionados, $bloque);
+
+                        // Incrementamos el contador de operaciones procesadas con éxito
                         $totalOperacionesProcesadas += $operacionesChunk->count();
                     });
 
-                // 7. Registro en Log de Auditoría
-                $nombresTipos = \App\Models\Certificados\CarSiaTipo::whereIn('id', $tipos_seleccionados)->pluck('nombre')->implode(', ');
+                // ==========================================
+                // 8. REGISTRO EN LOG DE AUDITORÍA
+                // Convertimos el array de IDs de tipos en un string de nombres reales para el log.
+                // ==========================================
+                $nombresTipos = CarSiaTipo::whereIn('id', $tipos_seleccionados)->pluck('nombre')->implode(', ');
 
-                $this->registrarLogAuditoria(
-                    $bloque, 1, 3,
-                    'Generación masiva de certificados (Multi-Tipo)', 'Bloque', 'Creación en lote de nuevos hashes aplicando reglas dinámicas.',
-                    [],
-                    ['registros_afectados' => $totalOperacionesProcesadas],
-                    ['tipos_asignados' => $nombresTipos ?: 'Desconocidos']
-                );
+                // Verificamos que el trait o método exista antes de llamarlo
+                if (method_exists($this, 'registrarLogAuditoria')) {
+                    $this->registrarLogAuditoria(
+                        $bloque, 1, 3, // Bloque, Acción, Entidad (Estos varían según tu configuración)
+                        'Generación masiva de certificados (Multi-Tipo)', 'Bloque', 'Creación en lote de nuevos hashes aplicando reglas dinámicas.',
+                        [], // Old payload
+                        ['registros_afectados' => $totalOperacionesProcesadas], // New payload
+                        ['tipos_asignados' => $nombresTipos ?: 'Desconocidos'] // Metadata
+                    );
+                }
 
+                // Confirmamos la transacción
                 DB::commit();
 
-                return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente aplicando matriz de reglas dinámicas ($totalOperacionesProcesadas operaciones).");
+                // 9. RESPUESTA EXITOSA
+                return back()->with('success', "Procesamiento masivo completado: Lote $bloque procesado exitosamente aplicando matriz de reglas dinámicas ($totalOperacionesProcesadas operaciones registradas en CRM).");
 
             } catch (\Exception $e) {
+                // Revertimos todos los cambios en BD si algo falla
                 DB::rollBack();
                 Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
-                return back()->with('error', 'Ocurrió un error en la base de datos: ' . $e->getMessage());
+                return back()->with('error', 'Ocurrió un error en la base de datos al procesar el lote: ' . $e->getMessage());
             }
         }
 
@@ -1277,46 +1318,76 @@ class OperacionController extends Controller
         /**
          * 11.5 PROCESAR INDIVIDUALMENTE (El "Jefe" del motor interno)
          *
-         * Recibe la petición del modal, registra el tipo de certificado seleccionado,
-         * y ejecuta el motor interno para procesar y guardar las líneas.
+         * Este método es el punto de entrada principal cuando un usuario decide procesar
+         * un certificado de forma unitaria desde el modal de la interfaz.
+         * Se encarga de validar la petición, asociar el tipo de certificado a la operación,
+         * delegar el cálculo de reglas al motor interno y finalmente registrar la acción
+         * en el módulo CRM, todo bajo una transacción segura.
          *
-         * @param Request $request
-         * @param int $id
+         * @param Request $request Contiene el 'tipo_certificado_id' seleccionado en el UI.
+         * @param int $id El ID de la operación (CarSiaOperacion) a procesar.
          * @return \Illuminate\Http\RedirectResponse
          */
         public function procesarIndividual(Request $request, $id)
         {
+            // 1. VALIDACIÓN DE ENTRADA
+            // Aseguramos que el usuario obligatoriamente haya seleccionado un tipo de certificado en el modal
             $request->validate([
-                'tipo_certificado_id' => 'required' // <--- Debe coincidir con el name del HTML
+                'tipo_certificado_id' => 'required'
             ]);
 
             try {
+                // Iniciamos la transacción: Si el motor interno o la base de datos fallan,
+                // ningún cambio se guardará, evitando registros a medias (huérfanos).
                 DB::beginTransaction();
 
+                // 2. OBTENCIÓN DE DATOS
+                // Buscamos la operación. Si no existe, lanzará un error 404 automáticamente.
                 $operacion = CarSiaOperacion::findOrFail($id);
-                $tipoId = $request->input('tipo_certificado_id'); // <--- Recibimos el ID
+                $tipoId = $request->input('tipo_certificado_id');
 
-                // 1. Registramos el tipo (Lo que antes hacía asignar_tipo)
-                \App\Models\Certificados\CarSiaTipoOperacion::create([
+                // ==========================================
+                // 3. REGISTRO DEL TIPO DE CERTIFICADO (Tabla Pivote / Historial)
+                // Guardamos qué tipo de certificado seleccionó el usuario para esta operación puntual.
+                // ==========================================
+                CarSiaTipoOperacion::create([
                     'id_car_sia_operaciones' => $operacion->id,
                     'numero_bloque'          => $operacion->numero_bloque,
                     'id_car_sia_tipos'       => $tipoId,
-                    'id_user'                => Auth::id(),
+                    'id_user'                => Auth::id(), // Registramos quién ejecutó la acción
                 ]);
 
-                // 2. Ejecutamos tu motor interno
+                // ==========================================
+                // 4. EJECUCIÓN DEL MOTOR INTERNO DE REGLAS
+                // Delegamos la carga pesada al método procesarLineasOperacion().
+                // Este método se encargará de cruzar las facturas con las reglas (JSON),
+                // calcular la mora, asignar el hash y guardar en 'car_sia_operaciones_lineas'.
+                // ==========================================
                 $this->procesarLineasOperacion($operacion);
 
+                // ==========================================
+                // 5. INTEGRACIÓN CON CRM (Auditoría e Interacciones)
+                // Invocamos el servicio centralizado para registrar que el agente
+                // generó este certificado. Esto suma a los indicadores de gestión del asesor.
+                // ==========================================
+                $crmService = new CrmInteractionService();
+                $crmService->registrarGeneracionCertificado($operacion, $tipoId, 'Individual');
+
+                // Si llegamos hasta aquí, todas las operaciones fueron exitosas. Confirmamos los cambios.
                 DB::commit();
 
+                // Redirigimos al usuario con un mensaje de éxito para que el frontend actualice la vista.
                 return back()->with('success', 'Certificado procesado y generado exitosamente.');
 
             } catch (\Exception $e) {
+                // Si ocurre cualquier error (SQL, lógica del motor, etc.), deshacemos los cambios en la BD.
                 DB::rollBack();
-                return back()->with('error', 'Ocurrió un error: ' . $e->getMessage());
+
+                // Retornamos a la vista anterior mostrando el error exacto para facilitar el soporte.
+                return back()->with('error', 'Ocurrió un error al procesar la operación: ' . $e->getMessage());
             }
         }
-
+        
 
         /**
          * 12. ACTUALIZAR LÍNEAS DESDE VISTA HOJA DE CÁLCULO
@@ -1796,23 +1867,36 @@ class OperacionController extends Controller
 
     /**
      * 15. GENERACIÓN DE CERTIFICADO DE GESTIÓN DESDE HOJA DE CÁLCULO MANUAL
-     * Procesa los bloques y matrices enviados por el modal, genera los hashes de auditoría,
-     * evalúa el payload JSON y persiste los registros correctamente sin disparar errores de duplicidad.
+     *
+     * Este método procesa los datos enviados desde un modal interactivo (Spreadsheet UI).
+     * Decodifica y evalúa arrays y objetos JSON anidados (payload y metadata), calcula
+     * los días de mora en tiempo real y persiste las facturas línea por línea de manera
+     * segura usando updateOrCreate para evitar duplicidad de hashes.
+     * Al finalizar, registra la acción en el módulo de interacciones (CRM).
+     *
+     * @param Request $request Petición HTTP con los bloques de datos JSON.
+     * @param int $id ID de la operación principal.
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
      */
     public function generarCertificadoGestionManual(Request $request, $id)
     {
+        // 1. VALIDACIÓN DE ENTRADA
+        // Aseguramos que lleguen el tipo de certificado y al menos un bloque de datos.
         $request->validate([
             'tipo_certificado' => 'required',
             'bloques'          => 'required|array|min:1',
         ]);
 
         try {
+            // Iniciamos transacción para evitar registros huérfanos si ocurre un error
             DB::beginTransaction();
 
+            // 2. OBTENCIÓN DE LA OPERACIÓN BASE
             $operacion = CarSiaOperacion::findOrFail($id);
             $tipoGestionId = $request->input('tipo_certificado');
 
-            // CORRECCIÓN: Agregar id_car_sia_tipos al primer array (búsqueda)
+            // 3. REGISTRO DEL TIPO DE OPERACIÓN
+            // Usamos updateOrCreate en la tabla pivote asociando la operación con el tipo de certificado.
             CarSiaTipoOperacion::updateOrCreate(
                 [
                     'id_car_sia_operaciones' => $operacion->id,
@@ -1824,38 +1908,56 @@ class OperacionController extends Controller
                 ]
             );
 
+            // 4. DATOS DE AUDITORÍA Y METADATA DE SESIÓN
+            // Obtenemos los datos del usuario que está realizando la acción.
             $auditoria = method_exists($this, 'obtenerDatosAuditoria')
                 ? $this->obtenerDatosAuditoria($operacion->id, $operacion->numero_bloque)
                 : ['user_id' => Auth::id()];
 
             $auditoria['id_tipo'] = $tipoGestionId;
 
+            // 5. GENERACIÓN DEL HASH DEL LOTE
+            // Creamos un hash único por defecto basado en Timestamp para agrupar estas facturas
+            // en caso de que las líneas no traigan un hash individual desde el frontend.
             $timestampLote = now()->timestamp;
             $hashLoteUnico = "API-{$operacion->numero_bloque}-TIPO-{$tipoGestionId}-OP-{$operacion->id}-TS-{$timestampLote}";
 
             $bloquesData = $request->input('bloques', []);
             $totalLineasProcesadas = 0;
 
+            // ==========================================
+            // 6. PROCESAMIENTO DE BLOQUES Y FACTURAS
+            // ==========================================
             foreach ($bloquesData as $bloque) {
+                // Extracción segura de los atributos del bloque con valores por defecto (Fallback)
                 $idCarSiaLineas  = $bloque['id_car_sia_lineas'] ?? null;
-                $idCarSiaEstados = $bloque['id_car_sia_estados'] ?? 3;
+                $idCarSiaEstados = $bloque['id_car_sia_estados'] ?? 3; // 3 = Estado procesado/activo por defecto
                 $idUserBloque    = $bloque['id_user'] ?? ($auditoria['user_id'] ?? Auth::id());
                 $facturas        = $bloque['facturas'] ?? [];
 
+                // 6.1. Bucle interno de Facturas (Líneas de obligación)
                 foreach ($facturas as $linea) {
                     $facturaId = $linea['id_factura'] ?? null;
-                    if (!$facturaId) continue;
+                    if (!$facturaId) continue; // Si la fila viene vacía o sin ID, la ignoramos.
 
-                    // ... (Mismo código de parseo de Payload y Metadata) ...
+                    // ---------------------------------------------------------
+                    // A. Parseo del Payload Documento
+                    // ---------------------------------------------------------
                     $payloadInput = $linea['payload_documento'] ?? null;
-                    $payloadArray = ["tipo_emision" => "manual_spreadsheet"];
+                    $payloadArray = ["tipo_emision" => "manual_spreadsheet"]; // Etiqueta base de origen
+
+                    // Verificamos si es un String (JSON) para decodificarlo, o si ya es un Array.
                     if (is_string($payloadInput)) {
                         $decoded = json_decode($payloadInput, true);
+                        // Si el JSON es válido, lo usamos. Si no, lo guardamos como texto plano.
                         $payloadArray = json_last_error() === JSON_ERROR_NONE ? $decoded : ["raw_text" => $payloadInput];
                     } elseif (is_array($payloadInput)) {
                         $payloadArray = $payloadInput;
                     }
 
+                    // ---------------------------------------------------------
+                    // B. Parseo de la Metadata
+                    // ---------------------------------------------------------
                     $metadataInput = $linea['metadata'] ?? null;
                     $metadataArray = [];
                     if (is_string($metadataInput)) {
@@ -1865,29 +1967,40 @@ class OperacionController extends Controller
                         $metadataArray = $metadataInput;
                     }
 
+                    // ---------------------------------------------------------
+                    // C. Cálculo dinámico de Días de Mora
+                    // ---------------------------------------------------------
                     $fechaVenci = $linea['fecha_venci'] ?? null;
                     $diasMora = 0;
                     if ($fechaVenci) {
                         try {
-                            $fechaVencimientoCarbon = \Carbon\Carbon::parse($fechaVenci);
+                            $fechaVencimientoCarbon = Carbon::parse($fechaVenci);
                             $diferencia = now()->diffInDays($fechaVencimientoCarbon, false);
+                            // Si la diferencia es negativa, la factura está vencida. Convertimos a positivo absoluto.
                             $diasMora = $diferencia < 0 ? abs((int)$diferencia) : 0;
                         } catch (\Exception $ex) {
-                            $diasMora = 0;
+                            $diasMora = 0; // Si la fecha tiene formato inválido, asumimos 0 para no romper el proceso.
                         }
                     }
 
+                    // ---------------------------------------------------------
+                    // D. Asignación del Hash de Integridad
+                    // ---------------------------------------------------------
+                    // Priorizamos el hash que venga del frontend; si no existe, usamos el hash global generado en el paso 5.
                     $hashLinea = !empty($linea['hash_certificado']) ? $linea['hash_certificado'] : $hashLoteUnico;
 
-                    // CORRECCIÓN: Agregar id_car_sia_tipos al array de búsqueda
+                    // ---------------------------------------------------------
+                    // E. Persistencia en Base de Datos (Línea de Operación)
+                    // ---------------------------------------------------------
+                    // updateOrCreate previene el error "Duplicate Entry" si el usuario reprocesa la misma fila.
                     CarSiaOperacionLinea::updateOrCreate(
-                        [
+                        [ // Condición de búsqueda (Llaves únicas)
                             'id_car_sia_operaciones' => $operacion->id,
                             'numero_bloque'          => $operacion->numero_bloque,
                             'id_factura'             => $facturaId,
                             'id_car_sia_tipos'       => $tipoGestionId,
                         ],
-                        [
+                        [ // Datos a actualizar o insertar
                             'hash_certificado'          => $hashLinea,
                             'id_car_sia_lineas'         => $idCarSiaLineas,
                             'observacion'               => $linea['observacion'] ?? 'Actualizado desde hoja de cálculo manual.',
@@ -1899,8 +2012,8 @@ class OperacionController extends Controller
                             'procesado_en'              => now(),
                             'id_user'                   => $idUserBloque,
                             'estadoApi'                 => $linea['estadoApi'] ?? '0',
-                            'metadata'                  => $metadataArray,
-                            'payload_documento'         => $payloadArray,
+                            'metadata'                  => $metadataArray,       // Laravel lo castea a JSON automáticamente
+                            'payload_documento'         => $payloadArray,      // Laravel lo castea a JSON automáticamente
                         ]
                     );
 
@@ -1908,12 +2021,25 @@ class OperacionController extends Controller
                 }
             }
 
+            // 7. VERIFICACIÓN DE PROCESAMIENTO
+            // Si el bucle finaliza pero no se detectaron facturas válidas, revertimos y arrojamos error.
             if ($totalLineasProcesadas === 0) {
                 throw new \Exception('No se encontraron líneas o facturas válidas para procesar en los bloques enviados.');
             }
 
+            // ==========================================
+            // 8. INTEGRACIÓN CON CRM (Interacciones)
+            // ==========================================
+            // Inyectamos el servicio para crear el registro en la tabla interactions,
+            // dejando evidencia de que el usuario gestionó este lote manualmente.
+            $crmService = new CrmInteractionService();
+            $crmService->registrarGeneracionCertificado($operacion, $tipoGestionId, 'Gestión Manual Spreadsheet');
+
+            // Confirmamos la transacción en la base de datos
             DB::commit();
 
+            // 9. RESPUESTA AL CLIENTE
+            // Soporta peticiones vía AJAX/Axios (JSON) o peticiones web normales (Redirect Back)
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -1925,8 +2051,14 @@ class OperacionController extends Controller
             return redirect()->back()->with('success', "Certificado procesado exitosamente. Total líneas: {$totalLineasProcesadas}");
 
         } catch (\Exception $e) {
+            // Si cualquier paso falla (Incluso un error de SQL), deshacemos todo para mantener la integridad
             DB::rollBack();
-            // ... (Resto de tu bloque catch sin cambios)
+
+            // Retornamos el error en el formato correspondiente al tipo de petición
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Ocurrió un error al procesar el documento manual: ' . $e->getMessage());
         }
     }
 
