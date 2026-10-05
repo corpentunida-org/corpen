@@ -67,7 +67,7 @@ class ExequialApiService
     private function send(string $method, string $uri, array $data = []): Response
     {
         try {
-            return $this->client()->{$method}($this->url($uri), $data);
+            $response = $this->client()->{$method}($this->url($uri), $data);
         } catch (ConnectionException $e) {
             Log::error("Exequiales API [{$method} {$uri}]: no se pudo conectar - " . $e->getMessage());
             throw new ExequialApiException(
@@ -75,5 +75,23 @@ class ExequialApiService
                 previous: $e,
             );
         }
+
+        // Un 401/403 significa que TOKEN_ADMIN (config('services.api_produccion.token'), un JWT
+        // fijo que no se renueva solo) venció o es inválido — Siasoft rechaza la petición ANTES
+        // de buscar nada. Sin esto, cada controlador que llama /api/Pastors interpretaba la
+        // respuesta vacía como "tercero no encontrado" y mostraba ese mensaje (confirmado con una
+        // cédula real que sí existe en Siasoft) — llevando a buscar el problema en la persona
+        // equivocada en vez de en el token. Se detecta acá, centralizado, para que TODOS los
+        // controladores que ya capturan ExequialApiException (ComaeExCliController,
+        // ComaeTerController, MaeC_ExSerController, RetiroTitularController) reciban el mensaje
+        // correcto sin tener que tocar cada uno por separado.
+        if (in_array($response->status(), [401, 403], true)) {
+            Log::error("Exequiales API [{$method} {$uri}]: token rechazado (HTTP {$response->status()}) — TOKEN_ADMIN venció o es inválido.");
+            throw new ExequialApiException(
+                'El token de autenticación con Siasoft venció o es inválido (no es un problema con este registro en particular). Contacta a Sistemas para renovarlo.',
+            );
+        }
+
+        return $response;
     }
 }
