@@ -57,11 +57,17 @@ class SegPolizaController extends Controller
         if ($terceroontable) {
             return redirect()->route('seguros.poliza.create')->with('error', 'Ya existe un tercero con la cédula ingresada');
         }
-        $controllerapi = new ComaeTerController();
+        // Antes: `new ComaeTerController()` — ese controlador exige ExequialApiService en su
+        // constructor (sin valor por defecto), así que instanciarlo "a mano" sin pasar por el
+        // contenedor de Laravel tiraba un ArgumentCountError fatal en TODA creación de póliza,
+        // sin importar el tercero ni el estado de Siasoft. app() resuelve la dependencia.
+        $controllerapi = app(ComaeTerController::class);
         $terapi = $controllerapi->show($request->tercedula);
-        if ($terapi->getStatusCode() === 404) {
-            return redirect()->route('seguros.poliza.create')->with('error', 'Tercero no encontrado en la base de datos Siasoft.');
-        } else {
+        // Antes solo miraba "!== 404" para decidir seguir — un 503 (token de Siasoft vencido,
+        // ver ExequialApiService::send()) o cualquier otro código inesperado caía en el "else" y
+        // creaba el tercero igual, sin haber confirmado nunca que existe en Siasoft. Ahora exige
+        // el 200 real de éxito y distingue el mensaje según la causa.
+        if ($terapi->getStatusCode() === 200) {
             $tercero = SegTercero::create([
                 'cedula' => $request->tercedula,
                 'nombre' => strtoupper($request->ternombre),
@@ -119,6 +125,15 @@ class SegPolizaController extends Controller
                 ->route('seguros.poliza.show', ['poliza' => 1, 'id' => $tercero->cedula])
                 ->with('success', 'Se creó correctamente la póliza');
         }
+
+        if ($terapi->getStatusCode() === 503) {
+            // Mismo problema que en Exequiales: token de Siasoft (TOKEN_ADMIN) vencido o
+            // inválido — no es que este tercero no exista.
+            return redirect()->route('seguros.poliza.create')->with('error',
+                'No se pudo validar con Siasoft: el token de autenticación venció o es inválido. Contacta a Sistemas.');
+        }
+
+        return redirect()->route('seguros.poliza.create')->with('error', 'Tercero no encontrado en la base de datos Siasoft.');
     }
 
     /**
