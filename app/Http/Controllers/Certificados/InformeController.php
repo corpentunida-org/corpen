@@ -21,7 +21,7 @@ class InformeController extends Controller
     public function index(Request $request)
     {
         $bloqueActivo = $request->get('bloque');
-        
+
         if (!$bloqueActivo) {
             $ultimoBloque = CarSiaBloque::select('numero_bloque')->latest('numero_bloque')->first();
             $bloqueActivo = $ultimoBloque ? $ultimoBloque->numero_bloque : 1;
@@ -45,7 +45,7 @@ class InformeController extends Controller
 
         // KPI optimizado con consultas directas de conteo SQL (Mucho más rápido)
         $totalLineas = CarSiaOperacionLinea::where('numero_bloque', $bloqueActivo)->count();
-        
+
         $generados = CarSiaOperacionLinea::where('numero_bloque', $bloqueActivo)
             ->whereHas('estadoOperacion', function($q) {
                 $q->whereRaw('LOWER(nombre) LIKE ?', ['%generado%'])
@@ -96,7 +96,7 @@ class InformeController extends Controller
         ));
     }
 
-    public function show($numeroBloque)
+    public function show(Request $request, $numeroBloque)
     {
         $bloqueActivo = $numeroBloque;
         $bloqueInfo = CarSiaBloque::where('numero_bloque', $numeroBloque)->firstOrFail();
@@ -104,11 +104,11 @@ class InformeController extends Controller
 
         // 1. Conteo de líneas optimizado
         $totalLineas = CarSiaOperacionLinea::where('numero_bloque', $bloqueActivo)->count();
-        
+
         $generados = CarSiaOperacionLinea::where('numero_bloque', $bloqueActivo)
             ->whereHas('estadoOperacion', function($q) {
                 $q->whereRaw('LOWER(nombre) LIKE ?', ['%generado%'])
-                  ->orWhereRaw('LOWER(nombre) LIKE ?', ['%completado%']);
+                ->orWhereRaw('LOWER(nombre) LIKE ?', ['%completado%']);
             })->count();
 
         $totalOperaciones = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
@@ -120,7 +120,7 @@ class InformeController extends Controller
             'pendientes'        => max(0, $totalLineas - $generados),
         ];
 
-        // 2. Gráfico de métodos optimizado con UNA SOLA consulta (groupBy en vez de múltiples count)
+        // 2. Gráfico de métodos optimizado con UNA SOLA consulta
         $metodosCounts = CarSiaOperacion::where('numero_bloque', $bloqueActivo)
             ->select('metodo_creacion', \DB::raw('count(*) as total'))
             ->groupBy('metodo_creacion')
@@ -132,18 +132,30 @@ class InformeController extends Controller
             'manuales'    => $metodosCounts[1] ?? 0,
         ];
 
-        // 3. Paginación ligera seleccionando solo las columnas necesarias (Evita sobrecarga de memoria)
-        $operacionesLote = CarSiaOperacion::with([
+        // 3. Paginación y Búsqueda (CORREGIDO)
+        $query = CarSiaOperacion::with([
                 'tercero:id,nom_ter',
                 'lineas' => function($q) {
                     $q->select('id', 'id_car_sia_operaciones');
                 }
             ])
             ->where('numero_bloque', $bloqueActivo)
-            ->select('id', 'numero_bloque', 'id_tercero', 'numero_radicado', 'metodo_creacion')
-            ->paginate(15);
+            ->select('id', 'numero_bloque', 'id_tercero', 'numero_radicado', 'metodo_creacion');
 
-        // 4. Limitar registros laterales para que no saturen la vista
+        // Si hay una búsqueda, aplicamos los filtros
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'LIKE', "%{$search}%")
+                ->orWhere('numero_radicado', 'LIKE', "%{$search}%")
+                ->orWhere('id_tercero', 'LIKE', "%{$search}%"); // Busca también por NIT/Cédula
+            });
+        }
+
+        // Paginación de 5 como solicitaste
+        $operacionesLote = $query->paginate(5);
+
+        // 4. Limitar registros laterales
         $tiposCertificadosLote = CarSiaTipoOperacion::with(['tipo:id,nombre'])
             ->where('numero_bloque', $bloqueActivo)
             ->take(30)
