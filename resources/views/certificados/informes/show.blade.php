@@ -34,6 +34,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
         .progress-custom { height: 8px; border-radius: 10px; background-color: #f1f5f9; overflow: hidden; }
+
+        /* Efecto de carga para la tabla */
+        .loading-table { opacity: 0.5; pointer-events: none; transition: opacity 0.3s ease; }
     </style>
 
     {{-- Importar Chart.js CDN --}}
@@ -189,22 +192,34 @@
                 {{-- 3.5 TABLA CON LAS OPERACIONES (CLIENTES PROCESADOS) DEL LOTE --}}
                 <div class="col-12 col-xl-8">
                     <div class="card card-custom shadow border-0 mb-4 h-100">
-                        <div class="card-header bg-white border-bottom p-4" style="border-radius: 20px 20px 0 0;">
+                        <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center" style="border-radius: 20px 20px 0 0;">
                             <h5 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: var(--c-text); font-size: 1.05rem;">
                                 <i class="fas fa-user-tie text-secondary border rounded p-1" style="border-color: var(--c-border) !important;"></i>
-                                Operaciones y Clientes Procesados en el Lote
+                                Operaciones Procesadas en el Lote
                             </h5>
+
+                            {{-- Formulario con ID asignado para interceptarlo con JS --}}
+                            <form action="{{ request()->url() }}" method="GET" class="m-0" id="form-busqueda-operaciones">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="search" class="form-control" placeholder="Buscar operación, radicado o NIT..." value="{{ request('search') }}">
+                                    <button class="btn btn-outline-secondary bg-light" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
+
                         <div class="card-body bg-light p-3 p-md-4">
-                            <div class="bg-white border rounded-3 shadow-sm overflow-hidden">
+                            {{-- DIV CONTENEDOR PARA ACTUALIZACIÓN AJAX --}}
+                            <div class="bg-white border rounded-3 shadow-sm overflow-hidden" id="contenedor-tabla-operaciones">
                                 <div class="table-responsive custom-scrollbar" style="max-height: 450px; overflow-y: auto;">
                                     <table class="table table-sm table-hover align-middle mb-0 text-nowrap" style="font-size: 0.8rem;">
                                         <thead class="table-light text-muted text-uppercase sticky-top" style="z-index: 10; font-size: 0.7rem;">
                                             <tr>
                                                 <th class="ps-3 py-2">ID Operación / Radicado</th>
-                                                <th class="py-2">Tercero / Cliente</th>
+                                                <th class="py-2 text-center">Cédula / NIT</th> {{-- Nueva columna --}}
                                                 <th class="py-2 text-center">Método</th>
-                                                <th class="py-2 text-center">Líneas Asociadas</th>
+                                                <th class="py-2 text-center">Líneas</th>
                                                 <th class="pe-3 py-2 text-center">Acciones</th>
                                             </tr>
                                         </thead>
@@ -212,13 +227,17 @@
                                             @forelse($operacionesLote as $operacion)
                                                 <tr style="border-bottom: 1px solid #f1f3f5;">
                                                     <td class="ps-3 py-2">
-                                                        <div class="fw-bold text-primary">Op ID: {{ $operacion->id }}</div>
-                                                        <div class="text-muted" style="font-size: 0.7rem;"><i class="fas fa-file-invoice me-1"></i> Radicado: {{ $operacion->numero_radicado ?? 'S/N' }}</div>
+                                                        <div class="fw-bold text-primary">ID: {{ $operacion->id }}</div>
+                                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                                            <i class="fas fa-file-invoice me-1"></i> Radicado: {{ $operacion->numero_radicado ?? 'S/N' }}
+                                                        </div>
                                                     </td>
-                                                    <td class="py-2">
-                                                        <div class="fw-bold text-dark">{{ optional($operacion->tercero)->nom_ter ?? 'Sin Tercero Asignado' }}</div>
-                                                        <div class="text-muted" style="font-size: 0.7rem;">NIT/Código: {{ $operacion->id_tercero ?? 'N/A' }}</div>
+
+                                                    {{-- Celda de Cédula / NIT --}}
+                                                    <td class="py-2 text-center text-muted fw-bold">
+                                                        <i class="far fa-id-card me-1 text-secondary"></i> {{ $operacion->id_tercero ?? 'N/A' }}
                                                     </td>
+
                                                     <td class="py-2 text-center">
                                                         <span class="badge {{ $operacion->metodo_creacion == 1 ? 'bg-pastel-warning text-warning' : 'bg-pastel-primary' }} px-2 py-1">
                                                             {{ $operacion->metodo_creacion == 1 ? 'MANUAL' : 'AUTOMÁTICO' }}
@@ -226,7 +245,7 @@
                                                     </td>
                                                     <td class="py-2 text-center">
                                                         <span class="badge bg-light text-dark border fw-bold px-2 py-1">
-                                                            {{ $operacion->lineas->count() }} Líneas
+                                                            {{ $operacion->lineas->count() }}
                                                         </span>
                                                     </td>
                                                     <td class="pe-3 py-2 text-center">
@@ -237,18 +256,21 @@
                                                 </tr>
                                             @empty
                                                 <tr>
+                                                    {{-- Colspan actualizado a 5 --}}
                                                     <td colspan="5" class="text-center py-5 bg-white text-muted">
-                                                        No hay operaciones registradas en este lote.
+                                                        <i class="fas fa-search mb-2 fs-4 opacity-50 d-block"></i>
+                                                        No hay operaciones registradas que coincidan con la búsqueda.
                                                     </td>
                                                 </tr>
                                             @endforelse
                                         </tbody>
                                     </table>
                                 </div>
+
                                 @if(isset($operacionesLote) && $operacionesLote->hasPages())
-                                    <div class="bg-light border-top pt-3 pb-3 px-4 d-flex justify-content-between align-items-center">
+                                    <div class="bg-light border-top pt-3 pb-3 px-4 d-flex justify-content-center align-items-center">
                                         <div class="m-0 pagination-sm">
-                                            {{ $operacionesLote->links('pagination::bootstrap-5') }}
+                                            {{ $operacionesLote->appends(request()->query())->links('pagination::bootstrap-5') }}
                                         </div>
                                     </div>
                                 @endif
@@ -265,23 +287,31 @@
                         <div class="card-header bg-white border-bottom p-3" style="border-radius: 20px 20px 0 0;">
                             <h5 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: var(--c-text); font-size: 0.95rem;">
                                 <i class="fas fa-certificate text-primary border rounded p-1" style="border-color: var(--c-border) !important;"></i>
-                                Tipos de Certificados del Lote
+                                Conteo de Certificados del Lote
                             </h5>
                         </div>
                         <div class="card-body bg-light p-3">
                             <div class="overflow-auto custom-scrollbar pe-2" style="max-height: 200px;">
                                 @if(isset($tiposCertificadosLote) && $tiposCertificadosLote->count() > 0)
+                                    @php
+                                        // Agrupar los certificados por el nombre del tipo y contarlos
+                                        $conteoTipos = collect($tiposCertificadosLote)->groupBy(function($item) {
+                                            return optional($item->tipo)->nombre ?? 'Certificado General';
+                                        })->map->count();
+                                    @endphp
+
                                     <div class="d-flex flex-column gap-2">
-                                        @foreach($tiposCertificadosLote as $tipoOp)
+                                        @foreach($conteoTipos as $nombreTipo => $cantidad)
                                             <div class="p-2 rounded bg-white border shadow-sm d-flex justify-content-between align-items-center" style="font-size: 0.75rem;">
                                                 <div>
                                                     <div class="fw-bold text-dark">
                                                         <i class="fas fa-file-pdf text-danger me-1"></i>
-                                                        {{ optional($tipoOp->tipo)->nombre ?? 'Certificado General' }}
+                                                        {{ $nombreTipo }}
                                                     </div>
-                                                    <div class="text-muted mt-1">Op ID: {{ $tipoOp->id_car_sia_operaciones ?? 'Global Bloque' }}</div>
                                                 </div>
-                                                <span class="badge bg-pastel-primary px-2 py-1">Asignado</span>
+                                                <span class="badge bg-pastel-primary px-2 py-1">
+                                                    {{ $cantidad }} {{ $cantidad == 1 ? 'asignado' : 'asignados' }}
+                                                </span>
                                             </div>
                                         @endforeach
                                     </div>
@@ -335,7 +365,7 @@
     </div>
 
     {{-- ==============================================================================
-         SCRIPTS PARA RENDERIZAR LOS GRÁFICOS Y BOTÓN PDF
+         SCRIPTS PARA RENDERIZAR LOS GRÁFICOS, BOTÓN PDF Y BÚSQUEDA AJAX
          ============================================================================== --}}
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -397,7 +427,7 @@
                         labels: ['Automáticas', 'Manuales'],
                         datasets: [{
                             label: 'Operaciones',
-                            data: [{{ $chartMetodos['automaticas'] }}, {{ $chartMetodos['manuales'] }}],
+                            data: [{{ $chartMetodos['automaticas'] ?? 0 }}, {{ $chartMetodos['manuales'] ?? 0 }}],
                             backgroundColor: ['#4a90e2', '#f57f17'],
                             borderRadius: 8,
                             barThickness: 35
@@ -420,6 +450,58 @@
                                 ticks: { font: { size: 11 } }
                             }
                         }
+                    }
+                });
+            }
+
+            // ========================================================================
+            // 4. BÚSQUEDA Y PAGINACIÓN AJAX (SIN RECARGAR PÁGINA)
+            // ========================================================================
+            const formSearch = document.getElementById('form-busqueda-operaciones');
+            const tableContainer = document.getElementById('contenedor-tabla-operaciones');
+
+            if (formSearch && tableContainer) {
+                const fetchAndUpdateTable = (url) => {
+                    tableContainer.classList.add('loading-table');
+
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContainer = doc.getElementById('contenedor-tabla-operaciones');
+
+                        if (newContainer) {
+                            tableContainer.innerHTML = newContainer.innerHTML;
+                        }
+                    })
+                    .catch(error => console.error('Error cargando la tabla:', error))
+                    .finally(() => {
+                        tableContainer.classList.remove('loading-table');
+                    });
+                };
+
+                // Interceptar envío del formulario de búsqueda
+                formSearch.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const url = new URL(formSearch.action);
+                    const searchInput = formSearch.querySelector('input[name="search"]').value;
+                    url.searchParams.set('search', searchInput);
+
+                    fetchAndUpdateTable(url.toString());
+                });
+
+                // Interceptar clics en los enlaces de paginación (Delegación de eventos)
+                tableContainer.addEventListener('click', function (e) {
+                    const link = e.target.closest('.pagination a');
+                    if (link) {
+                        e.preventDefault();
+                        fetchAndUpdateTable(link.href);
                     }
                 });
             }
