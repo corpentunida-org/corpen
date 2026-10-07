@@ -102,7 +102,6 @@ class CatalogoInmuebleController extends Controller
             'city' => 'required|string|max:255',
             'ubicacion' => 'nullable|string|max:500',
             'capacidad_maxima' => 'required|integer|min:1',
-            'precio_base_noche' => 'required|numeric|min:0',
             'tipo_inmueble_id' => 'required|integer',
         ]);
 
@@ -198,7 +197,6 @@ class CatalogoInmuebleController extends Controller
             'city' => 'sometimes|required|string|max:255',
             'ubicacion' => 'nullable|string|max:500',
             'capacidad_maxima' => 'sometimes|required|integer|min:1',
-            'precio_base_noche' => 'sometimes|required|numeric|min:0',
             'tipo_inmueble_id' => 'sometimes|required|integer',
         ]);
 
