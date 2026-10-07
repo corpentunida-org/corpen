@@ -1144,7 +1144,7 @@
 
                             <div class="fv-row">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte*</label>
-                                <div class="drop-zone-custom position-relative" id="drop_zone_area">
+                                <div class="drop-zone-custom position-relative" id="drop_zone_area" tabindex="0">
                                     <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none"
                                         accept=".pdf,.jpg,.jpeg,.png" required>
                                     <label for="archivo_soporte"
@@ -2338,6 +2338,13 @@
                 fechaInput.value = ''; // Esto fuerza que esté en blanco al abrir
             }
         });
+        // Asegura que el foco quede dentro de la zona de adjuntos para que Ctrl+V
+        // se capture de forma fiable en navegadores que restringen 'paste' a
+        // elementos enfocados (no solo al modal en sí).
+        modalElement.addEventListener('shown.bs.modal', function() {
+            const dz = document.getElementById('drop_zone_area');
+            if (dz) dz.focus();
+        });
         // ------------------------------------------
 
         let myModal;
@@ -2685,8 +2692,12 @@
             if (e.target.files.length) procesarArchivo(e.target.files[0]);
         });
         window.addEventListener('paste', e => {
-            if (modalElement && modalElement.classList.contains('show') && e.clipboardData.files.length)
-                procesarArchivo(e.clipboardData.files[0]);
+            if (!modalElement || !modalElement.classList.contains('show')) return;
+            const cd = e.clipboardData || window.clipboardData;
+            if (cd && cd.files && cd.files.length) {
+                e.preventDefault();
+                procesarArchivo(cd.files[0]);
+            }
         });
 
         if (dropZone) {
@@ -2739,8 +2750,12 @@
 
         // Lógica para pegar archivos globalmente (Portapapeles) en el input attachment
         document.addEventListener('paste', function(e) {
-            let pastedFiles = e.clipboardData.files;
-            if (pastedFiles.length === 0) return;
+            // Si hay un modal abierto (p.ej. Comprobante de Pago), ese modal tiene su
+            // propio manejo de Ctrl+V sobre su propio input; no interferir aquí.
+            if (document.querySelector('.modal.show')) return;
+            const cd = e.clipboardData || window.clipboardData;
+            let pastedFiles = cd ? cd.files : null;
+            if (!pastedFiles || pastedFiles.length === 0) return;
             let inputDocumento = document.getElementById('attachment');
             if (inputDocumento) {
                 const dt = new DataTransfer();

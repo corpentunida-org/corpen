@@ -72,6 +72,21 @@
                                         <i class="feather-clock me-2"></i>
                                         <span>Actualizar Titular</span>
                                     </a>
+                                    {{-- "Actualizar Titular" (arriba) edita datos propios de Exequiales (plan,
+                                         descuento, fecha de inicio) — esto edita los datos personales del tercero
+                                         (nombre, fecha de nacimiento, teléfono...) en la maestra compartida.
+                                         Solo si $maeter es true: si no existe el tercero, arriba ya se avisa con
+                                         un link para CREARLO, no para editarlo. --}}
+                                    @if ($maeter)
+                                        @candirect('maestras.terceros.update')
+                                        <a href="{{ route('maestras.terceros.edit', $asociado['documentId']) }}"
+                                            class="btn btn-outline-secondary" data-bs-toggle="tooltip"
+                                            title="Datos personales (nombre, fecha de nacimiento, distrito...)">
+                                            <i class="feather-edit-2 me-2"></i>
+                                            <span>Editar Tercero</span>
+                                        </a>
+                                        @endcandirect
+                                    @endif
                                     @endcandirect
                                 @else
                                     <a class="btn btn-danger" data-bs-toggle="tooltip">
