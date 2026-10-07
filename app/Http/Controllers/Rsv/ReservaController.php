@@ -18,65 +18,98 @@ class ReservaController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Soporte Dual (Web/JSON) con filtros de búsqueda, relaciones y paginación.
+     * Soporte Dual (Web/AJAX/JSON) con filtros de búsqueda, fechas, relaciones y paginación.
+     *
+     * @param Request $request
+     * @return View|JsonResponse|RedirectResponse
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         try {
+            /*
+             * 1. RELACIONES CORREGIDAS Y OPTIMIZADAS
+             * Se corrigió 'origenReserva' por 'origen' (como está en tu modelo).
+             */
             $query = Reserva::with([
                 'inmueble',
                 'user',
                 'status',
-                'origenReserva',
+                'origen', // <--- CORREGIDO: Antes era origenReserva y causaba el Error 500
                 'huespedes',
                 'transacciones',
+                'historialEndosos' // <--- VITAL para las franjas azules del calendario
             ]);
 
-            if ($request->has('search') && !empty($request->search)) {
-                $search = $request->search;
+            // 2. Filtro de Búsqueda
+            if ($request->filled('search')) {
+                $search = trim($request->search);
                 $query->where(function ($q) use ($search) {
                     $q->where('codigo_reserva', 'like', "%{$search}%")
-                      ->orWhere('comentario_reserva', 'like', "%{$search}%");
+                      ->orWhere('comentario_reserva', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($u) use ($search) {
+                          $u->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                      })
+                      ->orWhereHas('inmueble', function ($i) use ($search) {
+                          $i->where('name', 'like', "%{$search}%");
+                      });
                 });
             }
 
-            if ($request->has('id_rsv_statuses')) {
+            // 3. Filtros Exactos
+            if ($request->filled('id_rsv_statuses')) {
                 $query->where('id_rsv_statuses', $request->id_rsv_statuses);
             }
 
-            if ($request->has('id_rsv_catalogo_inmueble')) {
+            if ($request->filled('id_rsv_catalogo_inmueble')) {
                 $query->where('id_rsv_catalogo_inmueble', $request->id_rsv_catalogo_inmueble);
             }
 
+            // 4. Filtros de Fechas para el Calendario
+            if ($request->filled('fecha_desde')) {
+                $query->whereDate('fecha_inicio', '>=', $request->fecha_desde);
+            }
+
+            if ($request->filled('fecha_hasta')) {
+                $query->whereDate('fecha_fin', '<=', $request->fecha_hasta);
+            }
+
+            // Paginación dinámica (El calendario pide 2000)
             $perPage = $request->get('per_page', 15);
             $reservas = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-            // Si la petición es por API o AJAX, devolvemos JSON
-            if ($request->wantsJson() || $request->ajax()) {
+            // 🚀 5. RESPUESTA JSON PARA EL CALENDARIO (A PRUEBA DE FALLOS)
+            if ($request->wantsJson() && !$request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Listado de reservas obtenido exitosamente.',
-                    'data' => $reservas,
+                    // Devolvemos items() para que JavaScript no tenga problemas con la paginación
+                    'data' => $reservas->items()
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
+            // Respuesta AJAX (Tablas Blade)
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'html' => view('rsv.reservas.partials.tabla-registros', compact('reservas'))->render(),
+                ], 200);
+            }
+
+            // Respuesta Vista Tradicional
             return view('rsv.reservas.index', compact('reservas'));
 
-        } catch (Throwable $e) {
-            Log::error('Error en ReservaController@index: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Error en ReservaController@index: ' . $e->getMessage());
 
             if ($request->wantsJson() || $request->ajax()) {
+                // Devolvemos el error real en JSON para poder verlo en la consola del navegador si vuelve a fallar
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió un error al obtener el listado de reservas.',
-                    'error' => config('app.debug') ? $e->getMessage() : null,
+                    'message' => $e->getMessage()
                 ], 500);
             }
 
-            return back()->with('error', 'Ocurrió un error al obtener el listado de reservas.');
+            return back()->with('error', 'Ocurrió un error al cargar las reservas.');
         }
     }
 

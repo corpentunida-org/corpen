@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rsv\TarifaTemporada;
+use App\Http\Requests\Rsv\StoreTarifaTemporadaRequest;
+use App\Http\Requests\Rsv\UpdateTarifaTemporadaRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -77,19 +79,12 @@ class TarifaTemporadaController extends Controller
      * Store a newly created resource in storage.
      * Soporte Dual (Web redirect / JSON API).
      */
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(StoreTarifaTemporadaRequest $request): JsonResponse|RedirectResponse
     {
-        $validatedData = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'required|exists:rsv_catalogo_inmueble,id',
-            'nombre_temporada' => 'required|string|max:255',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'precio_noche' => 'required|numeric|min:0',
-            'precio_fin_semana' => 'required|numeric|min:0',
-            'precio_minimo_reserva' => 'required|numeric|min:0',
-            'dias_maximos' => 'nullable|integer|min:1', // <-- Campo dias_maximos integrado
-        ]);
+        // 1. Obtiene los datos ya validados por el FormRequest
+        $validatedData = $request->validated();
 
+        // 2. Ajuste manual para el checkbox HTML
         $validatedData['active'] = $request->has('active') ? true : false;
 
         DB::beginTransaction();
@@ -179,7 +174,7 @@ class TarifaTemporadaController extends Controller
      * Update the specified resource in storage.
      * Soporte Dual (Web redirect / JSON API).
      */
-    public function update(Request $request, string $id): JsonResponse|RedirectResponse
+    public function update(UpdateTarifaTemporadaRequest $request, string $id): JsonResponse|RedirectResponse
     {
         DB::beginTransaction();
 
@@ -196,17 +191,10 @@ class TarifaTemporadaController extends Controller
                 return redirect()->route('rsv.admin.dashboard')->with('error', 'La tarifa solicitada no existe.');
             }
 
-            $validatedData = $request->validate([
-                'id_rsv_catalogo_inmueble' => 'sometimes|required|exists:rsv_catalogo_inmueble,id',
-                'nombre_temporada' => 'sometimes|required|string|max:255',
-                'fecha_inicio' => 'sometimes|required|date',
-                'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
-                'precio_noche' => 'sometimes|required|numeric|min:0',
-                'precio_fin_semana' => 'sometimes|required|numeric|min:0',
-                'precio_minimo_reserva' => 'sometimes|required|numeric|min:0',
-                'dias_maximos' => 'sometimes|nullable|integer|min:1', // <-- Campo dias_maximos integrado en actualización
-            ]);
+            // 1. Obtiene los datos ya validados por el FormRequest
+            $validatedData = $request->validated();
 
+            // 2. Ajuste manual para el checkbox HTML
             if ($request->has('active')) {
                 $validatedData['active'] = $request->has('active') ? true : false;
             }
