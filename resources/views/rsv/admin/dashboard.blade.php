@@ -13,11 +13,11 @@
 
     {{-- Pestañas de Navegación --}}
     <ul class="nav nav-pills mb-4 bg-white p-2 rounded-pill shadow-sm" id="adminTabs" role="tablist">
-        <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#inmuebles">Inmuebles</button></li>
-        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#reservas">Reservas y Logística</button></li>
-        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#calendario">Calendario</button></li>
-        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#finanzas">Finanzas</button></li>
-        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#auditoria">Config & Auditoría</button></li>
+        <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#inmuebles" type="button" role="tab">Inmuebles</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#reservas" type="button" role="tab">Reservas y Logística</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#calendario" type="button" role="tab">Calendario</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#finanzas" type="button" role="tab">Finanzas</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#auditoria" type="button" role="tab">Config & Auditoría</button></li>
     </ul>
 
     <div class="tab-content" id="adminTabsContent">
@@ -27,86 +27,45 @@
             @include('rsv.admin.partials.tab-inmuebles')
         </div>
 
-        {{-- MODAL PARA CREAR NUEVO INMUEBLE (Con todos los campos del modelo) --}}
-        <div class="modal fade" id="modalNuevoInmueble" tabindex="-1" aria-labelledby="modalNuevoInmuebleLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content border-0 shadow-lg rounded-4 p-3">
-
-                    <div class="modal-header border-0 pb-0">
-                        <h5 class="modal-title fw-bold text-dark" id="modalNuevoInmuebleLabel">Registrar Propiedad</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-
-                    <div class="modal-body">
-                        <form action="{{ route('rsv.inmuebles.store') }}" method="POST">
-                            @csrf
-
-                            <div class="mb-3">
-                                <label class="form-label text-dark fw-bold">Nombre del Inmueble (`name`)</label>
-                                <input type="text" class="form-control" name="name" placeholder="Ej. Cabaña de Montaña" required>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark fw-bold">Precio Base por Noche ($) (`precio_base_noche`)</label>
-                                    <input type="number" step="0.01" class="form-control" name="precio_base_noche" placeholder="0.00" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark fw-bold">Capacidad Máxima (Personas) (`capacidad_maxima`)</label>
-                                    <input type="number" class="form-control" name="capacidad_maxima" placeholder="Ej. 4">
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark fw-bold">Ciudad (`city`)</label>
-                                    <input type="text" class="form-control" name="city" placeholder="Ej. Bogotá">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-dark fw-bold">Ubicación / Dirección (`ubicacion`)</label>
-                                    <input type="text" class="form-control" name="ubicacion" placeholder="Ej. Calle 100 # 15-20">
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label text-dark fw-bold">ID Tipo de Inmueble (`tipo_inmueble_id`)</label>
-                                <input type="number" class="form-control" name="tipo_inmueble_id" placeholder="Ej. 1">
-                            </div>
-
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" name="active" value="1" id="activeCheck" checked>
-                                <label class="form-check-label text-dark fw-bold" for="activeCheck">Activo (`active`)</label>
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-2 mt-4">
-                                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar Inmueble</button>
-                            </div>
-                        </form>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
         {{-- MÓDULO 2: RESERVAS Y LOGÍSTICA --}}
-        <div class="tab-pane fade" id="reservas">
-            <div class="row g-3">
-                <div class="col-md-8">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <div class="card-body">
-                            <h5 class="fw-bold">Reservas Activas</h5>
-                            <p class="text-muted small">Control de titulares (users), reservas (rsv_reservas), huéspedes asociados (rsv_reserva_huespedes) e itinerarios (rsv_itinerarios_eventos).</p>
-                            <!-- Lista de reservas globales -->
+        <div class="tab-pane fade" id="reservas" role="tabpanel" aria-labelledby="reservas-tab">
+            <div class="row g-4">
+                {{-- Columna Izquierda: Reservas Activas (8 Columnas) --}}
+                <div class="col-12 col-xl-8">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                        <div class="card-body p-4">
+                            <div class="mb-3">
+                                <h5 class="fw-bold text-dark mb-1">Reservas Activas</h5>
+                                <p class="text-muted small mb-0">Control de titulares (users), reservas (rsv_reservas), huéspedes asociados (rsv_reserva_huespedes) e itinerarios (rsv_itinerarios_eventos).</p>
+                            </div>
+                            <div class="mt-3">
+                                @include('rsv.admin.partials.tab-reservas')
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
-                        <div class="card-body">
-                            <h6 class="fw-bold text-danger">Gestión de Endosos</h6>
-                            <p class="text-muted small">Aprobación de traslados de titularidad (rsv_historial_endosos).</p>
-                            <button class="btn btn-outline-danger btn-sm w-100 rounded-pill">Revisar Solicitudes</button>
+
+                {{-- Columna Derecha: Gestión de Endosos (4 Columnas) --}}
+                <div class="col-12 col-xl-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 position-relative overflow-hidden" style="background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%);">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="d-flex align-items-center justify-content-center bg-white rounded-3 shadow-sm text-danger" style="width: 40px; height: 40px;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H5c-1.1 0-2 .9-2 2v2"></path>
+                                            <circle cx="8.5" cy="7" r="4"></circle>
+                                            <polyline points="17 11 19 13 23 9"></polyline>
+                                        </svg>
+                                    </div>
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1 shadow-sm" style="font-size: 0.7rem;">
+                                        3 Pendientes
+                                    </span>
+                                </div>
+                                <h6 class="fw-bold text-danger mb-1">Gestión de Endosos</h6>
+                                <p class="text-muted small mb-4">Aprobación de traslados de titularidad (rsv_historial_endosos).</p>
+                            </div>
+                            <button class="btn btn-danger btn-sm w-100 rounded-pill py-2 shadow-sm fw-medium">Revisar Solicitudes</button>
                         </div>
                     </div>
                 </div>
@@ -114,7 +73,7 @@
         </div>
 
         {{-- MÓDULO 3: CALENDARIO GLOBAL --}}
-        <div class="tab-pane fade" id="calendario">
+        <div class="tab-pane fade" id="calendario" role="tabpanel" aria-labelledby="calendario-tab">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body d-flex flex-column" style="min-height: 400px;">
                     <div class="d-flex justify-content-between mb-3">
@@ -123,27 +82,25 @@
                     </div>
                     <p class="text-muted small mb-3">Visualización conjunta de reservas aprobadas y bloqueos administrativos (rsv_bloqueos_calendario).</p>
                     <div class="flex-grow-1 border rounded-3 bg-light d-flex align-items-center justify-content-center text-muted">
-                        [Vista FullCalendar Global]
+                        @include('rsv.admin.partials.tab-calendario')
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- MÓDULO 4: FINANZAS --}}
-        <div class="tab-pane fade" id="finanzas">
+        <div class="tab-pane fade" id="finanzas" role="tabpanel" aria-labelledby="finanzas-tab">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body">
                     <h5 class="fw-bold">Control de Recaudos y Pasarelas</h5>
                     <p class="text-muted small">Monitoreo de pagos (rsv_transacciones_financieras) y configuración de métodos de cobro (rsv_pasarelas).</p>
-                    <!-- Tabla de transacciones globales -->
-
                     @include('rsv.components.pagination', ['paginator' => $transacciones ?? null])
                 </div>
             </div>
         </div>
 
         {{-- MÓDULO 5: CONFIGURACIÓN Y AUDITORÍA --}}
-        <div class="tab-pane fade" id="auditoria">
+        <div class="tab-pane fade" id="auditoria" role="tabpanel" aria-labelledby="auditoria-tab">
             <div class="row g-4">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm rounded-4 bg-dark text-white">
@@ -166,27 +123,81 @@
         </div>
     </div>
 
-    {{-- MODAL PARA NUEVO INMUEBLE (Integrado con su formulario) --}}
-    @include('rsv.components.modal', [
-        'id' => 'modalNuevoInmueble',
-        'title' => 'Registrar Propiedad',
-        'slot' => '
-            <form action="' . route('rsv.inmuebles.store') . '" method="POST">
-                ' . csrf_field() . '
-                <div class="mb-3">
-                    <label class="form-label text-dark fw-bold">Nombre del Inmueble</label>
-                    <input type="text" class="form-control" name="nombre" required>
+    {{-- MODAL PARA CREAR NUEVO INMUEBLE (Único, completo y funcional) --}}
+    <div class="modal fade" id="modalNuevoInmueble" tabindex="-1" aria-labelledby="modalNuevoInmuebleLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4 p-3">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark" id="modalNuevoInmuebleLabel">Registrar Propiedad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label text-dark fw-bold">Tarifa Base ($)</label>
-                    <input type="number" class="form-control" name="tarifa_base" required>
+                <div class="modal-body">
+                    <form action="{{ route('rsv.inmuebles.store') }}" method="POST">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-bold">Nombre del Inmueble (`name`)</label>
+                            <input type="text" class="form-control" name="name" placeholder="Ej. Cabaña de Montaña" required>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-dark fw-bold">Precio Base por Noche ($) (`precio_base_noche`)</label>
+                                <input type="number" step="0.01" class="form-control" name="precio_base_noche" placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-dark fw-bold">Capacidad Máxima (Personas) (`capacidad_maxima`)</label>
+                                <input type="number" class="form-control" name="capacidad_maxima" placeholder="Ej. 4">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-dark fw-bold">Ciudad (`city`)</label>
+                                <input type="text" class="form-control" name="city" placeholder="Ej. Bogotá">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-dark fw-bold">Ubicación / Dirección (`ubicacion`)</label>
+                                <input type="text" class="form-control" name="ubicacion" placeholder="Ej. Calle 100 # 15-20">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-dark fw-bold">ID Tipo de Inmueble (`tipo_inmueble_id`)</label>
+                            <input type="number" class="form-control" name="tipo_inmueble_id" placeholder="Ej. 1">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" name="active" value="1" id="activeCheck" checked>
+                            <label class="form-check-label text-dark fw-bold" for="activeCheck">Activo (`active`)</label>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar Inmueble</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="d-flex justify-content-end gap-2 mt-4">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" @click="open = false">Cancelar</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">Guardar Inmueble</button>
-                </div>
-            </form>
-        '
-    ])
+            </div>
+        </div>
+    </div>
+
+    {{-- Script para recordar la última pestaña activa (Persistencia tras recargar) --}}
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const activeTabHash = localStorage.getItem('activeAdminTab');
+            if (activeTabHash) {
+                const triggerEl = document.querySelector(`[data-bs-target="${activeTabHash}"]`);
+                if (triggerEl) {
+                    const tab = new bootstrap.Tab(triggerEl);
+                    tab.show();
+                }
+            }
+
+            const tabTriggers = document.querySelectorAll('#adminTabs button[data-bs-toggle="pill"]');
+            tabTriggers.forEach(trigger => {
+                trigger.addEventListener('shown.bs.tab', function (event) {
+                    const target = event.target.getAttribute('data-bs-target');
+                    localStorage.setItem('activeAdminTab', target);
+                });
+            });
+        });
+    </script>
+    @endpush
 
 </x-base-layout>
