@@ -63,6 +63,25 @@
                     </a>
                     @endcandirect
                 @endif
+
+                {{-- Datos personales del tercero (nombre, fecha de nacimiento, distrito...) en la
+                     maestra compartida — distinto de "Generar Novedad" (eso es sobre la póliza).
+                     $poliza->tercero ya es el MaeTerceros de esta cédula (o null si no existe) —
+                     mismo criterio que en Exequiales (asociados/show.blade.php: $maeter). Visible
+                     sin importar si la póliza está activa/cancelada, los datos del tercero no
+                     dependen de eso. --}}
+                @candirect('seguros.poliza.update')
+                    @if ($poliza->tercero)
+                        @candirect('maestras.terceros.update')
+                        <a href="{{ route('maestras.terceros.edit', $poliza->seg_asegurado_id) }}"
+                            class="btn btn-outline-secondary" data-bs-toggle="tooltip"
+                            title="Datos personales (nombre, fecha de nacimiento, distrito...)">
+                            <i class="feather-edit-2 me-2"></i>
+                            <span>Editar Tercero</span>
+                        </a>
+                        @endcandirect
+                    @endif
+                @endcandirect
             </div>
             <div
                 class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
