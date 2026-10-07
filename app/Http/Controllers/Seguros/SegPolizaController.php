@@ -90,7 +90,12 @@ class SegPolizaController extends Controller
                 ]);
             }
             
-            /*$plan = SegPlan::find($request->selectPlanes);
+            // Reactivado: estaba comentado (regresión, no algo desactivado a propósito — el
+            // formulario create.blade.php sigue pidiendo todos estos campos como obligatorios:
+            // selectPlanes, valorpagaraseguradora, etc.) y el código de abajo (auditoria/redirect)
+            // ya hacía referencia a $poliza como si existiera, así que también estaba roto.
+            // Columnas y modelos verificados contra el esquema real antes de reactivar.
+            $plan = SegPlan::find($request->selectPlanes);
             $valorPrimaFinal = $plan->prima_aseguradora;
             if ($request->extra_prima !== null && $request->extra_prima != 0) {
                 $valorPrimaFinal += ($plan->prima_aseguradora * $request->extra_prima) / 100;
@@ -115,7 +120,7 @@ class SegPolizaController extends Controller
                     'porcentajeDescuento' => $request->despor,
                     'valorDescuento' => $request->desval,
                 ]);
-            }*/
+            }
 
             $this->auditoria('TERCERO CREADO ' . \App\Http\Controllers\AuditoriaController::refTercero($tercero->cedula));
             $this->auditoria('ASEGURADO CREADO ' . \App\Http\Controllers\AuditoriaController::refTercero($asegurado->cedula));

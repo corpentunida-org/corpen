@@ -770,8 +770,13 @@ Route::prefix('maestras')
             });
 
         Route::resource('terceros', MaeTercerosController::class)
+            ->except(['edit', 'update'])
             ->names('terceros')
             ->parameters(['terceros' => 'tercero']);
+        Route::middleware('candirect:maestras.terceros.update')->group(function () {
+            Route::get('terceros/{tercero}/edit', [MaeTercerosController::class, 'edit'])->name('terceros.edit');
+            Route::match(['put', 'patch'], 'terceros/{tercero}', [MaeTercerosController::class, 'update'])->name('terceros.update');
+        });
         Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])->name('terceros.generarPdf');
 
         // COMAE_TER: import genérico del volcado externo de Terceros (no solo pastores). Prefijo
