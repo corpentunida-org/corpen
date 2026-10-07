@@ -16,6 +16,8 @@ class TarifaTemporada extends Model
         'fecha_fin',
         'precio_noche',
         'precio_fin_semana',
+        'precio_minimo_reserva',
+        'dias_maximos', 
         'active',
     ];
 
@@ -24,6 +26,8 @@ class TarifaTemporada extends Model
         'fecha_fin' => 'date',
         'precio_noche' => 'decimal:2',
         'precio_fin_semana' => 'decimal:2',
+        'precio_minimo_reserva' => 'decimal:2',
+        'dias_maximos' => 'integer',
         'active' => 'boolean',
     ];
 

@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Throwable;
 
@@ -58,7 +59,7 @@ class InmuebleMultimediaController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió an error al obtener el listado de multimedia.',
+                    'message' => 'Ocurrió un error al obtener el listado de multimedia.',
                     'error' => config('app.debug') ? $e->getMessage() : null,
                 ], 500);
             }
@@ -80,13 +81,13 @@ class InmuebleMultimediaController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * Soporte Dual (Web redirect / JSON API).
+     * Sube el archivo a AWS S3 y guarda la ruta en base de datos.
      */
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validatedData = $request->validate([
             'id_rsv_catalogo_inmueble' => 'required|exists:rsv_catalogo_inmueble,id',
-            'url_archivo' => 'required|string|max:255',
+            'url_archivo' => 'required|file|mimes:jpeg,png,jpg,webp,mp4,mov,avi|max:20480', // Soporta imágenes y videos de hasta 20MB
             'tipo_multimedia' => 'required|string|max:50',
             'orden' => 'nullable|integer',
             'es_portada' => 'boolean',
@@ -98,6 +99,12 @@ class InmuebleMultimediaController extends Controller
         DB::beginTransaction();
 
         try {
+            // Subir archivo a AWS S3 si viene presente en la petición
+            if ($request->hasFile('url_archivo')) {
+                $path = $request->file('url_archivo')->store('inmuebles/multimedia', 's3');
+                $validatedData['url_archivo'] = $path;
+            }
+
             $esPortada = $validatedData['es_portada'];
 
             if ($esPortada) {
@@ -109,7 +116,6 @@ class InmuebleMultimediaController extends Controller
                 return InmuebleMultimedia::create($validatedData);
             });
 
-            // CORREGIDO: Asegura que la transacción se guarde permanentemente en la base de datos
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -189,7 +195,7 @@ class InmuebleMultimediaController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * Soporte Dual (Web redirect / JSON API).
+     * Reemplaza el archivo en AWS S3 si se sube uno nuevo.
      */
     public function update(Request $request, string $id): JsonResponse|RedirectResponse
     {
@@ -210,7 +216,7 @@ class InmuebleMultimediaController extends Controller
 
             $validatedData = $request->validate([
                 'id_rsv_catalogo_inmueble' => 'sometimes|required|exists:rsv_catalogo_inmueble,id',
-                'url_archivo' => 'sometimes|required|string|max:255',
+                'url_archivo' => 'sometimes|nullable|file|mimes:jpeg,png,jpg,webp,mp4,mov,avi|max:20480',
                 'tipo_multimedia' => 'sometimes|required|string|max:50',
                 'orden' => 'sometimes|required|integer',
                 'es_portada' => 'boolean',
@@ -218,6 +224,20 @@ class InmuebleMultimediaController extends Controller
 
             if ($request->has('es_portada')) {
                 $validatedData['es_portada'] = $request->has('es_portada') ? true : false;
+            }
+
+            // Si se envía un nuevo archivo, lo subimos a S3 y borramos el anterior
+            if ($request->hasFile('url_archivo')) {
+                $oldPath = $multimedia->getRawOriginal('url_archivo');
+                if ($oldPath && !filter_var($oldPath, FILTER_VALIDATE_URL)) {
+                    Storage::disk('s3')->delete($oldPath);
+                }
+
+                $path = $request->file('url_archivo')->store('inmuebles/multimedia', 's3');
+                $validatedData['url_archivo'] = $path;
+            } else {
+                // Si no se envió archivo nuevo, removemos la clave para no sobrescribir la ruta actual con null
+                unset($validatedData['url_archivo']);
             }
 
             $idInmueble = $validatedData['id_rsv_catalogo_inmueble'] ?? $multimedia->id_rsv_catalogo_inmueble;
@@ -233,7 +253,6 @@ class InmuebleMultimediaController extends Controller
                 $multimedia->update($validatedData);
             });
 
-            // CORREGIDO: Confirmación de actualización
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -268,7 +287,7 @@ class InmuebleMultimediaController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * Soporte Dual (Web redirect / JSON API).
+     * Borra el registro de la BD y también el archivo físico correspondiente en AWS S3.
      */
     public function destroy(Request $request, string $id): JsonResponse|RedirectResponse
     {
@@ -289,11 +308,18 @@ class InmuebleMultimediaController extends Controller
 
             $inmuebleId = $multimedia->id_rsv_catalogo_inmueble;
 
+            // Obtener la ruta real del archivo en S3 antes de eliminar el registro
+            $oldPath = $multimedia->getRawOriginal('url_archivo');
+
             DB::transaction(function () use ($multimedia) {
                 $multimedia->delete();
             });
 
-            // CORREGIDO: Confirmación de eliminación
+            // Borrar el archivo de AWS S3 si es una ruta interna válida
+            if ($oldPath && !filter_var($oldPath, FILTER_VALIDATE_URL)) {
+                Storage::disk('s3')->delete($oldPath);
+            }
+
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -362,7 +388,6 @@ class InmuebleMultimediaController extends Controller
                 $multimedia->update(['es_portada' => true]);
             });
 
-            // CORREGIDO: Confirmación de establecimiento de portada
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {

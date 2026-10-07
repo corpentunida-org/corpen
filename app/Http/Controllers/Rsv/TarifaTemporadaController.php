@@ -86,6 +86,8 @@ class TarifaTemporadaController extends Controller
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
             'precio_noche' => 'required|numeric|min:0',
             'precio_fin_semana' => 'required|numeric|min:0',
+            'precio_minimo_reserva' => 'required|numeric|min:0',
+            'dias_maximos' => 'nullable|integer|min:1', // <-- Campo dias_maximos integrado
         ]);
 
         $validatedData['active'] = $request->has('active') ? true : false;
@@ -97,7 +99,6 @@ class TarifaTemporadaController extends Controller
                 return TarifaTemporada::create($validatedData);
             });
 
-            // CORREGIDO: Asegura que la transacción se guarde permanentemente en la base de datos
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -202,6 +203,8 @@ class TarifaTemporadaController extends Controller
                 'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
                 'precio_noche' => 'sometimes|required|numeric|min:0',
                 'precio_fin_semana' => 'sometimes|required|numeric|min:0',
+                'precio_minimo_reserva' => 'sometimes|required|numeric|min:0',
+                'dias_maximos' => 'sometimes|nullable|integer|min:1', // <-- Campo dias_maximos integrado en actualización
             ]);
 
             if ($request->has('active')) {
@@ -212,7 +215,6 @@ class TarifaTemporadaController extends Controller
                 $tarifa->update($validatedData);
             });
 
-            // CORREGIDO: Confirmación de actualización
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
@@ -271,7 +273,6 @@ class TarifaTemporadaController extends Controller
                 $tarifa->delete();
             });
 
-            // CORREGIDO: Confirmación de eliminación
             DB::commit();
 
             if ($request->wantsJson() || $request->ajax()) {
