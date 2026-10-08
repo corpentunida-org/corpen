@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\User;
 
 class Reserva extends Model
 {
@@ -37,9 +38,9 @@ class Reserva extends Model
         return $this->belongsTo(CatalogoInmueble::class, 'id_rsv_catalogo_inmueble');
     }
 
-    public function cliente(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class, 'id_user');
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     public function status(): BelongsTo

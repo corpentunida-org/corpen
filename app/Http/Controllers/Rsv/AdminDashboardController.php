@@ -15,11 +15,14 @@ class AdminDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Pestaña: Inmuebles
-        $inmuebles = CatalogoInmueble::paginate(10, ['*'], 'page_inmuebles');
+        // 1. Pestaña: Inmuebles (Cargamos multimedia y tarifas para que el carrusel y precios funcionen)
+        $inmuebles = CatalogoInmueble::with(['multimedia', 'tarifasTemporadas'])
+            ->paginate(10, ['*'], 'page_inmuebles');
 
-        // 2. Pestaña: Reservas (cargando relaciones útiles si las tienes, aquí un ejemplo básico)
-        $reservas = Reserva::paginate(10, ['*'], 'page_reservas');
+        // 2. Pestaña: Reservas (Cargamos el usuario, el inmueble y el estado para pintar los badges y nombres)
+        $reservas = Reserva::with(['inmueble', 'user', 'status'])
+            ->orderBy('created_at', 'desc') // Las más recientes primero
+            ->paginate(5, ['*'], 'page_reservas');
 
         // 3. Pestaña: Finanzas
         // Si no tienes registros o el modelo está vacío, esto simplemente pasará un paginador vacío.
