@@ -324,9 +324,12 @@ class MaeAsociadoController extends Controller
     }
 
     public function descargarExcel()
-    {
-        return Excel::download(new AsociadosExport, 'maestro_asociados_' . now()->format('Y_m_d_His') . '.xlsx');
-    }
+{
+    set_time_limit(300); // Amplía el tiempo límite a 5 minutos
+    ini_set('memory_limit', '512M'); // Asigna memoria suficiente para el proceso
+
+    return Excel::download(new AsociadosExport, 'maestro_asociados_' . now()->format('Y_m_d_His') . '.xlsx');
+}
 
     /**
      * Acción (Paso 1): Sube el archivo Excel, valida las columnas y lo guarda en Sesión.

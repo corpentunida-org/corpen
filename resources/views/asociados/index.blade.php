@@ -6,7 +6,14 @@
                 <h1 class="main-title">Directorio de Expedientes</h1>
                 <p class="main-subtitle">Gestión centralizada de información pastoral y documental</p>
             </div>
+
             <div class="header-actions">
+                <!-- Botón para descargar / exportar Excel -->
+                <a href="{{ route('asociados.sincronizar.descargar') }}" class="btn btn-corporate-outline shadow-sm me-2" title="Exportar directorio completo en Excel">
+                    <i class="fas fa-file-excel text-success me-1"></i> <span>Exportar Excel</span>
+                </a>
+
+                <!-- Botón principal de Aperturar Expediente -->
                 <a href="{{ route('asociados.maestro.create') }}" class="btn-corporate-black shadow-sm">
                     <i class="fas fa-plus me-1"></i> <span>Aperturar Expediente</span>
                 </a>
@@ -132,7 +139,7 @@
                                     data-custodia="{{ $asociado->custodia_actual ?? 'No definida' }}"
                                     data-observaciones="{{ $asociado->observaciones_archivo ?? 'Sin observaciones adicionales.' }}"
                                     data-nombre="{{ $asociado->nombre_completo }}">
-                                    
+
                                     {{-- CÉDULA: Enlace hacia el ECM si existe --}}
                                     <td class="ps-4 fw-bold">
                                         @if(!empty($asociado->ubicacion_ecm_link))
@@ -143,13 +150,13 @@
                                             <span class="text-dark" title="Sin enlace ECM">{{ $asociado->cedula }}</span>
                                         @endif
                                     </td>
-                                    
+
                                     {{-- NOMBRE COMPLETO --}}
                                     <td class="fw-bold text-dark nombre-trigger" style="cursor: pointer; position: relative;">
                                         <span title="Ver detalles del archivo físico">{{ $asociado->nombre_completo }}</span>
                                         <i class="fas fa-info-circle text-primary opacity-50 ms-1 small"></i>
                                     </td>
-                                    
+
                                     {{-- DISTRITO Y CIUDAD (Llamando a la relación) --}}
                                     <td>
                                         <div class="d-flex flex-column">
@@ -167,7 +174,7 @@
                                             <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle; margin-right: 3px;"></i> {{ $asociado->estado ?? 'Activo' }}
                                         </span>
                                     </td>
-                                    
+
                                     <td class="text-center pe-4">
                                         <div class="btn-group shadow-sm" role="group">
                                             <a href="{{ route('asociados.maestro.show', $asociado->id) }}" class="btn btn-sm btn-light border hover-bg-primary" title="Auditar Expediente">
@@ -232,7 +239,7 @@
                     <strong id="p-fecha" class="text-dark">--</strong>
                 </div>
             </div>
-            
+
             <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded border">
                 <div>
                     <span class="text-muted d-block text-uppercase mb-1" style="font-size: 0.7rem;"><i class="fas fa-shield-heart me-1"></i> Conservación</span>
@@ -285,7 +292,7 @@
                     const conservacion = row.getAttribute('data-conservacion');
                     const pConservacion = document.getElementById('p-conservacion');
                     pConservacion.textContent = conservacion;
-                    
+
                     pConservacion.className = 'badge font-weight-bold px-2 py-1 ';
                     if(conservacion.toLowerCase().includes('buen') || conservacion.toLowerCase().includes('óptim')) {
                         pConservacion.classList.add('bg-success', 'text-white');
@@ -302,7 +309,7 @@
                 trigger.addEventListener('mousemove', function (e) {
                     const cardWidth = previewCard.offsetWidth;
                     const cardHeight = previewCard.offsetHeight;
-                    
+
                     let leftPos = e.clientX + 20;
                     if (leftPos + cardWidth > window.innerWidth) {
                         leftPos = e.clientX - cardWidth - 20;

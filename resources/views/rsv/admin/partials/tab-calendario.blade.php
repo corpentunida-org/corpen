@@ -1,55 +1,238 @@
 {{-- resources/views/rsv/admin/partials/tab-calendario.blade.php --}}
+{{-- ESTILO: hoja de cálculo SUAVE · encabezados 9px · eventos 8px · pasteles --}}
 
-<div class="card border-0 shadow-sm rounded-4" data-scrollbar-target="#psScrollbarInit">
-    <div class="card-body p-4 d-flex flex-column" style="min-height: 600px;">
+<div id="calRoot">
 
-        <!-- LEYENDA DE COLORES Y FRANJAS -->
-        <div class="d-flex flex-wrap gap-3 mb-3 pb-3 border-bottom small fw-medium text-muted">
-            <span class="d-flex align-items-center gap-2">
-                <div class="rounded shadow-sm" style="width:16px;height:16px;background:#c8b6ff;"></div> Aprobada
+    @php
+        $listaInmuebles = $inmuebles ?? collect();
+    @endphp
+
+    <!-- ═══ CINTA SUPERIOR: leyenda + filtro ═══ -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 py-1.5 mb-2"
+         style="background: #fafbfd; border: 1px solid #f1f5f9; border-radius: 4px 4px 0 0;">
+
+        <!-- Leyenda pastel -->
+        <div class="d-flex flex-wrap align-items-center gap-1">
+
+            <span class="me-1" style="font-size: 7.5px; letter-spacing: .05em; color: #b3bcc7; font-weight: 600;">
+                <i class="bi bi-calendar3 me-1" style="font-size: 8px;"></i>LEYENDA
             </span>
-            <span class="d-flex align-items-center gap-2">
-                <div class="rounded shadow-sm" style="width:16px;height:16px;background:repeating-linear-gradient(45deg, #fff3cd, #fff3cd 4px, #ffe8a1 4px, #ffe8a1 8px);"></div> Pendiente
-            </span>
-            <span class="d-flex align-items-center gap-2">
-                <div class="rounded shadow-sm" style="width:16px;height:16px;background:repeating-linear-gradient(45deg, #cce5ff, #cce5ff 4px, #b8daff 4px, #b8daff 8px);"></div> Con Endoso
-            </span>
-            <span class="d-flex align-items-center gap-2">
-                <div class="rounded shadow-sm" style="width:16px;height:16px;background:repeating-linear-gradient(45deg, #f8d7da, #f8d7da 4px, #f1b0b7 4px, #f1b0b7 8px);"></div> Cancelada
-            </span>
-            <span class="d-flex align-items-center gap-2">
-                <div class="rounded shadow-sm" style="width:16px;height:16px;background:#dc3545;"></div> Mantenimiento
-            </span>
+
+            <span class="cal-chip"><span class="ldot" style="background:#a3cfb6;"></span> Aprobada</span>
+            <span class="cal-chip"><span class="ldot" style="background:#ecd3a0;"></span> Pendiente</span>
+            <span class="cal-chip"><span class="ldot" style="background:#a9cfe8;"></span> Endoso</span>
+            <span class="cal-chip"><span class="ldot" style="background:#e5b8b8;"></span> Cancelada</span>
+            <span class="cal-chip"><span class="ldot" style="background:#c98a85;"></span> Mantenimiento</span>
+
         </div>
 
-        <div class="flex-grow-1 border rounded-3 bg-white p-2">
-            <div id="calendario-global"></div>
+        <!-- Filtro de inmueble (suave) -->
+        <div class="d-flex align-items-center gap-1">
+            <i class="bi bi-building" style="font-size: 9px; color: #c3ccd6;"></i>
+            <select id="filtro_inmueble_cal" class="cal-select" title="Filtrar por inmueble">
+                <option value="">Todos los inmuebles</option>
+                @foreach($listaInmuebles as $inm)
+                    <option value="{{ $inm->id }}">{{ $inm->name }}</option>
+                @endforeach
+            </select>
         </div>
 
     </div>
+
+
+    <!-- ═══ MARCO DEL CALENDARIO + LOADER CRISTAL ═══ -->
+    <div class="position-relative"
+         style="border: 1px solid #f1f5f9; border-radius: 0 0 4px 4px; background: #fff; overflow: hidden;">
+
+        <div id="calendar-loader"
+             class="d-none position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
+             style="z-index: 50; background: rgba(255,255,255,.72); backdrop-filter: blur(3px);">
+
+            <div class="spinner-border spinner-border-sm" role="status" style="color: #3d7a5c; width: 14px; height: 14px;"></div>
+
+        </div>
+
+        <div id="calendario-global" class="p-1"></div>
+
+    </div>
+
 </div>
+
 
 @push('style')
 <style>
-    #calendario-global { background-color: white; padding: 10px; position: static; }
-    .fc .fc-daygrid-day.fc-day-today, .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame { background-color: #fff9e2 !important; }
-    .fc-dayGridMonth-view .fc-scrollgrid-sync-table { height: auto !important; }
-    .fc-dayGridMonth-view .fc-daygrid-day-frame { min-height: 100px !important; padding: 2px !important; }
-    .fc-multimonth-month { padding: 0.5rem !important; }
-    .fc .fc-multimonth-daygrid-table { min-height: auto !important; }
-    .fc-event-title { font-weight: 500; }
-    .fc-event { cursor: pointer; }
-    .modal-backdrop { position: fixed; width: 100vw; height: 100vh; z-index: 1040 !important; }
-    .modal { z-index: 1055 !important; }
+    /* ═══ BASE — anclada a #calRoot (misma paleta de las hojas) ═══ */
+    #calRoot {
+        --grid:  #f1f5f9;
+        --grid-2:#e9eef4;
+        --head:  #fafbfd;
+        --ink:   #64748b;
+        --ink-2: #475569;
+        --ink-3: #94a3b8;
+        --ink-4: #b3bcc7;
+        --accent:#3d7a5c;
+        --accent-bg: #f0f7f2;
+        --accent-bd: #d5e7dc;
+        font-family: Calibri, "Segoe UI", system-ui, sans-serif;
+        font-size: 8px;
+        line-height: 1.4;
+        color: var(--ink);
+    }
 
-    /* Franjas CSS */
-    .evento-aprobada { background-color: #c8b6ff !important; border-color: #a482ff !important; color: #2b1a55 !important; }
-    .evento-franjas-pendiente { background: repeating-linear-gradient(45deg, #fff3cd, #fff3cd 6px, #ffe8a1 6px, #ffe8a1 12px) !important; border-color: #ffc107 !important; color: #856404 !important; }
-    .evento-franjas-endoso { background: repeating-linear-gradient(45deg, #cce5ff, #cce5ff 6px, #b8daff 6px, #b8daff 12px) !important; border-color: #0d6efd !important; color: #004085 !important; }
-    .evento-franjas-cancelada { background: repeating-linear-gradient(45deg, #f8d7da, #f8d7da 6px, #f1b0b7 6px, #f1b0b7 12px) !important; border-color: #dc3545 !important; color: #721c24 !important; text-decoration: line-through; opacity: 0.8; }
-    .evento-bloqueo { background-color: #dc3545 !important; border-color: #b02a37 !important; color: #ffffff !important; }
+    /* Chips de leyenda */
+    #calRoot .cal-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 1px 8px; border-radius: 9px;
+        font-size: 8px; font-weight: 500;
+        border: 1px solid var(--grid); background: #fcfdfe; color: var(--ink-3);
+    }
+    #calRoot .ldot {
+        width: 5px; height: 5px; border-radius: 50%;
+        display: inline-block; opacity: .85;
+    }
+
+    /* Select suave */
+    #calRoot .cal-select {
+        border: 1px solid var(--grid-2); background: #fff; color: var(--ink-2);
+        font-family: inherit; font-size: 9px; font-weight: 500;
+        padding: 2px 8px; border-radius: 3px; cursor: pointer;
+        box-shadow: none !important; outline: none;
+    }
+    #calRoot .cal-select:focus { border-color: #c8d6cd; }
+
+
+    /* ═══ FULLCALENDAR · overrides (scoped) ═══ */
+
+    /* Grilla */
+    #calRoot .fc-theme-standard td,
+    #calRoot .fc-theme-standard th,
+    #calRoot .fc-theme-standard .fc-scrollgrid { border-color: var(--grid); }
+
+    /* Encabezados de día — 9px */
+    #calRoot .fc-col-header-cell {
+        padding: 4px 0 !important;
+        background: var(--head);
+        color: var(--ink-3);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        font-size: 9px !important;
+        border: none !important;
+    }
+    #calRoot .fc-col-header-cell-cushion { color: inherit; text-decoration: none; padding: 2px 4px; }
+
+    /* Celdas de día — 8px */
+    #calRoot .fc-daygrid-day-number {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+        font-weight: 400;
+        color: var(--ink-3);
+        text-decoration: none;
+    }
+    #calRoot .fc-day-today { background: var(--accent-bg) !important; }
+    #calRoot .fc-day-today .fc-daygrid-day-number { color: var(--accent); font-weight: 600; }
+
+    #calRoot .fc-dayGridMonth-view .fc-daygrid-day-frame { min-height: 62px; }
+    #calRoot .fc-daygrid-day { transition: background .15s ease; }
+    #calRoot .fc-daygrid-day:hover { background: #fafcfe; }
+
+    /* Otros meses: aún más tenues */
+    #calRoot .fc-day-other .fc-daygrid-day-number { color: #dfe5ec; }
+
+    /* Toolbar — botones estilo soft */
+    #calRoot .fc .fc-button {
+        background: #fff !important;
+        color: var(--ink-3) !important;
+        border: 1px solid var(--grid-2) !important;
+        box-shadow: none !important;
+        font-family: inherit;
+        font-size: 9px !important;
+        font-weight: 600;
+        text-transform: capitalize;
+        border-radius: 3px !important;
+        padding: 2px 9px !important;
+        transition: all .15s ease;
+    }
+    #calRoot .fc .fc-button:hover {
+        background: #fafcfe !important;
+        color: var(--ink-2) !important;
+        border-color: #d7dee6 !important;
+    }
+    #calRoot .fc .fc-button:not(:disabled).fc-button-active {
+        background: var(--accent-bg) !important;
+        color: var(--accent) !important;
+        border-color: var(--accent-bd) !important;
+    }
+    #calRoot .fc .fc-button-group { gap: 3px; }
+    #calRoot .fc .fc-toolbar-chunk { display: flex; gap: 4px; align-items: center; }
+
+    /* Título del mes */
+    #calRoot .fc-toolbar-title {
+        font-size: 10.5px !important;
+        font-weight: 600;
+        color: var(--ink-2);
+        letter-spacing: .01em;
+    }
+
+    /* Eventos — 8px, pastel, barra lateral de estado */
+    #calRoot .fc-event {
+        border-radius: 3px !important;
+        padding: 1px 4px !important;
+        margin-bottom: 1.5px !important;
+        font-size: 8px !important;
+        font-weight: 500;
+        line-height: 1.3;
+        box-shadow: none;
+        border-width: 1px !important;
+        border-left-width: 3px !important;
+        cursor: pointer;
+        transition: filter .15s ease;
+    }
+    #calRoot .fc-event:hover { filter: brightness(.985); }
+    #calRoot .fc-event-main, .fc-event-title, .fc-event-time { color: inherit !important; }
+    #calRoot .fc-event-title { font-weight: 600; }
+    #calRoot .fc-daygrid-event-dot { display: none; }
+
+    /* Estados (franja lateral pastel) */
+    #calRoot .ev-cancelada {
+        background: #fdf4f4 !important;
+        border-color: #f0dcdc !important;
+        color: #a87878 !important;
+        text-decoration: line-through;
+        opacity: .8;
+    }
+    #calRoot .ev-bloqueo {
+        background: #fdf0ef !important;
+        border-color: #edcfcf !important;
+        color: #965757 !important;
+    }
+
+    /* Vista anual (multi-month) */
+    #calRoot .fc-multimonth-month {
+        border: 1px solid var(--grid);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+    #calRoot .fc-multimonth-title {
+        font-size: 9px !important; font-weight: 600;
+        padding: 4px 9px;
+        background: var(--head);
+        border-bottom: 1px solid var(--grid);
+        color: var(--ink-3);
+        text-transform: uppercase; letter-spacing: .05em;
+    }
+    #calRoot .fc-multimonth-view .fc-daygrid-day-frame { min-height: 20px; }
+    #calRoot .fc-multimonth-view .fc-event { font-size: 7.5px !important; padding: 0 3px !important; }
+
+    /* Vista semana (timeGrid) */
+    #calRoot .fc-timegrid-slot-label,
+    #calRoot .fc-timegrid-axis { font-size: 7.5px !important; color: var(--ink-4); }
+    #calRoot .fc-timegrid-event { font-size: 7.5px !important; border-radius: 3px; }
+    #calRoot .fc-timegrid-col.fc-day-today { background: var(--accent-bg) !important; }
 </style>
 @endpush
+
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -57,168 +240,221 @@
 <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const calendarEl = document.getElementById('calendario-global');
+    document.addEventListener('DOMContentLoaded', () => {
+        const calEl  = document.getElementById('calendario-global'),
+              filtro = document.getElementById('filtro_inmueble_cal'),
+              loader = document.getElementById('calendar-loader');
 
-        if (calendarEl) {
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                height: "auto",
-                contentHeight: "auto",
-                expandRows: false,
-                initialView: 'dayGridMonth',
-                multiMonthMaxColumns: 3,
-                locale: 'es',
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'multiMonthYear,dayGridMonth,timeGridWeek'
-                },
-                buttonText: { year: 'Año', month: 'Mes', week: 'Semana', today: 'Hoy' },
-                eventDisplay: 'block',
+        if (!calEl) return;
 
-                events: function(fetchInfo, successCallback, failureCallback) {
-                    const start = fetchInfo.startStr.split('T')[0];
-                    const end = fetchInfo.endStr.split('T')[0];
+        /* Paleta pastel por inmueble (saturación rebajada) */
+        const getInmuebleStyle = (inmuebleName) => {
+            if (!inmuebleName) return { bg: '#fafbfd', border: '#e2e8f0', text: '#64748b' };
 
-                    const urlReservas = `/rsv/reservas?fecha_desde=${start}&fecha_hasta=${end}&per_page=2000`;
-                    const urlBloqueos = `/rsv/bloqueos-calendario?fecha_desde=${start}&fecha_hasta=${end}&per_page=2000`;
+            let hash = 0;
+            for (let i = 0; i < inmuebleName.length; i++) {
+                hash = inmuebleName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
 
-                    // Usamos SOLO Accept json, para no activar el ->ajax() del controlador
-                    const opts = { headers: { 'Accept': 'application/json' } };
+            return {
+                bg:     `hsl(${hue}, 45%, 96%)`,
+                border: `hsl(${hue}, 35%, 80%)`,
+                text:   `hsl(${hue}, 25%, 38%)`
+            };
+        };
 
-                    Promise.all([
-                        fetch(urlReservas, opts).then(res => res.json()),
-                        fetch(urlBloqueos, opts).then(res => res.json())
-                    ])
-                    .then(([resReservas, resBloqueos]) => {
-                        let eventos = [];
+        /* Franjas de estado pastel */
+        const STATUS = {
+            endoso:     '#8fb8e0',
+            pendiente:  '#d9b56a',
+            cancelada:  '#c98080',
+            bloqueo:    '#c98a85'
+        };
 
-                        // 🚀 EXTRAE LA DATA A PRUEBA DE BALAS (Soporta paginación o data directa)
-                        let arrayReservas = resReservas.data && resReservas.data.data ? resReservas.data.data : resReservas.data;
-                        let arrayBloqueos = resBloqueos.data && resBloqueos.data.data ? resBloqueos.data.data : resBloqueos.data;
+        const addDay = (dateStr) => {
+            if (!dateStr) return null;
+            const clean = dateStr.split(' ')[0];
+            const parts = clean.split('-');
+            if (parts.length !== 3) return clean;
 
-                        // Mapeo de Reservas
-                        if (Array.isArray(arrayReservas)) {
-                            arrayReservas.forEach(reserva => {
-                                if(!reserva.fecha_inicio || !reserva.fecha_fin) return;
+            const y = parseInt(parts[0]), m = parseInt(parts[1]) - 1, d = parseInt(parts[2]);
+            const dObj = new Date(y, m, d + 1);
 
-                                let endFormat = new Date(reserva.fecha_fin);
-                                endFormat.setDate(endFormat.getDate() + 1); // Exclusivo en FullCalendar
+            const yr = dObj.getFullYear();
+            const mo = String(dObj.getMonth() + 1).padStart(2, '0');
+            const da = String(dObj.getDate()).padStart(2, '0');
+            return `${yr}-${mo}-${da}`;
+        };
 
-                                let nombreEstado = reserva.status ? (reserva.status.nombre || reserva.status.name || '').toLowerCase() : '';
-                                let tieneEndoso = (reserva.historial_endosos && reserva.historial_endosos.length > 0) ||
-                                                  (reserva.historialEndosos && reserva.historialEndosos.length > 0);
+        const formatCleanDate = (dateStr) => {
+            if (!dateStr) return '';
+            const clean = dateStr.split(' ')[0];
+            const parts = clean.split('-');
+            if (parts.length !== 3) return dateStr;
 
-                                let cssClass = 'evento-aprobada';
-                                let icono = 'bi-calendar-check';
+            const year = parts[0];
+            const monthIndex = parseInt(parts[1]) - 1;
+            const day = parseInt(parts[2]);
+            const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-                                if (nombreEstado.includes('cancelad')) { cssClass = 'evento-franjas-cancelada'; icono = 'bi-calendar-x'; }
-                                else if (tieneEndoso || nombreEstado.includes('endos')) { cssClass = 'evento-franjas-endoso'; icono = 'bi-arrow-left-right'; }
-                                else if (nombreEstado.includes('pendient') || nombreEstado.includes('pre')) { cssClass = 'evento-franjas-pendiente'; icono = 'bi-hourglass-split'; }
+            return `${day} de ${meses[monthIndex]} de ${year}`;
+        };
 
-                                eventos.push({
-                                    id: 'rsv_' + reserva.id,
-                                    title: `${reserva.inmueble ? reserva.inmueble.name : 'Apto'} (${reserva.codigo_reserva})`,
-                                    start: reserva.fecha_inicio.split(' ')[0],
-                                    end: endFormat.toISOString().split('T')[0],
-                                    allDay: true,
-                                    classNames: [cssClass],
-                                    extendedProps: {
-                                        tipo: 'reserva',
-                                        icono: icono,
-                                        codigo: reserva.codigo_reserva,
-                                        estadoVisual: nombreEstado.toUpperCase(),
-                                        inmueble: reserva.inmueble ? reserva.inmueble.name : 'Apto',
-                                        usuario: reserva.user ? reserva.user.name : 'Titular'
-                                    }
-                                });
-                            });
-                        }
+        const calendar = new FullCalendar.Calendar(calEl, {
+            initialView: 'dayGridMonth',
+            multiMonthMaxColumns: 3,
+            locale: 'es',
+            height: 'auto',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'multiMonthYear,dayGridMonth,timeGridWeek' },
+            buttonText: { year: 'Año', month: 'Mes', week: 'Semana', today: 'Hoy' },
 
-                        // Mapeo de Bloqueos
-                        if (Array.isArray(arrayBloqueos)) {
-                            arrayBloqueos.forEach(bloqueo => {
-                                if(!bloqueo.fecha_inicio || !bloqueo.fecha_fin) return;
+            events: async (info, success, fail) => {
+                const fIni = info.startStr.split('T')[0], fFin = info.endStr.split('T')[0];
+                const qInm = filtro.value ? `&id_rsv_catalogo_inmueble=${filtro.value}` : '';
+                loader.classList.remove('d-none');
 
-                                let endFormat = new Date(bloqueo.fecha_fin.split(' ')[0]);
-                                endFormat.setDate(endFormat.getDate() + 1);
+                try {
+                    const [res, blq] = await Promise.all([
+                        fetch(`/rsv/reservas?fecha_desde=${fIni}&fecha_hasta=${fFin}&per_page=2000${qInm}`, { headers: { Accept: 'application/json' } }).then(r => r.json()),
+                        fetch(`/rsv/bloqueos-calendario?fecha_desde=${fIni}&fecha_hasta=${fFin}&per_page=2000${qInm}`, { headers: { Accept: 'application/json' } }).then(r => r.json())
+                    ]);
 
-                                eventos.push({
-                                    id: 'blq_' + bloqueo.id,
-                                    title: 'Mantenimiento: ' + (bloqueo.inmueble ? bloqueo.inmueble.name : ''),
-                                    start: bloqueo.fecha_inicio.split(' ')[0],
-                                    end: endFormat.toISOString().split('T')[0],
-                                    allDay: true,
-                                    classNames: ['evento-bloqueo'],
-                                    extendedProps: {
-                                        tipo: 'bloqueo',
-                                        icono: 'bi-wrench-adjustable',
-                                        motivo: bloqueo.motivo,
-                                        inmueble: bloqueo.inmueble ? bloqueo.inmueble.name : 'N/A'
-                                    }
-                                });
-                            });
-                        }
+                    const arrRes = res.data?.data || res.data || [];
+                    const arrBlq = blq.data?.data || blq.data || [];
 
-                        successCallback(eventos);
-                    }).catch(error => { console.error("Error Fetch:", error); failureCallback(error); });
-                },
+                    const evts = [
+                        ...arrRes.filter(r => r.fecha_inicio && r.fecha_fin).map(r => {
+                            let st = (r.status?.nombre || r.status?.name || '').toLowerCase();
+                            let endoso = r.historial_endosos?.length || r.historialEndosos?.length;
+                            let inmuebleName = r.inmueble?.name || 'Apto';
 
-                eventContent: function(arg) {
-                    let icon = arg.event.extendedProps.icono;
-                    if (arg.view.type === 'multiMonthYear') { return { html: `<div class="p-0 text-truncate" style="font-size: 0.7rem;"><i class="bi ${icon}"></i> ${arg.event.title}</div>` }; }
-                    return { html: `<div class="p-1 text-truncate"><i class="bi ${icon} me-1 ms-1"></i> ${arg.event.title}</div>` };
-                },
+                            let theme = getInmuebleStyle(inmuebleName);
+                            let cssClass = '';
+                            let icn = 'bi-check2-circle';
+                            let statusBorderColor = theme.border;
 
-                eventClick: function(info) {
-                    let props = info.event.extendedProps;
-                    let esBloqueo = props.tipo === "bloqueo";
+                            if (st.includes('cancelad')) {
+                                cssClass = 'ev-cancelada';
+                                icn = 'bi-x-circle';
+                                statusBorderColor = STATUS.cancelada;
+                            } else if (endoso || st.includes('endos')) {
+                                icn = 'bi-arrow-left-right';
+                                statusBorderColor = STATUS.endoso;
+                            } else if (st.includes('pendient') || st.includes('pre')) {
+                                icn = 'bi-clock-history';
+                                statusBorderColor = STATUS.pendiente;
+                            }
 
-                    let icono = esBloqueo ? "warning" : "info";
-                    let colorBtn = esBloqueo ? "#dc3545" : "#6f42c1";
-                    let titulo = esBloqueo ? "Mantenimiento / Bloqueo" : "Detalle de Reserva";
+                            let startRaw = r.fecha_inicio.split(' ')[0];
+                            let endRaw = r.fecha_fin.split(' ')[0];
 
-                    let opciones = { day: 'numeric', month: 'long', year: 'numeric' };
-                    let fechaInicio = new Date(info.event.start).toLocaleDateString('es-ES', opciones);
+                            return {
+                                id: `rsv_${r.id}`,
+                                title: `${inmuebleName} (${r.codigo_reserva})`,
+                                start: startRaw,
+                                end: addDay(endRaw),
+                                allDay: true,
+                                classNames: [cssClass],
+                                backgroundColor: theme.bg,
+                                borderColor: theme.border,
+                                textColor: theme.text,
+                                extendedProps: {
+                                    t: 'rsv',
+                                    icn,
+                                    cod: r.codigo_reserva,
+                                    est: st.toUpperCase(),
+                                    inm: inmuebleName,
+                                    usr: r.user?.name,
+                                    realStart: startRaw,
+                                    realEnd: endRaw,
+                                    statusColor: statusBorderColor
+                                }
+                            };
+                        }),
+                        ...arrBlq.filter(b => b.fecha_inicio && b.fecha_fin).map(b => {
+                            let startRaw = b.fecha_inicio.split(' ')[0];
+                            let endRaw = b.fecha_fin.split(' ')[0];
+                            return {
+                                id: `blq_${b.id}`,
+                                title: `Mtto: ${b.inmueble?.name || ''}`,
+                                start: startRaw,
+                                end: addDay(endRaw),
+                                allDay: true,
+                                classNames: ['ev-bloqueo'],
+                                extendedProps: {
+                                    t: 'blq',
+                                    icn: 'bi-tools',
+                                    dtl: b.motivo,
+                                    inm: b.inmueble?.name,
+                                    realStart: startRaw,
+                                    realEnd: endRaw,
+                                    statusColor: STATUS.bloqueo
+                                }
+                            };
+                        })
+                    ];
 
-                    let fechaFinObj = info.event.end ? new Date(info.event.endStr) : new Date(info.event.startStr);
-                    if (info.event.end) fechaFinObj.setDate(fechaFinObj.getDate() - 1);
-                    let fechaFin = fechaFinObj.toLocaleDateString('es-ES', opciones);
-
-                    let extras = esBloqueo
-                        ? `<p><b>Motivo:</b> ${props.motivo}</p>`
-                        : `<p><b>Código:</b> ${props.codigo}</p>
-                           <p><b>Estado:</b> <span class="badge bg-secondary">${props.estadoVisual}</span></p>
-                           <p><b>Titular:</b> ${props.usuario}</p>`;
-
-                    Swal.fire({
-                        title: titulo, icon: icono,
-                        html: `
-                            <div class="text-start mt-3" style="font-size: 1rem;">
-                                <p><b>Inmueble:</b> ${props.inmueble}</p>
-                                ${extras}
-                                <p><b>Ingreso:</b> ${fechaInicio}</p>
-                                <p><b>Salida:</b> ${fechaFin}</p>
-                            </div>
-                        `,
-                        confirmButtonColor: colorBtn, confirmButtonText: 'Cerrar'
-                    });
-                },
-
-                dayCellDidMount(arg) {
-                    const today = new Date(); today.setHours(0, 0, 0, 0);
-                    const cellDate = new Date(arg.date); cellDate.setHours(0, 0, 0, 0);
-                    if (cellDate < today) {
-                        arg.el.style.backgroundColor = "#f8f9fa";
-                        arg.el.style.opacity = "0.7";
-                    }
+                    loader.classList.add('d-none');
+                    success(evts);
+                } catch (e) {
+                    console.error("Error cargando eventos:", e);
+                    loader.classList.add('d-none'); fail(e);
                 }
-            });
+            },
 
-            calendar.render();
-            const calendarTab = document.querySelector('button[data-bs-target="#calendario"]');
-            if (calendarTab) { calendarTab.addEventListener('shown.bs.tab', () => calendar.updateSize()); }
-        }
+            eventDidMount: (info) => {
+                const stColor = info.event.extendedProps.statusColor;
+                if (stColor) {
+                    info.el.style.borderLeft = `3px solid ${stColor}`;
+                }
+            },
+
+            eventContent: (arg) => ({
+                html: `<div class="text-truncate">
+                          <i class="bi ${arg.event.extendedProps.icn} me-1"></i>${arg.event.title}
+                       </div>`
+            }),
+
+            eventClick: ({ event }) => {
+                const { t, icn, cod, est, usr, dtl, inm, realStart, realEnd } = event.extendedProps;
+
+                Swal.fire({
+                    title: t === 'blq' ? 'Mantenimiento' : 'Reserva',
+                    html: `
+                        <div class="text-start mt-1" style="font-family: Calibri, 'Segoe UI', sans-serif; font-size: 11px; color: #64748b;">
+                            <div style="font-size: 12.5px; font-weight: 600; color: #475569; margin-bottom: 8px;">
+                                <i class="bi ${icn}" style="color:#3d7a5c;"></i> ${inm || 'Inmueble'}
+                            </div>
+
+                            ${t === 'blq'
+                                ? `<div style="margin-bottom:3px;"><b style="color:#475569;">Motivo:</b> ${dtl || '—'}</div>`
+                                : `<div style="margin-bottom:3px;"><b style="color:#475569;">Código:</b> ${cod}</div>
+                                   <div style="margin-bottom:3px;"><b style="color:#475569;">Estado:</b> ${est}</div>
+                                   <div style="margin-bottom:3px;"><b style="color:#475569;">Asociado:</b> ${usr || '—'}</div>`}
+
+                            <hr style="border:none; border-top:1px solid #f1f5f9; margin:8px 0;">
+
+                            <div style="margin-bottom:3px; color:#94a3b8;">
+                                <i class="bi bi-box-arrow-in-right"></i> <b>Ingreso:</b> ${formatCleanDate(realStart)}
+                            </div>
+                            <div style="margin-bottom:0; color:#94a3b8;">
+                                <i class="bi bi-box-arrow-left"></i> <b>Salida:</b> ${formatCleanDate(realEnd)}
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: 'Cerrar',
+                    confirmButtonColor: '#3d7a5c',
+                    buttonsStyling: true
+                });
+            }
+        });
+
+        calendar.render();
+        filtro.addEventListener('change', () => calendar.refetchEvents());
+
+        const tab = document.querySelector('button[data-bs-target="#calendario"]');
+        if (tab) tab.addEventListener('shown.bs.tab', () => calendar.updateSize());
     });
 </script>
 @endpush

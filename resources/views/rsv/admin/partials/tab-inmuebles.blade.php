@@ -42,7 +42,7 @@
                             <div id="carouselInmueble{{ $item->id }}" class="carousel slide bg-dark position-relative flex-shrink-0" data-bs-ride="carousel" style="height: 220px; overflow: hidden;">
 
                                 {{-- 1. BOTÓN DE EDITAR (LÁPIZ FLOTANTE SUPERIOR IZQUIERDO) --}}
-                                <a href="{{ route('rsv.inmuebles.show', $item->id) }}"
+                                <a href="{{ route('rsv.admin.partials.inmuebles.show', $item->id) }}"
                                    class="btn btn-light btn-sm rounded-circle position-absolute top-0 start-0 m-3 p-2 shadow-sm d-flex align-items-center justify-content-center"
                                    style="width: 35px; height: 35px; z-index: 10; background: rgba(255, 255, 255, 0.85); border: none; transition: transform 0.2s; color: #475569;"
                                    onmouseover="this.style.transform='scale(1.1)';"

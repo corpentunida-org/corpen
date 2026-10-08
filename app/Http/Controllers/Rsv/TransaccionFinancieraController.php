@@ -15,38 +15,62 @@ use Throwable;
 class TransaccionFinancieraController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     * Soporte Dual (Web/JSON) con filtros y paginación.
+     * Listado de transacciones con filtros y paginación.
+     * Compatible con web y JSON.
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         try {
             $query = TransaccionFinanciera::with(['reserva', 'pasarela']);
 
-            if ($request->has('id_rsv_reservas')) {
-                $query->where('id_rsv_reservas', $request->id_rsv_reservas);
+            if ($request->filled('id_rsv_reservas')) {
+                $query->where(
+                    'id_rsv_reservas',
+                    $request->id_rsv_reservas
+                );
             }
 
-            if ($request->has('id_rsv_pasarelas')) {
-                $query->where('id_rsv_pasarelas', $request->id_rsv_pasarelas);
+            if ($request->filled('id_rsv_pasarela')) {
+                $query->where(
+                    'id_rsv_pasarela',
+                    $request->id_rsv_pasarela
+                );
             }
 
-            if ($request->has('estado')) {
-                $query->where('estado', $request->estado);
+            if ($request->filled('estado_pago')) {
+                $query->where('estado_pago', $request->estado_pago);
             }
 
-            if ($request->has('search') && !empty($request->search)) {
+            if ($request->filled('metodo_pago')) {
+                $query->where('metodo_pago', $request->metodo_pago);
+            }
+
+            if ($request->filled('search')) {
                 $search = $request->search;
+
                 $query->where(function ($q) use ($search) {
-                    $q->where('referencia', 'like', "%{$search}%")
-                      ->orWhere('codigo_transaccion', 'like', "%{$search}%");
+                    $q->where(
+                        'referencia_externa',
+                        'like',
+                        "%{$search}%"
+                    )->orWhere(
+                        'metodo_pago',
+                        'like',
+                        "%{$search}%"
+                    );
                 });
             }
 
-            $perPage = $request->get('per_page', 15);
-            $transacciones = $query->orderBy('created_at', 'desc')->paginate($perPage);
+            $perPage = max(
+                1,
+                min((int) $request->input('per_page', 15), 100)
+            );
 
-            // Si la petición es por API o AJAX, devolvemos JSON
+            $transacciones = $query
+                ->orderByDesc('created_at')
+                ->paginate($perPage)
+                ->withQueryString();
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -55,28 +79,37 @@ class TransaccionFinancieraController extends Controller
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
-            return view('rsv.transacciones-financieras.index', compact('transacciones'));
+            return view(
+                'rsv.transacciones-financieras.index',
+                compact('transacciones')
+            );
 
         } catch (Throwable $e) {
-            Log::error('Error en TransaccionFinancieraController@index: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error(
+                'Error en TransaccionFinancieraController@index: '
+                . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ocurrió un error al obtener el listado de transacciones financieras.',
-                    'error' => config('app.debug') ? $e->getMessage() : null,
+                    'error' => config('app.debug')
+                        ? $e->getMessage()
+                        : null,
                 ], 500);
             }
 
-            return back()->with('error', 'Ocurrió un error al obtener el listado de transacciones financieras.');
+            return back()->with(
+                'error',
+                'Ocurrió un error al obtener el listado de transacciones financieras.'
+            );
         }
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Creación de formularios no implementada.
      */
     public function create(): JsonResponse
     {
@@ -87,28 +120,36 @@ class TransaccionFinancieraController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Registrar una transacción financiera.
      */
     public function store(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
-            'id_rsv_pasarelas' => 'required|exists:rsv_pasarelas,id',
+            'id_rsv_reservas' => [
+                'required',
+                'exists:rsv_reservas,id',
+            ],
+            'id_rsv_pasarela' => [
+                'nullable',
+                'exists:rsv_pasarelas,id',
+            ],
             'monto' => 'required|numeric|min:0',
             'moneda' => 'nullable|string|max:10',
-            'estado' => 'nullable|string|max:50',
-            'referencia' => 'nullable|string|max:255',
-            'codigo_transaccion' => 'nullable|string|max:255',
-            'detalles' => 'nullable|string',
+            'estado_pago' => 'nullable|string|max:50',
+            'metodo_pago' => 'nullable|string|max:100',
+            'referencia_externa' => 'nullable|string|max:255',
+            'soporte_pago' => 'nullable|string|max:2048',
         ]);
-
-        DB::beginTransaction();
 
         try {
             $transaccion = DB::transaction(function () use ($validatedData) {
-                $trx = TransaccionFinanciera::create($validatedData);
-                $trx->load(['reserva', 'pasarela']);
-                return $trx;
+                $transaccion = TransaccionFinanciera::create(
+                    $validatedData
+                );
+
+                $transaccion->load(['reserva', 'pasarela']);
+
+                return $transaccion;
             });
 
             return response()->json([
@@ -118,26 +159,32 @@ class TransaccionFinancieraController extends Controller
             ], 201);
 
         } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en TransaccionFinancieraController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error(
+                'Error en TransaccionFinancieraController@store: '
+                . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la transacción financiera.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug')
+                    ? $e->getMessage()
+                    : null,
             ], 500);
         }
     }
 
     /**
-     * Display the specified resource.
+     * Consultar una transacción financiera.
      */
     public function show(string $id): JsonResponse
     {
         try {
-            $transaccion = TransaccionFinanciera::with(['reserva', 'pasarela'])->find($id);
+            $transaccion = TransaccionFinanciera::with([
+                'reserva',
+                'pasarela',
+            ])->find($id);
 
             if (!$transaccion) {
                 return response()->json([
@@ -153,20 +200,24 @@ class TransaccionFinancieraController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            Log::error('Error en TransaccionFinancieraController@show: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error(
+                'Error en TransaccionFinancieraController@show: '
+                . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al obtener la transacción financiera.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug')
+                    ? $e->getMessage()
+                    : null,
             ], 500);
         }
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Edición de formularios no implementada.
      */
     public function edit(string $id): JsonResponse
     {
@@ -177,11 +228,30 @@ class TransaccionFinancieraController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualizar una transacción financiera.
      */
-    public function update(Request $request, string $id): JsonResponse
-    {
-        DB::beginTransaction();
+    public function update(
+        Request $request,
+        string $id
+    ): JsonResponse {
+        $validatedData = $request->validate([
+            'id_rsv_reservas' => [
+                'sometimes',
+                'required',
+                'exists:rsv_reservas,id',
+            ],
+            'id_rsv_pasarela' => [
+                'sometimes',
+                'nullable',
+                'exists:rsv_pasarelas,id',
+            ],
+            'monto' => 'sometimes|required|numeric|min:0',
+            'moneda' => 'sometimes|nullable|string|max:10',
+            'estado_pago' => 'sometimes|nullable|string|max:50',
+            'metodo_pago' => 'sometimes|nullable|string|max:100',
+            'referencia_externa' => 'sometimes|nullable|string|max:255',
+            'soporte_pago' => 'sometimes|nullable|string|max:2048',
+        ]);
 
         try {
             $transaccion = TransaccionFinanciera::find($id);
@@ -193,18 +263,10 @@ class TransaccionFinancieraController extends Controller
                 ], 404);
             }
 
-            $validatedData = $request->validate([
-                'id_rsv_reservas' => 'sometimes|required|exists:rsv_reservas,id',
-                'id_rsv_pasarelas' => 'sometimes|required|exists:rsv_pasarelas,id',
-                'monto' => 'sometimes|required|numeric|min:0',
-                'moneda' => 'nullable|string|max:10',
-                'estado' => 'nullable|string|max:50',
-                'referencia' => 'nullable|string|max:255',
-                'codigo_transaccion' => 'nullable|string|max:255',
-                'detalles' => 'nullable|string',
-            ]);
-
-            DB::transaction(function () use ($transaccion, $validatedData) {
+            DB::transaction(function () use (
+                $transaccion,
+                $validatedData
+            ) {
                 $transaccion->update($validatedData);
             });
 
@@ -217,26 +279,27 @@ class TransaccionFinancieraController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en TransaccionFinancieraController@update: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error(
+                'Error en TransaccionFinancieraController@update: '
+                . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar la transacción financiera.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug')
+                    ? $e->getMessage()
+                    : null,
             ], 500);
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Eliminar una transacción financiera.
      */
     public function destroy(string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             $transaccion = TransaccionFinanciera::find($id);
 
@@ -257,15 +320,18 @@ class TransaccionFinancieraController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en TransaccionFinancieraController@destroy: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error(
+                'Error en TransaccionFinancieraController@destroy: '
+                . $e->getMessage(),
+                ['trace' => $e->getTraceAsString()]
+            );
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al eliminar la transacción financiera.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error' => config('app.debug')
+                    ? $e->getMessage()
+                    : null,
             ], 500);
         }
     }
