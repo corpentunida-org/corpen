@@ -9,6 +9,8 @@ use App\Models\Creditos\LineaCredito;
 use App\Models\Maestras\MaeTerceros; // Asegúrate que la ruta a tu modelo Tercero sea correcta
 use App\Http\Requests\StoreCreditoRequest;
 use App\Http\Requests\UpdateCreditoRequest;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CreditoController extends Controller
 {
@@ -46,12 +48,88 @@ class CreditoController extends Controller
      */
     public function create()
     {
-        // Pasamos a la vista todos los datos necesarios para los menús desplegables del formulario.
+        // El select de Cliente (Tercero) se llena por búsqueda AJAX (buscarTerceros), no
+        // cargando aquí los ~26.000 registros de MaeTerceros::all() — eso era lo que hacía
+        // tardar tanto en abrir este formulario.
         $estados = Estado::all();
         $lineasCredito = LineaCredito::all();
-        $terceros = MaeTerceros::all();
 
-        return view('creditos.creditos.crear', compact('estados', 'lineasCredito', 'terceros'));
+        return view('creditos.creditos.crear', compact('estados', 'lineasCredito'));
+    }
+
+    /**
+     * Búsqueda AJAX de terceros para el select de Cliente del formulario de crédito (Select2).
+     * Por cédula (cod_ter) o nombre (nom_ter), máximo 20 resultados por página.
+     */
+    public function buscarTerceros(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = 20;
+
+        $query = MaeTerceros::query();
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('nom_ter', 'like', "%{$q}%")
+                    ->orWhere('cod_ter', 'like', "%{$q}%");
+            });
+        }
+
+        $total = $query->count();
+        $terceros = $query->orderBy('nom_ter')
+            ->forPage($page, $perPage)
+            ->get(['cod_ter', 'nom_ter']);
+
+        return response()->json([
+            'results' => $terceros->map(fn ($t) => [
+                'id' => $t->cod_ter,
+                'text' => "{$t->nom_ter} ({$t->cod_ter})",
+            ]),
+            'pagination' => [
+                'more' => ($page * $perPage) < $total,
+            ],
+        ]);
+    }
+
+    /**
+     * Historial de crédito de un asociado por cédula: créditos activos (cre_creditos) +
+     * archivo histórico del sistema anterior (solicitudes y pagarés). Primera pieza de ir
+     * enlazando ambos esquemas sin fusionarlos todavía.
+     */
+    public function historial(Request $request)
+    {
+        $cedula = trim((string) $request->query('cedula', ''));
+        $tercero = null;
+        $creditosActuales = collect();
+        $emptyPaginator = fn () => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25);
+        $solicitudes = $emptyPaginator();
+        $pagares = $emptyPaginator();
+
+        if ($cedula !== '') {
+            $tercero = MaeTerceros::where('cod_ter', $cedula)->first(['cod_ter', 'nom_ter']);
+
+            $creditosActuales = Credito::where('mae_terceros_cod_ter', $cedula)
+                ->with(['estado', 'lineaCredito'])
+                ->orderByDesc('fecha_desembolso')
+                ->get();
+
+            // Paginados por separado (pageName distinto cada uno): algunas cédulas no son un
+            // pastor individual sino una entidad (ej. IPUC Nacional) con miles de solicitudes/
+            // pagarés históricos asociados — listarlos todos de una sentada no es viable.
+            $solicitudes = DB::table('cre_legacy_solicitudes')
+                ->where('doc_deu', $cedula)
+                ->orderByDesc('fecha')
+                ->paginate(25, ['*'], 'pagina_solicitudes')
+                ->withQueryString();
+
+            $pagares = DB::table('cre_legacy_pagares')
+                ->where('cod_deu', $cedula)
+                ->orderByDesc('fec_apro')
+                ->paginate(25, ['*'], 'pagina_pagares')
+                ->withQueryString();
+        }
+
+        return view('creditos.creditos.historial', compact('cedula', 'tercero', 'creditosActuales', 'solicitudes', 'pagares'));
     }
 
     /**
@@ -62,7 +140,7 @@ class CreditoController extends Controller
         // La validación se ejecuta automáticamente gracias al Form Request.
         Credito::create($request->validated());
 
-        return redirect()->route('creditos.index')->with('success', 'Crédito creado exitosamente.');
+        return redirect()->route('creditos.credito.index')->with('success', 'Crédito creado exitosamente.');
     }
 
     /**
@@ -73,7 +151,7 @@ class CreditoController extends Controller
         // Cargamos todas las relaciones del crédito para mostrarlas en la vista de detalle.
         $credito->load(['estado', 'lineaCredito', 'tercero', 'pagareRelacionado', 'escritura', 'notificaciones']);
 
-        return view('creditos.show', compact('credito'));
+        return view('creditos.creditos.show', compact('credito'));
     }
 
     /**
@@ -81,12 +159,13 @@ class CreditoController extends Controller
      */
     public function edit(Credito $credito)
     {
-        // Al igual que en create, necesitamos los datos para los menús desplegables.
         $estados = Estado::all();
         $lineasCredito = LineaCredito::all();
-        $terceros = MaeTerceros::all();
+        // Solo el tercero ya asignado a este crédito, para precargar el Select2 — el resto se
+        // busca por AJAX igual que en create().
+        $terceroActual = MaeTerceros::where('cod_ter', $credito->mae_terceros_cod_ter)->first(['cod_ter', 'nom_ter']);
 
-        return view('creditos.edit', compact('credito', 'estados', 'lineasCredito', 'terceros'));
+        return view('creditos.creditos.edit', compact('credito', 'estados', 'lineasCredito', 'terceroActual'));
     }
 
     /**
@@ -96,7 +175,7 @@ class CreditoController extends Controller
     {
         $credito->update($request->validated());
 
-        return redirect()->route('creditos.index')->with('success', 'Crédito actualizado exitosamente.');
+        return redirect()->route('creditos.credito.index')->with('success', 'Crédito actualizado exitosamente.');
     }
 
     /**
@@ -106,6 +185,6 @@ class CreditoController extends Controller
     {
         $credito->delete();
 
-        return redirect()->route('creditos.index')->with('success', 'Crédito eliminado exitosamente.');
+        return redirect()->route('creditos.credito.index')->with('success', 'Crédito eliminado exitosamente.');
     }
 }

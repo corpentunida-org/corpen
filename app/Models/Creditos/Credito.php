@@ -43,7 +43,7 @@ class Credito extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = ['pr', 'pagare', 'valor', 'cuotas', 'fecha_desembolso', 'cre_estados_id', 'mae_terceros_cedula', 'cre_lineas_creditos_id'];
+    protected $fillable = ['pr', 'pagare', 'valor', 'cuotas', 'fecha_desembolso', 'cre_estados_id', 'mae_terceros_cod_ter', 'cre_lineas_creditos_id'];
 
     /**
      * Los atributos que deben ser convertidos a tipos nativos.
@@ -53,7 +53,6 @@ class Credito extends Model
     protected $casts = [
         'valor' => 'double',
         'fecha_desembolso' => 'date',
-        'acuerdo' => 'boolean',
     ];
 
     // --- RELACIONES "PERTENECE A" (BELONGS TO) ---

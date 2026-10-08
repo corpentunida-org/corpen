@@ -112,6 +112,7 @@ use App\Http\Controllers\Demografia\DemografiaController;
 
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
+use App\Http\Controllers\Creditos\SolicitudController;
 use App\Http\Controllers\Creditos\LineaCreditoController;
 
 //INTERACCIONES
@@ -828,6 +829,23 @@ Route::prefix('maestras')
 //
 
 //CREDITOS
+// Antes del resource por la misma razón que "terceros/importar" en Maestras: el resource
+// registra GET creditos/{credito} (show), que si va primero se traga "buscar-tercero" como si
+// fuera un id de crédito (route model binding falla -> 404 engañoso).
+Route::get('creditos/buscar-tercero', [CreditoController::class, 'buscarTerceros'])
+    ->name('creditos.credito.buscar-tercero')
+    ->middleware('auth');
+
+Route::get('creditos/historial', [CreditoController::class, 'historial'])
+    ->name('creditos.credito.historial')
+    ->middleware('auth');
+
+Route::middleware('auth')->group(function () {
+    Route::get('creditos/solicitudes/crear', [SolicitudController::class, 'create'])->name('creditos.solicitud.create');
+    Route::post('creditos/solicitudes', [SolicitudController::class, 'store'])->name('creditos.solicitud.store');
+    Route::get('creditos/solicitudes/tercero/{tercero}', [SolicitudController::class, 'datosTercero'])->name('creditos.solicitud.datos-tercero');
+});
+
 Route::resource('creditos', CreditoController::class)
     ->names('creditos.credito')
     ->middleware(['auth']);

@@ -25,9 +25,8 @@ class StoreCreditoRequest extends FormRequest
             'valor' => 'required|numeric|min:0',
             'cuotas' => 'required|integer|min:1',
             'fecha_desembolso' => 'required|date',
-            'acuerdo' => 'required|boolean',
             'cre_estados_id' => 'required|integer|exists:cre_estados,id',
-            'mae_terceros_cedula' => 'required|string|exists:mae_terceros,cedula',
+            'mae_terceros_cod_ter' => 'required|integer|exists:MaeTerceros,cod_ter',
             'cre_lineas_creditos_id' => 'required|integer|exists:cre_lineas_creditos,id',
         ];
     }
