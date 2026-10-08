@@ -40,9 +40,11 @@
                     <div class="col-sm-12 col-md-5 d-flex justify-content-end align-items-center">
                         <x-input-search-creditos></x-input-search-creditos>
                     </div>
-                        {{-- Botón que lleva a la página de creación de créditos --}}
-                        <a href="{{ route('creditos.credito.create') }}" class="btn btn-primary d-flex align-items-center">
-                            <i class="feather-plus me-1"></i> Nuevo Crédito
+                        {{-- Nueva Solicitud: formulario completo (datos del pastor, ingresos/egresos,
+                             autorización y formulario firmado). Crear un crédito ya aprobado
+                             directamente sigue disponible en creditos/create para casos puntuales. --}}
+                        <a href="{{ route('creditos.solicitud.create') }}" class="btn btn-primary d-flex align-items-center">
+                            <i class="feather-plus me-1"></i> Nueva Solicitud
                         </a>
                 </div>
             </div>
@@ -51,8 +53,12 @@
     <div class="col-xxl-12">
     <div class="card stratch">
         <div class="card-header">
-            <h5 class="card-title">{{$creditos->first()->estado->nombre}} - {{$creditos->first()->estado->etapa->nombre}}</h5>
-            <a href="" class="d-flex me-1 btn btn-primary"><i class="feather-plus me-2"></i><span>Crear una Solicitud</span>
+            @if ($creditos->isNotEmpty())
+                <h5 class="card-title">{{ $creditos->first()->estado->nombre }} - {{ $creditos->first()->estado->etapa->nombre }}</h5>
+            @else
+                <h5 class="card-title">Sin créditos para mostrar</h5>
+            @endif
+            <a href="{{ route('creditos.solicitud.create') }}" class="d-flex me-1 btn btn-primary"><i class="feather-plus me-2"></i><span>Crear una Solicitud</span>
             </a>
         </div>
         <div class="card-body custom-card-action p-0">
@@ -70,31 +76,31 @@
                     <tbody>
                         @foreach ($creditos as $c)
                             <tr>
-                                <td><a href="" class="hstack gap-3">
+                                <td><a href="{{ route('creditos.credito.show', $c) }}" class="hstack gap-3">
                                         <i class="bi bi-person-circle"></i>
                                         <div>
                                             <span class="text-truncate-1-line">{{$c->mae_terceros_cod_ter}}</span>
                                             <small class="fs-12 fw-normal text-muted">{{$c->tercero->nom_ter}}</small>
                                         </div>
                                     </a></td>
-                                <td class="text-primary">{{ strtoupper($c->lineaCredito->nombre)}} 
+                                <td class="text-primary">{{ strtoupper($c->lineaCredito->nombre)}}
                                 <span class="badge bg-gray-200 text-dark">{{$c->lineaCredito->tipoCredito->nombre}}</span>
                                 </td>
-                                <td class="fw-bold text-dark">$
-                                    
+                                <td class="fw-bold text-dark">
+                                    ${{ number_format($c->valor, 0, ',', '.') }}
                                 </td>
                                 <td>
-                                    
-                                </td>                                
-                               
+                                    {{ $c->cuotas }}
+                                </td>
+
                                     <td class="text-end">
                                         <div class="hstack gap-2 justify-content-end">
-                                            <a href="" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="" data-bs-original-title="Ir al credito">
+                                            <a href="{{ route('creditos.credito.show', $c) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="" data-bs-original-title="Ir al credito">
                                                 <i class="feather-arrow-right"></i>
                                             </a>
                                         </div>
                                     </td>
-                               
+
                             </tr>
                         @endforeach
                     </tbody>
