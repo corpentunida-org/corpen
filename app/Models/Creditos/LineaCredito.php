@@ -35,10 +35,15 @@ class LineaCredito extends Model
         'nombre',
         'cuenta',
         'tasa_interes',
+        'tasa_interes_alt',
+        'edad_desde_tasa_alt',
         'plazo_minimo',
         'plazo_maximo',
         'edad_minima',
         'edad_maxima',
+        'monto_maximo',
+        'monto_minimo',
+        'seguro_todo_riesgo',
         'fecha_apertura',
         'fecha_cierre',
         'observacion',
@@ -54,7 +59,8 @@ class LineaCredito extends Model
     protected $casts = [
         'fecha_apertura' => 'date',
         'fecha_cierre' => 'date',
-        'tasa_interes' => 'decimal:2', // Asume 2 decimales para la tasa
+        'tasa_interes' => 'decimal:4',
+        'tasa_interes_alt' => 'decimal:4',
     ];
 
     /**
@@ -93,4 +99,12 @@ class LineaCredito extends Model
         return $this->hasMany(CarComprobantePago::class, 'id_obligacion', 'id');
     }
 
+    /**
+     * Documentos necesarios para solicitar un crédito de esta línea, en el orden en que deben
+     * presentarse.
+     */
+    public function documentos()
+    {
+        return $this->hasMany(LineaCreditoDocumento::class, 'cre_lineas_creditos_id')->orderBy('orden');
+    }
 }

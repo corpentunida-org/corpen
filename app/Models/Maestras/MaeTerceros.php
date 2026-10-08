@@ -117,7 +117,9 @@ class MaeTerceros extends Model
         'id_conyuge', // ID CÓNYUGE
         'nom_conyug', // NOMBRE CÓNYUGE
         'mail_conyu', // EMAIL CÓNYUGE
+        'cel_conyu', // CELULAR CÓNYUGE
         'num_hijos', // NÚMERO DE HIJOS
+        'personas_cargo', // Nº PERSONAS A CARGO (distinto de num_hijos)
         'parentesco', // PARENTESCO
 
         // ----------------------
@@ -127,6 +129,7 @@ class MaeTerceros extends Model
         'tel1', // TELÉFONO 1
         'tel2', // TELÉFONO 2
         'cel', // CELULAR
+        'whatsapp', // WHATSAPP (puede diferir del celular)
         'fax1', // FAX
         'email', // CORREO
         'email_fac', // EMAIL FACTURACIÓN
@@ -135,6 +138,18 @@ class MaeTerceros extends Model
         'contacto', // CONTACTO
         'cont_cxc', // CONTACTO CXC
         'cont_tel', // TELÉFONO CONTACTO
+
+        // ----------------------
+        // SALUD / VIVIENDA (solicitud de crédito)
+        // ----------------------
+        'peso', // KG
+        'estatura', // METROS
+        'eps',
+        'detalle_enfermedades',
+        'tipo_vivienda', // propia | pastoral
+        'congregacion_paga_servicios',
+        'congregacion_paga_arriendo',
+        'congregacion_paga_otros',
 
         // ----------------------
         // DOMICILIO
