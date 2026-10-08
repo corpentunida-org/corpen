@@ -1,581 +1,117 @@
 <x-base-layout>
-    @section('titlepage', 'Panel de Administración - Sistema RSV')
+    @section('titlepage', 'Panel Maestro de Inmuebles - RSV')
 
-    {{-- Notificaciones Toast --}}
+    {{-- Notificaciones del Sistema --}}
     @include('rsv.components.alert')
 
-    <div id="rsvPanel">
-
-        <style>
-            /* ═══ PANEL · base (misma lógica visual que las hojas internas) ═══ */
-            #rsvPanel {
-                --grid:    #f1f5f9;
-                --grid-2:  #e9eef4;
-                --head:    #fafbfd;
-                --ink:     #64748b;
-                --ink-2:   #475569;
-                --ink-3:   #94a3b8;
-                --ink-4:   #b3bcc7;
-                --accent:  #3d7a5c;
-                --accent-bg: #eef6f1;
-                --accent-bd: #d5e7dc;
-                --amber:   #b08a3e;
-                --amber-bg:#fdf8ec;
-                --amber-bd:#f3e7c6;
-                --red:     #b06a6a;
-                --red-bg:  #fdf4f4;
-                --red-bd:  #f0dcdc;
-                font-family: Calibri, "Segoe UI", system-ui, sans-serif;
-                font-size: 10px;
-                line-height: 1.45;
-                color: var(--ink);
-            }
-
-            #rsvPanel .strong { color: var(--ink-2); font-weight: 600; }
-            #rsvPanel .kicker {
-                font-size: 7.5px; font-weight: 600; letter-spacing: .08em;
-                text-transform: uppercase; color: var(--ink-4);
-            }
-            #rsvPanel .sub { font-size: 8.5px; color: var(--ink-4); }
-
-            /* ═══ NIVEL 1 · CINTA DE TÍTULO ═══ */
-            #rsvPanel .rp-titlebar {
-                display: flex; flex-wrap: wrap; gap: 8px;
-                align-items: center; justify-content: space-between;
-                padding: 10px 2px 12px;
-                border-bottom: 1px solid var(--grid);
-            }
-            #rsvPanel .rp-titlebar .rp-title {
-                font-size: 13px; font-weight: 600; color: #334155;
-                letter-spacing: .01em;
-            }
-
-            /* ═══ NIVEL 2 · PESTAÑAS DE MÓDULOS (sticky) ═══ */
-            #rsvPanel .rp-tabs {
-                position: sticky; top: 0; z-index: 20;
-                display: flex; align-items: stretch;
-                background: #fbfcfd;
-                border-bottom: 1px solid var(--grid);
-                overflow-x: auto;
-            }
-            #rsvPanel .rp-tabs::-webkit-scrollbar { display: none; }
-
-            #rsvPanel .rp-tab {
-                border: 0; background: transparent;
-                font-family: inherit;
-                font-size: 9.5px; font-weight: 600;
-                color: var(--ink-3);
-                padding: 9px 16px;
-                border-right: 1px solid var(--grid);
-                display: inline-flex; align-items: center; gap: 6px;
-                white-space: nowrap; cursor: pointer;
-            }
-            #rsvPanel .rp-tab i { font-size: 9.5px; opacity: .7; }
-            #rsvPanel .rp-tab:hover { background: #f5f8fb; color: var(--ink-2); }
-            #rsvPanel .rp-tab.active {
-                background: #fff; color: var(--ink-2);
-                box-shadow: inset 0 -2px 0 #b9d4c5;
-            }
-            #rsvPanel .rp-tab .n {
-                font-size: 7px; font-weight: 600; color: var(--ink-4);
-                letter-spacing: .05em;
-            }
-            #rsvPanel .rp-tab.active .n { color: var(--accent); opacity: .8; }
-
-            /* ═══ NIVEL 3 · MÓDULOS ═══ */
-            #rsvPanel .tab-pane { padding-top: 12px; }
-
-            #rsvPanel .rp-modstrip {
-                display: flex; align-items: center; justify-content: space-between;
-                gap: 8px;
-                padding: 6px 12px;
-                background: var(--head);
-                border: 1px solid var(--grid); border-bottom: 0;
-                border-radius: 4px 4px 0 0;
-            }
-            #rsvPanel .rp-modstrip .m-id {
-                font-size: 7.5px; font-weight: 600; letter-spacing: .08em;
-                color: var(--ink-4);
-            }
-            #rsvPanel .rp-modstrip .m-name {
-                font-size: 10px; font-weight: 600; color: var(--ink-2);
-            }
-            #rsvPanel .rp-modstrip .m-hint { font-size: 8px; color: var(--ink-4); }
-
-            #rsvPanel .rp-frame {
-                background: #fff;
-                border: 1px solid var(--grid);
-                border-radius: 0 0 4px 4px;
-                overflow: hidden;
-            }
-            #rsvPanel .rp-frame-body { padding: 12px; }
-            #rsvPanel .rp-frame-body.flush { padding: 0; }
-
-            /* ═══ Botones suaves (mismos que las hojas) ═══ */
-            #rsvPanel .btn-soft {
-                border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
-                font-size: 9px; font-weight: 600; padding: 3px 11px; border-radius: 3px;
-                display: inline-flex; align-items: center; gap: 5px;
-                text-decoration: none;
-            }
-            #rsvPanel .btn-soft:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
-
-            #rsvPanel .btn-soft-green {
-                background: var(--accent-bg); color: var(--accent);
-                border: 1px solid var(--accent-bd);
-                font-size: 9.5px; font-weight: 600; padding: 4px 12px; border-radius: 3px;
-                display: inline-flex; align-items: center; gap: 5px;
-                text-decoration: none;
-            }
-            #rsvPanel .btn-soft-green:hover { background: #e3f1e9; color: #34684e; }
-
-            #rsvPanel .btn-soft-amber {
-                background: var(--amber-bg); color: var(--amber);
-                border: 1px solid var(--amber-bd);
-                font-size: 9px; font-weight: 600; padding: 3px 11px; border-radius: 3px;
-                display: inline-flex; align-items: center; gap: 5px;
-            }
-            #rsvPanel .btn-soft-amber:hover { background: #faf1dc; color: #8f6e2f; }
-
-            #rsvPanel .btn-soft-red {
-                background: var(--red-bg); color: var(--red);
-                border: 1px solid var(--red-bd);
-                font-size: 9px; font-weight: 600; padding: 4px 12px; border-radius: 3px;
-                display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-                width: 100%;
-            }
-            #rsvPanel .btn-soft-red:hover { background: #fbeded; color: #965757; }
-
-            /* ═══ Badge pastel ═══ */
-            #rsvPanel .chip {
-                display: inline-flex; align-items: center; gap: 4px;
-                padding: 1px 8px; border-radius: 9px;
-                font-size: 8px; font-weight: 600; border: 1px solid;
-                line-height: 14px;
-            }
-            #rsvPanel .chip-red   { color:#b06a6a; background:#fdf4f4; border-color:#f0dcdc; }
-            #rsvPanel .chip-green { color:#5d8a70; background:#f0f7f2; border-color:#d8e9de; }
-            #rsvPanel .chip-amber { color:#b08a3e; background:#fdf8ec; border-color:#f3e7c6; }
-
-            /* ═══ Card Endosos (pastel, antes rojo intenso) ═══ */
-            #rsvPanel .endosos-card {
-                background: linear-gradient(180deg, #fefbfb 0%, #fdf5f5 100%);
-                border: 1px solid var(--red-bd);
-                border-radius: 4px;
-                height: 100%;
-                display: flex; flex-direction: column;
-            }
-            #rsvPanel .endosos-head {
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 10px 12px; border-bottom: 1px solid #f7e9e9;
-            }
-            #rsvPanel .endosos-body {
-                padding: 12px; flex: 1;
-                font-size: 8.5px; color: var(--ink-3);
-            }
-            #rsvPanel .endosos-foot { padding: 10px 12px; border-top: 1px solid #f7e9e9; }
-
-            /* ═══ Bitácora (antes card negra) ═══ */
-            #rsvPanel .audit-banner {
-                background: linear-gradient(180deg, #fbfcfd 0%, #f7fafb 100%);
-                border: 1px solid var(--grid-2);
-                border-left: 3px solid #7a8ba0;
-                border-radius: 4px;
-            }
-
-            /* ═══ Celdas de catálogos ═══ */
-            #rsvPanel .cat-cell {
-                background: #fff; border: 1px solid var(--grid);
-                border-radius: 4px; padding: 10px 12px;
-                display: flex; flex-direction: column; height: 100%;
-            }
-            #rsvPanel .cat-cell .cat-item {
-                display: flex; align-items: baseline; justify-content: space-between;
-                gap: 6px; padding: 3px 0;
-                border-bottom: 1px dashed var(--grid);
-                font-size: 8.5px; color: var(--ink);
-            }
-            #rsvPanel .cat-cell .cat-item .tbl {
-                font-size: 7.5px; color: var(--ink-4);
-            }
-
-            /* ═══ Modal suave ═══ */
-            #rsvPanel .rp-modal .modal-content {
-                border: 1px solid var(--grid-2);
-                border-radius: 5px;
-                box-shadow: 0 8px 30px rgba(15,23,42,.06);
-                font-family: inherit;
-                color: var(--ink);
-            }
-            #rsvPanel .rp-modal .modal-header {
-                border-bottom: 1px solid var(--grid); padding: 10px 14px;
-            }
-            #rsvPanel .rp-modal .modal-body { padding: 14px; }
-            #rsvPanel .rp-modal .modal-footer {
-                border-top: 1px solid var(--grid); padding: 10px 14px;
-            }
-            #rsvPanel .rp-modal .form-label {
-                font-size: 8px; font-weight: 600; letter-spacing: .05em;
-                text-transform: uppercase; color: var(--ink-3);
-                margin-bottom: 3px;
-            }
-            #rsvPanel .rp-modal .form-label .tbl {
-                text-transform: none; letter-spacing: 0;
-                font-weight: 400; color: var(--ink-4);
-            }
-            #rsvPanel .rp-modal .form-control,
-            #rsvPanel .rp-modal .form-check-input {
-                font-size: 9.5px; color: var(--ink-2);
-                border: 1px solid #e9eef4; border-radius: 3px;
-                padding: 4px 8px;
-                box-shadow: none !important;
-            }
-            #rsvPanel .rp-modal .form-control:focus {
-                border-color: #c8d6cd;
-            }
-            #rsvPanel .rp-modal .form-check-label {
-                font-size: 9.5px; color: var(--ink-2); font-weight: 600;
-            }
-        </style>
-
-
-        <!-- ═══════════ NIVEL 1 · CINTA DE TÍTULO ═══════════ -->
-        <div class="rp-titlebar">
-
-            <div>
-                <div class="kicker">RSV · Panel de Administración</div>
-                <div class="rp-title">Panel de Control</div>
-                <div class="sub">
-                    <i class="bi bi-clock-history me-1"></i>{{ now()->translatedFormat('l d/m/Y · H:i') }}
-                </div>
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-                <span class="chip chip-green" title="Sistema operativo">
-                    <span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block;"></span>
-                    Sistema activo
-                </span>
-
-                <a href="{{ route('rsv.reservas.pdf', 1) }}" class="btn-soft-green">
-                    <i class="bi bi-file-pdf" style="font-size: 9.5px;"></i> Reporte Global
-                </a>
-            </div>
-
-        </div>
-
-
-        <!-- ═══════════ NIVEL 2 · PESTAÑAS DE MÓDULOS ═══════════ -->
-        <ul class="nav rp-tabs" id="adminTabs" role="tablist" style="list-style: none; margin: 0; padding: 0;">
-
-            <li class="nav-item" role="presentation">
-                <button class="rp-tab nav-link active" data-bs-toggle="pill" data-bs-target="#inmuebles" type="button" role="tab">
-                    <span class="n">01</span><i class="bi bi-house-door"></i> Inmuebles
-                </button>
-            </li>
-
-            <li class="nav-item" role="presentation">
-                <button class="rp-tab nav-link" data-bs-toggle="pill" data-bs-target="#reservas" type="button" role="tab">
-                    <span class="n">02</span><i class="bi bi-calendar2-check"></i> Reservas y Logística
-                </button>
-            </li>
-
-            <li class="nav-item" role="presentation">
-                <button class="rp-tab nav-link" data-bs-toggle="pill" data-bs-target="#calendario" type="button" role="tab">
-                    <span class="n">03</span><i class="bi bi-calendar3"></i> Calendario
-                </button>
-            </li>
-
-            <li class="nav-item" role="presentation">
-                <button class="rp-tab nav-link" data-bs-toggle="pill" data-bs-target="#finanzas" type="button" role="tab">
-                    <span class="n">04</span><i class="bi bi-wallet2"></i> Finanzas
-                </button>
-            </li>
-
-            <li class="nav-item" role="presentation">
-                <button class="rp-tab nav-link" data-bs-toggle="pill" data-bs-target="#auditoria" type="button" role="tab">
-                    <span class="n">05</span><i class="bi bi-shield-lock"></i> Config & Auditoría
-                </button>
-            </li>
-
-        </ul>
-
-
-        <div class="tab-content" id="adminTabsContent">
-
-
-            <!-- ═══ MÓDULO 01 · INMUEBLES ═══ -->
-            <div class="tab-pane fade show active" id="inmuebles" role="tabpanel" aria-labelledby="inmuebles-tab">
-
-                <div class="rp-modstrip">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="m-id">MÓDULO 01</span>
-                        <span class="m-name">Inmuebles</span>
-                    </div>
-                    <span class="m-hint d-none d-md-inline">Propiedades, tarifas base y capacidad</span>
-                </div>
-
-                <div class="rp-frame">
-                    <div class="rp-frame-body flush">
-                        @include('rsv.admin.partials.tab-inmuebles')
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- ═══ MÓDULO 02 · RESERVAS Y LOGÍSTICA ═══ -->
-            <div class="tab-pane fade" id="reservas" role="tabpanel" aria-labelledby="reservas-tab">
-
-                <div class="rp-modstrip">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="m-id">MÓDULO 02</span>
-                        <span class="m-name">Reservas y Logística</span>
-                    </div>
-                    <span class="m-hint d-none d-md-inline">Titulares · huéspedes · itinerarios · endosos</span>
-                </div>
-
-                <div class="rp-frame">
-                    <div class="p-3">
-                        <div class="row g-3">
-
-                            <!-- Hoja de reservas (self-contained) -->
-                            <div class="col-12 col-xl-8">
-                                @include('rsv.admin.partials.tab-reservas')
-                            </div>
-
-                            <!-- Endosos (pastel suave) -->
-                            <div class="col-12 col-xl-4">
-                                <div class="endosos-card">
-
-                                    <div class="endosos-head">
-                                        <span class="strong" style="font-size: 9.5px;">
-                                            <i class="bi bi-arrow-left-right me-1" style="color: var(--red); opacity:.7;"></i>
-                                            Gestión de Endosos
-                                        </span>
-                                        <span class="chip chip-red">3 pendientes</span>
-                                    </div>
-
-                                    <div class="endosos-body">
-                                        Aprobación de traslados de titularidad.
-                                        <div class="sub mt-1">Tabla: <code style="font-size:7.5px; color: var(--ink-4);">rsv_historial_endosos</code></div>
-
-                                        <div class="mt-2">
-                                            <div class="cat-item"><span>Solicitud #1042</span><span class="chip chip-amber" style="font-size:7px;">Revisión</span></div>
-                                            <div class="cat-item"><span>Solicitud #1041</span><span class="chip chip-amber" style="font-size:7px;">Revisión</span></div>
-                                            <div class="cat-item" style="border-bottom: 0;"><span>Solicitud #1039</span><span class="chip chip-amber" style="font-size:7px;">Revisión</span></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="endosos-foot">
-                                        <button type="button" class="btn-soft-red">
-                                            <i class="bi bi-eye" style="font-size: 9px;"></i> Revisar Solicitudes
-                                        </button>
-                                    </div>
-
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- ═══ MÓDULO 03 · CALENDARIO ═══ -->
-            <div class="tab-pane fade" id="calendario" role="tabpanel" aria-labelledby="calendario-tab">
-
-                <div class="rp-modstrip">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="m-id">MÓDULO 03</span>
-                        <span class="m-name">Calendario</span>
-                    </div>
-                    <span class="m-hint d-none d-md-inline">Disponibilidad conjunta: reservas + bloqueos</span>
-                </div>
-
-                <div class="rp-frame">
-                    <div class="rp-frame-body">
-
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                            <span class="strong" style="font-size: 9.5px;">Disponibilidad y Bloqueos</span>
-                            <button type="button" class="btn-soft-amber">
-                                <i class="bi bi-slash-circle" style="font-size: 9px;"></i> Registrar Mantenimiento
-                            </button>
-                        </div>
-
-                        <div class="sub mb-2">
-                            Reservas aprobadas + bloqueos administrativos
-                            <code style="font-size:7.5px;">(rsv_bloqueos_calendario)</code>
-                        </div>
-
-                        <div style="border: 1px solid var(--grid); border-radius: 4px; min-height: 320px;">
-                            @include('rsv.admin.partials.tab-calendario')
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- ═══ MÓDULO 04 · FINANZAS ═══ -->
-            <div class="tab-pane fade" id="finanzas" role="tabpanel" aria-labelledby="finanzas-tab">
-
-                <div class="rp-modstrip">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="m-id">MÓDULO 04</span>
-                        <span class="m-name">Finanzas</span>
-                    </div>
-                    <span class="m-hint d-none d-md-inline">Transacciones <code style="font-size:7.5px;">(rsv_transacciones_financieras)</code> · Pasarelas <code style="font-size:7.5px;">(rsv_pasarelas)</code></span>
-                </div>
-
-                <div class="rp-frame">
-                    <div class="rp-frame-body flush">
-                        @include('rsv.admin.partials.tab-finanzas')
-                    </div>
-                </div>
-
-            </div>
-
-
-            <!-- ═══ MÓDULO 05 · CONFIG & AUDITORÍA ═══ -->
-            <div class="tab-pane fade" id="auditoria" role="tabpanel" aria-labelledby="auditoria-tab">
-
-                <div class="rp-modstrip">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="m-id">MÓDULO 05</span>
-                        <span class="m-name">Config & Auditoría</span>
-                    </div>
-                    <span class="m-hint d-none d-md-inline">Trazabilidad inmutable del sistema</span>
-                </div>
-
-                <div class="rp-frame">
-                    <div class="rp-frame-body">
-
-                        <!-- Bitácora (banner suave con barra lateral pizarra) -->
-                        <div class="audit-banner p-3 mb-3">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                <div>
-                                    <div class="strong" style="font-size: 10px;">
-                                        <i class="bi bi-journal-text me-1" style="color: #7a8ba0;"></i>
-                                        Bitácora del Sistema
-                                    </div>
-                                    <div class="sub mt-0.5">
-                                        Registro inmutable de acciones de usuarios
-                                        <code style="font-size:7.5px;">(rsv_audit_logs)</code>
-                                    </div>
-                                </div>
-                                <button type="button" class="btn-soft">
-                                    <i class="bi bi-list-ul" style="font-size: 9px;"></i> Ver registros
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Catálogos maestros -->
-                        <div class="row g-2">
-
-                            <div class="col-12 col-md-4">
-                                <div class="cat-cell">
-                                    <div class="kicker mb-2">Orígenes</div>
-                                    <div class="cat-item"><span>Web</span><span class="tbl">rsv_origen_reservas</span></div>
-                                    <div class="cat-item" style="border-bottom:0;"><span>App</span><span class="tbl">rsv_origen_reservas</span></div>
-                                    <button type="button" class="btn-soft mt-2 align-self-start" style="font-size: 8.5px; padding: 2px 9px;">
-                                        <i class="bi bi-pencil" style="font-size: 8px;"></i> Configurar
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-4">
-                                <div class="cat-cell">
-                                    <div class="kicker mb-2">Tipos de Receptor</div>
-                                    <div class="cat-item" style="border-bottom:0;"><span>Catálogo base</span><span class="tbl">rsv_tipo_receptor</span></div>
-                                    <button type="button" class="btn-soft mt-2 align-self-start" style="font-size: 8.5px; padding: 2px 9px;">
-                                        <i class="bi bi-pencil" style="font-size: 8px;"></i> Configurar
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="col-12 col-md-4">
-                                <div class="cat-cell">
-                                    <div class="kicker mb-2">Estados</div>
-                                    <div class="cat-item"><span>Estados permitidos</span><span class="tbl">rsv_statuses</span></div>
-                                    <div class="cat-item" style="border-bottom:0;"><span>Historial</span><span class="tbl">rsv_historial_estados</span></div>
-                                    <button type="button" class="btn-soft mt-2 align-self-start" style="font-size: 8.5px; padding: 2px 9px;">
-                                        <i class="bi bi-pencil" style="font-size: 8px;"></i> Configurar
-                                    </button>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-
-        <!-- ═══════════ MODAL · REGISTRAR PROPIEDAD (suavizado) ═══════════ -->
-        <div class="modal fade rp-modal" id="modalNuevoInmueble" tabindex="-1" aria-labelledby="modalNuevoInmuebleLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-
-                    <div class="modal-header">
-                        <div>
-                            <div class="kicker">Módulo 01 · Inmuebles</div>
-                            <h6 class="strong mb-0 mt-0.5" style="font-size: 11px;" id="modalNuevoInmuebleLabel">Registrar Propiedad</h6>
-                        </div>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+    {{-- Estilos mínimos del panel (solo pulido visual) --}}
+    <style>
+        .rsv-kicker {
+            font-size: 0.62rem; font-weight: 600; letter-spacing: 1px;
+            text-transform: uppercase; color: #94a3b8;
+        }
+        .rsv-soft-card {
+            background: #fff; border: 1px solid #f1f5f9;
+            border-radius: 8px; box-shadow: none;
+        }
+        .rsv-soft-card:hover { border-color: #e9eef4; }
+
+        /* Pestañas suaves */
+        .nav-tabs .nav-link {
+            font-size: 0.72rem; font-weight: 600; color: #94a3b8;
+            border-bottom: 2px solid transparent !important;
+            padding: 0.5rem 0.9rem;
+        }
+        .nav-tabs .nav-link:hover { color: #475569; }
+        .nav-tabs .nav-link.active {
+            color: #3d7a5c !important;
+            border-bottom-color: #b9d4c5 !important;
+            background-color: transparent !important;
+        }
+
+        /* Selector sobrio */
+        .rsv-select {
+            font-size: 0.78rem; font-weight: 600; color: #475569;
+            border: 1px solid #e9eef4 !important;
+            box-shadow: none !important;
+        }
+        .rsv-select:focus { border-color: #c8d6cd !important; }
+        .rsv-input-icn {
+            background: #fafbfd !important; border: 1px solid #e9eef4 !important;
+            color: #94a3b8 !important; font-size: 0.8rem;
+        }
+
+        /* Botón suave */
+        .rsv-btn-soft {
+            background: #f0f7f2; color: #3d7a5c;
+            border: 1px solid #d5e7dc;
+            font-size: 0.72rem; font-weight: 600;
+        }
+        .rsv-btn-soft:hover { background: #e3f1e9; color: #34684e; }
+
+        /* Badges flotantes discretos */
+        .rsv-portada-badge {
+            font-size: 0.58rem; font-weight: 600; letter-spacing: 0.5px;
+            color: #64748b;
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(233,238,244,.9);
+        }
+        .rsv-heart-btn {
+            width: 28px !important; height: 28px !important;
+            background: rgba(255,255,255,.92) !important;
+            border: 1px solid rgba(233,238,244,.9) !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,.06) !important;
+        }
+    </style>
+
+    <div class="container-fluid py-4">
+
+        {{-- ======================================================================= --}}
+        {{-- 1. SELECTOR MAESTRO (EL REY DE LA VISTA)                               --}}
+        {{-- ======================================================================= --}}
+        <div class="rsv-soft-card mb-4">
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+
+                    {{-- Texto descriptivo --}}
+                    <div class="col-12 col-lg-5 text-center text-lg-start">
+                        <span class="rsv-kicker d-block mb-1">Panel Conector RSV</span>
+                        <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #334155;">Gestión por Inmueble</h6>
+                        <p class="mb-0" style="font-size: 0.7rem; color: #94a3b8;">Seleccione una propiedad para cargar su ecosistema o elija ver todas.</p>
                     </div>
 
-                    <div class="modal-body">
-                        <form action="{{ route('rsv.inmuebles.store') }}" method="POST">
-                            @csrf
+                    {{-- Formulario Selector --}}
+                    <div class="col-12 col-lg-7">
+                        <form action="{{ route('rsv.admin.dashboard') }}" method="GET" class="d-flex w-100">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text rsv-input-icn">
+                                    <i class="bi bi-building"></i>
+                                </span>
 
-                            <div class="mb-2.5">
-                                <label class="form-label">Nombre del inmueble <span class="tbl">(`name`)</span></label>
-                                <input type="text" class="form-control" name="name" placeholder="Ej. Cabaña de Montaña" required>
-                            </div>
+                                <select class="form-select rsv-select"
+                                        name="inmueble_id"
+                                        onchange="this.form.submit()"
+                                        aria-label="Seleccionar Inmueble">
 
-                            <div class="row g-2">
-                                <div class="col-md-6 mb-2.5">
-                                    <label class="form-label">Precio base por noche <span class="tbl">(`precio_base_noche`)</span></label>
-                                    <input type="number" step="0.01" class="form-control" name="precio_base_noche" placeholder="0.00" required>
-                                </div>
-                                <div class="col-md-6 mb-2.5">
-                                    <label class="form-label">Capacidad máxima <span class="tbl">(`capacidad_maxima`)</span></label>
-                                    <input type="number" class="form-control" name="capacidad_maxima" placeholder="Ej. 4">
-                                </div>
-                            </div>
+                                    <option value="" class="text-muted">-- Seleccione una propiedad para operar --</option>
 
-                            <div class="row g-2">
-                                <div class="col-md-6 mb-2.5">
-                                    <label class="form-label">Ciudad <span class="tbl">(`city`)</span></label>
-                                    <input type="text" class="form-control" name="city" placeholder="Ej. Bogotá">
-                                </div>
-                                <div class="col-md-6 mb-2.5">
-                                    <label class="form-label">Ubicación / Dirección <span class="tbl">(`ubicacion`)</span></label>
-                                    <input type="text" class="form-control" name="ubicacion" placeholder="Ej. Calle 100 # 15-20">
-                                </div>
-                            </div>
+                                    {{-- OPCIÓN GLOBAL: VER TODOS --}}
+                                    <option value="todos" {{ request('inmueble_id') === 'todos' ? 'selected' : '' }}>
+                                        Ver todas las propiedades (Panel Global)
+                                    </option>
 
-                            <div class="mb-2.5">
-                                <label class="form-label">ID Tipo de inmueble <span class="tbl">(`tipo_inmueble_id`)</span></label>
-                                <input type="number" class="form-control" name="tipo_inmueble_id" placeholder="Ej. 1">
+                                    @isset($listaInmuebles)
+                                        @foreach($listaInmuebles as $opcion)
+                                            <option value="{{ $opcion->id }}" {{ request('inmueble_id', $inmueble->id ?? '') == $opcion->id ? 'selected' : '' }}>
+                                                {{ $opcion->name }} ({{ $opcion->city }}) - {{ $opcion->active ? 'Activo' : 'Inactivo' }}
+                                            </option>
+                                        @endforeach
+                                    @endisset
+                                </select>
                             </div>
-
-                            <div class="form-check mb-1">
-                                <input type="checkbox" class="form-check-input" name="active" value="1" id="activeCheck" checked>
-                                <label class="form-check-label" for="activeCheck">Activo <span class="tbl" style="font-weight:400; color: var(--ink-4);">(`active`)</span></label>
-                            </div>
-
-                            <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                                <button type="button" class="btn-soft" data-bs-dismiss="modal">Cancelar</button>
-                                <button type="submit" class="btn-soft-green">
-                                    <i class="bi bi-check-lg" style="font-size: 9.5px;"></i> Guardar Inmueble
-                                </button>
-                            </div>
+                            <noscript>
+                                <button type="submit" class="btn btn-sm rsv-btn-soft ms-2">Cargar</button>
+                            </noscript>
                         </form>
                     </div>
 
@@ -583,33 +119,262 @@
             </div>
         </div>
 
+        {{-- ======================================================================= --}}
+        {{-- CONDICIONAL A: ECOSISTEMA DE UN INMUEBLE ESPECÍFICO                     --}}
+        {{-- ======================================================================= --}}
+        @if(isset($inmueble) && $inmueble)
+
+            {{-- MÉTRICAS RÁPIDAS DEL INMUEBLE --}}
+            <div class="row g-2 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="rsv-soft-card h-100">
+                        <div class="card-body p-2 text-center">
+                            <h6 class="text-uppercase fw-bold mb-1" style="font-size: 0.6rem; color: #b3bcc7; letter-spacing: 0.5px;">Capacidad</h6>
+                            <h6 class="mb-0 fw-bold" style="font-size: 0.95rem; color: #475569;">
+                                <i class="bi bi-people me-1" style="font-size: 0.7rem; color: #a9cfe8;"></i>{{ $inmueble->capacidad_maxima ?? 0 }}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rsv-soft-card h-100">
+                        <div class="card-body p-2 text-center">
+                            <h6 class="text-uppercase fw-bold mb-1" style="font-size: 0.6rem; color: #b3bcc7; letter-spacing: 0.5px;">Tarifa Actual</h6>
+                            <h6 class="mb-0 fw-bold" style="font-size: 0.95rem; color: #5d8a70;">
+                                <i class="bi bi-cash-coin me-1" style="font-size: 0.7rem;"></i>${{ number_format(optional($inmueble->latestTarifa)->precio_noche ?? 0, 0) }}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rsv-soft-card h-100">
+                        <div class="card-body p-2 text-center">
+                            <h6 class="text-uppercase fw-bold mb-1" style="font-size: 0.6rem; color: #b3bcc7; letter-spacing: 0.5px;">Total Reservas</h6>
+                            <h6 class="mb-0 fw-bold" style="font-size: 0.95rem; color: #475569;">
+                                <i class="bi bi-journal-check me-1" style="font-size: 0.7rem; color: #ecd3a0;"></i>{{ $inmueble->reservas->count() ?? 0 }}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rsv-soft-card h-100">
+                        <div class="card-body p-2 text-center">
+                            <h6 class="text-uppercase fw-bold mb-1" style="font-size: 0.6rem; color: #b3bcc7; letter-spacing: 0.5px;">Galería S3</h6>
+                            <h6 class="mb-0 fw-bold" style="font-size: 0.95rem; color: #475569;">
+                                <i class="bi bi-images me-1" style="font-size: 0.7rem; color: #cdb4e4;"></i>{{ $inmueble->multimedia->count() ?? 0 }}
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- PESTAÑAS DE CONEXIÓN --}}
+            <div class="rsv-soft-card">
+                <div class="card-header bg-white border-bottom p-0" style="border-color: #f1f5f9 !important;">
+                    <ul class="nav nav-tabs nav-fill border-0 pt-1 px-1" id="adminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#inmuebles" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-sliders me-1"></i> Configuración Propiedad
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reservas" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-calendar2-check me-1"></i> Reservas ({{ $inmueble->reservas->count() ?? 0 }})
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#calendario" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-calendar3 me-1"></i> Calendario / Bloqueos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#finanzas" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-wallet2 me-1"></i> Finanzas
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body p-3 bg-white" style="border-radius: 0 0 8px 8px;">
+                    <div class="tab-content" id="adminTabsContent">
+                        <div class="tab-pane fade show active" id="inmuebles" role="tabpanel">
+                            @include('rsv.admin.partials.tab-inmuebles')
+                        </div>
+                        <div class="tab-pane fade" id="reservas" role="tabpanel">
+                            @include('rsv.admin.partials.tab-reservas')
+                        </div>
+                        <div class="tab-pane fade" id="calendario" role="tabpanel">
+                            @include('rsv.admin.partials.tab-calendario')
+                        </div>
+                        <div class="tab-pane fade" id="finanzas" role="tabpanel">
+                            @include('rsv.admin.partials.tab-finanzas')
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        {{-- ======================================================================= --}}
+        {{-- CONDICIONAL B: VISTA GLOBAL ("VER TODOS" CON TARJETAS ESTILO CLIENTE)   --}}
+        {{-- ======================================================================= --}}
+        @elseif(request('inmueble_id') === 'todos')
+
+            <div class="rsv-soft-card p-3 mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
+                    <div>
+                        <div class="rsv-kicker mb-1"><i class="bi bi-grid-3x3-gap me-1"></i> Panel Global</div>
+                        <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #334155;">Todas las Propiedades</h6>
+                        <p class="mb-0" style="font-size: 0.7rem; color: #94a3b8;">Vista previa interactiva tal como las visualizan los clientes en el catálogo.</p>
+                    </div>
+                    <span class="badge rounded-pill fw-semibold" style="font-size: 0.62rem; background-color: #f9f7fc; color: #8f7bb5; border: 1px solid #e9e2f2;">
+                        Total Registradas: {{ $listaInmuebles->count() }}
+                    </span>
+                </div>
+
+                {{-- Cuadrícula de Tarjetas Estilo Cliente --}}
+                <div class="row g-3">
+                    @forelse($listaInmuebles as $prop)
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="rsv-soft-card overflow-hidden d-flex flex-column h-100 position-relative">
+
+                                {{-- SECCIÓN 1: CARRUSEL DE FOTOS --}}
+                                <div id="carouselInmuebleGlobal{{ $prop->id }}" class="carousel slide position-relative flex-shrink-0" data-bs-ride="carousel" style="height: 180px; overflow: hidden; background: #f4f6f8;">
+
+                                    {{-- CORAZÓN FLOTANTE SUPERIOR DERECHO (Favorito) --}}
+                                    <button type="button" class="btn btn-light btn-sm rounded-circle position-absolute top-0 end-0 m-2 p-2 rsv-heart-btn d-flex align-items-center justify-content-center"
+                                            title="Favorito">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d98c8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                        </svg>
+                                    </button>
+
+                                    @php
+                                        // Asegurar que cargue la multimedia si no viene cargada en la colección
+                                        $galeriaGlobal = $prop->relationLoaded('multimedia') ? $prop->multimedia : $prop->multimedia()->get();
+                                    @endphp
+
+                                    <div class="carousel-inner w-100 h-100">
+                                        @forelse($galeriaGlobal as $index => $media)
+                                            <div class="carousel-item w-100 h-100 {{ $index === 0 ? 'active' : '' }}">
+                                                <img src="{{ $media->url_archivo }}" class="d-block w-100 h-100" style="object-fit: cover; object-position: center;" alt="Foto inmueble">
+                                                @if($media->es_portada)
+                                                    <span class="badge rsv-portada-badge position-absolute bottom-0 start-0 m-2 px-2 py-1" style="z-index: 5;">Portada</span>
+                                                @endif
+                                            </div>
+                                        @empty
+                                            <div class="carousel-item active w-100 h-100 d-flex align-items-center justify-content-center" style="background: #fafbfd;">
+                                                <span class="fst-italic" style="font-size: 0.68rem; color: #d4dae2;">Sin fotos en galería</span>
+                                            </div>
+                                        @endforelse
+                                    </div>
+
+                                    @if($galeriaGlobal->count() > 1)
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselInmuebleGlobal{{ $prop->id }}" data-bs-slide="prev" style="width: 26px; opacity: .3;">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 14px; height: 14px; filter: invert(.45);"></span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselInmuebleGlobal{{ $prop->id }}" data-bs-slide="next" style="width: 26px; opacity: .3;">
+                                            <span class="carousel-control-next-icon" aria-hidden="true" style="width: 14px; height: 14px; filter: invert(.45);"></span>
+                                        </button>
+                                    @endif
+                                </div>
+
+                                {{-- SECCIÓN 2: CUERPO DE LA TARJETA --}}
+                                <div class="card-body p-3 d-flex flex-column flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <h6 class="fw-bold mb-0 text-truncate pe-2" style="font-size: 0.78rem; color: #475569;" title="{{ $prop->name }}">{{ $prop->name }}</h6>
+                                        @if($prop->active)
+                                            <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.6rem; background-color: #f0f7f2; color: #5d8a70; border: 1px solid #d8e9de;">Activo</span>
+                                        @else
+                                            <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.6rem; background-color: #fafbfd; color: #9aa5b1; border: 1px solid #eef2f6;">Inactivo</span>
+                                        @endif
+                                    </div>
+
+                                    {{-- Calificación --}}
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="d-flex align-items-center gap-1">
+                                            <div class="d-flex align-items-center gap-1">
+                                                @for($i = 0; $i < 5; $i++)
+                                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="#ecd3a0" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                                @endfor
+                                            </div>
+                                            <span class="fw-semibold" style="font-size: 0.62rem; color: #94a3b8;">5.0</span>
+                                        </div>
+                                        <span style="font-size: 0.62rem; color: #b3bcc7;">{{ $prop->reservas_count ?? 0 }} reservas</span>
+                                    </div>
+
+                                    {{-- Ubicación --}}
+                                    <p class="mb-3 text-truncate" style="font-size: 0.68rem; color: #94a3b8;">
+                                        <i class="bi bi-geo-alt" style="color: #c3ccd6;"></i> {{ $prop->city ?? 'Sin ciudad' }} — {{ $prop->ubicacion ?? 'Sin dirección' }}
+                                    </p>
+
+                                    {{-- Valores Base --}}
+                                    <div class="rounded-2 p-2 mb-3" style="background: #fafbfd; border: 1px solid #f1f5f9;">
+                                        <div class="row text-center g-0">
+                                            <div class="col-6 border-end" style="border-color: #f1f5f9 !important;">
+                                                <span class="d-block text-uppercase fw-bold" style="font-size: 0.55rem; color: #b3bcc7; letter-spacing: 0.5px;">CAPACIDAD</span>
+                                                <span class="fw-semibold" style="font-size: 0.72rem; color: #475569;">{{ $prop->capacidad_maxima ?? 'N/A' }} pers.</span>
+                                            </div>
+                                            <div class="col-6">
+                                                <span class="d-block text-uppercase fw-bold" style="font-size: 0.55rem; color: #b3bcc7; letter-spacing: 0.5px;">PRECIO BASE</span>
+                                                <span class="fw-semibold" style="font-size: 0.72rem; color: #5d8a70;">${{ number_format(optional($prop->latestTarifa)->precio_noche ?? 0, 2) }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Botón para saltar a la gestión de este inmueble --}}
+                                    <div class="mt-auto pt-2 border-top" style="border-color: #f1f5f9 !important;">
+                                        <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => $prop->id]) }}"
+                                           class="btn btn-sm w-100 rounded-2 py-1.5 rsv-btn-soft d-flex align-items-center justify-content-center gap-1">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            Gestionar Ecosistema
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-12 text-center py-4" style="color: #b3bcc7; font-size: 0.72rem;">
+                            No hay inmuebles registrados en el sistema.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+        {{-- ======================================================================= --}}
+        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                       --}}
+        {{-- ======================================================================= --}}
+        @else
+
+            <div class="d-flex flex-column align-items-center justify-content-center text-center mt-5">
+                <div class="bg-white mb-2 rounded-circle d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; border: 1px dashed #e9eef4;">
+                    <i class="bi bi-buildings" style="font-size: 1.4rem; color: #d4dae2;"></i>
+                </div>
+                <h6 class="fw-bold" style="font-size: 0.85rem; color: #475569;">Esperando orden de trabajo</h6>
+                <p class="mb-0" style="max-width: 380px; font-size: 0.7rem; color: #94a3b8;">
+                    Utilice el selector superior para elegir un inmueble específico o seleccione <strong>"Ver todas las propiedades"</strong> para consultar el panel global.
+                </p>
+            </div>
+
+        @endif
+
     </div>
 
-
-    {{-- Persistencia de la última pestaña activa --}}
+    {{-- Script nativo para Bootstrap 5 y persistencia de pestañas --}}
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-
-            /* Restaurar última pestaña activa */
-            const activeTabHash = localStorage.getItem('activeAdminTab');
+            const activeTabHash = localStorage.getItem('rsvAdminTab');
             if (activeTabHash) {
-                const triggerEl = document.querySelector('#rsvPanel [data-bs-target="' + activeTabHash + '"]');
+                const triggerEl = document.querySelector('#adminTabs button[data-bs-target="' + activeTabHash + '"]');
                 if (triggerEl) {
-                    const tab = new bootstrap.Tab(triggerEl);
-                    tab.show();
+                    new bootstrap.Tab(triggerEl).show();
                 }
             }
 
-            /* Guardar pestaña al cambiar */
-            const tabTriggers = document.querySelectorAll('#rsvPanel #adminTabs button[data-bs-toggle="pill"]');
-            tabTriggers.forEach(trigger => {
-                trigger.addEventListener('shown.bs.tab', function (event) {
-                    const target = event.target.getAttribute('data-bs-target');
-                    localStorage.setItem('activeAdminTab', target);
+            document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"]').forEach(trigger => {
+                trigger.addEventListener('shown.bs.tab', event => {
+                    localStorage.setItem('rsvAdminTab', event.target.getAttribute('data-bs-target'));
                 });
             });
-
         });
     </script>
     @endpush

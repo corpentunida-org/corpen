@@ -198,7 +198,7 @@
                 <i class="bi bi-clock-history me-1"></i>{{ now()->format('d/m/Y H:i') }}
             </span>
             <span style="font-size: 9px; font-weight: 600; color: #5d8a70;">
-                Σ ${{ number_format($transacciones->sum('monto') ?? 0, 2) }}
+                Σ ${{ number_format(($transacciones ?? collect())->sum('monto'), 2) }}
             </span>
         </div>
     </div>
@@ -588,7 +588,7 @@
 
         <div class="d-flex gap-3">
             <span>Visibles: <b class="strong" id="statVisibles">{{ ($transacciones ?? collect())->count() }}</b></span>
-            <span>Σ: <b class="strong" style="color: #5d8a70;" id="statSuma">${{ number_format($transacciones->sum('monto') ?? 0, 2) }}</b></span>
+            <span>Σ: <b class="strong" style="color: #5d8a70;" id="statSuma">${{ number_format(($transacciones ?? collect())->sum('monto'), 2) }}</b></span>
         </div>
 
     </div>

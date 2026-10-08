@@ -220,6 +220,7 @@
 
         <div class="d-flex align-items-center gap-1.5">
             <i class="bi bi-file-earmark-spreadsheet" style="font-size: .8rem; color: #b9d4c5;"></i>
+            <span class="strong" style="font-size: 9.5px;">RESERVAS.XLSX</span>
             <span class="sub ms-1" style="margin: 0;">{{ $totalReg }} registros</span>
         </div>
 

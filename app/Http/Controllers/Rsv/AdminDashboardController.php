@@ -16,29 +16,65 @@ class AdminDashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Pestaña: Inmuebles (Cargamos multimedia y tarifas)
-        $inmuebles = CatalogoInmueble::with(['multimedia', 'tarifasTemporadas'])
-            ->paginate(10, ['*'], 'page_inmuebles');
+        // 1. SELECTOR MAESTRO: Cargar todos los inmuebles por defecto para la lista desplegable
+        $listaInmuebles = CatalogoInmueble::orderBy('name', 'asc')->get();
 
-        // 2. Pestaña: Reservas (Cargamos usuario, inmueble y estado)
-        $reservas = Reserva::with(['inmueble', 'user', 'status'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(5, ['*'], 'page_reservas');
+        // 2. INICIALIZAR ECOSISTEMA: Variables vacías por defecto
+        $inmueble = null;
+        $reservas = null;
+        $transacciones = null;
 
-        // 4. Pestaña: Finanzas (Transacciones financieras con sus relaciones)
-        $transacciones = TransaccionFinanciera::with(['reserva.inmueble', 'pasarela'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10, ['*'], 'page_finanzas');
-
-        // Listado de Pasarelas de Pago para la pestaña de configuraciones
+        // 3. VARIABLES GLOBALES: Datos que no dependen de un apartamento específico
         $pasarelas = Pasarela::all();
-
-        // 5. Pestaña: Auditoría
         $auditoria = AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
 
-        // Retorna la vista principal pasando todas las variables compactadas
+        // 4. FILTRADO CONECTOR: Si hay un valor seleccionado en el selector
+        if ($request->filled('inmueble_id')) {
+            $inmuebleId = $request->inmueble_id;
+
+            if ($inmuebleId === 'todos') {
+                // A. VISTA GLOBAL: Cargar inmuebles precargando multimedia y tarifa base para velocidad máxima
+                $listaInmuebles = CatalogoInmueble::with(['multimedia', 'latestTarifa'])
+                    ->orderBy('name', 'asc')
+                    ->get();
+
+                // Cargar todas las reservas y transacciones de manera general
+                $reservas = Reserva::with(['user', 'status', 'inmueble'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'page_reservas');
+
+                $transacciones = TransaccionFinanciera::with(['reserva.inmueble', 'pasarela'])
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'page_finanzas');
+            } else {
+                // B. VISTA ESPECÍFICA POR INMUEBLE: Cargar el Inmueble Maestro y sus relaciones
+                $inmueble = CatalogoInmueble::with([
+                    'multimedia',
+                    'tarifasTemporadas',
+                    'latestTarifa',
+                    'bloqueosCalendario'
+                ])->findOrFail($inmuebleId);
+
+                // Filtrar Reservas: Traer SOLO las reservas de ESTE inmueble específico
+                $reservas = Reserva::with(['user', 'status'])
+                    ->where('id_rsv_catalogo_inmueble', $inmuebleId)
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'page_reservas');
+
+                // Filtrar Finanzas: Traer SOLO las transacciones ligadas a las reservas de ESTE inmueble
+                $transacciones = TransaccionFinanciera::with(['reserva.inmueble', 'pasarela'])
+                    ->whereHas('reserva', function ($query) use ($inmuebleId) {
+                        $query->where('id_rsv_catalogo_inmueble', $inmuebleId);
+                    })
+                    ->orderBy('created_at', 'desc')
+                    ->paginate(10, ['*'], 'page_finanzas');
+            }
+        }
+
+        // 5. RENDERIZADO: Retornar la vista principal con todas las variables compactadas
         return view('rsv.admin.dashboard', compact(
-            'inmuebles',
+            'listaInmuebles',
+            'inmueble',
             'reservas',
             'transacciones',
             'pasarelas',

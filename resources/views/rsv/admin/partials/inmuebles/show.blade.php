@@ -1,946 +1,1251 @@
 {{--
     ========================================================================
-    VISTA PRINCIPAL: Detalle y Gestión de Inmueble (Panel de Administración)
-    RUTA SUGERIDA: resources/views/rsv/admin/partials/inmuebles/show.blade.php
-    CONTROLADOR ASOCIADO: CatalogoInmuebleController@show
-
-    ARQUITECTURA DE LA VISTA (3 Engranajes con Acordeón):
-    1. Núcleo Base: Datos estructurales del modelo CatalogoInmueble.
-    2. Motor Comercial: Gestión de la relación HasMany (TarifaTemporada).
-    3. Vitrina Visual: Gestión de la relación HasMany (InmuebleMultimedia).
-
-    DISEÑO: Interfaz corporativa amigable (Colores pasteles accesibles y UI limpia).
+    VISTA UNIFICADA: Detalle, Gestión y Vista Previa de Inmueble
+    RUTA: resources/views/rsv/admin/partials/inmuebles/show.blade.php
+    ESTILO: hoja de cálculo SUAVE · celdas 8px · encabezados 9px · pasteles
+    FIX: modales DENTRO de #showRoot para que el CSS les aplique
     ========================================================================
 --}}
 
-<div class="container-fluid px-0">
+<div id="showRoot">
 
-    {{-- ================================================================== --}}
-    {{-- SECCIÓN: ENCABEZADO GENERAL (Experiencia Premium Dashboard)        --}}
-    {{-- ================================================================== --}}
-    <div class="card border-0 mb-4 position-relative overflow-hidden bg-white" style="border-radius: 1.25rem; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.03);">
+    <style>
+        /* ═══ BASE — anclada a #showRoot ═══ */
+        #showRoot {
+            --grid:    #f1f5f9;
+            --grid-2:  #e9eef4;
+            --head:    #fafbfd;
+            --ink:     #64748b;
+            --ink-2:   #475569;
+            --ink-3:   #94a3b8;
+            --ink-4:   #b3bcc7;
+            --accent:  #3d7a5c;
+            --accent-bg: #f0f7f2;
+            --accent-bd: #d5e7dc;
+            --m1: #8fb0cc;  --m1-bg: #f2f7fb;  --m1-bd: #dde8f1;
+            --m2: #5d8a70;  --m2-bg: #f0f7f2;  --m2-bd: #d8e9de;
+            --m3: #8f7bb5;  --m3-bg: #f9f7fc;  --m3-bd: #e9e2f2;
+            font-family: Calibri, "Segoe UI", system-ui, sans-serif;
+            font-size: 8px;
+            line-height: 1.4;
+            color: var(--ink);
+        }
 
-        {{-- Barra decorativa superior: Representa la unión de los 3 Módulos (Azul, Verde, Morado) --}}
-        <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(90deg, #174EA6 0%, #3F6212 50%, #681DA8 100%);"></div>
+        #showRoot .strong { color: var(--ink-2); font-weight: 600; }
+        #showRoot .kicker {
+            font-size: 7.5px; font-weight: 600; letter-spacing: .07em;
+            text-transform: uppercase; color: var(--ink-4);
+        }
+        #showRoot .sub { font-size: 7.5px; color: var(--ink-4); }
+        #showRoot .num { font-variant-numeric: tabular-nums; }
 
-        {{-- Marca de agua decorativa de fondo (Icono de Edificio) --}}
-        <div class="position-absolute top-50 end-0 translate-middle-y opacity-25 pe-none d-none d-md-block" style="right: -5%; transform: scale(1.6); color: #F1F5F9;">
-            <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"></path><path d="M9 7h.01"></path><path d="M9 11h.01"></path><path d="M15 7h.01"></path><path d="M15 11h.01"></path>
-            </svg>
+        /* ═══ CINTA DE TÍTULO ═══ */
+        #showRoot .sh-titlebar {
+            display: flex; flex-wrap: wrap; gap: 10px;
+            align-items: center; justify-content: space-between;
+            padding: 2px 2px 10px;
+            border-bottom: 1px solid var(--grid);
+            margin-bottom: 12px;
+        }
+        #showRoot .sh-live {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 7.5px; font-weight: 600; letter-spacing: .06em;
+            color: var(--ink-3);
+            border: 1px solid var(--grid-2); background: var(--head);
+            border-radius: 9px; padding: 1px 9px;
+        }
+        #showRoot .sh-live .pulse {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--m1); opacity: .8;
+            animation: shPulse 2s infinite;
+        }
+        @keyframes shPulse { 0%,100% { opacity:.35; } 50% { opacity:.9; } }
+
+        /* ═══ BOTONES ═══ */
+        #showRoot .btn-soft {
+            border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
+            font-family: inherit;
+            font-size: 8.5px; font-weight: 600; padding: 2px 10px; border-radius: 3px;
+            display: inline-flex; align-items: center; gap: 5px;
+            text-decoration: none; transition: all .15s ease;
+        }
+        #showRoot .btn-soft:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
+
+        #showRoot .btn-soft-m1 { background: var(--m1-bg); color: #5c7d99; border-color: var(--m1-bd); }
+        #showRoot .btn-soft-m1:hover { background: #e9f1f8; color: #47637c; }
+
+        #showRoot .btn-soft-m2 { background: var(--m2-bg); color: var(--m2); border-color: var(--m2-bd); }
+        #showRoot .btn-soft-m2:hover { background: #e5f0e9; color: #476f58; }
+
+        #showRoot .btn-soft-m3 { background: var(--m3-bg); color: var(--m3); border-color: var(--m3-bd); }
+        #showRoot .btn-soft-m3:hover { background: #f1ecf8; color: #75639c; }
+
+        /* ═══ MÓDULOS ═══ */
+        #showRoot .sh-module { margin-bottom: 10px; }
+
+        #showRoot .sh-strip {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 8px; padding: 6px 10px;
+            background: var(--head);
+            border: 1px solid var(--grid); border-bottom: 0;
+            border-radius: 4px 4px 0 0;
+            border-left: 2px solid var(--module-color, var(--grid-2));
+        }
+        #showRoot .sh-strip.m1 { --module-color: var(--m1); }
+        #showRoot .sh-strip.m2 { --module-color: var(--m2); }
+        #showRoot .sh-strip.m3 { --module-color: var(--m3); }
+
+        #showRoot .sh-strip .head-btn {
+            display: flex; align-items: center; gap: 7px;
+            background: transparent; border: 0; padding: 0;
+            font-family: inherit; text-align: left; cursor: pointer;
+        }
+        #showRoot .sh-strip .m-id { font-size: 7px; font-weight: 600; letter-spacing: .08em; color: var(--ink-4); }
+        #showRoot .sh-strip .m-name { font-size: 10px; font-weight: 600; color: var(--ink-2); }
+        #showRoot .sh-strip .chev {
+            width: 10px; height: 10px; color: var(--ink-4);
+            transition: transform .2s ease;
+        }
+        #showRoot .sh-strip .head-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+        #showRoot .sh-frame { background: #fff; border: 1px solid var(--grid); border-radius: 0 0 4px 4px; }
+        #showRoot .sh-body { padding: 10px; }
+
+        /* ═══ STAT CELLS ═══ */
+        #showRoot .stat-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+        #showRoot .stat-cell {
+            flex: 1; min-width: 140px;
+            border: 1px solid var(--grid); border-radius: 4px;
+            padding: 8px 10px;
+        }
+        #showRoot .stat-cell .lbl {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 7px; font-weight: 600; letter-spacing: .06em;
+            text-transform: uppercase; color: var(--ink-4); margin-bottom: 3px;
+        }
+        #showRoot .stat-cell .lbl i { font-size: 8.5px; color: #c3ccd6; }
+        #showRoot .stat-cell .big {
+            font-size: 11px; font-weight: 600; color: var(--ink-2);
+            font-variant-numeric: tabular-nums;
+        }
+        #showRoot .stat-cell .big small { font-size: 8px; font-weight: 400; color: var(--ink-4); }
+
+        #showRoot .vis-pill {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 2px 9px; border-radius: 9px;
+            font-size: 8px; font-weight: 600; border: 1px solid;
+        }
+        #showRoot .vis-on  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
+        #showRoot .vis-off { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
+        #showRoot .vis-on .dotp { width: 5px; height: 5px; border-radius: 50%; background: #a3cfb6; animation: shPulse 2s infinite; }
+        #showRoot .vis-off .dotp { width: 5px; height: 5px; border-radius: 50%; background: #d4dae2; }
+
+        /* ═══ TABLA TIPO HOJA ═══ */
+        #showRoot .xls-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        #showRoot .xls-table th,
+        #showRoot .xls-table td {
+            border-right: 1px solid var(--grid);
+            border-bottom: 1px solid var(--grid);
+            padding: 2px 7px; height: 20px;
+            vertical-align: middle; white-space: nowrap;
+            background: #fff; font-size: 8px; font-weight: 400; color: var(--ink);
+        }
+        #showRoot .xls-table thead th {
+            font-size: 9px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .05em;
+            color: var(--ink-3); background: var(--head);
+        }
+        #showRoot .xls-table td.row-index {
+            background: var(--head); color: #d4dae2;
+            font-size: 7.5px; text-align: center;
+            width: 22px; min-width: 22px; padding: 0;
+        }
+        #showRoot .xls-table tbody tr:hover td { background: #fafcfe; }
+
+        #showRoot .chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 0 7px; border-radius: 8px;
+            font-size: 7.5px; font-weight: 600; border: 1px solid; line-height: 13px;
+        }
+        #showRoot .chip-green  { color:#5d8a70; background:#f0f7f2; border-color:#d8e9de; }
+        #showRoot .chip-gray   { color:#9aa5b1; background:#fafbfd; border-color:#eef2f6; }
+        #showRoot .chip-purple { color:#8f7bb5; background:#f9f7fc; border-color:#e9e2f2; }
+        #showRoot .chip-blue   { color:#5c7d99; background:#f2f7fb; border-color:#dde8f1; }
+
+        #showRoot .btn-actions {
+            border: 0; background: transparent; color: var(--ink-3);
+            font-family: inherit;
+            font-size: 8px; font-weight: 600; padding: 1px 8px; border-radius: 3px;
+        }
+        #showRoot .btn-actions:hover { background: #eef2f6; color: var(--ink-2); }
+
+        #showRoot .thumb {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; border-radius: 3px;
+            border: 1px solid var(--grid); background: var(--head);
+            overflow: hidden; text-decoration: none;
+            transition: border-color .15s ease;
+        }
+        #showRoot .thumb:hover { border-color: var(--grid-2); }
+        #showRoot .thumb img { width: 100%; height: 100%; object-fit: cover; }
+        #showRoot .thumb i { font-size: 12px; color: var(--m3); opacity: .7; }
+
+        #showRoot .sh-empty {
+            text-align: center; padding: 22px 12px;
+            color: var(--ink-4); font-size: 8.5px; background: var(--head);
+        }
+        #showRoot .sh-empty i { font-size: 16px; color: #d4dae2; display: block; margin-bottom: 3px; }
+
+        /* ═══ ALERTAS FLASH ═══ */
+        #showRoot .sh-alert {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 8px; padding: 5px 10px; margin-bottom: 10px;
+            border-radius: 4px; font-size: 8.5px; font-weight: 500; border: 1px solid;
+        }
+        #showRoot .sh-alert.ok  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
+        #showRoot .sh-alert.err { color: #b06a6a; background: #fdf4f4; border-color: #f0dcdc; }
+        #showRoot .sh-alert button {
+            border: 0; background: transparent; color: inherit;
+            font-size: 10px; line-height: 1; opacity: .6; cursor: pointer;
+        }
+        #showRoot .sh-alert button:hover { opacity: 1; }
+
+        /* ═══ TARJETA VISTA PREVIA ═══ */
+        #showRoot .pv-label {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 7.5px; font-weight: 600; letter-spacing: .07em;
+            text-transform: uppercase; color: var(--ink-4);
+            margin-bottom: 6px;
+        }
+        #showRoot .pv-label svg { width: 10px; height: 10px; stroke: #c3ccd6; }
+
+        #showRoot .pv-card {
+            background: #fff; border: 1px solid var(--grid);
+            border-radius: 5px; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        #showRoot .pv-sticky { position: sticky; top: 14px; }
+
+        #showRoot .pv-carousel {
+            height: 180px; background: #f4f6f8;
+            position: relative; flex-shrink: 0;
+            border-bottom: 1px solid var(--grid);
+        }
+        #showRoot .pv-carousel img { object-fit: cover; object-position: center; width: 100%; height: 100%; }
+        #showRoot .pv-carousel .carousel-inner,
+        #showRoot .pv-carousel .carousel-item { width: 100%; height: 100%; }
+
+        #showRoot .float-btn {
+            width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%;
+            background: rgba(255,255,255,.92);
+            border: 1px solid rgba(233,238,244,.95);
+            color: var(--ink-3);
+            text-decoration: none;
+            box-shadow: 0 1px 4px rgba(15,23,42,.08);
+            z-index: 10;
+            transition: transform .15s ease, color .15s ease;
+        }
+        #showRoot .float-btn:hover { transform: scale(1.1); color: var(--ink-2); }
+        #showRoot .float-btn svg { width: 13px; height: 13px; }
+        #showRoot .float-btn .heart { stroke: #d98c8c; }
+        #showRoot .float-btn:hover .heart { stroke: #c46a6a; }
+
+        #showRoot .pv-carousel .carousel-control-prev,
+        #showRoot .pv-carousel .carousel-control-next {
+            width: 26px; opacity: .25; transition: opacity .15s ease; z-index: 5;
+        }
+        #showRoot .pv-carousel:hover .carousel-control-prev,
+        #showRoot .pv-carousel:hover .carousel-control-next { opacity: .55; }
+        #showRoot .pv-carousel .carousel-control-prev-icon,
+        #showRoot .pv-carousel .carousel-control-next-icon {
+            width: 14px; height: 14px; filter: invert(.45);
+        }
+
+        #showRoot .portada-badge {
+            position: absolute; bottom: 6px; left: 6px; z-index: 5;
+            font-size: 7px; font-weight: 600; letter-spacing: .05em;
+            color: var(--ink-3);
+            background: rgba(255,255,255,.9);
+            border: 1px solid rgba(233,238,244,.9);
+            border-radius: 3px; padding: 0 6px; line-height: 14px;
+        }
+
+        #showRoot .pv-body { padding: 9px 11px 8px; display: flex; flex-direction: column; flex-grow: 1; }
+
+        #showRoot .star-row svg { width: 9px; height: 9px; fill: #ecd3a0; stroke: none; }
+        #showRoot .star-row .score { font-size: 8px; font-weight: 600; color: var(--ink-3); }
+        #showRoot .rev-count {
+            font-size: 7.5px; color: var(--ink-4);
+            display: inline-flex; align-items: center; gap: 3px;
+        }
+        #showRoot .rev-count svg { width: 9px; height: 9px; stroke: #c3ccd6; }
+
+        #showRoot .loc {
+            font-size: 8px; color: var(--ink-3);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #showRoot .loc i { font-size: 8px; color: #c3ccd6; }
+
+        #showRoot .spec-box {
+            background: var(--head); border: 1px solid var(--grid);
+            border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; display: flex;
+        }
+        #showRoot .spec-box .half { flex: 1; text-align: center; }
+        #showRoot .spec-box .half + .half { border-left: 1px solid var(--grid); }
+        #showRoot .spec-box .lbl {
+            display: block; font-size: 7px; font-weight: 600;
+            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
+        }
+        #showRoot .spec-box .val {
+            display: block; font-size: 9px; font-weight: 600;
+            color: var(--ink-2); font-variant-numeric: tabular-nums;
+        }
+
+        #showRoot .tarifa-box { border: 1px solid var(--grid); border-radius: 4px; padding: 7px 9px; background: #fff; }
+        #showRoot .tarifa-top {
+            display: flex; justify-content: space-between; align-items: baseline;
+            gap: 8px; padding-bottom: 6px; margin-bottom: 6px;
+            border-bottom: 1px solid var(--grid);
+        }
+        #showRoot .tarifa-name { font-size: 8.5px; font-weight: 600; color: var(--ink-2); line-height: 1.25; }
+        #showRoot .tarifa-fecha { font-size: 7px; color: var(--ink-4); }
+        #showRoot .tarifa-precio { font-size: 8.5px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+        #showRoot .tarifa-precio small {
+            display: block; font-size: 6.5px; font-weight: 600;
+            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
+        }
+        #showRoot .restr-row { display: flex; gap: 6px; }
+        #showRoot .restr-cell {
+            flex: 1; text-align: center;
+            background: var(--head); border: 1px solid var(--grid);
+            border-radius: 3px; padding: 3px 4px;
+        }
+        #showRoot .restr-cell .lbl {
+            display: block; font-size: 6.5px; font-weight: 600;
+            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
+        }
+        #showRoot .restr-cell .val {
+            display: block; font-size: 9px; font-weight: 600;
+            line-height: 1.3; font-variant-numeric: tabular-nums; color: #5d8a70;
+        }
+        #showRoot .restr-cell .val.blue { color: #7d9cb8; }
+
+        #showRoot .tarifa-empty {
+            border: 1px dashed var(--grid-2); border-radius: 4px;
+            padding: 7px; text-align: center;
+            font-size: 8px; font-style: italic; color: var(--ink-4);
+            background: var(--head);
+        }
+
+        /* ═══ MODALES SUAVES ═══ */
+        #showRoot .sh-modal .modal-content {
+            border: 1px solid var(--grid-2); border-radius: 5px;
+            box-shadow: 0 8px 30px rgba(15,23,42,.06);
+            font-family: inherit; color: var(--ink);
+        }
+        #showRoot .sh-modal .modal-header { border-bottom: 1px solid var(--grid); padding: 9px 14px; }
+        #showRoot .sh-modal .modal-body { padding: 14px; }
+        #showRoot .sh-modal .form-label {
+            font-size: 7.5px; font-weight: 600; letter-spacing: .06em;
+            text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px;
+        }
+        #showRoot .sh-modal .form-label span {
+            text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-4);
+        }
+        #showRoot .sh-modal .form-control,
+        #showRoot .sh-modal .form-select,
+        #showRoot .sh-modal .form-check-input {
+            font-size: 9.5px; color: var(--ink-2);
+            border: 1px solid var(--grid-2); border-radius: 3px;
+            padding: 4px 8px; box-shadow: none !important;
+        }
+        #showRoot .sh-modal .form-control:focus,
+        #showRoot .sh-modal .form-select:focus { border-color: #c8d6cd; }
+        #showRoot .sh-modal .form-check-label { font-size: 9px; color: var(--ink-2); font-weight: 600; }
+        #showRoot .sh-modal .switch-box {
+            background: var(--head); border: 1px solid var(--grid);
+            border-radius: 4px; padding: 8px 10px;
+        }
+        #showRoot .sh-modal .btn-cancel {
+            border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
+            font-family: inherit; font-size: 9px; font-weight: 600;
+            padding: 3px 14px; border-radius: 3px;
+        }
+        #showRoot .sh-modal .btn-cancel:hover { color: var(--ink-2); background: #fafcfe; }
+        #showRoot .sh-modal .btn-save {
+            background: var(--accent-bg); color: var(--accent);
+            border: 1px solid var(--accent-bd);
+            font-family: inherit; font-size: 9px; font-weight: 600;
+            padding: 3px 14px; border-radius: 3px;
+        }
+        #showRoot .sh-modal .btn-save:hover { background: #e3f1e9; color: #34684e; }
+    </style>
+
+
+    {{-- ═══ CINTA DE TÍTULO ═══ --}}
+    <div class="sh-titlebar">
+
+        <div>
+            <span class="sh-live mb-1">
+                <span class="pulse"></span> EXPEDIENTE #{{ $inmueble->id }}
+            </span>
+            <div class="strong" style="font-size: 13px;">
+                Panel de Gestión: {{ $inmueble->name }}
+            </div>
+            <div class="sub">
+                Administra información, tarifas y fotos con vista previa en tiempo real
+            </div>
         </div>
 
-        <div class="card-body p-4 p-md-5 position-relative z-1 d-flex justify-content-between align-items-center flex-wrap gap-4">
+        <a href="{{ route('rsv.admin.dashboard') }}" class="btn-soft">
+            <i class="bi bi-arrow-left" style="font-size: 9px;"></i> Volver al Catálogo
+        </a>
 
-            {{-- Bloque de Identidad del Inmueble --}}
-            <div class="d-flex flex-column align-items-start">
-
-                {{-- Badge estilo Pill con pulso de actividad --}}
-                <span class="badge rounded-pill d-inline-flex align-items-center gap-2 mb-3 px-3 py-2 shadow-sm" style="background-color: #F8FAFC; color: #334155; border: 1px solid #E2E8F0; font-size: 0.75rem; letter-spacing: 0.5px;">
-                    <span class="rounded-circle spinner-grow spinner-grow-sm" style="width: 8px; height: 8px; background-color: #3B82F6; animation-duration: 2s;" role="status"></span>
-                    <span class="font-monospace fw-semibold">EXPEDIENTE VIVO #{{ $inmueble->id }}</span>
-                </span>
-
-                {{-- Título Principal --}}
-                <h2 class="fw-bolder mb-2 text-dark" style="letter-spacing: -0.5px; font-size: 1.85rem;">
-                    {{ $inmueble->name }}
-                </h2>
-
-                {{-- Descripción con Icono de Engranaje --}}
-                <p class="mb-0 d-flex align-items-center gap-2 text-muted" style="font-size: 0.95rem;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #64748B;">
-                        <circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                    Sistema centralizado: Administra la identidad, las reglas comerciales y la galería.
-                </p>
-            </div>
-
-            {{-- Botón de Acción Principal --}}
-            <div class="d-flex ms-auto mt-3 mt-md-0">
-                <a href="{{ route('rsv.admin.dashboard') }}"
-                class="btn d-inline-flex align-items-center gap-2 px-4 py-2 fw-medium rounded-pill border-0 shadow-sm text-decoration-none"
-                style="background-color: #F8FAFC; color: #475569; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);"
-                onmouseover="this.style.backgroundColor='#F1F5F9'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.05)';"
-                onmouseout="this.style.backgroundColor='#F8FAFC'; this.style.transform='none'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)';">
-
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    Volver al Panel General
-                </a>
-            </div>
-
-        </div>
     </div>
 
-    {{-- Alertas de Éxito y Error (Flash Messages) --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show rounded-3 py-2 px-3 small mb-4 shadow-sm border-0" style="background-color: #CEEAD6; color: #0D652D;" role="alert">
-            <span class="fw-medium">{{ session('success') }}</span>
-            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show rounded-3 py-2 px-3 small mb-4 shadow-sm border-0" style="background-color: #FAD2CF; color: #A50E0E;" role="alert">
-            <span class="fw-medium">{{ session('error') }}</span>
-            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+    <div class="row g-3">
 
+        {{-- ═══════════ COLUMNA IZQUIERDA · VISTA PREVIA DEL CLIENTE ═══════════ --}}
+        <div class="col-12 col-lg-5 col-xl-4">
 
-    {{-- ================================================================== --}}
-    {{-- ENGRANAJE 1: NÚCLEO DEL INMUEBLE (Identidad y Características)       --}}
-    {{-- ================================================================== --}}
-    <div class="card border-0 mb-4 bg-white overflow-hidden" style="border-radius: 1.25rem; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.02); border-top: 4px solid #174EA6 !important;">
+            <div class="pv-sticky">
 
-        <div class="card-header bg-transparent border-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-            <div class="d-flex align-items-center gap-3 flex-grow-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseNucleoInmueble" aria-expanded="false" aria-controls="collapseNucleoInmueble">
-                <div class="d-flex justify-content-center align-items-center rounded-3 shadow-sm" style="width: 45px; height: 45px; background: linear-gradient(135deg, #E8F0FE 0%, #D2E3FC 100%); color: #174EA6;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M3 21h18"></path><path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"></path><path d="M9 21v-4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v4"></path>
+                <div class="pv-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
                     </svg>
-                </div>
-                <div>
-                    <span class="text-uppercase font-monospace fw-bold" style="color: #669DF6; font-size: 0.65rem; letter-spacing: 1.5px;">Módulo 1 de 3 (Haga clic para expandir / colapsar)</span>
-                    <h5 class="fw-bolder mb-0 text-dark d-flex align-items-center gap-2" style="letter-spacing: -0.3px;">
-                        Identidad y Especificaciones
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </h5>
-                </div>
-            </div>
-
-            <button type="button"
-                    class="btn d-inline-flex align-items-center gap-2 rounded-pill px-4 py-2 fw-medium border shadow-sm"
-                    style="background-color: #ffffff; color: #174EA6; border-color: #D2E3FC !important; transition: all 0.2s ease;"
-                    onmouseover="this.style.backgroundColor='#F8FAFC'; this.style.transform='translateY(-2px)';"
-                    onmouseout="this.style.backgroundColor='#ffffff'; this.style.transform='none';"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalEditarInmueblePrincipal">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                </svg>
-                Editar Propiedad
-            </button>
-        </div>
-
-        {{-- Contenedor Colapsado estándar Bootstrap --}}
-        <div id="collapseNucleoInmueble" class="collapse">
-            <div class="card-body px-4 pb-4 pt-0">
-
-                <div class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3" style="background-color: #F4F8FE; border-left: 4px solid #8AB4F8;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#174EA6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0">
-                        <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <p class="mb-0 small" style="color: #475569; line-height: 1.6;">
-                        <strong style="color: #174EA6;">¿Para qué sirve este módulo?</strong> Define los datos estructurales fijos de la propiedad. Estos valores son el <strong>"ADN"</strong> del inmueble y determinarán cómo el motor de búsquedas filtra este espacio para los huéspedes.
-                    </p>
+                    Vista Previa del Cliente
                 </div>
 
-                <div class="row g-3">
-                    <div class="col-12 col-md-4">
-                        <div class="p-3 rounded-4 h-100 d-flex flex-column" style="background-color: #ffffff; border: 1px solid #E2E8F0; box-shadow: 0 2px 10px rgba(0,0,0,0.01);">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Capacidad Límite</span>
+                <div class="pv-card">
+
+                    {{-- CARRUSEL + FLOTANTES --}}
+                    <div id="carouselInmueble{{ $inmueble->id }}"
+                         class="carousel slide pv-carousel"
+                         data-bs-ride="carousel">
+
+                        {{-- LÁPIZ (abre modal de edición) --}}
+                        <button type="button"
+                                class="float-btn position-absolute top-0 start-0 m-2"
+                                data-bs-toggle="modal" data-bs-target="#modalEditarInmueblePrincipal"
+                                title="Editar Inmueble">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+
+                        {{-- CORAZÓN (favorito) --}}
+                        <button type="button"
+                                class="float-btn position-absolute top-0 end-0 m-2 btn-favorito"
+                                title="Vista de favorito">
+                            <svg class="heart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                            </svg>
+                        </button>
+
+                        @php $galeria = $inmueble->multimedia ?? collect(); @endphp
+
+                        <div class="carousel-inner">
+                            @forelse($galeria as $index => $media)
+                                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                    <img src="{{ $media->url_archivo }}" alt="Foto inmueble">
+                                    @if($media->es_portada)
+                                        <span class="portada-badge">PORTADA</span>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="carousel-item active">
+                                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--head);color:#d4dae2;font-size:8.5px;font-style:italic;">
+                                        <i class="bi bi-image me-1"></i> Sube fotos en la galería
+                                    </div>
+                                </div>
+                            @endforelse
+                        </div>
+
+                        @if($galeria->count() > 1)
+                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselInmueble{{ $inmueble->id }}" data-bs-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Anterior</span>
+                            </button>
+                            <button class="carousel-control-next" type="button" data-bs-target="#carouselInmueble{{ $inmueble->id }}" data-bs-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="visually-hidden">Siguiente</span>
+                            </button>
+                        @endif
+
+                    </div>
+
+
+                    {{-- CUERPO --}}
+                    <div class="pv-body">
+
+                        {{-- Título + estado --}}
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                            <div class="strong text-truncate" style="font-size: 9.5px;" title="{{ $inmueble->name }}">
+                                {{ $inmueble->name }}
                             </div>
-                            <span class="fw-bolder mt-auto" style="color: #1e293b; font-size: 1.15rem;">
-                                {{ $inmueble->capacidad_maxima ?? '0' }} <span class="fw-medium text-muted" style="font-size: 0.85rem;">personas</span>
+
+                            @if($inmueble->active)
+                                <span class="chip chip-green" style="flex-shrink: 0;">Activo</span>
+                            @else
+                                <span class="chip chip-gray" style="flex-shrink: 0;">Inactivo</span>
+                            @endif
+                        </div>
+
+
+                        {{-- Rating + reseñas --}}
+                        <div class="d-flex align-items-center justify-content-between mb-1">
+                            <div class="d-flex align-items-center gap-1 star-row">
+                                @for($i = 0; $i < 5; $i++)
+                                    <svg viewBox="0 0 24 24">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                @endfor
+                                <span class="score ms-0.5">5.0</span>
+                            </div>
+
+                            <span class="rev-count">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                {{ $inmueble->comentarios_count ?? 0 }} reseñas
                             </span>
                         </div>
-                    </div>
 
-                    <div class="col-12 col-md-4">
-                        <div class="p-3 rounded-4 h-100 d-flex flex-column" style="background-color: #ffffff; border: 1px solid #E2E8F0; box-shadow: 0 2px 10px rgba(0,0,0,0.01);">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
-                                </svg>
-                                <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Punto Geográfico</span>
+
+                        {{-- Ubicación --}}
+                        <div class="loc mb-2">
+                            <i class="bi bi-geo-alt me-1"></i>{{ $inmueble->city ?? 'Sin ciudad' }} — {{ $inmueble->ubicacion ?? 'Sin dirección' }}
+                        </div>
+
+
+                        {{-- Valores --}}
+                        <div class="spec-box">
+                            <div class="half">
+                                <span class="lbl">Capacidad máx.</span>
+                                <span class="val">{{ $inmueble->capacidad_maxima ?? 'N/A' }} pers.</span>
                             </div>
-                            <div class="mt-auto">
-                                <span class="d-block fw-bolder text-truncate" style="color: #1e293b; font-size: 1.05rem;" title="{{ $inmueble->city ?? 'Ciudad no especificada' }}">
-                                    {{ $inmueble->city ?? 'N/A' }}
-                                </span>
-                                <span class="d-block text-muted text-truncate small" title="{{ $inmueble->ubicacion ?? 'Dirección no especificada' }}">
-                                    {{ $inmueble->ubicacion ?? 'Sin dirección registrada' }}
-                                </span>
+                            <div class="half">
+                                <span class="lbl">Precio base</span>
+                                <span class="val" style="color: #5d8a70;">${{ number_format($inmueble->precio_base_noche ?? 0, 2) }}</span>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="col-12 col-md-4">
-                        <div class="p-3 rounded-4 h-100 d-flex flex-column justify-content-between" style="background-color: #ffffff; border: 1px solid #E2E8F0; box-shadow: 0 2px 10px rgba(0,0,0,0.01);">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>
-                                </svg>
-                                <span class="text-uppercase fw-bold text-muted" style="font-size: 0.65rem; letter-spacing: 0.5px;">Visibilidad Pública</span>
-                            </div>
-                            <div class="mt-auto">
-                                @if($inmueble->active)
-                                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3" style="background-color: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; width: fit-content;">
-                                        <span class="spinner-grow spinner-grow-sm" style="width: 6px; height: 6px; background-color: #10B981;" role="status"></span>
-                                        <span class="fw-bold" style="font-size: 0.85rem;">En vivo (Catálogo Público)</span>
+
+                        {{-- Última tarifa --}}
+                        <div class="kicker mb-1 mt-auto">Condiciones última tarifa</div>
+
+                        @php $ultimaTarifa = $inmueble->latestTarifa; @endphp
+
+                        @if($ultimaTarifa)
+                            <div class="tarifa-box">
+
+                                <div class="tarifa-top">
+                                    <div>
+                                        <div class="tarifa-name">{{ $ultimaTarifa->nombre_temporada }}</div>
+                                        <div class="tarifa-fecha">
+                                            {{ optional($ultimaTarifa->fecha_inicio)->format('d/m/Y') }} — {{ optional($ultimaTarifa->fecha_fin)->format('d/m/Y') }}
+                                        </div>
                                     </div>
-                                @else
-                                    <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-3" style="background-color: #F8FAFC; border: 1px solid #E2E8F0; color: #64748B; width: fit-content;">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                        <span class="fw-bold" style="font-size: 0.85rem;">Oculto (Borrador)</span>
+                                    <div class="text-end">
+                                        <span class="tarifa-precio">
+                                            <small>Precio noche</small>
+                                            ${{ number_format($ultimaTarifa->precio_noche, 2) }}
+                                        </span>
                                     </div>
-                                @endif
+                                </div>
+
+                                <div class="restr-row">
+                                    <div class="restr-cell">
+                                        <span class="lbl">Mín. reserva</span>
+                                        <span class="val">${{ number_format($ultimaTarifa->precio_minimo_reserva, 2) }}</span>
+                                    </div>
+                                    <div class="restr-cell">
+                                        <span class="lbl">Máx. días</span>
+                                        <span class="val blue">{{ $ultimaTarifa->dias_maximos ?: 'Ilimitado' }}</span>
+                                    </div>
+                                </div>
+
                             </div>
-                        </div>
+                        @else
+                            <div class="tarifa-empty">Sin tarifas temporales activas</div>
+                        @endif
+
                     </div>
+
                 </div>
 
             </div>
-        </div>
-    </div>
 
-
-    {{-- ================================================================== --}}
-    {{-- ENGRANAJE 2: MOTOR FINANCIERO (Tarifas por Temporada con Días Máx.) --}}
-    {{-- ================================================================== --}}
-    <div class="card border-0 mb-4 bg-white overflow-hidden" style="border-radius: 1.25rem; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.02); border-top: 4px solid #4D7C0F !important;">
-
-        <div class="card-header bg-transparent border-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-            <div class="d-flex align-items-center gap-3 flex-grow-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseMotorComercial" aria-expanded="false" aria-controls="collapseMotorComercial">
-                <div class="d-flex justify-content-center align-items-center rounded-3 shadow-sm" style="width: 45px; height: 45px; background: linear-gradient(135deg, #ECFDF5 0%, #D1E5A5 100%); color: #3F6212;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                </div>
-                <div>
-                    <span class="text-uppercase font-monospace fw-bold" style="color: #65A30D; font-size: 0.65rem; letter-spacing: 1.5px;">Módulo 2 de 3 (Haga clic para expandir / colapsar)</span>
-                    <h5 class="fw-bolder mb-0 text-dark d-flex align-items-center gap-2" style="letter-spacing: -0.3px;">
-                        Motor Comercial y Tarifas
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </h5>
-                </div>
-            </div>
-
-            <button type="button"
-                    class="btn d-inline-flex align-items-center gap-2 rounded-pill px-4 py-2 fw-medium border shadow-sm"
-                    style="background-color: #ffffff; color: #3F6212; border-color: #D1E5A5 !important; transition: all 0.2s ease;"
-                    onmouseover="this.style.backgroundColor='#F7FEE7'; this.style.transform='translateY(-2px)';"
-                    onmouseout="this.style.backgroundColor='#ffffff'; this.style.transform='none';"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalAddTarifa">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Nueva Tarifa
-            </button>
         </div>
 
-        {{-- Contenedor Colapsado estándar Bootstrap --}}
-        <div id="collapseMotorComercial" class="collapse">
-            <div class="card-body px-4 pb-4 pt-0">
-                <div class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3" style="background-color: #F7FEE7; border-left: 4px solid #BEF264;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3F6212" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0">
-                        <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <p class="mb-0 small" style="color: #3F6212; line-height: 1.6;">
-                        <strong>¿Para qué sirve este módulo?</strong> Programa los precios dinámicos del inmueble. Permite definir rangos de fechas (temporadas, festivos) con tarifas por noche diferenciadas, montos mínimos exigidos y el límite de días máximos para la reserva.
-                    </p>
+
+        {{-- ═══════════ COLUMNA DERECHA · LOS 3 MÓDULOS ═══════════ --}}
+        <div class="col-12 col-lg-7 col-xl-8">
+
+            {{-- Alertas flash --}}
+            @if(session('success'))
+                <div class="sh-alert ok" role="alert">
+                    <span><i class="bi bi-check-circle me-1"></i>{{ session('success') }}</span>
+                    <button type="button" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="sh-alert err" role="alert">
+                    <span><i class="bi bi-exclamation-circle me-1"></i>{{ session('error') }}</span>
+                    <button type="button" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+                </div>
+            @endif
+
+
+            {{-- ── MÓDULO 1 · NÚCLEO ── --}}
+            <div class="sh-module">
+
+                <div class="sh-strip m1">
+                    <button type="button" class="head-btn"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseNucleoInmueble"
+                            aria-expanded="false"
+                            aria-controls="collapseNucleoInmueble">
+                        <span class="m-id">MÓDULO 1/3</span>
+                        <span class="m-name">Identidad y Especificaciones</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+
+                    <button type="button" class="btn-soft btn-soft-m1"
+                            data-bs-toggle="modal" data-bs-target="#modalEditarInmueblePrincipal">
+                        <i class="bi bi-pencil" style="font-size: 8.5px;"></i> Editar Propiedad
+                    </button>
                 </div>
 
-                <div class="table-responsive border rounded-4 bg-white mb-0 overflow-hidden" style="border-color: #E2E8F0 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
-                        <thead style="background-color: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
-                            <tr>
-                                <th class="py-3 px-4 text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Temporada</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Rango de Fechas</th>
-                                <th class="py-3 px-3 text-end text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Precio Noche</th>
-                                <th class="py-3 px-3 text-end text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Fin Semana</th>
-                                <th class="py-3 px-3 text-end text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Mín. Reserva</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Días Máx.</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Estado</th>
-                                <th class="py-3 px-4 text-center text-uppercase fw-bold text-muted border-0" style="font-size: 0.65rem; letter-spacing: 0.5px;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($inmueble->tarifasTemporadas ?? [] as $tarifa)
-                                <tr style="border-bottom: 1px solid #F1F5F9;">
-                                    <td class="fw-semibold py-3 px-4" style="color: #1e293b;">{{ $tarifa->nombre_temporada }}</td>
-                                    <td class="text-center py-3">
-                                        <span class="badge rounded-pill bg-light text-dark border px-2 py-1 font-monospace" style="font-size: 0.75rem;">
-                                            {{ optional($tarifa->fecha_inicio)->format('d/M/Y') }} - {{ optional($tarifa->fecha_fin)->format('d/M/Y') }}
-                                        </span>
-                                    </td>
-                                    <td class="text-end font-monospace py-3 fw-bolder" style="color: #3F6212;">${{ number_format($tarifa->precio_noche, 2) }}</td>
-                                    <td class="text-end font-monospace py-3 fw-semibold" style="color: #4D7C0F;">${{ number_format($tarifa->precio_fin_semana, 2) }}</td>
-                                    <td class="text-end font-monospace py-3 text-muted">${{ number_format($tarifa->precio_minimo_reserva, 2) }}</td>
-                                    <td class="text-center font-monospace py-3 text-muted">{{ $tarifa->dias_maximos ?? '—' }}</td>
-                                    <td class="text-center py-3">
-                                        @if($tarifa->active)
-                                            <span class="badge rounded-pill fw-medium px-2 py-1" style="background-color: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0;">Activa</span>
+                <div id="collapseNucleoInmueble" class="collapse">
+                    <div class="sh-frame">
+                        <div class="sh-body">
+
+                            <div class="stat-grid">
+
+                                <div class="stat-cell">
+                                    <span class="lbl"><i class="bi bi-people"></i> Capacidad límite</span>
+                                    <span class="big">{{ $inmueble->capacidad_maxima ?? '0' }} <small>personas</small></span>
+                                </div>
+
+                                <div class="stat-cell">
+                                    <span class="lbl"><i class="bi bi-geo-alt"></i> Punto geográfico</span>
+                                    <span class="big d-block text-truncate" title="{{ $inmueble->city ?? '' }}">{{ $inmueble->city ?? 'N/A' }}</span>
+                                    <span class="sub d-block text-truncate" title="{{ $inmueble->ubicacion ?? '' }}">{{ $inmueble->ubicacion ?? 'Sin dirección' }}</span>
+                                </div>
+
+                                <div class="stat-cell">
+                                    <span class="lbl"><i class="bi bi-eye"></i> Visibilidad</span>
+                                    <div class="mt-1">
+                                        @if($inmueble->active)
+                                            <span class="vis-pill vis-on"><span class="dotp"></span> En vivo</span>
                                         @else
-                                            <span class="badge rounded-pill fw-medium px-2 py-1" style="background-color: #F8FAFC; color: #64748B; border: 1px solid #E2E8F0;">Inactiva</span>
+                                            <span class="vis-pill vis-off"><span class="dotp"></span> Borrador</span>
                                         @endif
-                                    </td>
-                                    <td class="text-center py-3 px-4">
-                                        <button type="button"
-                                            class="btn btn-light border shadow-sm btn-sm px-3 py-1 rounded-pill btn-editar-tarifa fw-medium"
-                                            style="font-size: 0.75rem; color: #475569; transition: all 0.2s;"
-                                            onmouseover="this.style.backgroundColor='#F1F5F9'; this.style.color='#0f172a';"
-                                            onmouseout="this.style.backgroundColor=''; this.style.color='#475569';"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalEditarTarifa"
-                                            data-url-update="{{ route('rsv.tarifas-temporadas.update', $tarifa->id) }}"
-                                            data-nombre-temporada="{{ $tarifa->nombre_temporada }}"
-                                            data-fecha-inicio="{{ optional($tarifa->fecha_inicio)->format('Y-m-d') }}"
-                                            data-fecha-fin="{{ optional($tarifa->fecha_fin)->format('Y-m-d') }}"
-                                            data-precio-noche="{{ $tarifa->precio_noche }}"
-                                            data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
-                                            data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
-                                            data-dias-maximos="{{ $tarifa->dias_maximos }}"
-                                            data-active="{{ $tarifa->active ? 1 : 0 }}">
-                                            Editar
-                                        </button>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-5" style="background-color: #F8FAFC;">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-2">
-                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-                                        </svg>
-                                        <p class="mb-0 fw-medium">No hay tarifas registradas.</p>
-                                        <span class="small">Se requiere configurar al menos una tarifa para operar.</span>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+                                    </div>
+                                </div>
 
+                            </div>
 
-    {{-- ================================================================== --}}
-    {{-- ENGRANAJE 3: VITRINA VISUAL (Multimedia, Imágenes y Videos)        --}}
-    {{-- ================================================================== --}}
-    <div class="card border-0 mb-4 bg-white overflow-hidden" style="border-radius: 1.25rem; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.02); border-top: 4px solid #7B1FA2 !important;">
-
-        <div class="card-header bg-transparent border-0 pt-4 pb-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-
-            <div class="d-flex align-items-center gap-3 flex-grow-1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseVitrinaVisual" aria-expanded="false" aria-controls="collapseVitrinaVisual">
-                <div class="d-flex justify-content-center align-items-center rounded-3 shadow-sm" style="width: 45px; height: 45px; background: linear-gradient(135deg, #F5F3FF 0%, #E9D2FC 100%); color: #7B1FA2;">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
-                    </svg>
-                </div>
-                <div>
-                    <span class="text-uppercase font-monospace fw-bold" style="color: #A855F7; font-size: 0.65rem; letter-spacing: 1.5px;">Módulo 3 de 3 (Haga clic para expandir / colapsar)</span>
-                    <h5 class="fw-bolder mb-0 text-dark d-flex align-items-center gap-2" style="letter-spacing: -0.3px;">
-                        Vitrina Visual y Galería
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </h5>
-                </div>
-            </div>
-
-            <button type="button"
-                    class="btn d-inline-flex align-items-center gap-2 rounded-pill px-4 py-2 fw-medium border shadow-sm"
-                    style="background-color: #ffffff; color: #7B1FA2; border-color: #E9D2FC !important; transition: all 0.2s ease;"
-                    onmouseover="this.style.backgroundColor='#FAF5FF'; this.style.transform='translateY(-2px)';"
-                    onmouseout="this.style.backgroundColor='#ffffff'; this.style.transform='none';"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalAddMultimedia">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Agregar Recurso
-            </button>
-        </div>
-
-        {{-- Contenedor Colapsado estándar Bootstrap --}}
-        <div id="collapseVitrinaVisual" class="collapse">
-            <div class="card-body px-4 pb-4 pt-0">
-                <div class="d-flex align-items-start gap-3 p-3 mb-4 rounded-3" style="background-color: #FAF5FF; border-left: 4px solid #D8B4FE;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7B1FA2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0">
-                        <circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <p class="mb-0 small" style="color: #581C87; line-height: 1.6;">
-                        <strong>¿Para qué sirve este módulo?</strong> Alimenta la interfaz del cliente final con fotografías y videos promocionales almacenados de forma segura en AWS S3. Puedes definir el orden de aparición y marcar una imagen estrella como <strong>"Portada Principal"</strong>.
-                    </p>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="table-responsive border rounded-4 bg-white mb-0 overflow-hidden" style="border-color: #E2E8F0 !important; box-shadow: 0 4px 15px rgba(0,0,0,0.01);">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
-                        <thead style="background-color: #F8FAFC; border-bottom: 2px solid #E2E8F0;">
-                            <tr>
-                                <th class="py-3 px-4 text-center text-uppercase fw-bold text-muted border-0" style="width: 50px; font-size: 0.65rem; letter-spacing: 0.5px;">ID</th>
-                                <th class="py-3 px-3 text-uppercase fw-bold text-muted border-0" style="width: 120px; font-size: 0.65rem; letter-spacing: 0.5px;">Tipo</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="width: 110px; font-size: 0.65rem; letter-spacing: 0.5px;">Vista Previa</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="width: 90px; font-size: 0.65rem; letter-spacing: 0.5px;">Orden</th>
-                                <th class="py-3 px-3 text-center text-uppercase fw-bold text-muted border-0" style="width: 100px; font-size: 0.65rem; letter-spacing: 0.5px;">Portada</th>
-                                <th class="py-3 px-4 text-center text-uppercase fw-bold text-muted border-0" style="width: 100px; font-size: 0.65rem; letter-spacing: 0.5px;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($inmueble->multimedia ?? [] as $media)
-                                <tr style="border-bottom: 1px solid #F1F5F9;">
-                                    <td class="text-center text-muted font-monospace py-3 px-4">{{ $media->id }}</td>
-                                    <td class="py-3">
-                                        <span class="badge rounded-pill fw-medium px-2 py-1" style="background-color: #F1F5F9; color: #475569; border: 1px solid #E2E8F0;">
-                                            @if($media->tipo_multimedia == 'imagen')
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                            @else
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
-                                            @endif
-                                            {{ ucfirst($media->tipo_multimedia) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center py-3">
-                                        <a href="{{ $media->url_archivo }}" target="_blank" class="d-inline-block position-relative overflow-hidden rounded-3 border shadow-sm" style="width: 45px; height: 45px; background-color: #F8FAFC; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.08)';" onmouseout="this.style.transform='none';" title="Ver archivo completo en S3">
-                                            @if($media->tipo_multimedia == 'imagen')
-                                                <img src="{{ $media->url_archivo }}" alt="Miniatura" class="w-100 h-100 object-fit-cover">
-                                            @else
-                                                <div class="w-100 h-100 d-flex flex-column justify-content-center align-items-center text-purple" style="color: #7B1FA2; background-color: #FAF5FF;">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                        <polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-                                                    </svg>
-                                                </div>
-                                            @endif
-                                        </a>
-                                    </td>
-                                    <td class="text-center py-3 font-monospace fw-semibold" style="color: #64748B;">{{ $media->orden }}</td>
-                                    <td class="text-center py-3">
-                                        @if($media->es_portada)
-                                            <span class="badge rounded-pill fw-medium px-2 py-1 shadow-sm" style="background-color: #FDF4FF; color: #A21CAF; border: 1px solid #F5D0FE;">Sí (Principal)</span>
-                                        @else
-                                            <span class="text-muted">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center py-3 px-4">
-                                        <button type="button"
-                                            class="btn btn-light border shadow-sm btn-sm px-3 py-1 rounded-pill btn-editar-multimedia fw-medium"
-                                            style="font-size: 0.75rem; color: #475569; transition: all 0.2s;"
-                                            onmouseover="this.style.backgroundColor='#F1F5F9'; this.style.color='#0f172a';"
-                                            onmouseout="this.style.backgroundColor=''; this.style.color='#475569';"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalEditarMultimedia"
-                                            data-url-update="{{ route('rsv.inmueble-multimedia.update', $media->id) }}"
-                                            data-tipo-multimedia="{{ $media->tipo_multimedia }}"
-                                            data-orden="{{ $media->orden }}"
-                                            data-es-portada="{{ $media->es_portada ? 1 : 0 }}">
-                                            Editar
-                                        </button>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted py-5" style="background-color: #F8FAFC;">
-                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#CBD5E1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-2">
-                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline>
-                                        </svg>
-                                        <p class="mb-0 fw-medium">Vitrina vacía.</p>
-                                        <span class="small">Sube fotos o videos para atraer a tus clientes.</span>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+            </div>
+
+
+            {{-- ── MÓDULO 2 · MOTOR COMERCIAL ── --}}
+            <div class="sh-module">
+
+                <div class="sh-strip m2">
+                    <button type="button" class="head-btn"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseMotorComercial"
+                            aria-expanded="false"
+                            aria-controls="collapseMotorComercial">
+                        <span class="m-id">MÓDULO 2/3</span>
+                        <span class="m-name">Motor Comercial y Tarifas</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+
+                    <button type="button" class="btn-soft btn-soft-m2"
+                            data-bs-toggle="modal" data-bs-target="#modalAddTarifa">
+                        <i class="bi bi-plus-lg" style="font-size: 8.5px;"></i> Nueva Tarifa
+                    </button>
                 </div>
+
+                <div id="collapseMotorComercial" class="collapse">
+                    <div class="sh-frame">
+                        <div class="sh-body">
+
+                            <div class="overflow-auto" style="border: 1px solid var(--grid); border-radius: 4px;">
+
+                                <table class="xls-table" style="min-width: 480px;">
+
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 22px;"></th>
+                                            <th>Temporada</th>
+                                            <th class="text-center">Fechas</th>
+                                            <th class="text-end">Precio / Noche</th>
+                                            <th class="text-center">·</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        @forelse($inmueble->tarifasTemporadas ?? [] as $tarifa)
+
+                                            <tr>
+                                                <td class="row-index">{{ $loop->iteration }}</td>
+
+                                                <td class="strong">
+                                                    {{ $tarifa->nombre_temporada }}
+                                                    <div class="mt-0.5">
+                                                        @if($tarifa->active)
+                                                            <span class="chip chip-green" style="font-size: 7px;">Activa</span>
+                                                        @else
+                                                            <span class="chip chip-gray" style="font-size: 7px;">Inactiva</span>
+                                                        @endif
+                                                    </div>
+                                                </td>
+
+                                                <td class="text-center num" style="color: #a8b3c1;">
+                                                    {{ optional($tarifa->fecha_inicio)->format('d/m') }} — {{ optional($tarifa->fecha_fin)->format('d/m/y') }}
+                                                </td>
+
+                                                <td class="text-end num strong" style="color: #5d8a70;">
+                                                    ${{ number_format($tarifa->precio_noche, 2) }}
+                                                </td>
+
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                        class="btn-actions btn-editar-tarifa"
+                                                        data-bs-toggle="modal" data-bs-target="#modalEditarTarifa"
+                                                        data-url-update="{{ route('rsv.tarifas-temporadas.update', $tarifa->id) }}"
+                                                        data-nombre-temporada="{{ $tarifa->nombre_temporada }}"
+                                                        data-fecha-inicio="{{ optional($tarifa->fecha_inicio)->format('Y-m-d') }}"
+                                                        data-fecha-fin="{{ optional($tarifa->fecha_fin)->format('Y-m-d') }}"
+                                                        data-precio-noche="{{ $tarifa->precio_noche }}"
+                                                        data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
+                                                        data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
+                                                        data-dias-maximos="{{ $tarifa->dias_maximos }}"
+                                                        data-active="{{ $tarifa->active ? 1 : 0 }}">
+                                                        Editar
+                                                    </button>
+                                                </td>
+
+                                            </tr>
+
+                                        @empty
+                                            <tr>
+                                                <td class="row-index">1</td>
+                                                <td colspan="4">
+                                                    <div class="sh-empty" style="background: transparent;">
+                                                        <i class="bi bi-calendar-x"></i>
+                                                        No hay tarifas registradas.
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+
+            {{-- ── MÓDULO 3 · VITRINA VISUAL ── --}}
+            <div class="sh-module">
+
+                <div class="sh-strip m3">
+                    <button type="button" class="head-btn"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseVitrinaVisual"
+                            aria-expanded="false"
+                            aria-controls="collapseVitrinaVisual">
+                        <span class="m-id">MÓDULO 3/3</span>
+                        <span class="m-name">Vitrina Visual y Galería</span>
+                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+
+                    <button type="button" class="btn-soft btn-soft-m3"
+                            data-bs-toggle="modal" data-bs-target="#modalAddMultimedia">
+                        <i class="bi bi-plus-lg" style="font-size: 8.5px;"></i> Agregar Recurso
+                    </button>
+                </div>
+
+                <div id="collapseVitrinaVisual" class="collapse">
+                    <div class="sh-frame">
+                        <div class="sh-body">
+
+                            <div class="overflow-auto" style="border: 1px solid var(--grid); border-radius: 4px;">
+
+                                <table class="xls-table" style="min-width: 420px;">
+
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 22px;"></th>
+                                            <th class="text-center">Vista</th>
+                                            <th>Tipo / Portada</th>
+                                            <th class="text-center">Orden</th>
+                                            <th class="text-center">·</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        @forelse($inmueble->multimedia ?? [] as $media)
+
+                                            <tr>
+                                                <td class="row-index">{{ $loop->iteration }}</td>
+
+                                                <td class="text-center">
+                                                    <a href="{{ $media->url_archivo }}" target="_blank" class="thumb" title="Ver archivo completo">
+                                                        @if($media->tipo_multimedia == 'imagen')
+                                                            <img src="{{ $media->url_archivo }}" alt="Miniatura">
+                                                        @else
+                                                            <i class="bi bi-play-btn"></i>
+                                                        @endif
+                                                    </a>
+                                                </td>
+
+                                                <td>
+                                                    <div class="mb-0.5">
+                                                        @if($media->tipo_multimedia == 'imagen')
+                                                            <span class="chip chip-blue"><i class="bi bi-image"></i> Imagen</span>
+                                                        @else
+                                                            <span class="chip chip-purple"><i class="bi bi-camera-video"></i> Video</span>
+                                                        @endif
+                                                    </div>
+                                                    @if($media->es_portada)
+                                                        <span class="chip chip-green" style="font-size: 7px;">Principal</span>
+                                                    @endif
+                                                </td>
+
+                                                <td class="text-center num">{{ $media->orden }}</td>
+
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                        class="btn-actions btn-editar-multimedia"
+                                                        data-bs-toggle="modal" data-bs-target="#modalEditarMultimedia"
+                                                        data-url-update="{{ route('rsv.inmueble-multimedia.update', $media->id) }}"
+                                                        data-tipo-multimedia="{{ $media->tipo_multimedia }}"
+                                                        data-orden="{{ $media->orden }}"
+                                                        data-es-portada="{{ $media->es_portada ? 1 : 0 }}">
+                                                        Editar
+                                                    </button>
+                                                </td>
+
+                                            </tr>
+
+                                        @empty
+                                            <tr>
+                                                <td class="row-index">1</td>
+                                                <td colspan="4">
+                                                    <div class="sh-empty" style="background: transparent;">
+                                                        <i class="bi bi-images"></i>
+                                                        Vitrina vacía. Sube fotos o videos.
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
         </div>
-    </div>
 
-</div>
+    </div>  {{-- /row g-3 --}}
 
 
-{{-- ================================================================== --}}
-{{-- ZONA DE MODALES DE GESTIÓN (EDICIÓN Y CREACIÓN)                    --}}
-{{-- ================================================================== --}}
+    {{-- ═══════════════════════════════════════════════════════════ --}}
+    <!--  MODALES (DENTRO de #showRoot para que el CSS aplique)       -->
+    <!--  ═══════════════════════════════════════════════════════════ -->
 
-{{-- MODAL 1: EDITAR INMUEBLE PRINCIPAL --}}
-<div class="modal fade" id="modalEditarInmueblePrincipal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-3" style="background-color: #E8F0FE;">
-                <h6 class="modal-title fw-bold" style="color: #174EA6;">Editar Núcleo del Inmueble</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                <form action="{{ route('rsv.inmuebles.update', $inmueble->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
+    {{-- MODAL 1 · EDITAR INMUEBLE PRINCIPAL --}}
+    <div class="modal fade sh-modal" id="modalEditarInmueblePrincipal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
 
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Nombre del Inmueble</label>
-                        <input type="text" class="form-control" name="name" value="{{ old('name', $inmueble->name) }}" required>
+                <div class="modal-header">
+                    <div>
+                        <div class="kicker">Módulo 1/3 · Núcleo</div>
+                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar núcleo del inmueble</div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+                </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Capacidad Máxima (Personas)</label>
-                            <input type="number" class="form-control" name="capacidad_maxima" value="{{ old('capacidad_maxima', $inmueble->capacidad_maxima) }}">
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Tipo de Inmueble ID</label>
-                            <input type="number" class="form-control" name="tipo_inmueble_id" value="{{ old('tipo_inmueble_id', $inmueble->tipo_inmueble_id) }}" required>
-                        </div>
-                    </div>
+                <div class="modal-body">
+                    <form action="{{ route('rsv.inmuebles.update', $inmueble->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Ciudad</label>
-                            <input type="text" class="form-control" name="city" value="{{ old('city', $inmueble->city) }}">
+                        <div class="mb-2">
+                            <label class="form-label">Nombre del inmueble <span>(`name`)</span></label>
+                            <input type="text" class="form-control" name="name" value="{{ old('name', $inmueble->name) }}" required>
                         </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Ubicación / Dirección detallada</label>
-                            <input type="text" class="form-control" name="ubicacion" value="{{ old('ubicacion', $inmueble->ubicacion) }}">
-                        </div>
-                    </div>
 
-                    <div class="mb-4 p-3 rounded-3" style="background-color: #F8FAFC; border: 1px solid #E2E8F0;">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="editActiveInmueble" {{ old('active', $inmueble->active) ? 'checked' : '' }}>
-                            <label class="form-check-label fw-semibold" style="color: #334155;" for="editActiveInmueble">Activo (Visible en catálogo general)</label>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-light border px-4 rounded-3 fw-medium" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn px-4 rounded-3 fw-medium text-white" style="background-color: #174EA6;">Actualizar Inmueble</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ================================================================== --}}
-{{-- MODAL 2A: AGREGAR TARIFA POR TEMPORADA                             --}}
-{{-- ================================================================== --}}
-<div class="modal fade" id="modalAddTarifa" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-3" style="background-color: #E2F0CB;">
-                <h6 class="modal-title fw-bold" style="color: #3F6212;">Nueva Tarifa al Motor Comercial</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                <form action="{{ route('rsv.tarifas-temporadas.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Nombre de la Temporada</label>
-                        <input type="text" class="form-control" name="nombre_temporada" placeholder="Ej. Temporada Alta Diciembre" required>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Fecha de Inicio</label>
-                            <input type="date" class="form-control" name="fecha_inicio" required>
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Fecha de Fin</label>
-                            <input type="date" class="form-control" name="fecha_fin" required>
-                        </div>
-                    </div>
-
-                    {{-- Grilla de 4 columnas para Precios y Límites --}}
-                    <div class="row">
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Precio Noche ($)</label>
-                            <input type="number" step="0.01" class="form-control" name="precio_noche" placeholder="0.00" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Precio Fin Sem. ($)</label>
-                            <input type="number" step="0.01" class="form-control" name="precio_fin_semana" placeholder="0.00" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Mín. Reserva ($)</label>
-                            <input type="number" step="0.01" class="form-control" name="precio_minimo_reserva" placeholder="0.00" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Días Máximos</label>
-                            <input type="number" class="form-control" name="dias_maximos" placeholder="Ej. 30" min="1">
-                        </div>
-                    </div>
-
-                    <div class="mb-4 p-3 rounded-3" style="background-color: #F8FAFC; border: 1px solid #E2E8F0;">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="tarifaActiveCheck" checked>
-                            <label class="form-check-label fw-semibold" style="color: #334155;" for="tarifaActiveCheck">Tarifa activa comercialmente</label>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-light border px-4 rounded-3 fw-medium" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn px-4 rounded-3 fw-medium text-white" style="background-color: #4D7C0F;">Guardar Tarifa</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ================================================================== --}}
-{{-- MODAL 2B: EDITAR TARIFA POR TEMPORADA                              --}}
-{{-- ================================================================== --}}
-<div class="modal fade" id="modalEditarTarifa" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-3" style="background-color: #E2F0CB;">
-                <h6 class="modal-title fw-bold" style="color: #3F6212;">Editar Tarifa Comercial</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                <form id="formEditarTarifa" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Nombre de la Temporada</label>
-                        <input type="text" class="form-control" id="edit_tarifa_nombre" name="nombre_temporada" required>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Fecha de Inicio</label>
-                            <input type="date" class="form-control" id="edit_tarifa_inicio" name="fecha_inicio" required>
-                        </div>
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Fecha de Fin</label>
-                            <input type="date" class="form-control" id="edit_tarifa_fin" name="fecha_fin" required>
-                        </div>
-                    </div>
-
-                    {{-- Grilla de 4 columnas para Precios y Límites en Edición --}}
-                    <div class="row">
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Precio Noche ($)</label>
-                            <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_noche" name="precio_noche" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Precio Fin Sem. ($)</label>
-                            <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_fin_semana" name="precio_fin_semana" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Mín. Reserva ($)</label>
-                            <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_minimo" name="precio_minimo_reserva" required>
-                        </div>
-                        <div class="col-md-3 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Días Máximos</label>
-                            <input type="number" class="form-control" id="edit_tarifa_dias_maximos" name="dias_maximos" min="1">
-                        </div>
-                    </div>
-
-                    <div class="mb-4 p-3 rounded-3" style="background-color: #F8FAFC; border: 1px solid #E2E8F0;">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active">
-                            <label class="form-check-label fw-semibold" style="color: #334155;" for="edit_tarifa_active">Tarifa activa comercialmente</label>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-light border px-4 rounded-3 fw-medium" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn px-4 rounded-3 fw-medium text-white" style="background-color: #4D7C0F;">Actualizar Tarifa</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-{{-- ================================================================== --}}
-{{-- MODAL 3A: AGREGAR MULTIMEDIA (S3 + Drag & Drop + Ctrl + V)         --}}
-{{-- ================================================================== --}}
-<div class="modal fade" id="modalAddMultimedia" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-3" style="background-color: #F3E8FD;">
-                <h6 class="modal-title fw-bold" style="color: #681DA8;">Agregar Recurso a la Vitrina</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                <form action="{{ route('rsv.inmueble-multimedia.store') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                    {{-- Zona de Drag & Drop y Pegado (Ctrl + V) --}}
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Archivo (Imagen o Video)</label>
-                        <div class="upload-drop-zone border-2 border-dashed rounded-4 p-4 text-center position-relative"
-                             style="border-color: #D8B4FE; background-color: #FAF5FF; cursor: pointer; transition: all 0.2s;"
-                             tabindex="0">
-                            {{-- Input file oculto pero interactivo --}}
-                            <input type="file" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 file-input-target"
-                                   name="url_archivo" accept="image/jpeg,image/png,image/jpg,image/webp,video/mp4,video/mov,video/avi" required style="cursor: pointer;">
-                            <div class="dz-message pointer-events-none">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7B1FA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                <p class="mb-1 fw-bold text-dark file-name-display" style="font-size: 0.9rem;">
-                                    Arrastra tu archivo aquí o <span style="color: #681DA8;">haz clic para buscar</span>
-                                </p>
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">
-                                    💡 Tip: Puedes presionar <kbd class="bg-white border px-1 rounded shadow-sm">Ctrl + V</kbd> para pegar una imagen directamente.
-                                </span>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Capacidad máxima <span>(`capacidad_maxima`)</span></label>
+                                <input type="number" class="form-control" name="capacidad_maxima" value="{{ old('capacidad_maxima', $inmueble->capacidad_maxima) }}">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Tipo de inmueble ID <span>(`tipo_inmueble_id`)</span></label>
+                                <input type="number" class="form-control" name="tipo_inmueble_id" value="{{ old('tipo_inmueble_id', $inmueble->tipo_inmueble_id) }}" required>
                             </div>
                         </div>
-                        <div class="form-text text-muted mt-1" style="font-size: 0.75rem;">Formatos: JPG, PNG, WEBP, MP4, MOV, AVI (Máx. 20MB).</div>
-                    </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Tipo de Multimedia</label>
-                        <select class="form-select" name="tipo_multimedia" required>
-                            <option value="imagen">Fotografía / Imagen</option>
-                            <option value="video">Video promocional</option>
-                        </select>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Orden de Visualización</label>
-                            <input type="number" class="form-control" name="orden" value="0">
-                        </div>
-                        <div class="col-md-6 mb-4 d-flex align-items-center pt-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="esPortadaCheck">
-                                <label class="form-check-label fw-semibold" style="color: #334155;" for="esPortadaCheck">Establecer Portada</label>
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Ciudad <span>(`city`)</span></label>
+                                <input type="text" class="form-control" name="city" value="{{ old('city', $inmueble->city) }}">
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Ubicación / Dirección <span>(`ubicacion`)</span></label>
+                                <input type="text" class="form-control" name="ubicacion" value="{{ old('ubicacion', $inmueble->ubicacion) }}">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-light border px-4 rounded-3 fw-medium" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn px-4 rounded-3 fw-medium text-white" style="background-color: #681DA8;">Guardar Recurso</button>
-                    </div>
-                </form>
+                        <div class="switch-box mt-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="editActiveInmueble" {{ old('active', $inmueble->active) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="editActiveInmueble">Activo (visible en catálogo general)</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
+                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Inmueble</button>
+                        </div>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
-</div>
 
-{{-- ================================================================== --}}
-{{-- MODAL 3B: EDITAR MULTIMEDIA (S3 + Drag & Drop + Ctrl + V)          --}}
-{{-- ================================================================== --}}
-<div class="modal fade" id="modalEditarMultimedia" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-            <div class="modal-header border-0 pb-3" style="background-color: #F3E8FD;">
-                <h6 class="modal-title fw-bold" style="color: #681DA8;">Editar Recurso de Vitrina</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 bg-white">
-                <form id="formEditarMultimedia" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
 
-                    {{-- Zona de Drag & Drop y Pegado (Ctrl + V) --}}
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Reemplazar Archivo (Opcional)</label>
-                        <div class="upload-drop-zone border-2 border-dashed rounded-4 p-4 text-center position-relative"
-                             style="border-color: #D8B4FE; background-color: #FAF5FF; cursor: pointer; transition: all 0.2s;"
-                             tabindex="0">
-                            <input type="file" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 file-input-target"
-                                   name="url_archivo" accept="image/jpeg,image/png,image/jpg,image/webp,video/mp4,video/mov,video/avi" style="cursor: pointer;">
-                            <div class="dz-message pointer-events-none">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7B1FA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
-                                </svg>
-                                <p class="mb-1 fw-bold text-dark file-name-display" style="font-size: 0.9rem;">
-                                    Arrastra tu nuevo archivo o <span style="color: #681DA8;">haz clic para buscar</span>
-                                </p>
-                                <span class="text-muted d-block" style="font-size: 0.75rem;">
-                                    💡 Tip: Presiona <kbd class="bg-white border px-1 rounded shadow-sm">Ctrl + V</kbd> para pegar una imagen.
-                                </span>
+    {{-- MODAL 2A · NUEVA TARIFA --}}
+    <div class="modal fade sh-modal" id="modalAddTarifa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <div>
+                        <div class="kicker">Módulo 2/3 · Motor comercial</div>
+                        <div class="strong mt-0.5" style="font-size: 10.5px;">Nueva tarifa por temporada</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{{ route('rsv.tarifas-temporadas.store') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
+
+                        <div class="mb-2">
+                            <label class="form-label">Nombre de la temporada <span>(`nombre_temporada`)</span></label>
+                            <input type="text" class="form-control" name="nombre_temporada" placeholder="Ej. Temporada Alta Diciembre" required>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Fecha de inicio <span>(`fecha_inicio`)</span></label>
+                                <input type="date" class="form-control" name="fecha_inicio" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Fecha de fin <span>(`fecha_fin`)</span></label>
+                                <input type="date" class="form-control" name="fecha_fin" required>
                             </div>
                         </div>
-                        <div class="form-text text-muted mt-1" style="font-size: 0.75rem;">Déjalo en blanco si deseas conservar el archivo actual de S3.</div>
-                    </div>
 
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-semibold">Tipo de Multimedia</label>
-                        <select class="form-select" id="edit_media_tipo" name="tipo_multimedia" required>
-                            <option value="imagen">Fotografía / Imagen</option>
-                            <option value="video">Video promocional</option>
-                        </select>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <label class="form-label text-muted small fw-semibold">Orden de Visualización</label>
-                            <input type="number" class="form-control" id="edit_media_orden" name="orden">
-                        </div>
-                        <div class="col-md-6 mb-4 d-flex align-items-center pt-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="edit_media_portada">
-                                <label class="form-check-label fw-semibold" style="color: #334155;" for="edit_media_portada">Establecer Portada</label>
+                        <div class="row g-2">
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Precio noche</label>
+                                <input type="number" step="0.01" class="form-control" name="precio_noche" placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Precio fin sem.</label>
+                                <input type="number" step="0.01" class="form-control" name="precio_fin_semana" placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Mín. reserva</label>
+                                <input type="number" step="0.01" class="form-control" name="precio_minimo_reserva" placeholder="0.00" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Días máximos</label>
+                                <input type="number" class="form-control" name="dias_maximos" placeholder="Ej. 30" min="1">
                             </div>
                         </div>
-                    </div>
 
-                    <div class="d-flex justify-content-end gap-2 mt-2">
-                        <button type="button" class="btn btn-light border px-4 rounded-3 fw-medium" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn px-4 rounded-3 fw-medium text-white" style="background-color: #681DA8;">Actualizar Recurso</button>
-                    </div>
-                </form>
+                        <div class="switch-box mt-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="tarifaActiveCheck" checked>
+                                <label class="form-check-label" for="tarifaActiveCheck">Tarifa activa comercialmente</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
+                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Guardar Tarifa</button>
+                        </div>
+                    </form>
+                </div>
+
             </div>
         </div>
     </div>
-</div>
 
-{{-- ================================================================== --}}
-{{-- SCRIPT UNIFICADO: ACORDEONES, MODALES, DRAG & DROP Y CTRL + V       --}}
-{{-- ================================================================== --}}
+
+    {{-- MODAL 2B · EDITAR TARIFA --}}
+    <div class="modal fade sh-modal" id="modalEditarTarifa" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <div>
+                        <div class="kicker">Módulo 2/3 · Motor comercial</div>
+                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar tarifa comercial</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="formEditarTarifa" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
+
+                        <div class="mb-2">
+                            <label class="form-label">Nombre de la temporada</label>
+                            <input type="text" class="form-control" id="edit_tarifa_nombre" name="nombre_temporada" required>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Fecha de inicio</label>
+                                <input type="date" class="form-control" id="edit_tarifa_inicio" name="fecha_inicio" required>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Fecha de fin</label>
+                                <input type="date" class="form-control" id="edit_tarifa_fin" name="fecha_fin" required>
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Precio noche</label>
+                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_noche" name="precio_noche" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Precio fin sem.</label>
+                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_fin_semana" name="precio_fin_semana" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Mín. reserva</label>
+                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_minimo" name="precio_minimo_reserva" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Días máximos</label>
+                                <input type="number" class="form-control" id="edit_tarifa_dias_maximos" name="dias_maximos" min="1">
+                            </div>
+                        </div>
+
+                        <div class="switch-box mt-1">
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active">
+                                <label class="form-check-label" for="edit_tarifa_active">Tarifa activa</label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
+                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Tarifa</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    {{-- MODAL 3A · AGREGAR MULTIMEDIA --}}
+    <div class="modal fade sh-modal" id="modalAddMultimedia" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <div>
+                        <div class="kicker">Módulo 3/3 · Vitrina visual</div>
+                        <div class="strong mt-0.5" style="font-size: 10.5px;">Agregar recurso multimedia</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form action="{{ route('rsv.inmueble-multimedia.store') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
+
+                        <div class="mb-2">
+                            <label class="form-label">Tipo de multimedia <span>(`tipo_multimedia`)</span></label>
+                            <select class="form-select" name="tipo_multimedia" required>
+                                <option value="imagen">Imagen</option>
+                                <option value="video">Video</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">URL del archivo (S3) <span>(`url_archivo`)</span></label>
+                            <input type="url" class="form-control" name="url_archivo" placeholder="https://bucket.s3.amazonaws.com/..." required>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Orden de aparición <span>(`orden`)</span></label>
+                                <input type="number" class="form-control" name="orden" placeholder="Ej. 1" min="1">
+                            </div>
+                            <div class="col-md-6 mb-2 d-flex align-items-end">
+                                <div class="switch-box w-100">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="addMediaPortada">
+                                        <label class="form-check-label" for="addMediaPortada">Portada principal</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
+                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Guardar Recurso</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+    {{-- MODAL 3B · EDITAR MULTIMEDIA --}}
+    <div class="modal fade sh-modal" id="modalEditarMultimedia" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <div>
+                        <div class="kicker">Módulo 3/3 · Vitrina visual</div>
+                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar recurso multimedia</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="formEditarMultimedia" method="POST">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="mb-2">
+                            <label class="form-label">Tipo de multimedia</label>
+                            <select class="form-select" id="edit_media_tipo" name="tipo_multimedia" required>
+                                <option value="imagen">Imagen</option>
+                                <option value="video">Video</option>
+                            </select>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label">Orden</label>
+                                <input type="number" class="form-control" id="edit_media_orden" name="orden" min="1">
+                            </div>
+                            <div class="col-md-6 mb-2 d-flex align-items-end">
+                                <div class="switch-box w-100">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="edit_media_portada">
+                                        <label class="form-check-label" for="edit_media_portada">Portada principal</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
+                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Recurso</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+</div>{{-- /#showRoot --}}
+
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        /**
-         * 1. INICIALIZACIÓN DE UI: ACORDEONES
-         * Fuerza a que todos los contenedores colapsables inicien cerrados al cargar.
-         */
-        document.querySelectorAll('.collapse').forEach(function (el) {
-            const collapseInstance = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
-            collapseInstance.hide();
-        });
+        /* ── Poblar modal de editar TARIFA ── */
+        document.querySelectorAll('#showRoot .btn-editar-tarifa').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var f = document.getElementById('formEditarTarifa');
+                if (!f) return;
 
-        /**
-         * 2. PUENTE JS: MODAL DE EDICIÓN DE TARIFAS (MOTOR COMERCIAL)
-         */
-        document.querySelectorAll('.btn-editar-tarifa').forEach(button => {
-            button.addEventListener('click', function () {
-                const form = document.getElementById('formEditarTarifa');
-                if (!form) return;
+                f.action = btn.dataset.urlUpdate;
 
-                form.action = this.getAttribute('data-url-update');
-                document.getElementById('edit_tarifa_nombre').value = this.getAttribute('data-nombre-temporada') || '';
-                document.getElementById('edit_tarifa_inicio').value = this.getAttribute('data-fecha-inicio') || '';
-                document.getElementById('edit_tarifa_fin').value = this.getAttribute('data-fecha-fin') || '';
-                document.getElementById('edit_tarifa_precio_noche').value = this.getAttribute('data-precio-noche') || '';
-                document.getElementById('edit_tarifa_precio_fin_semana').value = this.getAttribute('data-precio-fin-semana') || '';
-                document.getElementById('edit_tarifa_precio_minimo').value = this.getAttribute('data-precio-minimo-reserva') || '';
-
-                const activeCheckbox = document.getElementById('edit_tarifa_active');
-                if (activeCheckbox) {
-                    activeCheckbox.checked = (this.getAttribute('data-active') === '1');
-                }
+                document.getElementById('edit_tarifa_nombre').value            = btn.dataset.nombreTemporada || '';
+                document.getElementById('edit_tarifa_inicio').value            = btn.dataset.fechaInicio || '';
+                document.getElementById('edit_tarifa_fin').value               = btn.dataset.fechaFin || '';
+                document.getElementById('edit_tarifa_precio_noche').value      = btn.dataset.precioNoche || '';
+                document.getElementById('edit_tarifa_precio_fin_semana').value = btn.dataset.precioFinSemana || '';
+                document.getElementById('edit_tarifa_precio_minimo').value     = btn.dataset.precioMinimoReserva || '';
+                document.getElementById('edit_tarifa_dias_maximos').value      = btn.dataset.diasMaximos || '';
+                document.getElementById('edit_tarifa_active').checked          = btn.dataset.active === '1';
             });
         });
 
-        /**
-         * 3. PUENTE JS: MODAL DE EDICIÓN DE MULTIMEDIA (VITRINA S3)
-         */
-        document.querySelectorAll('.btn-editar-multimedia').forEach(button => {
-            button.addEventListener('click', function () {
-                const form = document.getElementById('formEditarMultimedia');
-                if (!form) return;
+        /* ── Poblar modal de editar MULTIMEDIA ── */
+        document.querySelectorAll('#showRoot .btn-editar-multimedia').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var f = document.getElementById('formEditarMultimedia');
+                if (!f) return;
 
-                form.action = this.getAttribute('data-url-update');
-                document.getElementById('edit_media_tipo').value = this.getAttribute('data-tipo-multimedia') || 'imagen';
-                document.getElementById('edit_media_orden').value = this.getAttribute('data-orden') || '0';
+                f.action = btn.dataset.urlUpdate;
 
-                const portadaCheckbox = document.getElementById('edit_media_portada');
-                if (portadaCheckbox) {
-                    portadaCheckbox.checked = (this.getAttribute('data-es-portada') === '1');
-                }
-
-                const dropZone = form.closest('.modal-body').querySelector('.upload-drop-zone');
-                if (dropZone) {
-                    const textDisplay = dropZone.querySelector('.file-name-display');
-                    textDisplay.innerHTML = 'Arrastra tu nuevo archivo o <span style="color: #681DA8;">haz clic para buscar</span>';
-                }
+                document.getElementById('edit_media_tipo').value      = btn.dataset.tipoMultimedia || 'imagen';
+                document.getElementById('edit_media_orden').value     = btn.dataset.orden || '';
+                document.getElementById('edit_media_portada').checked = btn.dataset.esPortada === '1';
             });
         });
-
-        /**
-         * 4. GESTIÓN DE DRAG & DROP, CAMBIOS DE ARCHIVO Y PEGADO CON CTRL + V
-         */
-        document.querySelectorAll('.upload-drop-zone').forEach(dropZone => {
-            const fileInput = dropZone.querySelector('.file-input-target');
-            const textDisplay = dropZone.querySelector('.file-name-display');
-            const modal = dropZone.closest('.modal');
-
-            fileInput.addEventListener('change', function () {
-                if (this.files && this.files.length > 0) {
-                    textDisplay.textContent = `📁 Archivo seleccionado: ${this.files[0].name}`;
-                }
-            });
-
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }, false);
-            });
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    dropZone.style.backgroundColor = '#F3E8FD';
-                    dropZone.style.borderColor = '#681DA8';
-                }, false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => {
-                    dropZone.style.backgroundColor = '#FAF5FF';
-                    dropZone.style.borderColor = '#D8B4FE';
-                }, false);
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files && files.length > 0) {
-                    fileInput.files = files;
-                    textDisplay.textContent = `📁 Archivo seleccionado: ${files[0].name}`;
-                }
-            });
-
-            if (modal) {
-                modal.addEventListener('paste', (e) => {
-                    if (!modal.classList.contains('show')) return;
-
-                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                    for (let i = 0; i < items.length; i++) {
-                        if (items[i].kind === 'file') {
-                            const file = items[i].getAsFile();
-                            if (file) {
-                                const dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(file);
-                                fileInput.files = dataTransfer.files;
-                                textDisplay.textContent = `📋 Imagen pegada: ${file.name || 'clipboard_image.png'}`;
-                                e.preventDefault();
-                                break;
-                            }
-                        }
-                    }
-                });
-            }
-        });
-
-        /**
-         * 5. UX: REAPERTURA AUTOMÁTICA DE MODALES POR ERRORES DE VALIDACIÓN
-         * (Se utiliza la palabra clave 'or' de PHP para evitar conflictos de parseo)
-         */
-        @if($errors->has('nombre_temporada') or $errors->has('precio_noche') or$errors->has('precio_minimo_reserva'))
-            const modalTarifaEl = document.getElementById('modalAddTarifa');
-            if (modalTarifaEl) {
-                new bootstrap.Modal(modalTarifaEl).show();
-            }
-        @endif
-
-        @if($errors->has('url_archivo') or$errors->has('tipo_multimedia'))
-            const modalMultimediaEl = document.getElementById('modalAddMultimedia');
-            if (modalMultimediaEl) {
-                new bootstrap.Modal(modalMultimediaEl).show();
-            }
-        @endif
 
     });
 </script>
