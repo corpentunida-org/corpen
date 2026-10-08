@@ -1,309 +1,769 @@
 {{--
     ========================================================================
     VISTA: tab-reservas.blade.php
-    ESTILO: Minimalista, espaciado fluido, menú de estados corregido y búsqueda robusta.
+    ESTILO: Hoja de cálculo SUAVE · celdas 8px · encabezados 9px.
+            Jerarquía sumisa: tonalidades claras, bajo contraste.
+    AGENDA DE HOY: consulta directa a BD (llegadas y salidas reales).
     ========================================================================
 --}}
 
-<div class="container-fluid px-0" style="color: #475569; font-size: 0.78rem;">
+<div class="container-fluid px-0" id="xlsRoot">
 
     <style>
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .card-subtle {
-            background-color: #FFFFFF;
-            border: 1px solid #E2E8F0;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+        /* ═══ BASE — tonalidades claras y sumisas ═══ */
+        #xlsRoot {
+            --grid:    #f1f5f9;   /* borde casi invisible */
+            --grid-2:  #e9eef4;   /* borde un punto más marcado */
+            --head:    #fafbfd;
+            --ink:     #64748b;   /* texto de celda: gris suave */
+            --ink-2:   #475569;   /* texto fuerte */
+            --ink-3:   #94a3b8;   /* texto terciario */
+            --ink-4:   #b3bcc7;   /* texto tenue */
+            --accent:  #3d7a5c;   /* verde desaturado */
+            --accent-bg: #eef6f1; /* verde pastel */
+            font-family: Calibri, "Segoe UI", system-ui, sans-serif;
+            font-size: 8px;
+            line-height: 1.4;
+            color: var(--ink);
         }
 
-        .metric-pill {
-            background-color: #F8FAFC;
-            border: 1px solid #E2E8F0;
-            padding: 0.5rem 0.85rem;
-            border-radius: 10px;
-        }
+        #xlsRoot .no-scrollbar::-webkit-scrollbar { display: none; }
+        #xlsRoot .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .table-friendly tbody tr {
-            border-bottom: 1px solid #F1F5F9;
-            transition: background-color 0.15s ease-in-out;
-        }
-        .table-friendly tbody tr:hover {
-            background-color: #F8FAFC !important;
-        }
+        /* ═══ TABLA ═══ */
+        #xlsRoot .xls-table { width: 100%; border-collapse: separate; border-spacing: 0; }
 
-        .input-friendly {
-            background-color: #FFFFFF;
-            border: 1px solid #CBD5E1;
-            color: #334155;
-            font-size: 0.75rem;
-        }
-        .input-friendly:focus {
-            border-color: #94A3B8;
-            box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.15);
-        }
-
-        .btn-friendly {
-            background-color: #FFFFFF;
-            color: #475569;
-            border: 1px solid #CBD5E1;
-            font-size: 0.72rem;
-            font-weight: 500;
-        }
-        .btn-friendly:hover {
-            background-color: #F8FAFC;
-            border-color: #94A3B8;
-            color: #1E293B;
-        }
-
-        /* Corrección del menú de estados espichado */
-        .status-pill-menu {
-            display: flex;
-            gap: 0.5rem;
-            overflow-x: auto;
-            padding: 0.75rem 1rem;
-            background-color: #FFFFFF;
-            border-bottom: 1px solid #E2E8F0;
-            align-items: center;
-        }
-        .status-pill-item {
-            padding: 0.35rem 0.85rem;
-            border-radius: 20px;
-            font-size: 0.72rem;
-            font-weight: 500;
+        #xlsRoot .xls-table th,
+        #xlsRoot .xls-table td {
+            border-right: 1px solid var(--grid);
+            border-bottom: 1px solid var(--grid);
+            padding: 2px 7px;
+            height: 20px;
+            vertical-align: middle;
             white-space: nowrap;
-            text-decoration: none;
-            transition: all 0.2s ease;
+            background: #fff;
+            font-size: 8px;              /* ← CELDAS 8px */
+            font-weight: 400;
+            color: var(--ink);
         }
+
+        #xlsRoot .xls-table thead th {
+            position: sticky; top: 0; z-index: 2;
+            font-size: 9px;              /* ← ENCABEZADOS 9px */
+            font-weight: 600;            /* sumiso: 600, no 700 */
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--ink-3);
+            background: var(--head);
+        }
+
+        #xlsRoot .xls-table td.row-index {
+            position: sticky; left: 0; z-index: 1;
+            background: var(--head); color: #d4dae2;
+            font-size: 7.5px; font-weight: 400; text-align: center;
+            width: 22px; min-width: 22px; padding: 0;
+        }
+
+        #xlsRoot .xls-table tbody tr:hover td { background: #fafcfe; }
+        #xlsRoot .xls-table tbody tr:hover td.row-index { background: #f3f6fa; }
+
+        /* llegada hoy: ámbar muy pálido */
+        #xlsRoot .xls-table tbody tr.row-today td { background: #fffdf6; }
+        #xlsRoot .xls-table tbody tr.row-today:hover td { background: #fffbea; }
+        #xlsRoot .xls-table tbody tr.row-today:hover td.row-index { background: #faf3dd; }
+
+        #xlsRoot .num { font-variant-numeric: tabular-nums; }
+        #xlsRoot .sub { font-size: 7.5px; line-height: 1.25; color: var(--ink-4); margin-top: 0.5px; }
+        #xlsRoot .strong { color: var(--ink-2); font-weight: 600; }
+
+        #xlsRoot .dot {
+            display: inline-block; width: 5px; height: 5px;
+            border-radius: 50%; background: currentColor;
+            margin-right: 4px; vertical-align: middle; opacity: .75;
+        }
+
+        /* ═══ Orden por columna ═══ */
+        #xlsRoot th.sortable { cursor: pointer; user-select: none; }
+        #xlsRoot th.sortable:hover { color: var(--ink-2); }
+        #xlsRoot th .s-ind { font-size: 7.5px; opacity: .3; }
+        #xlsRoot th.sortable[data-dir="asc"] .s-ind,
+        #xlsRoot th.sortable[data-dir="desc"] .s-ind { opacity: .8; color: var(--accent); }
+
+        /* ═══ Chip cuenta regresiva — pastel ═══ */
+        #xlsRoot .cd {
+            display: inline-block; padding: 0 5px;
+            border-radius: 8px; font-size: 7.5px; font-weight: 600;
+            border: 1px solid; letter-spacing: .02em; line-height: 12px;
+        }
+        #xlsRoot .cd-today  { color:#b08a3e; background:#fdf8ec; border-color:#f3e7c6; }
+        #xlsRoot .cd-next   { color:#5d86a6; background:#f2f8fc; border-color:#dbe9f3; }
+        #xlsRoot .cd-future { color:#9aa5b1; background:#fafbfd; border-color:#eef2f6; }
+        #xlsRoot .cd-live   { color:#5d8a70; background:#f0f7f2; border-color:#d8e9de; }
+        #xlsRoot .cd-done   { color:#c8d0d9; background:#fbfcfd; border-color:#f3f6f9; }
+
+        /* ═══ KPIs — pálidos ═══ */
+        #xlsRoot .kpi {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border: 1px solid var(--grid);
+            border-radius: 4px; background: #fcfdfe; font-size: 8.5px;
+            color: var(--ink-3);
+        }
+        #xlsRoot .kpi .kpi-l { color: #b3bcc7; font-weight: 600; font-size: 7.5px; letter-spacing: .05em; }
+        #xlsRoot .kpi b { color: #5b6b7d; font-weight: 600; font-variant-numeric: tabular-nums; }
+        #xlsRoot .kpi a { color: #b08a3e; font-size: 7.5px; font-weight: 600; text-decoration: none; }
+        #xlsRoot .kpi a:hover { color: #8f6e2f; }
+
+        /* ═══ Chips de estado — pastel ═══ */
+        #xlsRoot .fchip {
+            padding: 1px 8px; border-radius: 10px;
+            font-size: 8.5px; font-weight: 500; white-space: nowrap;
+            text-decoration: none; border: 1px solid var(--grid);
+            color: var(--ink-4); background: #fcfdfe;
+        }
+        #xlsRoot .fchip:hover { color: var(--ink-2); border-color: var(--grid-2); text-decoration: none; }
+        #xlsRoot .fchip.active {
+            color: var(--accent); background: var(--accent-bg);
+            border-color: #d5e7dc; font-weight: 600;
+        }
+
+        /* ═══ Botones — suaves ═══ */
+        #xlsRoot .btn-mini {
+            border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
+            font-size: 8.5px; font-weight: 500; padding: 1px 8px; border-radius: 3px;
+        }
+        #xlsRoot .btn-mini:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
+
+        #xlsRoot .btn-green {
+            background: var(--accent-bg); color: var(--accent); border: 1px solid #d5e7dc;
+            font-size: 9px; font-weight: 600;
+            padding: 2px 10px; border-radius: 3px;
+        }
+        #xlsRoot .btn-green:hover { background: #e3f1e9; color: #34684e; }
+
+        /* ═══ Pestañas de hojas ═══ */
+        #xlsRoot .sheet-tab {
+            border: 0; background: transparent;
+            font-size: 9px; color: var(--ink-4);
+            padding: 3px 12px; border-right: 1px solid var(--grid);
+            height: 22px; display: inline-flex; align-items: center; gap: 5px;
+        }
+        #xlsRoot .sheet-tab:hover { background: #f7fafc; color: var(--ink-2); }
+        #xlsRoot .sheet-tab.active {
+            background: #fff; color: var(--ink-2); font-weight: 600;
+            box-shadow: inset 0 -2px 0 #b9d4c5;   /* verde clarito */
+        }
+        #xlsRoot .tab-dot { width: 4px; height: 4px; border-radius: 1.5px; opacity: .6; }
     </style>
 
-    {{-- 1. ENCABEZADO Y ACCIONES PRINCIPALES --}}
-    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom" style="border-color: #E2E8F0 !important;">
-        <div class="d-flex align-items-center gap-2">
-            <h6 class="fw-semibold mb-0" style="color: #1E293B; font-size: 0.95rem;">Reservas</h6>
-            <span class="badge rounded-pill fw-normal" style="background-color: #F1F5F9; color: #64748B; font-size: 0.68rem; border: 1px solid #E2E8F0;">
-                {{ $metrics['total_reservas'] ?? (isset($reservas) && method_exists($reservas, 'total') ? $reservas->total() : count($reservas ?? [])) }} registros
-            </span>
+
+    @php
+        $listadoReservas = $reservas ?? [];
+
+        $totalReg = $metrics['total_reservas']
+            ?? (isset($reservas) && method_exists($reservas, 'total') ? $reservas->total() : count($listadoReservas));
+
+        $sumPagina = 0; $countPagina = 0;
+        foreach ($listadoReservas as $r) { $sumPagina += (float) ($r->monto_total ?? 0); $countPagina++; }
+
+        $statusesList  = class_exists(\App\Models\Rsv\Status::class) ? \App\Models\Rsv\Status::all() : collect();
+        $currentStatus = request('id_rsv_statuses');
+
+        /* ═══════════════════════════════════════════════════════
+           AGENDA DE HOY — consulta directa a BD
+           ═══════════════════════════════════════════════════════ */
+        $hoy         = now()->startOfDay();
+        $agendaHoy   = collect();
+        $agendaSrc   = 'pag';
+
+        if (class_exists(\App\Models\Rsv\Reserva::class)) {
+            try {
+                $agendaHoy = \App\Models\Rsv\Reserva::with(['user', 'inmueble', 'status'])
+                    ->where(function ($q) use ($hoy) {
+                        $q->whereDate('fecha_inicio', $hoy->toDateString())
+                          ->orWhereDate('fecha_fin', $hoy->toDateString());
+                    })
+                    ->orderBy('fecha_inicio')
+                    ->get()
+                    ->flatMap(function ($r) use ($hoy) {
+                        $out = collect();
+
+                        $fi = $r->fecha_inicio ? \Illuminate\Support\Carbon::parse($r->fecha_inicio) : null;
+                        $ff = $r->fecha_fin    ? \Illuminate\Support\Carbon::parse($r->fecha_fin)    : null;
+
+                        if ($fi && $fi->isSameDay($hoy)) $out->push(['tipo' => 'LLEGADA', 'r' => $r]);
+                        if ($ff && $ff->isSameDay($hoy)) $out->push(['tipo' => 'SALIDA',  'r' => $r]);
+
+                        return $out;
+                    });
+
+                $agendaSrc = 'db';
+            } catch (\Throwable $e) {
+                $agendaHoy = collect();
+            }
+        }
+
+        if ($agendaSrc === 'pag') {
+            foreach ($listadoReservas as $r) {
+                try {
+                    $fi = $r->fecha_inicio ? \Illuminate\Support\Carbon::parse($r->fecha_inicio) : null;
+                    $ff = $r->fecha_fin    ? \Illuminate\Support\Carbon::parse($r->fecha_fin)    : null;
+                    if ($fi && $fi->isSameDay($hoy)) $agendaHoy->push(['tipo' => 'LLEGADA', 'r' => $r]);
+                    if ($ff && $ff->isSameDay($hoy)) $agendaHoy->push(['tipo' => 'SALIDA',  'r' => $r]);
+                } catch (\Throwable $e) { continue; }
+            }
+        }
+    @endphp
+
+
+    <!-- ═══ BARRA DE TÍTULO ═══ -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 py-1.5 border-bottom bg-light" style="border-color: #f1f5f9 !important;">
+
+        <div class="d-flex align-items-center gap-1.5">
+            <i class="bi bi-file-earmark-spreadsheet" style="font-size: .8rem; color: #b9d4c5;"></i>
+            <span class="sub ms-1" style="margin: 0;">{{ $totalReg }} registros</span>
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-friendly px-3 py-1.5 rounded-2 d-flex align-items-center gap-1.5">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                Exportar
+            <button type="button" class="btn-mini d-inline-flex align-items-center gap-1">
+                <i class="bi bi-download" style="font-size: 8px;"></i> Exportar
             </button>
-            <button type="button" class="btn px-3 py-1.5 rounded-2 fw-medium d-flex align-items-center gap-1.5 shadow-sm" style="background-color: #4F46E5; color: #FFFFFF; font-size: 0.72rem; border: none;" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                Nueva Reserva
+            <button type="button"
+                    class="btn btn-green d-inline-flex align-items-center gap-1"
+                    data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
+                <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Reserva
             </button>
         </div>
     </div>
 
-    {{-- 2. PANEL DE MÉTRICAS Y ALERTAS --}}
-    <div class="row g-2 mb-3">
-        <div class="col-12 col-md-6">
-            <div class="card-subtle rounded-3 p-2.5 d-flex align-items-center justify-content-between h-100">
-                <div class="metric-pill d-flex align-items-center gap-2 flex-fill me-2" style="background-color: #F0FDF4; border-color: #DCFCE7;">
-                    <span class="rounded-circle d-block" style="width: 7px; height: 7px; background-color: #16A34A;"></span>
-                    <div>
-                        <div style="color: #15803D; font-size: 0.62rem; font-weight: 600;">ACTIVAS HOY</div>
-                        <div class="fw-bold" style="color: #166534; font-size: 0.88rem;">{{ $metrics['activas'] ?? 0 }}</div>
-                    </div>
-                </div>
 
-                <div class="metric-pill d-flex align-items-center gap-2 flex-fill me-2" style="background-color: #F0F9FF; border-color: #E0F2FE;">
-                    <span class="rounded-circle d-block" style="width: 7px; height: 7px; background-color: #0284C7;"></span>
-                    <div>
-                        <div style="color: #0369A1; font-size: 0.62rem; font-weight: 600;">ESTIMADO MES</div>
-                        <div class="fw-bold" style="color: #075985; font-size: 0.88rem;">${{ number_format($metrics['monto_total_mes'] ?? 0, 0) }}</div>
-                    </div>
-                </div>
+    <!-- ═══ KPIs MINI ═══ -->
+    <div class="d-flex flex-wrap align-items-center gap-1.5 px-2 py-1.5 border-bottom bg-white" style="border-color: #f1f5f9 !important;">
 
-                <div class="metric-pill d-flex align-items-center gap-2 flex-fill" style="background-color: #FAF5FF; border-color: #F3E8FF;">
-                    <span class="rounded-circle d-block" style="width: 7px; height: 7px; background-color: #9333EA;"></span>
-                    <div>
-                        <div style="color: #6B21A8; font-size: 0.62rem; font-weight: 600;">OCUPACIÓN</div>
-                        <div class="fw-bold" style="color: #581C87; font-size: 0.88rem;">{{ $metrics['porcentaje_ocupacion'] ?? '78%' }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <span class="kpi">
+            <span class="dot" style="color:#a3cfb6;"></span>
+            <span class="kpi-l">ACTIVAS</span><b>{{ $metrics['activas'] ?? 0 }}</b>
+        </span>
 
-        <div class="col-12 col-md-3">
-            <div class="card-subtle rounded-3 p-3 h-100 d-flex flex-column justify-content-center" style="background-color: #F8FAFC;">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <span class="fw-semibold" style="color: #475569; font-size: 0.68rem;">LLEGADAS HOY</span>
-                    <span class="badge rounded-pill px-2 py-0.5" style="background-color: #E2E8F0; color: #334155; font-size: 0.6rem;">2 aptos</span>
-                </div>
-                <div class="text-truncate" style="color: #64748B; font-size: 0.72rem;">
-                    • Apto 402 <span style="color: #94A3B8;">(14:00)</span><br>
-                    • Villa Sol <span style="color: #94A3B8;">(16:00)</span>
-                </div>
-            </div>
-        </div>
+        <span class="kpi">
+            <span class="dot" style="color:#a9cfe8;"></span>
+            <span class="kpi-l">MES</span><b>${{ number_format($metrics['monto_total_mes'] ?? 0, 0) }}</b>
+        </span>
 
-        <div class="col-12 col-md-3">
-            <div class="card-subtle rounded-3 p-3 h-100 d-flex align-items-center justify-content-between" style="background-color: #FFFBEB; border-color: #FEF3C7;">
-                <div>
-                    <div class="d-flex align-items-center gap-1.5 mb-1">
-                        <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: #D97706;"></span>
-                        <span class="fw-semibold" style="color: #92400E; font-size: 0.68rem;">Endosos por revisar</span>
-                    </div>
-                    <span style="color: #B45309; font-size: 0.72rem;">{{ $metrics['endosos_pendientes'] ?? 3 }} solicitudes pendientes</span>
-                </div>
-                <a href="#" class="btn btn-sm px-2.5 py-1 rounded-2 text-decoration-none fw-medium" style="background-color: #FEF3C7; color: #78350F; border: 1px solid #FDE68A; font-size: 0.68rem;">
-                    Revisar
-                </a>
-            </div>
-        </div>
+        <span class="kpi">
+            <span class="dot" style="color:#cdb4e4;"></span>
+            <span class="kpi-l">OCUP.</span><b>{{ $metrics['porcentaje_ocupacion'] ?? '78%' }}</b>
+        </span>
+
+        <span class="kpi">
+            <span class="dot" style="color:#ecd3a0;"></span>
+            <span class="kpi-l">ENDOSOS</span><b>{{ $metrics['endosos_pendientes'] ?? 3 }}</b>
+            <a href="#">Revisar →</a>
+        </span>
+
     </div>
 
-    {{-- 3. TABLA PRINCIPAL Y CONTROLES DE FILTRADO --}}
-    <div class="card-subtle rounded-3 overflow-hidden">
 
-        {{-- Barra de Filtros Integrada --}}
-        <div class="p-3 border-bottom" style="background-color: #FAFAFA; border-color: #E2E8F0 !important;">
-            <form action="{{ url()->current() }}" method="GET" class="row g-2 align-items-center" id="formFiltroReservas">
-                @if(request('id_rsv_statuses'))
-                    <input type="hidden" name="id_rsv_statuses" value="{{ request('id_rsv_statuses') }}">
-                @endif
+    <!-- ═══ BÚSQUEDA + FECHAS ═══ -->
+    <form action="{{ url()->current() }}" method="GET" id="formFiltroReservas">
 
-                <div class="col-12 col-md-6">
-                    <input type="text" id="inputSearchReservas" name="search" class="form-control form-control-sm input-friendly rounded-2 px-3 py-1.5" placeholder="Buscar por código, titular, correo o inmueble..." value="{{ request('search') }}" autocomplete="off">
-                </div>
+        @if(request('id_rsv_statuses'))
+            <input type="hidden" name="id_rsv_statuses" value="{{ request('id_rsv_statuses') }}">
+        @endif
 
-                <div class="col-5 col-md-2.5">
-                    <input type="date" name="fecha_desde" class="form-control form-control-sm input-friendly rounded-2 px-2 py-1.5" value="{{ request('fecha_desde') }}">
-                </div>
-                <div class="col-5 col-md-2.5">
-                    <input type="date" name="fecha_hasta" class="form-control form-control-sm input-friendly rounded-2 px-2 py-1.5" value="{{ request('fecha_hasta') }}">
-                </div>
+        <div class="d-flex flex-wrap align-items-stretch border-bottom bg-white" style="border-color: #f1f5f9 !important;">
 
-                <div class="col-2 col-md-1 text-end">
-                    <button type="submit" class="btn btn-friendly w-100 rounded-2 py-1.5 d-flex justify-content-center align-items-center" title="Aplicar filtros">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                    </button>
-                </div>
-            </form>
+            <div class="d-flex align-items-center px-2 flex-grow-1" style="min-width: 170px;">
+                <i class="bi bi-search me-2" style="font-size: 8.5px; color: #c3ccd6;"></i>
+                <input type="text"
+                       id="inputSearchReservas"
+                       name="search"
+                       class="form-control form-control-sm border-0 shadow-none p-0"
+                       style="font-size: 9px; color: #64748b; box-shadow: none !important;"
+                       placeholder="Código, titular, correo o inmueble…"
+                       value="{{ request('search') }}"
+                       autocomplete="off">
+            </div>
+
+            <div class="d-flex align-items-center gap-1 border-start px-2" style="border-color: #f1f5f9 !important;">
+                <input type="date" name="fecha_desde"
+                       class="form-control form-control-sm border-0 shadow-none"
+                       style="font-size: 8.5px; color: #94a3b8; width: 100px; box-shadow: none !important;"
+                       value="{{ request('fecha_desde') }}" title="Desde">
+                <span style="font-size: 8.5px; color: #c3ccd6;">→</span>
+                <input type="date" name="fecha_hasta"
+                       class="form-control form-control-sm border-0 shadow-none"
+                       style="font-size: 8.5px; color: #94a3b8; width: 100px; box-shadow: none !important;"
+                       value="{{ request('fecha_hasta') }}" title="Hasta">
+                <button type="submit" class="btn btn-mini py-0 px-1.5" title="Aplicar filtros">
+                    <i class="bi bi-chevron-right" style="font-size: 8px;"></i>
+                </button>
+            </div>
+
         </div>
+    </form>
 
-        {{-- Menú de Pestañas de Estado Mejorado (Diseño holgado y sin comprimirse) --}}
-        @php
-            $statusesList = class_exists(\App\Models\Rsv\Status::class) ? \App\Models\Rsv\Status::all() : collect();
-            $currentStatus = request('id_rsv_statuses');
-            $listadoReservas = $reservas ?? [];
-        @endphp
-        <div class="status-pill-menu no-scrollbar">
-            <a href="{{ request()->fullUrlWithQuery(['id_rsv_statuses' => null, 'page' => null]) }}"
-               class="status-pill-item"
-               style="{{ is_null($currentStatus) ? 'color: #FFFFFF; background-color: #1E293B;' : 'color: #64748B; background-color: #F1F5F9;' }}">
-                Todas
-            </a>
-            @foreach($statusesList as $st)
-                @php $isActive = ($currentStatus == $st->id); @endphp
-                <a href="{{ request()->fullUrlWithQuery(['id_rsv_statuses' => $st->id, 'page' => null]) }}"
-                   class="status-pill-item"
-                   style="{{ $isActive ? 'color: #FFFFFF; background-color: #4F46E5;' : 'color: #64748B; background-color: #F1F5F9;' }}">
-                    {{ $st->name }}
-                </a>
-            @endforeach
-        </div>
 
-        {{-- Tabla de Datos --}}
-        <div class="table-responsive">
-            <table class="table table-friendly align-middle mb-0 text-nowrap" style="font-size: 0.78rem;">
+    <!-- ═══ CHIPS DE ESTADO ═══ -->
+    <div class="d-flex align-items-center gap-1 px-2 py-1 border-bottom bg-white no-scrollbar" style="overflow-x: auto; border-color: #f1f5f9 !important;">
+
+        <span class="me-1" style="font-size: 7.5px; letter-spacing: .05em; color: #b3bcc7; font-weight: 600;">
+            <i class="bi bi-funnel-fill me-1" style="font-size: 7.5px;"></i>ESTADO
+        </span>
+
+        <a href="{{ request()->fullUrlWithQuery(['id_rsv_statuses' => null, 'page' => null]) }}"
+           class="fchip {{ is_null($currentStatus) ? 'active' : '' }}">Todas</a>
+
+        @foreach($statusesList as $st)
+            <a href="{{ request()->fullUrlWithQuery(['id_rsv_statuses' => $st->id, 'page' => null]) }}"
+               class="fchip {{ ($currentStatus == $st->id) ? 'active' : '' }}">{{ $st->name }}</a>
+        @endforeach
+
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- HOJA 1 · RESERVAS                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="sheet-reservas" class="sheet-pane">
+
+        <div class="overflow-auto" style="max-height: 56vh;">
+
+            <table class="xls-table" style="min-width: 820px;">
+
                 <thead>
-                    <tr style="background-color: #F8FAFC; border-bottom: 1px solid #E2E8F0;">
-                        <th class="py-2.5 px-3 border-0" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">CÓDIGO / FECHAS</th>
-                        <th class="py-2.5 px-3 border-0" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">TITULAR</th>
-                        <th class="py-2.5 px-3 border-0" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">INMUEBLE</th>
-                        <th class="py-2.5 px-3 border-0 text-end" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">MONTO</th>
-                        <th class="py-2.5 px-3 border-0 text-center" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">ESTADO</th>
-                        <th class="py-2.5 px-3 border-0 text-center" style="color: #475569; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.2px;">ACCIONES</th>
+                    <tr>
+                        <th style="width: 22px; min-width: 22px;"></th>
+                        <th>Código</th>
+                        <th>Titular</th>
+                        <th>Inmueble</th>
+                        <th class="sortable" data-sort="ini">Check-in <i class="bi bi-arrow-down-up s-ind"></i></th>
+                        <th>Check-out</th>
+                        <th class="text-center">N</th>
+                        <th class="text-end sortable" data-sort="monto">Monto <i class="bi bi-arrow-down-up s-ind"></i></th>
+                        <th>Estado</th>
+                        <th class="text-end" style="padding-right: 8px;">·</th>
                     </tr>
                 </thead>
+
                 <tbody id="tbodyReservas">
+
                     @forelse($listadoReservas as $reserva)
-                        <tr class="reserva-row">
-                            <td class="px-3 py-3">
-                                <span class="d-block fw-semibold" style="color: #1E293B;">#{{ $reserva->codigo_reserva }}</span>
-                                <span class="d-block text-muted" style="font-size: 0.68rem;">
-                                    {{ optional($reserva->fecha_inicio)->format('d M') }} — {{ optional($reserva->fecha_fin)->format('d M Y') }}
-                                </span>
+
+                        @php
+                            $hoy    = $hoy ?? now()->startOfDay();
+                            $inicio = $reserva->fecha_inicio;
+                            $fin    = $reserva->fecha_fin;
+
+                            $noches = ($inicio && $fin)
+                                ? (int) abs(\Illuminate\Support\Carbon::parse($inicio)->startOfDay()->diffInDays(\Illuminate\Support\Carbon::parse($fin)->startOfDay()))
+                                : null;
+
+                            try {
+                                $fi = $inicio ? \Illuminate\Support\Carbon::parse($inicio) : null;
+                            } catch (\Throwable $e) { $fi = null; }
+
+                            $diasParaLlegada = $fi ? (int) floor($fi->startOfDay()->diffInDays($hoy, false)) : null;
+
+                            $enCurso = false; $pct = 0;
+                            try {
+                                if ($fi && $fin) {
+                                    $fi0 = $fi->copy()->startOfDay();
+                                    $ff0 = \Illuminate\Support\Carbon::parse($fin)->startOfDay();
+                                    $enCurso = $hoy->betweenIncluded($fi0, $ff0);
+                                    if ($enCurso && $noches > 0) {
+                                        $pct = (int) min(100, max(0, ($fi0->diffInDays($hoy) / $noches) * 100));
+                                    }
+                                }
+                            } catch (\Throwable $e) {}
+
+                            if ($enCurso)                                              { $cd = ['EN CURSO', 'cd-live']; }
+                            elseif ($diasParaLlegada === 0)                            { $cd = ['HOY', 'cd-today']; }
+                            elseif ($diasParaLlegada === 1)                            { $cd = ['MAÑANA', 'cd-next']; }
+                            elseif ($diasParaLlegada !== null && $diasParaLlegada > 1) { $cd = ['+'.$diasParaLlegada.'d', 'cd-future']; }
+                            elseif ($diasParaLlegada !== null && $diasParaLlegada < 0) { $cd = ['FIN', 'cd-done']; }
+                            else                                                        { $cd = ['—', 'cd-done']; }
+
+                            $llegaHoy = ($diasParaLlegada === 0);
+
+                            $stName = optional($reserva->status)->name ?? 'Pendiente';
+                            $s = strtolower($stName);
+                            $dot = 'text-secondary';
+                            if (str_contains($s, 'confirm') || str_contains($s, 'activ'))      { $dot = 'text-success'; }
+                            elseif (str_contains($s, 'pendien'))                                { $dot = 'text-warning'; }
+                            elseif (str_contains($s, 'cancela') || str_contains($s, 'rechaz'))  { $dot = 'text-danger'; }
+                        @endphp
+
+                        <tr class="reserva-row {{ $llegaHoy ? 'row-today' : '' }}">
+
+                            <td class="row-index">{{ $loop->iteration }}</td>
+
+                            <!-- Código -->
+                            <td class="strong">#{{ $reserva->codigo_reserva }}</td>
+
+                            <!-- Titular -->
+                            <td>
+                                {{ optional($reserva->user)->name ?? 'Sin asignar' }}
+                                <div class="sub">{{ optional($reserva->user)->email ?? '—' }}</div>
                             </td>
-                            <td class="px-3 py-3">
-                                <span class="d-block fw-medium text-dark">{{ optional($reserva->user)->name ?? 'Sin asignar' }}</span>
-                                <span class="d-block text-muted" style="font-size: 0.68rem;">{{ optional($reserva->user)->email ?? '—' }}</span>
+
+                            <!-- Inmueble -->
+                            <td>
+                                <i class="bi bi-house-door me-1" style="font-size: 7.5px; color: #c3ccd6;"></i>{{ optional($reserva->inmueble)->name ?? 'N/D' }}
                             </td>
-                            <td class="px-3 py-3 fw-medium text-secondary">
-                                {{ optional($reserva->inmueble)->name ?? 'N/D' }}
+
+                            <!-- Check-in + cuenta regresiva -->
+                            <td class="num" data-ini="{{ $fi ? $fi->timestamp : 0 }}">
+                                {{ $fi ? $fi->format('d/m') : '—' }}
+                                <span class="cd {{ $cd[1] }} ms-1">{{ $cd[0] }}</span>
+                                @if($enCurso)
+                                    <div class="d-flex align-items-center gap-1 mt-0.5">
+                                        <span style="display:inline-block;width:38px;height:2.5px;background:#f1f5f9;border-radius:2px;overflow:hidden;">
+                                            <span style="display:block;height:100%;width:{{ $pct }}%;background:#b9d4c5;"></span>
+                                        </span>
+                                        <span class="sub" style="margin:0;">{{ $pct }}%</span>
+                                    </div>
+                                @endif
                             </td>
-                            <td class="px-3 py-3 text-end fw-semibold text-dark">
+
+                            <!-- Check-out -->
+                            <td class="num" style="color: #a8b3c1;">
+                                @if($fin)
+                                    @try {{ \Illuminate\Support\Carbon::parse($fin)->format('d/m/y') }} @catch(\Throwable $e) — @endtry
+                                @else — @endif
+                            </td>
+
+                            <!-- Noches -->
+                            <td class="text-center num">{{ $noches ?? '—' }}</td>
+
+                            <!-- Monto -->
+                            <td class="text-end num strong" data-monto="{{ (float) ($reserva->monto_total ?? 0) }}">
                                 ${{ number_format($reserva->monto_total ?? 0, 2) }}
                             </td>
-                            <td class="px-3 py-3 text-center">
-                                @php
-                                    $stName = optional($reserva->status)->name ?? 'Pendiente';
-                                    $bg = '#F1F5F9'; $color = '#475569'; $border = '#E2E8F0';
-                                    if(str_contains(strtolower($stName), 'confirm') || str_contains(strtolower($stName), 'activ')) {
-                                        $bg = '#DCFCE7'; $color = '#15803D'; $border = '#BBF7D0';
-                                    } elseif(str_contains(strtolower($stName), 'pendien')) {
-                                        $bg = '#FEF3C7'; $color = '#B45309'; $border = '#FDE68A';
-                                    } elseif(str_contains(strtolower($stName), 'cancela')) {
-                                        $bg = '#FEE2E2'; $color = '#B91C1C'; $border = '#FCA5A5';
-                                    }
-                                @endphp
-                                <span class="px-2.5 py-1 rounded-2 fw-medium d-inline-block shadow-sm" style="background-color: {{ $bg }}; color: {{ $color }}; font-size: 0.68rem; border: 1px solid {{ $border }};">
-                                    {{ $stName }}
-                                </span>
+
+                            <!-- Estado -->
+                            <td><span class="dot {{ $dot }}"></span>{{ strtoupper($stName) }}</td>
+
+                            <!-- Acción -->
+                            <td class="text-end" style="padding-right: 8px;">
+                                <button type="button" class="btn-mini">Detalle</button>
                             </td>
-                            <td class="px-3 py-3 text-center">
-                                <button class="btn btn-friendly px-2.5 py-1 rounded-2 shadow-sm" style="font-size: 0.68rem;">
-                                    Detalle
-                                </button>
-                            </td>
+
                         </tr>
+
                     @empty
+
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-muted fst-italic">
-                                No hay reservas registradas en este criterio.
+                            <td class="row-index">1</td>
+                            <td colspan="9" class="text-center py-4" style="font-size: 8.5px; color: #b3bcc7;">
+                                No hay reservas registradas para este criterio.
                             </td>
                         </tr>
+
                     @endforelse
+
                 </tbody>
+
             </table>
+
         </div>
 
-        {{-- Paginación --}}
+
+        <!-- Paginación -->
         @if(isset($reservas) && method_exists($reservas, 'hasPages') && $reservas->hasPages())
-            <div class="px-3 py-2.5 border-top d-flex justify-content-between align-items-center" style="background-color: #FAFAFA; border-color: #E2E8F0 !important; font-size: 0.7rem; color: #64748B;">
-                <span>Mostrando {{ $reservas->firstItem() }} a {{ $reservas->lastItem() }} de {{ $reservas->total() }} registros</span>
+            <div class="px-2 py-1 border-top bg-white d-flex justify-content-between align-items-center"
+                 style="font-size: 8.5px; color: #b3bcc7; border-color: #f1f5f9 !important;">
+
+                <span>{{ $reservas->firstItem() }}–{{ $reservas->lastItem() }} de {{ $reservas->total() }}</span>
                 <div>{{ $reservas->appends(request()->query())->links() }}</div>
+
             </div>
         @endif
 
     </div>
+
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- HOJA 2 · AGENDA DE HOY (BD real)             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="sheet-agenda" class="sheet-pane d-none">
+
+        <div class="d-flex align-items-center justify-content-between px-2 py-1 border-bottom bg-light" style="font-size: 8.5px; border-color: #f1f5f9 !important;">
+
+            <span style="color: #a8b3c1;">
+                <i class="bi bi-calendar-day me-1"></i>
+                {{ now()->translatedFormat('l d/m') }}
+                <span class="ms-1 opacity-75">
+                    ({{ $agendaSrc === 'db' ? 'todo el sistema' : 'página actual' }})
+                </span>
+            </span>
+
+            <span>
+                <span class="me-2" style="color:#5d8a70; font-weight: 600;">
+                    <i class="bi bi-arrow-down-right"></i> {{ $agendaHoy->where('tipo', 'LLEGADA')->count() }} llegadas
+                </span>
+                <span style="color:#c08484; font-weight: 600;">
+                    <i class="bi bi-arrow-up-right"></i> {{ $agendaHoy->where('tipo', 'SALIDA')->count() }} salidas
+                </span>
+            </span>
+
+        </div>
+
+        <div class="overflow-auto" style="max-height: 56vh;">
+
+            <table class="xls-table" style="min-width: 580px;">
+
+                <thead>
+                    <tr>
+                        <th style="width: 22px; min-width: 22px;"></th>
+                        <th>Tipo</th>
+                        <th>Código</th>
+                        <th>Titular</th>
+                        <th>Inmueble</th>
+                        <th>Hora</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @forelse($agendaHoy as $item)
+
+                        @php
+                            $r = $item['r'];
+                            $esLlegada = ($item['tipo'] === 'LLEGADA');
+                            $stName = optional($r->status)->name ?? 'Pendiente';
+                            $s = strtolower($stName);
+                            $dot = 'text-secondary';
+                            if (str_contains($s, 'confirm') || str_contains($s, 'activ'))     { $dot = 'text-success'; }
+                            elseif (str_contains($s, 'pendien'))                               { $dot = 'text-warning'; }
+                            elseif (str_contains($s, 'cancela') || str_contains($s, 'rechaz')) { $dot = 'text-danger'; }
+                        @endphp
+
+                        <tr class="{{ $esLlegada ? 'row-today' : '' }}">
+
+                            <td class="row-index">{{ $loop->iteration }}</td>
+
+                            <td style="font-size: 8px; font-weight: 600; color: {{ $esLlegada ? '#5d8a70' : '#c08484' }};">
+                                {{ $item['tipo'] }}
+                            </td>
+
+                            <td class="strong">#{{ $r->codigo_reserva }}</td>
+
+                            <td>{{ optional($r->user)->name ?? 'Sin asignar' }}</td>
+
+                            <td>{{ optional($r->inmueble)->name ?? 'N/D' }}</td>
+
+                            <td class="num">
+                                @php
+                                    $fh = $esLlegada ? $r->fecha_inicio : $r->fecha_fin;
+                                @endphp
+                                @if($fh)
+                                    @try {{ \Illuminate\Support\Carbon::parse($fh)->format('H:i') }} @catch(\Throwable $e) — @endtry
+                                @else — @endif
+                            </td>
+
+                            <td><span class="dot {{ $dot }}"></span>{{ strtoupper($stName) }}</td>
+
+                        </tr>
+
+                    @empty
+
+                        <tr>
+                            <td class="row-index">1</td>
+                            <td colspan="6" class="text-center py-4" style="font-size: 8.5px; color: #b3bcc7;">
+                                <i class="bi bi-sun me-1"></i>
+                                Sin llegadas ni salidas para hoy.
+                            </td>
+                        </tr>
+
+                    @endforelse
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- HOJA 3 · RESUMEN                             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="sheet-resumen" class="sheet-pane d-none">
+
+        <div class="overflow-auto" style="max-height: 56vh;">
+
+            <table class="xls-table" style="min-width: 400px;">
+
+                <thead>
+                    <tr>
+                        <th style="width: 22px; min-width: 22px;"></th>
+                        <th>Métrica</th>
+                        <th class="text-end">Valor</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    <tr>
+                        <td class="row-index">1</td>
+                        <td>Total reservas</td>
+                        <td class="text-end num strong">{{ $totalReg }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-index">2</td>
+                        <td>Activas hoy</td>
+                        <td class="text-end num strong" style="color: #5d8a70;">{{ $metrics['activas'] ?? 0 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-index">3</td>
+                        <td>Estimado del mes</td>
+                        <td class="text-end num strong">${{ number_format($metrics['monto_total_mes'] ?? 0, 0) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-index">4</td>
+                        <td>Ocupación</td>
+                        <td class="text-end num strong">{{ $metrics['porcentaje_ocupacion'] ?? '78%' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-index">5</td>
+                        <td>Endosos pendientes</td>
+                        <td class="text-end num strong" style="color: #b08a3e;">{{ $metrics['endosos_pendientes'] ?? 3 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="row-index">6</td>
+                        <td>Σ Monto (página)</td>
+                        <td class="text-end num strong" style="color: #5d8a70;">${{ number_format($sumPagina, 2) }}</td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ═══ PESTAÑAS DE HOJAS ═══ -->
+    <div class="d-flex align-items-center border-top bg-light px-1" style="height: 22px; border-color: #f1f5f9 !important;">
+
+        <button type="button" class="sheet-tab active" data-sheet="reservas">
+            <span class="tab-dot" style="background:#a3cfb6;"></span> Reservas
+        </button>
+
+        <button type="button" class="sheet-tab" data-sheet="agenda">
+            <span class="tab-dot" style="background:#a9cfe8;"></span> Agenda de hoy
+        </button>
+
+        <button type="button" class="sheet-tab" data-sheet="resumen">
+            <span class="tab-dot" style="background:#cdb4e4;"></span> Resumen
+        </button>
+
+    </div>
+
+
+    <!-- ═══ BARRA DE ESTADO ═══ -->
+    <div class="d-flex align-items-center justify-content-between border-top bg-white px-2"
+         style="height: 18px; font-size: 8.5px; color: #c3ccd6; border-color: #f1f5f9 !important;">
+
+        <span>Listo</span>
+
+        <div class="d-flex gap-3">
+            <span>Visibles: <b class="strong" id="statVisibles">{{ $countPagina }}</b></span>
+            <span>Σ: <b class="strong" style="color: #5d8a70;" id="statSuma">${{ number_format($sumPagina, 2) }}</b></span>
+        </div>
+
+    </div>
+
 </div>
 
-{{-- Script de filtrado dinámico en cliente --}}
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('inputSearchReservas');
-        const tbody = document.getElementById('tbodyReservas');
-        if (!searchInput || !tbody) return;
+    document.addEventListener('DOMContentLoaded', function () {
 
-        const rows = tbody.querySelectorAll('.reserva-row');
+        var tabs  = document.querySelectorAll('#xlsRoot .sheet-tab');
+        var panes = document.querySelectorAll('#xlsRoot .sheet-pane');
 
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase().trim();
-
-            rows.forEach(function(row) {
-                const text = row.textContent.toLowerCase();
-                if (text.includes(query)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
+        /* ── Hojas ── */
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+                panes.forEach(function (p) { p.classList.add('d-none'); });
+                var pane = document.getElementById('sheet-' + tab.dataset.sheet);
+                if (pane) pane.classList.remove('d-none');
             });
         });
+
+
+        /* ── Búsqueda instantánea + Σ ── */
+        var search  = document.getElementById('inputSearchReservas');
+        var tbody   = document.getElementById('tbodyReservas');
+        var statVis = document.getElementById('statVisibles');
+        var statSum = document.getElementById('statSuma');
+
+        function fmt(n) {
+            return '$' + Number(n).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        if (search && tbody) {
+            var rowsArr = Array.prototype.slice.call(tbody.querySelectorAll('.reserva-row'));
+
+            search.addEventListener('input', function () {
+                var q = this.value.toLowerCase().trim();
+                var vis = 0, sum = 0;
+
+                rowsArr.forEach(function (row) {
+                    var show = row.textContent.toLowerCase().includes(q);
+                    row.style.display = show ? '' : 'none';
+
+                    if (show) {
+                        vis++;
+                        var m = row.querySelector('[data-monto]');
+                        if (m) sum += parseFloat(m.dataset.monto || 0);
+                    }
+                });
+
+                if (statVis) statVis.textContent = vis;
+                if (statSum) statSum.textContent = fmt(sum);
+            });
+        }
+
+
+        /* ── Ordenar por columna ── */
+        document.querySelectorAll('#xlsRoot th.sortable').forEach(function (th) {
+
+            th.addEventListener('click', function () {
+                if (!tbody) return;
+
+                var attr = th.dataset.sort;
+                var dir  = th.dataset.dir === 'asc' ? 'desc' : 'asc';
+                th.dataset.dir = dir;
+
+                document.querySelectorAll('#xlsRoot th.sortable').forEach(function (o) {
+                    if (o !== th) o.dataset.dir = '';
+                });
+
+                var rows = Array.prototype.slice.call(tbody.querySelectorAll('.reserva-row'));
+
+                rows.sort(function (a, b) {
+                    var ca = a.querySelector('[data-' + attr + ']');
+                    var cb = b.querySelector('[data-' + attr + ']');
+                    var x = ca ? parseFloat(ca.dataset[attr]) || 0 : 0;
+                    var y = cb ? parseFloat(cb.dataset[attr]) || 0 : 0;
+                    return dir === 'asc' ? x - y : y - x;
+                });
+
+                rows.forEach(function (r, i) {
+                    tbody.appendChild(r);
+                    var ri = r.querySelector('.row-index');
+                    if (ri) ri.textContent = i + 1;
+                });
+            });
+
+        });
+
     });
 </script>
