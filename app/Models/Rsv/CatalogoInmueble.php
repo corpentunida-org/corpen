@@ -5,6 +5,7 @@ namespace App\Models\Rsv;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // <-- Importación añadida
 
 /**
  * Modelo: CatalogoInmueble
@@ -38,6 +39,14 @@ class CatalogoInmueble extends Model
         'active' => 'boolean',
         'capacidad_maxima' => 'integer',
     ];
+
+    /**
+     * RELACIÓN: Un inmueble pertenece a una categoría o tipo de inmueble.
+     */
+    public function tipoInmueble(): BelongsTo
+    {
+        return $this->belongsTo(TipoInmueble::class, 'tipo_inmueble_id');
+    }
 
     /**
      * RELACIÓN: Un inmueble posee un historial completo de tarifas por temporada.
@@ -81,4 +90,3 @@ class CatalogoInmueble extends Model
         return $this->hasMany(Reserva::class, 'id_rsv_catalogo_inmueble');
     }
 }
-

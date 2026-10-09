@@ -69,6 +69,7 @@ use App\Http\Controllers\Rsv\StatusController;
 use App\Http\Controllers\Rsv\TarifaTemporadaController;
 use App\Http\Controllers\Rsv\TipoReceptorController;
 use App\Http\Controllers\Rsv\TransaccionFinancieraController;
+use App\Http\Controllers\Rsv\TipoInmuebleController;
 
 use App\Http\Controllers\Rsv\AdminDashboardController;
 use App\Http\Controllers\Rsv\CatalogoInmuebleController;
@@ -713,6 +714,7 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
         Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
+        Route::resource('tipos-inmuebles', TipoInmuebleController::class)->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);
         Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
         Route::resource('tarifas-temporadas', TarifaTemporadaController::class)->parameters(['tarifas-temporadas' => 'rsvTarifa']);
         Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
