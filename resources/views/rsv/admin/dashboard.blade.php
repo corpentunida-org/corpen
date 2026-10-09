@@ -264,7 +264,7 @@
                                     @include('rsv.admin.partials.inmuebles.tarifa')
                                 </div>
                             </div>
-
+ 
                             {{-- 3. Galería Multimedia (partials/inmuebles/galeria.blade.php) --}}
                             <div class="tab-pane fade" id="sub-galeria" role="tabpanel">
                                 <div class="text-center py-4 text-muted small fst-italic">
