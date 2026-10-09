@@ -4,7 +4,7 @@
     {{-- Notificaciones del Sistema --}}
     @include('rsv.components.alert')
 
-    {{-- Estilos mínimos del panel (solo pulido visual) --}}
+    {{-- Estilos para el diseño unificado en bloque pastel (Padre e Hijos de 5 botones) --}}
     <style>
         .rsv-kicker {
             font-size: 0.62rem; font-weight: 600; letter-spacing: 1px;
@@ -16,17 +16,57 @@
         }
         .rsv-soft-card:hover { border-color: #e9eef4; }
 
-        /* Pestañas suaves */
+        /* Pestañas principales suaves */
         .nav-tabs .nav-link {
             font-size: 0.72rem; font-weight: 600; color: #94a3b8;
             border-bottom: 2px solid transparent !important;
             padding: 0.5rem 0.9rem;
         }
         .nav-tabs .nav-link:hover { color: #475569; }
-        .nav-tabs .nav-link.active {
-            color: #3d7a5c !important;
-            border-bottom-color: #b9d4c5 !important;
-            background-color: transparent !important;
+
+        /* Pestaña PADRE ACTIVA ("Propiedades") fusionada en bloque pastel */
+        .nav-tabs .nav-link.active[data-bs-target="#global-inmuebles"] {
+            color: #2e5c43 !important;
+            background-color: #e3f1e9 !important;
+            border-color: #d1e7d9 #d1e7d9 #e3f1e9 #d1e7d9 !important;
+            border-radius: 6px 6px 0 0 !important;
+            font-weight: 700;
+        }
+
+        /* SUBMENÚ HIJO ACOPLADO (5 botones con ajuste flexible para pantallas) */
+        .rsv-subnav-bar {
+            background: #e3f1e9;
+            border: 1px solid #d1e7d9;
+            border-top: none;
+            border-radius: 0 0 6px 6px;
+            padding: 0.45rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .rsv-sub-pills .nav-link {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #4a7c59;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 0.3rem 0.6rem;
+            border-radius: 6px;
+            transition: all 0.15s ease-in-out;
+            border: 1px solid #d1e7d9;
+        }
+        .rsv-sub-pills .nav-link:hover {
+            color: #2e5c43;
+            background: #ffffff;
+        }
+        .rsv-sub-pills .nav-link.active {
+            color: #ffffff !important;
+            background: #3d7a5c !important;
+            border-color: #3d7a5c !important;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         /* Selector sobrio */
@@ -67,7 +107,7 @@
     <div class="container-fluid py-4">
 
         {{-- ======================================================================= --}}
-        {{-- 1. SELECTOR MAESTRO (EL REY DE LA VISTA)                               --}}
+        {{-- 1. SELECTOR MAESTRO                                                       --}}
         {{-- ======================================================================= --}}
         <div class="rsv-soft-card mb-4">
             <div class="card-body p-3">
@@ -120,9 +160,207 @@
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL A: ECOSISTEMA DE UN INMUEBLE ESPECÍFICO                     --}}
+        {{-- CONDICIONAL A: VISTA GLOBAL ("VER TODOS" CON PESTAÑAS GLOBALES)           --}}
         {{-- ======================================================================= --}}
-        @if(isset($inmueble) && $inmueble)
+        @if(request('inmueble_id') === 'todos')
+
+            <div class="rsv-soft-card overflow-hidden mb-4">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
+                    <div>
+                        <div class="rsv-kicker mb-1"><i class="bi bi-grid-3x3-gap me-1"></i> Panel Global</div>
+                        <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #334155;">Gestión Global del Sistema</h6>
+                        <p class="mb-0" style="font-size: 0.7rem; color: #94a3b8;">Vista consolidada de propiedades, reservas, calendario, finanzas y auditoría.</p>
+                    </div>
+                    <span class="badge rounded-pill fw-semibold" style="font-size: 0.62rem; background-color: #f9f7fc; color: #8f7bb5; border: 1px solid #e9e2f2;">
+                        Total Inmuebles: {{ isset($inmueblesGrid) ? $inmueblesGrid->total() : ($listaInmuebles->count() ?? 0) }}
+                    </span>
+                </div>
+
+                {{-- PESTAÑAS GLOBALES PRINCIPALES (MENÚ PADRE) --}}
+                <div class="card-header bg-white border-bottom p-0" style="border-color: #f1f5f9 !important;">
+                    <ul class="nav nav-tabs nav-fill border-0 pt-1 px-1" id="globalAdminTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#global-inmuebles" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-buildings me-1"></i> Propiedades
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-reservas" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-calendar2-check me-1"></i> Reservas Globales
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-calendario" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-calendar3 me-1"></i> Calendario / Bloqueos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-finanzas" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-wallet2 me-1"></i> Finanzas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-auditoria" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-shield-check me-1"></i> Auditoría
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                {{-- CONTENIDO DE LAS PESTAÑAS GLOBALES --}}
+                <div class="tab-content" id="globalAdminTabsContent">
+
+                    {{-- TAB 1: PROPIEDADES (CONTENEDOR DE LOS 5 SUBMENÚS HIJOS) --}}
+                    <div class="tab-pane fade show active" id="global-inmuebles" role="tabpanel">
+
+                        {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL --}}
+                        <div class="rsv-subnav-bar">
+                            <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
+                                <i class="bi bi-diagram-3-fill"></i>
+                                <span class="fw-bold">Ecosistema Inmobiliario:</span>
+                            </div>
+                            <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="inmueblesSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#sub-catalogo" type="button" role="tab">
+                                        <i class="bi bi-grid-3x3 me-1"></i> Catálogo
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-tarifa" type="button" role="tab">
+                                        <i class="bi bi-cash-coin me-1"></i> Tarifas
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-galeria" type="button" role="tab">
+                                        <i class="bi bi-images me-1"></i> Galería
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-tipo" type="button" role="tab">
+                                        <i class="bi bi-tags me-1"></i> Tipos
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-show" type="button" role="tab">
+                                        <i class="bi bi-pencil-square me-1"></i> Edición / Detalle
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        {{-- Contenido de las 5 Sub-pestañas de Propiedades --}}
+                        <div class="tab-content p-3" id="inmueblesSubContent">
+
+                            {{-- 1. Catálogo General (partials/inmuebles/catalogo.blade.php) --}}
+                            <div class="tab-pane fade show active" id="sub-catalogo" role="tabpanel">
+                                <div class="container-fluid px-0">
+                                    @include('rsv.admin.partials.inmuebles.catalogo')
+                                </div>
+                            </div>
+
+                            {{-- 2. Tarifas y Temporadas (partials/inmuebles/tarifa.blade.php) --}}
+                            <div class="tab-pane fade" id="sub-tarifa" role="tabpanel">
+                                <div class="text-center py-4 text-muted small fst-italic">
+                                    @include('rsv.admin.partials.inmuebles.tarifa')
+                                </div>
+                            </div>
+ 
+                            {{-- 3. Galería Multimedia (partials/inmuebles/galeria.blade.php) --}}
+                            <div class="tab-pane fade" id="sub-galeria" role="tabpanel">
+                                <div class="text-center py-4 text-muted small fst-italic">
+                                    @include('rsv.admin.partials.inmuebles.galeria')
+                                </div>
+                            </div>
+
+                            {{-- 4. Tipos de Inmueble (partials/inmuebles/tipo.blade.php) --}}
+                            <div class="tab-pane fade" id="sub-tipo" role="tabpanel">
+                                {{-- @include('rsv.admin.partials.inmuebles.tipo') --}}
+                                <div class="text-center py-4 text-muted small fst-italic">
+                                    [Partial pendiente: rsv.admin.partials.inmuebles.tipo]
+                                </div>
+                            </div>
+
+                            {{-- 5. Edición y Detalle (partials/inmuebles/show.blade.php) --}}
+                            <div class="tab-pane fade" id="sub-show" role="tabpanel">
+                                {{-- @include('rsv.admin.partials.inmuebles.show') --}}
+                                <div class="text-center py-4 text-muted small fst-italic">
+                                    [Partial pendiente: rsv.admin.partials.inmuebles.show]
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {{-- TAB 2: RESERVAS GLOBALES --}}
+                    <div class="tab-pane fade p-3" id="global-reservas" role="tabpanel">
+                        @include('rsv.admin.partials.tab-reservas')
+                    </div>
+
+                    {{-- TAB 3: CALENDARIO GLOBAL --}}
+                    <div class="tab-pane fade p-3" id="global-calendario" role="tabpanel">
+                        @include('rsv.admin.partials.tab-calendario')
+                    </div>
+
+                    {{-- TAB 4: FINANZAS GLOBALES --}}
+                    <div class="tab-pane fade p-3" id="global-finanzas" role="tabpanel">
+                        @include('rsv.admin.partials.tab-finanzas')
+                    </div>
+
+                    {{-- TAB 5: AUDITORÍA GLOBAL --}}
+                    <div class="tab-pane fade p-3" id="global-auditoria" role="tabpanel">
+                        <div class="p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
+                            <h6 class="fw-bold mb-3" style="font-size: 0.82rem; color: #334155;">
+                                <i class="bi bi-shield-check me-1 text-success"></i> Registro de Auditoría del Sistema
+                            </h6>
+                            @isset($auditoria)
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0" style="font-size: 0.75rem;">
+                                        <thead class="table-light text-uppercase" style="font-size: 0.65rem; color: #64748b;">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Acción / Evento</th>
+                                                <th>Usuario</th>
+                                                <th>Detalles</th>
+                                                <th>Fecha</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($auditoria as $log)
+                                                <tr>
+                                                    <td class="fw-bold">#{{ $log->id }}</td>
+                                                    <td><span class="badge bg-light text-dark border">{{ $log->action ?? $log->evento ?? 'Acción' }}</span></td>
+                                                    <td>{{ $log->user->name ?? $log->usuario ?? 'Sistema' }}</td>
+                                                    <td class="text-muted text-truncate" style="max-width: 250px;" title="{{ json_encode($log->details ?? $log->detalles ?? '') }}">
+                                                        {{ Str::limit(json_encode($log->details ?? $log->detalles ?? 'N/A'), 50) }}
+                                                    </td>
+                                                    <td>{{ $log->created_at ? $log->created_at->format('Y-m-d H:i') : '' }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted py-3">No hay registros de auditoría disponibles.</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                @if(method_exists($auditoria, 'links'))
+                                    <div class="mt-3">
+                                        {{ $auditoria->appends(['inmueble_id' => 'todos'])->links() }}
+                                    </div>
+                                @endif
+                            @else
+                                <p class="text-muted small mb-0">No hay información de auditoría cargada.</p>
+                            @endisset
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        {{-- ======================================================================= --}}
+        {{-- CONDICIONAL B: ECOSISTEMA DE UN INMUEBLE ESPECÍFICO                     --}}
+        {{-- ======================================================================= --}}
+        @elseif(isset($inmueble) && $inmueble)
 
             {{-- MÉTRICAS RÁPIDAS DEL INMUEBLE --}}
             <div class="row g-2 mb-4">
@@ -168,7 +406,7 @@
                 </div>
             </div>
 
-            {{-- PESTAÑAS DE CONEXIÓN --}}
+            {{-- PESTAÑAS PRINCIPALES DEL INMUEBLE (MENÚ PADRE) --}}
             <div class="rsv-soft-card">
                 <div class="card-header bg-white border-bottom p-0" style="border-color: #f1f5f9 !important;">
                     <ul class="nav nav-tabs nav-fill border-0 pt-1 px-1" id="adminTabs" role="tablist">
@@ -192,155 +430,158 @@
                                 <i class="bi bi-wallet2 me-1"></i> Finanzas
                             </button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#auditoria" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-shield-check me-1"></i> Auditoría
+                            </button>
+                        </li>
                     </ul>
                 </div>
 
-                <div class="card-body p-3 bg-white" style="border-radius: 0 0 8px 8px;">
+                <div class="card-body p-0 bg-white" style="border-radius: 0 0 8px 8px;">
                     <div class="tab-content" id="adminTabsContent">
+
+                        {{-- TAB 1: CONFIGURACIÓN PROPIEDAD (CONTENEDOR DE LOS 5 SUBMENÚS HIJOS) --}}
                         <div class="tab-pane fade show active" id="inmuebles" role="tabpanel">
-                            @include('rsv.admin.partials.tab-inmuebles')
-                        </div>
-                        <div class="tab-pane fade" id="reservas" role="tabpanel">
-                            @include('rsv.admin.partials.tab-reservas')
-                        </div>
-                        <div class="tab-pane fade" id="calendario" role="tabpanel">
-                            @include('rsv.admin.partials.tab-calendario')
-                        </div>
-                        <div class="tab-pane fade" id="finanzas" role="tabpanel">
-                            @include('rsv.admin.partials.tab-finanzas')
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-        {{-- ======================================================================= --}}
-        {{-- CONDICIONAL B: VISTA GLOBAL ("VER TODOS" CON TARJETAS ESTILO CLIENTE)   --}}
-        {{-- ======================================================================= --}}
-        @elseif(request('inmueble_id') === 'todos')
+                            {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL (ORDEN IDÉNTICO A "A") --}}
+                            <div class="rsv-subnav-bar">
+                                <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
+                                    <i class="bi bi-diagram-3-fill"></i>
+                                    <span class="fw-bold">Ecosistema Inmobiliario:</span>
+                                </div>
+                                <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="inmuebleSingleSubTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single-sub-catalogo" type="button" role="tab">
+                                            <i class="bi bi-grid-3x3 me-1"></i> Catálogo
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-tarifa" type="button" role="tab">
+                                            <i class="bi bi-cash-coin me-1"></i> Tarifas
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-galeria" type="button" role="tab">
+                                            <i class="bi bi-images me-1"></i> Galería
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-tipo" type="button" role="tab">
+                                            <i class="bi bi-tags me-1"></i> Tipos
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-show" type="button" role="tab">
+                                            <i class="bi bi-pencil-square me-1"></i> Edición / Detalle
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
 
-            <div class="rsv-soft-card p-3 mb-4">
-                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
-                    <div>
-                        <div class="rsv-kicker mb-1"><i class="bi bi-grid-3x3-gap me-1"></i> Panel Global</div>
-                        <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #334155;">Todas las Propiedades</h6>
-                        <p class="mb-0" style="font-size: 0.7rem; color: #94a3b8;">Vista previa interactiva tal como las visualizan los clientes en el catálogo.</p>
-                    </div>
-                    <span class="badge rounded-pill fw-semibold" style="font-size: 0.62rem; background-color: #f9f7fc; color: #8f7bb5; border: 1px solid #e9e2f2;">
-                        Total Registradas: {{ $listaInmuebles->count() }}
-                    </span>
-                </div>
+                            {{-- CONTENIDO DE LAS 5 SUB-PESTAÑAS DEL INMUEBLE ESPECÍFICO --}}
+                            <div class="tab-content p-3" id="inmuebleSingleSubContent">
 
-                {{-- Cuadrícula de Tarjetas Estilo Cliente --}}
-                <div class="row g-3">
-                    @forelse($listaInmuebles as $prop)
-                        <div class="col-12 col-md-6 col-xl-4">
-                            <div class="rsv-soft-card overflow-hidden d-flex flex-column h-100 position-relative">
-
-                                {{-- SECCIÓN 1: CARRUSEL DE FOTOS --}}
-                                <div id="carouselInmuebleGlobal{{ $prop->id }}" class="carousel slide position-relative flex-shrink-0" data-bs-ride="carousel" style="height: 180px; overflow: hidden; background: #f4f6f8;">
-
-                                    {{-- CORAZÓN FLOTANTE SUPERIOR DERECHO (Favorito) --}}
-                                    <button type="button" class="btn btn-light btn-sm rounded-circle position-absolute top-0 end-0 m-2 p-2 rsv-heart-btn d-flex align-items-center justify-content-center"
-                                            title="Favorito">
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d98c8c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-                                        </svg>
-                                    </button>
-
-                                    @php
-                                        // Asegurar que cargue la multimedia si no viene cargada en la colección
-                                        $galeriaGlobal = $prop->relationLoaded('multimedia') ? $prop->multimedia : $prop->multimedia()->get();
-                                    @endphp
-
-                                    <div class="carousel-inner w-100 h-100">
-                                        @forelse($galeriaGlobal as $index => $media)
-                                            <div class="carousel-item w-100 h-100 {{ $index === 0 ? 'active' : '' }}">
-                                                <img src="{{ $media->url_archivo }}" class="d-block w-100 h-100" style="object-fit: cover; object-position: center;" alt="Foto inmueble">
-                                                @if($media->es_portada)
-                                                    <span class="badge rsv-portada-badge position-absolute bottom-0 start-0 m-2 px-2 py-1" style="z-index: 5;">Portada</span>
-                                                @endif
-                                            </div>
-                                        @empty
-                                            <div class="carousel-item active w-100 h-100 d-flex align-items-center justify-content-center" style="background: #fafbfd;">
-                                                <span class="fst-italic" style="font-size: 0.68rem; color: #d4dae2;">Sin fotos en galería</span>
-                                            </div>
-                                        @endforelse
+                                {{-- 1. Catálogo General Filtrado --}}
+                                <div class="tab-pane fade show active" id="single-sub-catalogo" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.catalogo', ['inmueble' => $inmueble])
                                     </div>
-
-                                    @if($galeriaGlobal->count() > 1)
-                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselInmuebleGlobal{{ $prop->id }}" data-bs-slide="prev" style="width: 26px; opacity: .3;">
-                                            <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 14px; height: 14px; filter: invert(.45);"></span>
-                                        </button>
-                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselInmuebleGlobal{{ $prop->id }}" data-bs-slide="next" style="width: 26px; opacity: .3;">
-                                            <span class="carousel-control-next-icon" aria-hidden="true" style="width: 14px; height: 14px; filter: invert(.45);"></span>
-                                        </button>
-                                    @endif
                                 </div>
 
-                                {{-- SECCIÓN 2: CUERPO DE LA TARJETA --}}
-                                <div class="card-body p-3 d-flex flex-column flex-grow-1">
-                                    <div class="d-flex justify-content-between align-items-start mb-1">
-                                        <h6 class="fw-bold mb-0 text-truncate pe-2" style="font-size: 0.78rem; color: #475569;" title="{{ $prop->name }}">{{ $prop->name }}</h6>
-                                        @if($prop->active)
-                                            <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.6rem; background-color: #f0f7f2; color: #5d8a70; border: 1px solid #d8e9de;">Activo</span>
-                                        @else
-                                            <span class="badge px-2 py-1 fw-semibold" style="font-size: 0.6rem; background-color: #fafbfd; color: #9aa5b1; border: 1px solid #eef2f6;">Inactivo</span>
-                                        @endif
-                                    </div>
-
-                                    {{-- Calificación --}}
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="d-flex align-items-center gap-1">
-                                            <div class="d-flex align-items-center gap-1">
-                                                @for($i = 0; $i < 5; $i++)
-                                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="#ecd3a0" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                                                @endfor
-                                            </div>
-                                            <span class="fw-semibold" style="font-size: 0.62rem; color: #94a3b8;">5.0</span>
-                                        </div>
-                                        <span style="font-size: 0.62rem; color: #b3bcc7;">{{ $prop->reservas_count ?? 0 }} reservas</span>
-                                    </div>
-
-                                    {{-- Ubicación --}}
-                                    <p class="mb-3 text-truncate" style="font-size: 0.68rem; color: #94a3b8;">
-                                        <i class="bi bi-geo-alt" style="color: #c3ccd6;"></i> {{ $prop->city ?? 'Sin ciudad' }} — {{ $prop->ubicacion ?? 'Sin dirección' }}
-                                    </p>
-
-                                    {{-- Valores Base --}}
-                                    <div class="rounded-2 p-2 mb-3" style="background: #fafbfd; border: 1px solid #f1f5f9;">
-                                        <div class="row text-center g-0">
-                                            <div class="col-6 border-end" style="border-color: #f1f5f9 !important;">
-                                                <span class="d-block text-uppercase fw-bold" style="font-size: 0.55rem; color: #b3bcc7; letter-spacing: 0.5px;">CAPACIDAD</span>
-                                                <span class="fw-semibold" style="font-size: 0.72rem; color: #475569;">{{ $prop->capacidad_maxima ?? 'N/A' }} pers.</span>
-                                            </div>
-                                            <div class="col-6">
-                                                <span class="d-block text-uppercase fw-bold" style="font-size: 0.55rem; color: #b3bcc7; letter-spacing: 0.5px;">PRECIO BASE</span>
-                                                <span class="fw-semibold" style="font-size: 0.72rem; color: #5d8a70;">${{ number_format(optional($prop->latestTarifa)->precio_noche ?? 0, 2) }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {{-- Botón para saltar a la gestión de este inmueble --}}
-                                    <div class="mt-auto pt-2 border-top" style="border-color: #f1f5f9 !important;">
-                                        <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => $prop->id]) }}"
-                                           class="btn btn-sm w-100 rounded-2 py-1.5 rsv-btn-soft d-flex align-items-center justify-content-center gap-1">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                            Gestionar Ecosistema
-                                        </a>
+                                {{-- 2. Tarifas y Temporadas --}}
+                                <div class="tab-pane fade" id="single-sub-tarifa" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.tarifa', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
+
+                                {{-- 3. Galería Multimedia --}}
+                                <div class="tab-pane fade" id="single-sub-galeria" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.galeria', ['inmueble' => $inmueble])
+                                    </div>
+                                </div>
+
+                                {{-- 4. Tipos de Inmueble --}}
+                                <div class="tab-pane fade" id="single-sub-tipo" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.tipo', ['inmueble' => $inmueble])
+                                    </div>
+                                </div>
+
+                                {{-- 5. Edición y Detalle --}}
+                                <div class="tab-pane fade" id="single-sub-show" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.show', ['inmueble' => $inmueble])
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
-                    @empty
-                        <div class="col-12 text-center py-4" style="color: #b3bcc7; font-size: 0.72rem;">
-                            No hay inmuebles registrados en el sistema.
+
+                        {{-- DEMÁS PESTAÑAS PRINCIPALES DEL PADRE PARA EL INMUEBLE --}}
+                        <div class="tab-pane fade p-3" id="reservas" role="tabpanel">
+                            @include('rsv.admin.partials.tab-reservas')
                         </div>
-                    @endforelse
+                        <div class="tab-pane fade p-3" id="calendario" role="tabpanel">
+                            @include('rsv.admin.partials.tab-calendario')
+                        </div>
+                        <div class="tab-pane fade p-3" id="finanzas" role="tabpanel">
+                            @include('rsv.admin.partials.tab-finanzas')
+                        </div>
+                        <div class="tab-pane fade p-3" id="auditoria" role="tabpanel">
+                            <div class="p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
+                                <h6 class="fw-bold mb-3" style="font-size: 0.82rem; color: #334155;">
+                                    <i class="bi bi-shield-check me-1 text-success"></i> Registro de Auditoría de la Propiedad
+                                </h6>
+                                @isset($auditoria)
+                                    <div class="table-responsive">
+                                        <table class="table table-sm align-middle mb-0" style="font-size: 0.75rem;">
+                                            <thead class="table-light text-uppercase" style="font-size: 0.65rem; color: #64748b;">
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Acción / Evento</th>
+                                                    <th>Usuario</th>
+                                                    <th>Detalles</th>
+                                                    <th>Fecha</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @forelse($auditoria as $log)
+                                                    <tr>
+                                                        <td class="fw-bold">#{{ $log->id }}</td>
+                                                        <td><span class="badge bg-light text-dark border">{{ $log->action ?? $log->evento ?? 'Acción' }}</span></td>
+                                                        <td>{{ $log->user->name ?? $log->usuario ?? 'Sistema' }}</td>
+                                                        <td class="text-muted text-truncate" style="max-width: 250px;" title="{{ json_encode($log->details ?? $log->detalles ?? '') }}">
+                                                            {{ Str::limit(json_encode($log->details ?? $log->detalles ?? 'N/A'), 50) }}
+                                                        </td>
+                                                        <td>{{ $log->created_at ? $log->created_at->format('Y-m-d H:i') : '' }}</td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="5" class="text-center text-muted py-3">No hay registros de auditoría para este inmueble.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @if(method_exists($auditoria, 'links'))
+                                        <div class="mt-3">
+                                            {{ $auditoria->appends(['inmueble_id' => $inmueble->id])->links() }}
+                                        </div>
+                                    @endif
+                                @else
+                                    <p class="text-muted small mb-0">No hay información de auditoría cargada.</p>
+                                @endisset
+                            </div>
+                        </div>
+
+                    </div>
                 </div>
             </div>
-
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                       --}}
+        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                         --}}
         {{-- ======================================================================= --}}
         @else
 
@@ -358,21 +599,55 @@
 
     </div>
 
-    {{-- Script nativo para Bootstrap 5 y persistencia de pestañas --}}
+    {{-- Script nativo para Bootstrap 5 y persistencia avanzada de pestañas y subpestañas --}}
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const activeTabHash = localStorage.getItem('rsvAdminTab');
-            if (activeTabHash) {
-                const triggerEl = document.querySelector('#adminTabs button[data-bs-target="' + activeTabHash + '"]');
+            // 1. Restaurar pestañas y subpestañas guardadas previamente en localStorage
+            const savedTab = localStorage.getItem('rsvAdminTab');
+            const savedSubTab = localStorage.getItem('rsvAdminSubTab');
+
+            if (savedTab) {
+                const triggerEl = document.querySelector('#adminTabs button[data-bs-target="' + savedTab + '"], #globalAdminTabs button[data-bs-target="' + savedTab + '"]');
                 if (triggerEl) {
-                    new bootstrap.Tab(triggerEl).show();
+                    const tabInstance = new bootstrap.Tab(triggerEl);
+                    tabInstance.show();
                 }
             }
 
-            document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"]').forEach(trigger => {
+            if (savedSubTab) {
+                const triggerSubEl = document.querySelector('#inmueblesSubTabs button[data-bs-target="' + savedSubTab + '"], #inmuebleSingleSubContent button[data-bs-target="' + savedSubTab + '"], #inmueblesSubContent button[data-bs-target="' + savedSubTab + '"]');
+                if (triggerSubEl) {
+                    const pillInstance = new bootstrap.Tab(triggerSubEl);
+                    pillInstance.show();
+                }
+            }
+
+            // 2. Escuchar cambios en las pestañas principales (Padre)
+            document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"], #globalAdminTabs button[data-bs-toggle="tab"]').forEach(trigger => {
                 trigger.addEventListener('shown.bs.tab', event => {
-                    localStorage.setItem('rsvAdminTab', event.target.getAttribute('data-bs-target'));
+                    const target = event.target.getAttribute('data-bs-target');
+                    localStorage.setItem('rsvAdminTab', target);
+                });
+            });
+
+            // 3. Escuchar cambios en las subpestañas del ecosistema inmobiliario (Hijos)
+            document.querySelectorAll('.rsv-sub-pills button[data-bs-toggle="pill"]').forEach(trigger => {
+                trigger.addEventListener('shown.bs.tab', event => {
+                    const target = event.target.getAttribute('data-bs-target');
+                    localStorage.setItem('rsvAdminSubTab', target);
+                });
+            });
+
+            // 4. Asegurar que al enviar formularios internos (como los de galería o tarifas)
+            // la página recargue manteniendo la pestaña actual limpiando o preservando estados si es necesario.
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function() {
+                    // Opcional: si el formulario apunta a otra ruta, guardamos el estado actual antes de salir
+                    const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+                    const activeSubTab = document.querySelector('.rsv-sub-pills .nav-link.active');
+                    if (activeTab) localStorage.setItem('rsvAdminTab', activeTab.getAttribute('data-bs-target'));
+                    if (activeSubTab) localStorage.setItem('rsvAdminSubTab', activeSubTab.getAttribute('data-bs-target'));
                 });
             });
         });
