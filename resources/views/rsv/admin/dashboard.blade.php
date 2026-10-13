@@ -107,7 +107,7 @@
     <div class="container-fluid py-4">
 
         {{-- ======================================================================= --}}
-        {{-- 1. SELECTOR MAESTRO                                                       --}}
+        {{-- 1. SELECTOR MAESTRO                                                     --}}
         {{-- ======================================================================= --}}
         <div class="rsv-soft-card mb-4">
             <div class="card-body p-3">
@@ -143,7 +143,7 @@
                                     @isset($listaInmuebles)
                                         @foreach($listaInmuebles as $opcion)
                                             <option value="{{ $opcion->id }}" {{ request('inmueble_id', $inmueble->id ?? '') == $opcion->id ? 'selected' : '' }}>
-                                                {{ $opcion->name }} ({{ $opcion->city }}) - {{ $opcion->active ? 'Activo' : 'Inactivo' }}
+                                                {{ $opcion->name }}{{ isset($opcion->city) && $opcion->city ? ' (' . $opcion->city . ')' : '' }} - {{ $opcion->active ? 'Activo' : 'Inactivo' }}
                                             </option>
                                         @endforeach
                                     @endisset
@@ -160,7 +160,7 @@
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL A: VISTA GLOBAL ("VER TODOS" CON PESTAÑAS GLOBALES)           --}}
+        {{-- CONDICIONAL A: VISTA GLOBAL ("VER TODOS" CON PESTAÑAS GLOBALES)          --}}
         {{-- ======================================================================= --}}
         @if(request('inmueble_id') === 'todos')
 
@@ -221,6 +221,11 @@
                             </div>
                             <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="inmueblesSubTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-show" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
                                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#sub-catalogo" type="button" role="tab">
                                         <i class="bi bi-grid-3x3 me-1"></i> Catálogo
                                     </button>
@@ -240,55 +245,49 @@
                                         <i class="bi bi-tags me-1"></i> Tipos
                                     </button>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#sub-show" type="button" role="tab">
-                                        <i class="bi bi-pencil-square me-1"></i> Edición / Detalle
-                                    </button>
-                                </li>
                             </ul>
                         </div>
 
                         {{-- Contenido de las 5 Sub-pestañas de Propiedades --}}
                         <div class="tab-content p-3" id="inmueblesSubContent">
 
-                            {{-- 1. Catálogo General (partials/inmuebles/catalogo.blade.php) --}}
+                            {{-- 1. Aqui sale el inmueble con la galería Detalle y ultima tarifa aplicada --}}
+                            <div class="tab-pane fade" id="sub-show" role="tabpanel">
+                                <div class="text-center py-4 text-muted small fst-italic">
+                                    @include('rsv.admin.partials.inmuebles.show')
+                                </div>
+                            </div>
+
+                            {{-- 2. Catálogo General --}}
                             <div class="tab-pane fade show active" id="sub-catalogo" role="tabpanel">
                                 <div class="container-fluid px-0">
                                     @include('rsv.admin.partials.inmuebles.catalogo')
                                 </div>
                             </div>
 
-                            {{-- 2. Tarifas y Temporadas (partials/inmuebles/tarifa.blade.php) --}}
+                            {{-- 3. Tarifas y Temporadas --}}
                             <div class="tab-pane fade" id="sub-tarifa" role="tabpanel">
                                 <div class="text-center py-4 text-muted small fst-italic">
                                     @include('rsv.admin.partials.inmuebles.tarifa')
                                 </div>
                             </div>
- 
-                            {{-- 3. Galería Multimedia (partials/inmuebles/galeria.blade.php) --}}
+
+                            {{-- 4. Galería Multimedia --}}
                             <div class="tab-pane fade" id="sub-galeria" role="tabpanel">
                                 <div class="text-center py-4 text-muted small fst-italic">
                                     @include('rsv.admin.partials.inmuebles.galeria')
                                 </div>
                             </div>
 
-                            {{-- 4. Tipos de Inmueble (partials/inmuebles/tipo.blade.php) --}}
+                            {{-- 5. Tipos de Inmueble --}}
                             <div class="tab-pane fade" id="sub-tipo" role="tabpanel">
-                                {{-- @include('rsv.admin.partials.inmuebles.tipo') --}}
                                 <div class="text-center py-4 text-muted small fst-italic">
-                                    [Partial pendiente: rsv.admin.partials.inmuebles.tipo]
-                                </div>
-                            </div>
-
-                            {{-- 5. Edición y Detalle (partials/inmuebles/show.blade.php) --}}
-                            <div class="tab-pane fade" id="sub-show" role="tabpanel">
-                                {{-- @include('rsv.admin.partials.inmuebles.show') --}}
-                                <div class="text-center py-4 text-muted small fst-italic">
-                                    [Partial pendiente: rsv.admin.partials.inmuebles.show]
+                                    @include('rsv.admin.partials.inmuebles.tipo')
                                 </div>
                             </div>
 
                         </div>
+
                     </div>
 
                     {{-- TAB 2: RESERVAS GLOBALES --}}
@@ -356,7 +355,6 @@
 
                 </div>
             </div>
-
         {{-- ======================================================================= --}}
         {{-- CONDICIONAL B: ECOSISTEMA DE UN INMUEBLE ESPECÍFICO                     --}}
         {{-- ======================================================================= --}}
@@ -444,13 +442,18 @@
                         {{-- TAB 1: CONFIGURACIÓN PROPIEDAD (CONTENEDOR DE LOS 5 SUBMENÚS HIJOS) --}}
                         <div class="tab-pane fade show active" id="inmuebles" role="tabpanel">
 
-                            {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL (ORDEN IDÉNTICO A "A") --}}
+                            {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL (ORDEN EXACTO A LA CONDICIONAL "A") --}}
                             <div class="rsv-subnav-bar">
                                 <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
                                     <i class="bi bi-diagram-3-fill"></i>
                                     <span class="fw-bold">Ecosistema Inmobiliario:</span>
                                 </div>
                                 <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="inmuebleSingleSubTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-show" type="button" role="tab">
+                                            <i class="bi bi-house-door me-1"></i> Inicio
+                                        </button>
+                                    </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single-sub-catalogo" type="button" role="tab">
                                             <i class="bi bi-grid-3x3 me-1"></i> Catálogo
@@ -471,49 +474,44 @@
                                             <i class="bi bi-tags me-1"></i> Tipos
                                         </button>
                                     </li>
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sub-show" type="button" role="tab">
-                                            <i class="bi bi-pencil-square me-1"></i> Edición / Detalle
-                                        </button>
-                                    </li>
                                 </ul>
                             </div>
 
                             {{-- CONTENIDO DE LAS 5 SUB-PESTAÑAS DEL INMUEBLE ESPECÍFICO --}}
                             <div class="tab-content p-3" id="inmuebleSingleSubContent">
 
-                                {{-- 1. Catálogo General Filtrado --}}
+                                {{-- 1. Inicio (partials/inmuebles/show.blade.php) --}}
+                                <div class="tab-pane fade" id="single-sub-show" role="tabpanel">
+                                    <div class="container-fluid px-0">
+                                        @include('rsv.admin.partials.inmuebles.show', ['inmueble' => $inmueble])
+                                    </div>
+                                </div>
+
+                                {{-- 2. Catálogo General Filtrado (ACTIVA POR DEFECTO COMO EN "A") --}}
                                 <div class="tab-pane fade show active" id="single-sub-catalogo" role="tabpanel">
                                     <div class="container-fluid px-0">
                                         @include('rsv.admin.partials.inmuebles.catalogo', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
 
-                                {{-- 2. Tarifas y Temporadas --}}
+                                {{-- 3. Tarifas y Temporadas --}}
                                 <div class="tab-pane fade" id="single-sub-tarifa" role="tabpanel">
                                     <div class="container-fluid px-0">
                                         @include('rsv.admin.partials.inmuebles.tarifa', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
 
-                                {{-- 3. Galería Multimedia --}}
+                                {{-- 4. Galería Multimedia --}}
                                 <div class="tab-pane fade" id="single-sub-galeria" role="tabpanel">
                                     <div class="container-fluid px-0">
                                         @include('rsv.admin.partials.inmuebles.galeria', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
 
-                                {{-- 4. Tipos de Inmueble --}}
+                                {{-- 5. Tipos de Inmueble --}}
                                 <div class="tab-pane fade" id="single-sub-tipo" role="tabpanel">
                                     <div class="container-fluid px-0">
                                         @include('rsv.admin.partials.inmuebles.tipo', ['inmueble' => $inmueble])
-                                    </div>
-                                </div>
-
-                                {{-- 5. Edición y Detalle --}}
-                                <div class="tab-pane fade" id="single-sub-show" role="tabpanel">
-                                    <div class="container-fluid px-0">
-                                        @include('rsv.admin.partials.inmuebles.show', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
 
@@ -581,7 +579,7 @@
                 </div>
             </div>
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                         --}}
+        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                       --}}
         {{-- ======================================================================= --}}
         @else
 
@@ -596,55 +594,86 @@
             </div>
 
         @endif
-
     </div>
 
     {{-- Script nativo para Bootstrap 5 y persistencia avanzada de pestañas y subpestañas --}}
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // 1. Restaurar pestañas y subpestañas guardadas previamente en localStorage
+
+            // ═══ MAPAS DE EQUIVALENCIA GLOBAL ↔ INDIVIDUAL ═══
+            // Al recargar en el otro modo, el ID guardado se TRADUCE a su equivalente
+            // para que el subgrupo activo se MANTENGA (Inicio→Inicio, Tarifas→Tarifas…)
+            const MAPA_PADRES = {
+                '#global-inmuebles':  '#inmuebles',   '#inmuebles':  '#global-inmuebles',
+                '#global-reservas':   '#reservas',    '#reservas':   '#global-reservas',
+                '#global-calendario': '#calendario',  '#calendario': '#global-calendario',
+                '#global-finanzas':   '#finanzas',    '#finanzas':   '#global-finanzas',
+                '#global-auditoria':  '#auditoria',   '#auditoria':  '#global-auditoria'
+            };
+
+            const MAPA_HIJOS = {
+                '#sub-show':            '#single-sub-show',
+                '#sub-catalogo':        '#single-sub-catalogo',
+                '#sub-tarifa':          '#single-sub-tarifa',
+                '#sub-galeria':         '#single-sub-galeria',
+                '#sub-tipo':            '#single-sub-tipo',
+                '#single-sub-show':     '#sub-show',
+                '#single-sub-catalogo': '#sub-catalogo',
+                '#single-sub-tarifa':   '#sub-tarifa',
+                '#single-sub-galeria':  '#sub-galeria',
+                '#single-sub-tipo':     '#sub-tipo'
+            };
+
+            // Búsqueda en los TABLISTS correctos (los contenedores de contenido
+            // no contienen botones → esa era la causa de que nunca restaurara)
+            const btnPadre = sel => document.querySelector(
+                '#globalAdminTabs button[data-bs-target="' + sel + '"], ' +
+                '#adminTabs button[data-bs-target="' + sel + '"]'
+            );
+            const btnHijo = sel => document.querySelector(
+                '#inmueblesSubTabs button[data-bs-target="' + sel + '"], ' +
+                '#inmuebleSingleSubTabs button[data-bs-target="' + sel + '"]'
+            );
+
+            // 1 · Restaurar PESTAÑA PADRE (prueba el ID guardado y su traducción)
             const savedTab = localStorage.getItem('rsvAdminTab');
-            const savedSubTab = localStorage.getItem('rsvAdminSubTab');
-
             if (savedTab) {
-                const triggerEl = document.querySelector('#adminTabs button[data-bs-target="' + savedTab + '"], #globalAdminTabs button[data-bs-target="' + savedTab + '"]');
-                if (triggerEl) {
-                    const tabInstance = new bootstrap.Tab(triggerEl);
-                    tabInstance.show();
+                for (const sel of [savedTab, MAPA_PADRES[savedTab]].filter(Boolean)) {
+                    const el = btnPadre(sel);
+                    if (el) { new bootstrap.Tab(el).show(); break; }
                 }
             }
 
+            // 2 · Restaurar SUBPESTAÑA (prueba el ID guardado y su traducción).
+            //     FIX PRINCIPAL: antes en modo individual nunca encontraba el botón
+            //     (buscaba en #inmuebleSingleSubContent) y caía al default Catálogo.
+            const savedSubTab = localStorage.getItem('rsvAdminSubTab');
             if (savedSubTab) {
-                const triggerSubEl = document.querySelector('#inmueblesSubTabs button[data-bs-target="' + savedSubTab + '"], #inmuebleSingleSubContent button[data-bs-target="' + savedSubTab + '"], #inmueblesSubContent button[data-bs-target="' + savedSubTab + '"]');
-                if (triggerSubEl) {
-                    const pillInstance = new bootstrap.Tab(triggerSubEl);
-                    pillInstance.show();
+                for (const sel of [savedSubTab, MAPA_HIJOS[savedSubTab]].filter(Boolean)) {
+                    const el = btnHijo(sel);
+                    if (el) { new bootstrap.Tab(el).show(); break; }
                 }
             }
 
-            // 2. Escuchar cambios en las pestañas principales (Padre)
+            // 3 · Guardar pestaña PADRE al cambiar
             document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"], #globalAdminTabs button[data-bs-toggle="tab"]').forEach(trigger => {
                 trigger.addEventListener('shown.bs.tab', event => {
-                    const target = event.target.getAttribute('data-bs-target');
-                    localStorage.setItem('rsvAdminTab', target);
+                    localStorage.setItem('rsvAdminTab', event.target.getAttribute('data-bs-target'));
                 });
             });
 
-            // 3. Escuchar cambios en las subpestañas del ecosistema inmobiliario (Hijos)
+            // 4 · Guardar SUBPESTAÑA al cambiar
             document.querySelectorAll('.rsv-sub-pills button[data-bs-toggle="pill"]').forEach(trigger => {
                 trigger.addEventListener('shown.bs.tab', event => {
-                    const target = event.target.getAttribute('data-bs-target');
-                    localStorage.setItem('rsvAdminSubTab', target);
+                    localStorage.setItem('rsvAdminSubTab', event.target.getAttribute('data-bs-target'));
                 });
             });
 
-            // 4. Asegurar que al enviar formularios internos (como los de galería o tarifas)
-            // la página recargue manteniendo la pestaña actual limpiando o preservando estados si es necesario.
+            // 5 · Al enviar formularios internos, persistir el estado activo antes de recargar
             document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function() {
-                    // Opcional: si el formulario apunta a otra ruta, guardamos el estado actual antes de salir
-                    const activeTab = document.querySelector('.nav-tabs .nav-link.active');
+                form.addEventListener('submit', function () {
+                    const activeTab = document.querySelector('#adminTabs .nav-link.active, #globalAdminTabs .nav-link.active');
                     const activeSubTab = document.querySelector('.rsv-sub-pills .nav-link.active');
                     if (activeTab) localStorage.setItem('rsvAdminTab', activeTab.getAttribute('data-bs-target'));
                     if (activeSubTab) localStorage.setItem('rsvAdminSubTab', activeSubTab.getAttribute('data-bs-target'));

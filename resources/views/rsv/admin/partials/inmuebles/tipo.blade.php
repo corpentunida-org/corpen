@@ -1,16 +1,32 @@
 @php
     use App\Models\Rsv\TipoInmueble;
 
-    // Obtener la colección de forma segura tanto si viene del controlador como si se carga directamente
-    $tiposCollection = isset($tiposInmuebles)
-        ? $tiposInmuebles
-        : (isset($tipos) ? $tipos : TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre')->get());
+    // 1. Determinar si estamos en vista Global o Inmueble Específico (patrón estándar del sistema)
+    $modoGlobal = !isset($inmueble) || !$inmueble;
 
-    // Conteo de inmuebles asociados (usa withCount si está, si no lazy-load)
+    // 2. Obtener TODOS los tipos en ambos modos (el CRUD es de catálogo global).
+    //    En individual, el tipo asignado al inmueble se destaca con chip "Asignado".
+    if (isset($tiposInmuebles)) {
+        $tiposCollection = $tiposInmuebles;
+    } elseif (isset($tipos)) {
+        $tiposCollection = $tipos;
+    } else {
+        $tiposCollection = TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre')->get();
+    }
+
+    // 3. Conteo de inmuebles asociados (usa withCount si está, si no lazy-load)
     $conteoInmuebles = function ($tipo) {
         if (!is_null($tipo->catalogo_inmuebles_count)) return $tipo->catalogo_inmuebles_count;
-        return $tipo->catalogoInmuebles->count();
+        return $tipo->relationLoaded('catalogoInmuebles') ? $tipo->catalogoInmuebles->count() : 0;
     };
+
+    // 4. UID único por inclusión: si este partial se renderiza más de una vez en la
+    //    página, cada copia obtiene sus PROPIOS ids de modales/campos/botones/script.
+    //    Sin esto, Bootstrap abriría el modal de una copia oculta → gris congelado.
+    $tiUid = 'ti' . substr(md5(uniqid('', true)), 0, 8);
+
+    // 5. Tipo asignado al inmueble (solo modo individual, para destacarlo)
+    $tipoAsignadoId = (!$modoGlobal && isset($inmueble)) ? $inmueble->tipo_inmueble_id : null;
 @endphp
 
 {{-- Escala px del sistema (idéntica a tarifas y galería) --}}
@@ -39,6 +55,9 @@
         background-color: #fafcfe; --bs-table-accent-bg: transparent;
     }
 
+    /* Fila del tipo asignado en modo individual */
+    .tipo-soft tr.ti-assigned > * { background-color: #f0f7f2 !important; }
+
     /* Chips (misma escala que rsv-chip / gm-chip) */
     .tipo-soft .ti-chip {
         display: inline-flex; align-items: center; gap: 2px;
@@ -50,6 +69,7 @@
     .tipo-soft .ti-chip.ok  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
     .tipo-soft .ti-chip.off { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
     .tipo-soft .ti-chip.cnt { color: #5b7fa6; background: #f2f6fb; border-color: #dbe6f2; }
+    .tipo-soft .ti-chip.asg { color: #3d7a5c; background: #e3f1e9; border-color: #d5e7dc; }
 
     /* Celdas con truncado limpio */
     .tipo-soft .ti-ellip { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
@@ -112,7 +132,7 @@
     .tipo-soft-modal .tz-switch-box .sw-desc  { font-size: 7px; color: var(--ink-4); }
     .tipo-soft-modal .form-check-input { margin-top: 0; }
 
-    /* Caja de advertencia (eliminar con inmuebles asociados) */
+    /* Caja de advertencia (desactivar con inmuebles asociados) */
     .tipo-soft-modal .ti-warn {
         background: #fdf5f4; border: 1px solid #f0dcd8; border-radius: 4px;
         color: #c98a85; font-size: 8px; font-weight: 600;
@@ -142,7 +162,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL                              --}}
+{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL (CRUD en AMBOS modos)        --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="tipo-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
@@ -150,13 +170,14 @@
 
         <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
             <i class="bi bi-tags me-1" style="font-size: 8px; color: #5d8a70;"></i>
-            Tipos de Inmueble
+            {{ $modoGlobal ? 'Tipos de Inmueble del Catálogo' : 'Tipos de Inmueble · Catálogo' }}
         </h6>
 
+        {{-- Botón Nuevo Tipo disponible en AMBOS modos --}}
         <button type="button"
                 class="btn btn-sm"
                 style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
-                data-bs-toggle="modal" data-bs-target="#modalAddTipo">
+                data-bs-toggle="modal" data-bs-target="#modalAddTipo-{{ $tiUid }}">
             <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nuevo Tipo
         </button>
 
@@ -173,7 +194,7 @@
                     <th>Descripción</th>
                     <th class="text-center" style="width: 70px;">Inmuebles</th>
                     <th class="text-center" style="width: 60px;">Estado</th>
-                    <th class="text-center" style="width: 76px;">·</th>
+                    <th class="text-center" style="width: 110px;">·</th>
                 </tr>
             </thead>
 
@@ -182,9 +203,12 @@
 
                     @foreach($tiposCollection as $tipo)
 
-                        @php $nInmuebles = $conteoInmuebles($tipo); @endphp
+                        @php
+                            $nInmuebles = $conteoInmuebles($tipo);
+                            $esAsignado = (!$modoGlobal && !is_null($tipoAsignadoId) && $tipoAsignadoId == $tipo->id);
+                        @endphp
 
-                        <tr>
+                        <tr class="{{ $esAsignado ? 'ti-assigned' : '' }}">
 
                             <td class="ti-num">{{ $loop->iteration }}</td>
 
@@ -192,6 +216,12 @@
                                 <span class="ti-nombre" title="{{ $tipo->nombre }}">
                                     <i class="bi bi-tag-fill me-1" style="font-size: 6.5px; color: #5d8a70;"></i>{{ $tipo->nombre }}
                                 </span>
+                                {{-- Destacar el tipo asignado a este inmueble (solo individual) --}}
+                                @if($esAsignado)
+                                    <span class="ti-chip asg ms-1" title="Tipo asignado a este inmueble">
+                                        <i class="bi bi-house-door"></i>Asignado
+                                    </span>
+                                @endif
                             </td>
 
                             <td class="ti-ellip" title="{{ $tipo->descripcion }}" style="color: #94a3b8;">
@@ -217,12 +247,13 @@
                                 @endif
                             </td>
 
+                            {{-- Acciones disponibles en AMBOS modos --}}
                             <td class="text-center">
                                 <button type="button"
-                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tipo"
+                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tipo-{{ $tiUid }}"
                                         style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarTipo"
-                                        data-url-update="{{ route('rsv.tipos-inmueble.update', $tipo->id) }}"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarTipo-{{ $tiUid }}"
+                                        data-url-update="{{ route('rsv.tipos-inmuebles.update', $tipo->id) }}"
                                         data-nombre="{{ $tipo->nombre }}"
                                         data-descripcion="{{ $tipo->descripcion }}"
                                         data-active="{{ $tipo->active ? 1 : 0 }}"
@@ -231,13 +262,13 @@
                                 </button>
                                 <span style="color: #e2e8f0;">·</span>
                                 <button type="button"
-                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-eliminar-tipo"
+                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-eliminar-tipo-{{ $tiUid }}"
                                         style="font-size: 8px; color: #c98a85; font-weight: 600;"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarTipo"
-                                        data-url-delete="{{ route('rsv.tipos-inmueble.destroy', $tipo->id) }}"
+                                        data-bs-toggle="modal" data-bs-target="#modalEliminarTipo-{{ $tiUid }}"
+                                        data-url-delete="{{ route('rsv.tipos-inmuebles.destroy', $tipo->id) }}"
                                         data-nombre="{{ $tipo->nombre }}"
                                         data-count="{{ $nInmuebles }}">
-                                    Eliminar
+                                    Desactivar
                                 </button>
                             </td>
 
@@ -262,9 +293,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · NUEVO TIPO DE INMUEBLE                                   --}}
+{{-- MODAL · NUEVO TIPO DE INMUEBLE (ID único por inclusión)          --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalAddTipo" tabindex="-1" aria-hidden="true">
+<div class="modal fade tipo-soft-modal" id="modalAddTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -279,7 +310,7 @@
                 </div>
             </div>
 
-            <form action="{{ route('rsv.tipos-inmueble.store') }}" method="POST">
+            <form action="{{ route('rsv.tipos-inmuebles.store') }}" method="POST">
                 @csrf
 
                 <div class="modal-body p-3">
@@ -311,7 +342,7 @@
                                 <div class="sw-desc">Disponible al crear inmuebles</div>
                             </div>
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addTipoActive" checked>
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addTipoActive-{{ $tiUid }}" checked>
                             </div>
                         </div>
                     </div>
@@ -334,9 +365,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · EDITAR TIPO DE INMUEBLE                                  --}}
+{{-- MODAL · EDITAR TIPO DE INMUEBLE (ID único por inclusión)         --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalEditarTipo" tabindex="-1" aria-hidden="true">
+<div class="modal fade tipo-soft-modal" id="modalEditarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -346,12 +377,12 @@
                     <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
                         Catálogo · Editando
                     </div>
-                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_tipo_hint_title" style="font-size: 0.95rem;">Tipo de Inmueble</h6>
-                    <small class="text-muted" id="edit_tipo_hint" style="font-size: 7.5px;">Selecciona un tipo…</small>
+                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_tipo_hint_title-{{ $tiUid }}" style="font-size: 0.95rem;">Tipo de Inmueble</h6>
+                    <small class="text-muted" id="edit_tipo_hint-{{ $tiUid }}" style="font-size: 7.5px;">Selecciona un tipo…</small>
                 </div>
             </div>
 
-            <form id="formEditarTipo" method="POST">
+            <form id="formEditarTipo-{{ $tiUid }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -363,12 +394,12 @@
 
                         <div class="mb-2">
                             <label class="form-label">Nombre del tipo <span class="req">*</span></label>
-                            <input type="text" class="form-control form-control-sm" id="edit_tipo_nombre" name="nombre" maxlength="100" required>
+                            <input type="text" class="form-control form-control-sm" id="edit_tipo_nombre-{{ $tiUid }}" name="nombre" maxlength="100" required>
                         </div>
 
                         <div class="mb-0">
                             <label class="form-label">Descripción</label>
-                            <textarea class="form-control form-control-sm" id="edit_tipo_descripcion" name="descripcion" rows="2"></textarea>
+                            <textarea class="form-control form-control-sm" id="edit_tipo_descripcion-{{ $tiUid }}" name="descripcion" rows="2"></textarea>
                         </div>
                     </div>
 
@@ -383,7 +414,7 @@
                                 <div class="sw-desc">Pausar sin eliminar</div>
                             </div>
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tipo_active">
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tipo_active-{{ $tiUid }}">
                             </div>
                         </div>
                     </div>
@@ -391,7 +422,7 @@
                 </div>
 
                 <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
-                    <span class="text-muted" id="edit_tipo_hint_count" style="font-size: 7.5px;"></span>
+                    <span class="text-muted" id="edit_tipo_hint_count-{{ $tiUid }}" style="font-size: 7.5px;"></span>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-sm btn-dark py-1 px-2" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Actualizar</button>
@@ -406,9 +437,10 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · ELIMINAR TIPO DE INMUEBLE                                --}}
+{{-- MODAL · DESACTIVAR TIPO (ID único por inclusión)                 --}}
+{{-- Coincide con el comportamiento real del controlador (soft-off)   --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalEliminarTipo" tabindex="-1" aria-hidden="true">
+<div class="modal fade tipo-soft-modal" id="modalEliminarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border shadow-sm">
 
@@ -416,35 +448,35 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
                 <div class="text-end">
                     <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
-                        Catálogo · Eliminar
+                        Catálogo · Desactivar
                     </div>
-                    <h6 class="modal-title mb-0 text-dark fw-bold" style="font-size: 0.95rem;">Confirmar Eliminación</h6>
+                    <h6 class="modal-title mb-0 text-dark fw-bold" style="font-size: 0.95rem;">Confirmar Desactivación</h6>
                 </div>
             </div>
 
-            <form id="formEliminarTipo" method="POST">
+            <form id="formEliminarTipo-{{ $tiUid }}" method="POST">
                 @csrf
                 @method('DELETE')
 
                 <div class="modal-body p-3">
 
                     <p class="mb-2 text-start" style="font-size: 9.5px; color: var(--ink-2);">
-                        ¿Eliminar el tipo <b id="del_tipo_nombre" style="color: #334155;">—</b>? Esta acción no se puede deshacer.
+                        ¿Desactivar el tipo <b id="del_tipo_nombre-{{ $tiUid }}" style="color: #334155;">—</b>? Pasará a estado <b>Inactivo</b> sin eliminarse físicamente.
                     </p>
 
-                    {{-- Advertencia solo si hay inmuebles usando este tipo --}}
-                    <div class="ti-warn d-none" id="del_tipo_warning">
+                    {{-- Advertencia solo si hay inmuebles usando este tipo (el controlador lo bloqueará) --}}
+                    <div class="ti-warn d-none" id="del_tipo_warning-{{ $tiUid }}">
                         <i class="bi bi-exclamation-triangle-fill"></i>
-                        <span>Tiene <b id="del_tipo_count">0</b> inmueble(s) asociado(s). Quedarán sin tipo asignado.</span>
+                        <span>Tiene <b id="del_tipo_count-{{ $tiUid }}">0</b> inmueble(s) asociado(s). El sistema no permitirá desactivarlo.</span>
                     </div>
 
                 </div>
 
                 <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
-                    <span class="text-muted" style="font-size: 7.5px;">Acción irreversible</span>
+                    <span class="text-muted" style="font-size: 7.5px;">Reversible desde Editar</span>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-sm btn-delete-soft py-1 px-2" style="font-size: 11px;"><i class="bi bi-trash3"></i> Eliminar</button>
+                        <button type="submit" class="btn btn-sm btn-delete-soft py-1 px-2" style="font-size: 11px;"><i class="bi bi-power"></i> Desactivar</button>
                     </div>
                 </div>
 
@@ -455,26 +487,27 @@
 </div>
 
 
-{{-- SCRIPT · Llenado de modales Editar / Eliminar (mismo patrón del sistema) --}}
+{{-- SCRIPT · Llenado de modales Editar / Desactivar (scoped por UID) --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const UID = '{{ $tiUid }}';
 
         /* ═══ EDITAR TIPO ═══ */
-        document.querySelectorAll('.btn-editar-tipo').forEach(btn => {
+        document.querySelectorAll('.btn-editar-tipo-' + UID).forEach(btn => {
             btn.addEventListener('click', function () {
-                const form = document.getElementById('formEditarTipo');
+                const form = document.getElementById('formEditarTipo-' + UID);
                 form.action = this.getAttribute('data-url-update');
 
-                document.getElementById('edit_tipo_nombre').value = this.getAttribute('data-nombre') || '';
-                document.getElementById('edit_tipo_descripcion').value = this.getAttribute('data-descripcion') || '';
+                document.getElementById('edit_tipo_nombre-' + UID).value = this.getAttribute('data-nombre') || '';
+                document.getElementById('edit_tipo_descripcion-' + UID).value = this.getAttribute('data-descripcion') || '';
 
-                const activeCheck = document.getElementById('edit_tipo_active');
+                const activeCheck = document.getElementById('edit_tipo_active-' + UID);
                 activeCheck.checked = this.getAttribute('data-active') === '1';
 
                 /* Contexto del header/footer */
-                const hintTitle = document.getElementById('edit_tipo_hint_title');
-                const hint      = document.getElementById('edit_tipo_hint');
-                const hintCount = document.getElementById('edit_tipo_hint_count');
+                const hintTitle = document.getElementById('edit_tipo_hint_title-' + UID);
+                const hint      = document.getElementById('edit_tipo_hint-' + UID);
+                const hintCount = document.getElementById('edit_tipo_hint_count-' + UID);
 
                 const nombre = this.getAttribute('data-nombre') || '—';
                 const count  = parseInt(this.getAttribute('data-count') || 0);
@@ -495,26 +528,25 @@
             });
         });
 
-        /* ═══ ELIMINAR TIPO ═══ */
-        document.querySelectorAll('.btn-eliminar-tipo').forEach(btn => {
+        /* ═══ DESACTIVAR TIPO ═══ */
+        document.querySelectorAll('.btn-eliminar-tipo-' + UID).forEach(btn => {
             btn.addEventListener('click', function () {
-                const form = document.getElementById('formEliminarTipo');
+                const form = document.getElementById('formEliminarTipo-' + UID);
                 form.action = this.getAttribute('data-url-delete');
 
-                const nombre  = this.getAttribute('data-nombre') || '—';
-                const count   = parseInt(this.getAttribute('data-count') || 0);
+                const nombre = this.getAttribute('data-nombre') || '—';
+                const count  = parseInt(this.getAttribute('data-count') || 0);
 
-                document.getElementById('del_tipo_nombre').textContent = '“' + nombre + '”';
+                document.getElementById('del_tipo_nombre-' + UID).textContent = '“' + nombre + '”';
 
-                const warn = document.getElementById('del_tipo_warning');
+                const warn = document.getElementById('del_tipo_warning-' + UID);
                 if (count > 0) {
-                    document.getElementById('del_tipo_count').textContent = count;
+                    document.getElementById('del_tipo_count-' + UID).textContent = count;
                     warn.classList.remove('d-none');
                 } else {
                     warn.classList.add('d-none');
                 }
             });
         });
-
     });
 </script>

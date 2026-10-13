@@ -20,6 +20,13 @@
             $tarifasMostrar = $inmueble->tarifasTemporadas;
         }
     }
+
+    // ═══ FIX ANTI-CONGELAMIENTO ═══
+    // UID único por inclusión: si este partial se renderiza en más de un lugar
+    // de la página (show.blade.php + tab del dashboard), cada copia obtiene sus
+    // PROPIOS ids de modal/campos/script. Sin esto, Bootstrap abre el modal de
+    // la copia oculta (backdrop gris que intercepta clics = pantalla congelada).
+    $tzUid = 'tz' . substr(md5(uniqid('', true)), 0, 8);
 @endphp
 
 {{-- Escala px del sistema (idéntica a las demás vistas) --}}
@@ -156,12 +163,14 @@
             {{ $modoGlobal ? 'Visión Global de Tarifas' : 'Tarifas y Temporadas del Inmueble' }}
         </h6>
 
-        <button type="button"
-                class="btn btn-sm"
-                style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
-                data-bs-toggle="modal" data-bs-target="#modalAddTarifa">
-            <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Tarifa
-        </button>
+        @if(empty($soloLectura))
+            <button type="button"
+                    class="btn btn-sm"
+                    style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
+                    data-bs-toggle="modal" data-bs-target="#modalAddTarifa-{{ $tzUid }}">
+                <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Tarifa
+            </button>
+        @endif
 
     </div>
 
@@ -182,7 +191,9 @@
                     <th class="text-end">Mín. Reserva</th>
                     <th class="text-center">Días Máx.</th>
                     <th class="text-center">Estado</th>
-                    <th class="text-center">·</th>
+                    @if(empty($soloLectura))
+                        <th class="text-center">·</th>
+                    @endif
                 </tr>
             </thead>
 
@@ -231,25 +242,26 @@
                                 @endif
                             </td>
 
-                            <td class="text-center">
-                                <button type="button"
-                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tarifa"
-                                        style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarTarifa"
-                                        data-url-update="{{ route('rsv.tarifas-temporadas.update', $tarifa->id) }}"
-                                        data-inmueble-id="{{ $tarifa->id_rsv_catalogo_inmueble }}"
-                                        data-nombre-temporada="{{ $tarifa->nombre_temporada }}"
-                                        data-fecha-inicio="{{ optional($tarifa->fecha_inicio)->format('Y-m-d') }}"
-                                        data-fecha-fin="{{ optional($tarifa->fecha_fin)->format('Y-m-d') }}"
-                                        data-precio-noche="{{ $tarifa->precio_noche }}"
-                                        data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
-                                        data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
-                                        data-dias-maximos="{{ $tarifa->dias_maximos }}"
-                                        data-active="{{ $tarifa->active ? 1 : 0 }}">
-                                    Editar
-                                </button>
-                            </td>
-
+                            @if(empty($soloLectura))
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tarifa-{{ $tzUid }}"
+                                            style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditarTarifa-{{ $tzUid }}"
+                                            data-url-update="{{ route('rsv.tarifas-temporadas.update', $tarifa->id) }}"
+                                            data-inmueble-id="{{ $tarifa->id_rsv_catalogo_inmueble }}"
+                                            data-nombre-temporada="{{ $tarifa->nombre_temporada }}"
+                                            data-fecha-inicio="{{ optional($tarifa->fecha_inicio)->format('Y-m-d') }}"
+                                            data-fecha-fin="{{ optional($tarifa->fecha_fin)->format('Y-m-d') }}"
+                                            data-precio-noche="{{ $tarifa->precio_noche }}"
+                                            data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
+                                            data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
+                                            data-dias-maximos="{{ $tarifa->dias_maximos }}"
+                                            data-active="{{ $tarifa->active ? 1 : 0 }}">
+                                        Editar
+                                    </button>
+                                </td>
+                            @endif
                         </tr>
 
                     @endforeach
@@ -271,9 +283,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL 2A · NUEVA TARIFA                                          --}}
+{{-- MODAL 2A · NUEVA TARIFA (ID único por inclusión)                 --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tarifas-soft-modal" id="modalAddTarifa" tabindex="-1" aria-hidden="true">
+<div class="modal fade tarifas-soft-modal" id="modalAddTarifa-{{ $tzUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -304,7 +316,7 @@
                                     <option value="">-- Seleccione un inmueble --</option>
                                     @isset($listaInmuebles)
                                         @foreach ($listaInmuebles as $propOpt)
-                                            <option value="{{ $propOpt->id }}">{{ $propOpt->name }} ({{ $propOpt->city }})</option>
+                                            <option value="{{ $propOpt->id }}">{{ $propOpt->name }}{{ isset($propOpt->city) ? ' (' . $propOpt->city . ')' : '' }}</option>
                                         @endforeach
                                     @endisset
                                 </select>
@@ -396,7 +408,7 @@
                                         <div class="text-muted" style="font-size: 7px;">Aplica al cotizar</div>
                                     </div>
                                     <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addActive" checked>
+                                        <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addActive-{{ $tzUid }}" checked>
                                     </div>
                                 </div>
                             </div>
@@ -421,9 +433,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL 2B · EDITAR TARIFA                                         --}}
+{{-- MODAL 2B · EDITAR TARIFA (ID único por inclusión)                --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tarifas-soft-modal" id="modalEditarTarifa" tabindex="-1" aria-hidden="true">
+<div class="modal fade tarifas-soft-modal" id="modalEditarTarifa-{{ $tzUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -433,12 +445,12 @@
                     <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
                         Motor Comercial · Editando
                     </div>
-                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_tarifa_hint_title" style="font-size: 0.95rem;">Tarifa Comercial</h6>
-                    <small class="text-muted" id="edit_tarifa_hint" style="font-size: 7.5px;">Selecciona una tarifa…</small>
+                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_tarifa_hint_title-{{ $tzUid }}" style="font-size: 0.95rem;">Tarifa Comercial</h6>
+                    <small class="text-muted" id="edit_tarifa_hint-{{ $tzUid }}" style="font-size: 7.5px;">Selecciona una tarifa…</small>
                 </div>
             </div>
 
-            <form id="formEditarTarifa" method="POST">
+            <form id="formEditarTarifa-{{ $tzUid }}" method="POST">
                 @csrf
                 @method('PUT')
 
@@ -451,11 +463,11 @@
                         @if ($modoGlobal)
                             <div class="mb-2">
                                 <label class="form-label small mb-1 text-start d-block">Inmueble <span class="text-danger">*</span></label>
-                                <select class="form-select form-select-sm" id="edit_tarifa_inmueble_id" name="id_rsv_catalogo_inmueble" required>
+                                <select class="form-select form-select-sm" id="edit_tarifa_inmueble_id-{{ $tzUid }}" name="id_rsv_catalogo_inmueble" required>
                                     <option value="">-- Seleccione un inmueble --</option>
                                     @isset($listaInmuebles)
                                         @foreach ($listaInmuebles as $propOpt)
-                                            <option value="{{ $propOpt->id }}">{{ $propOpt->name }} ({{ $propOpt->city }})</option>
+                                            <option value="{{ $propOpt->id }}">{{ $propOpt->name }}{{ isset($propOpt->city) ? ' (' . $propOpt->city . ')' : '' }}</option>
                                         @endforeach
                                     @endisset
                                 </select>
@@ -466,7 +478,7 @@
 
                         <div class="mb-0">
                             <label class="form-label small mb-1 text-start d-block">Nombre de la temporada <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control form-control-sm" id="edit_tarifa_nombre" name="nombre_temporada" required>
+                            <input type="text" class="form-control form-control-sm" id="edit_tarifa_nombre-{{ $tzUid }}" name="nombre_temporada" required>
                         </div>
                     </div>
 
@@ -478,14 +490,14 @@
                         <div class="row g-2 align-items-center">
                             <div class="col-5">
                                 <label class="form-label small mb-1 text-start d-block">Desde <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control form-control-sm" id="edit_tarifa_inicio" name="fecha_inicio" required>
+                                <input type="date" class="form-control form-control-sm" id="edit_tarifa_inicio-{{ $tzUid }}" name="fecha_inicio" required>
                             </div>
                             <div class="col-2 text-center pt-3">
                                 <i class="bi bi-arrow-right text-muted"></i>
                             </div>
                             <div class="col-5">
                                 <label class="form-label small mb-1 text-start d-block">Hasta <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control form-control-sm" id="edit_tarifa_fin" name="fecha_fin" required>
+                                <input type="date" class="form-control form-control-sm" id="edit_tarifa_fin-{{ $tzUid }}" name="fecha_fin" required>
                             </div>
                         </div>
                     </div>
@@ -500,7 +512,7 @@
                                 <label class="form-label small mb-1 text-start d-block">Por noche <span class="text-danger">*</span></label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_noche" name="precio_noche" required>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_noche-{{ $tzUid }}" name="precio_noche" required>
                                 </div>
                             </div>
 
@@ -508,7 +520,7 @@
                                 <label class="form-label small mb-1 text-start d-block">Fin semana</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_fin_semana" name="precio_fin_semana" required>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_fin_semana-{{ $tzUid }}" name="precio_fin_semana" required>
                                 </div>
                             </div>
 
@@ -516,7 +528,7 @@
                                 <label class="form-label small mb-1 text-start d-block">Mínimo</label>
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_minimo" name="precio_minimo_reserva" required>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-sm" id="edit_tarifa_precio_minimo-{{ $tzUid }}" name="precio_minimo_reserva" required>
                                 </div>
                             </div>
                         </div>
@@ -530,7 +542,7 @@
                         <div class="row g-2 align-items-center">
                             <div class="col-5">
                                 <label class="form-label small mb-1 text-start d-block">Días máx.</label>
-                                <input type="number" class="form-control form-control-sm" id="edit_tarifa_dias_maximos" name="dias_maximos" min="1">
+                                <input type="number" class="form-control form-control-sm" id="edit_tarifa_dias_maximos-{{ $tzUid }}" name="dias_maximos" min="1">
                                 <div class="text-muted mt-1 text-start" style="font-size: 7px;">Vacío = sin límite</div>
                             </div>
 
@@ -542,7 +554,7 @@
                                         <div class="text-muted" style="font-size: 7px;">Pausar sin eliminar</div>
                                     </div>
                                     <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active">
+                                        <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active-{{ $tzUid }}">
                                     </div>
                                 </div>
                             </div>
@@ -552,7 +564,7 @@
                 </div>
 
                 <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
-                    <span class="text-muted" id="edit_tarifa_hint_dates" style="font-size: 7.5px;"></span>
+                    <span class="text-muted" id="edit_tarifa_hint_dates-{{ $tzUid }}" style="font-size: 7.5px;"></span>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-sm btn-dark py-1 px-2" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Actualizar</button>
@@ -567,32 +579,33 @@
 
 
 {{-- SCRIPT PARA LLENAR LOS CAMPOS DEL MODAL DE EDICIÓN --}}
+{{-- Scoped por UID: cada copia de este partial solo controla SUS botones --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const botonesEditar = document.querySelectorAll('.btn-editar-tarifa');
+        const botonesEditar = document.querySelectorAll('.btn-editar-tarifa-{{ $tzUid }}');
         botonesEditar.forEach(btn => {
             btn.addEventListener('click', function () {
-                const form = document.getElementById('formEditarTarifa');
+                const form = document.getElementById('formEditarTarifa-{{ $tzUid }}');
                 form.action = this.getAttribute('data-url-update');
 
-                if (document.getElementById('edit_tarifa_inmueble_id')) {
-                    document.getElementById('edit_tarifa_inmueble_id').value = this.getAttribute('data-inmueble-id');
+                if (document.getElementById('edit_tarifa_inmueble_id-{{ $tzUid }}')) {
+                    document.getElementById('edit_tarifa_inmueble_id-{{ $tzUid }}').value = this.getAttribute('data-inmueble-id');
                 }
-                document.getElementById('edit_tarifa_nombre').value = this.getAttribute('data-nombre-temporada');
-                document.getElementById('edit_tarifa_inicio').value = this.getAttribute('data-fecha-inicio');
-                document.getElementById('edit_tarifa_fin').value = this.getAttribute('data-fecha-fin');
-                document.getElementById('edit_tarifa_precio_noche').value = this.getAttribute('data-precio-noche');
-                document.getElementById('edit_tarifa_precio_fin_semana').value = this.getAttribute('data-precio-fin-semana');
-                document.getElementById('edit_tarifa_precio_minimo').value = this.getAttribute('data-precio-minimo-reserva');
-                document.getElementById('edit_tarifa_dias_maximos').value = this.getAttribute('data-dias-maximos');
+                document.getElementById('edit_tarifa_nombre-{{ $tzUid }}').value = this.getAttribute('data-nombre-temporada');
+                document.getElementById('edit_tarifa_inicio-{{ $tzUid }}').value = this.getAttribute('data-fecha-inicio');
+                document.getElementById('edit_tarifa_fin-{{ $tzUid }}').value = this.getAttribute('data-fecha-fin');
+                document.getElementById('edit_tarifa_precio_noche-{{ $tzUid }}').value = this.getAttribute('data-precio-noche');
+                document.getElementById('edit_tarifa_precio_fin_semana-{{ $tzUid }}').value = this.getAttribute('data-precio-fin-semana');
+                document.getElementById('edit_tarifa_precio_minimo-{{ $tzUid }}').value = this.getAttribute('data-precio-minimo-reserva');
+                document.getElementById('edit_tarifa_dias_maximos-{{ $tzUid }}').value = this.getAttribute('data-dias-maximos');
 
-                const activeCheck = document.getElementById('edit_tarifa_active');
+                const activeCheck = document.getElementById('edit_tarifa_active-{{ $tzUid }}');
                 activeCheck.checked = this.getAttribute('data-active') === '1';
 
                 /* Contexto del header/footer */
-                const hintTitle = document.getElementById('edit_tarifa_hint_title');
-                const hint      = document.getElementById('edit_tarifa_hint');
-                const hintDates = document.getElementById('edit_tarifa_hint_dates');
+                const hintTitle = document.getElementById('edit_tarifa_hint_title-{{ $tzUid }}');
+                const hint      = document.getElementById('edit_tarifa_hint-{{ $tzUid }}');
+                const hintDates = document.getElementById('edit_tarifa_hint_dates-{{ $tzUid }}');
 
                 if (hintTitle) hintTitle.textContent = this.getAttribute('data-nombre-temporada') || 'Tarifa Comercial';
 

@@ -24,6 +24,13 @@
         $t = $inm?->tipoInmueble;
         return $t ? ($t->nombre ?? $t->name ?? $t->nom_tipo ?? null) : null;
     };
+
+    // ═══ FIX ANTI-CONGELAMIENTO (igual que tarifa) ═══
+    // UID único por inclusión: si este partial se renderiza en más de un lugar
+    // de la página (show.blade.php + tab del dashboard), cada copia obtiene sus
+    // PROPIOS ids de modales/dropzones/campos/script. Sin esto, Bootstrap abre
+    // el modal de la copia oculta → backdrop gris que captura los clics.
+    $gmUid = 'gm' . substr(md5(uniqid('', true)), 0, 8);
 @endphp
 
 {{-- Escala px del sistema (idéntica al módulo de tarifas) --}}
@@ -167,8 +174,6 @@
         background: var(--accent-bg);
         border-style: solid;
     }
-    /* Input invisible que cubre toda la zona: habilita el clic nativo
-       y mantiene la validación "required" del navegador intacta */
     .galeria-soft-modal .gm-dz-input {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
@@ -218,104 +223,107 @@
 </style>
 
 
-{{-- ── MÓDULO 3 · VITRINA VISUAL (Contenedor de Pestaña) ── --}}
-<div class="tab-pane fade show active" id="sub-galeria" role="tabpanel">
+{{-- ── MÓDULO 3 · VITRINA VISUAL ── --}}
+{{-- FIX: sin wrapper tab-pane propio (el dashboard ya lo envuelve; dentro de show      --}}
+{{-- es contenido directo). El wrapper duplicado con id="sub-galeria" rompía las tabs.  --}}
+<div class="galeria-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
-    <div class="galeria-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
-
-            <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
-                <i class="bi bi-images me-1" style="font-size: 8px; color: #5d8a70;"></i>
-                Vitrina Visual y Galería
-            </h6>
-
+        <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
+            <i class="bi bi-images me-1" style="font-size: 8px; color: #5d8a70;"></i>
+            Vitrina Visual y Galería
+        </h6>
+        @if(empty($soloLectura))
             <button type="button"
                     class="btn btn-sm"
                     style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
-                    data-bs-toggle="modal" data-bs-target="#modalAddMultimedia">
+                    data-bs-toggle="modal" data-bs-target="#modalAddMultimedia-{{ $gmUid }}">
                 <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Agregar Recurso
             </button>
+        @endif
+        
+    </div>
 
-        </div>
+    <div class="table-responsive">
 
-        <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
 
-            <table class="table table-sm table-hover align-middle mb-0">
-
-                <thead>
-                    <tr>
-                        <th class="gm-num">#</th>
-                        <th class="text-center" style="width: 28px;">Vista</th>
-                        <th style="width: 62px;">Tipo</th>
-                        <th>Inmueble</th>
-                        <th style="width: 100px;">Tipo Inm.</th>
-                        <th class="text-center" style="width: 36px;">Ord.</th>
+            <thead>
+                <tr>
+                    <th class="gm-num">#</th>
+                    <th class="text-center" style="width: 28px;">Vista</th>
+                    <th style="width: 62px;">Tipo</th>
+                    <th>Inmueble</th>
+                    <th style="width: 100px;">Tipo Inm.</th>
+                    <th class="text-center" style="width: 36px;">Ord.</th>
+                    @if(empty($soloLectura))
                         <th class="text-center" style="width: 48px;">·</th>
-                    </tr>
-                </thead>
+                    @endif
+                </tr>
+            </thead>
 
-                <tbody>
-                    @if(isset($mediaCollection) && count($mediaCollection) > 0)
+            <tbody>
+                @if(isset($mediaCollection) && count($mediaCollection) > 0)
 
-                        @foreach($mediaCollection as $media)
+                    @foreach($mediaCollection as $media)
 
-                            @php $tipoInm = $tipoInmLabel($media->inmueble); @endphp
+                        @php $tipoInm = $tipoInmLabel($media->inmueble); @endphp
 
-                            <tr>
+                        <tr>
 
-                                <td class="gm-num">{{ $loop->iteration }}</td>
+                            <td class="gm-num">{{ $loop->iteration }}</td>
 
-                                <td class="text-center">
-                                    <a href="{{ $media->url_archivo }}" target="_blank" title="Ver archivo completo" class="gm-link text-decoration-none">
-                                        @if($media->tipo_multimedia == 'imagen')
-                                            <img src="{{ $media->url_archivo }}" alt="" class="gm-thumb">
-                                        @else
-                                            <span class="gm-thumb-video"><i class="bi bi-play-fill"></i></span>
-                                        @endif
-                                    </a>
-                                </td>
-
-                                {{-- COLUMNA TIPO: solo chips de media y portada --}}
-                                <td>
-                                    <div class="d-flex align-items-center gap-1">
-                                        @if($media->tipo_multimedia == 'imagen')
-                                            <span class="gm-chip img"><i class="bi bi-image"></i>IMG</span>
-                                        @else
-                                            <span class="gm-chip vid"><i class="bi bi-camera-video"></i>VID</span>
-                                        @endif
-
-                                        @if($media->es_portada)
-                                            <span class="gm-chip ok" title="Portada principal"><i class="bi bi-star-fill"></i>P</span>
-                                        @endif
-                                    </div>
-                                </td>
-
-                                {{-- COLUMNA INMUEBLE: nombre truncado --}}
-                                <td class="gm-ellip">
-                                    <span class="gm-inmueble" title="{{ $media->inmueble->name ?? '—' }}">
-                                        {{ $media->inmueble->name ?? '—' }}
-                                    </span>
-                                </td>
-
-                                {{-- COLUMNA TIPO INMUEBLE: chip verde o guion --}}
-                                <td class="gm-ellip-sm">
-                                    @if($tipoInm)
-                                        <span class="gm-tipo" title="{{ $tipoInm }}">
-                                            <i class="bi bi-tag-fill"></i><span class="t">{{ $tipoInm }}</span>
-                                        </span>
+                            <td class="text-center">
+                                <a href="{{ $media->url_archivo }}" target="_blank" title="Ver archivo completo" class="gm-link text-decoration-none">
+                                    @if($media->tipo_multimedia == 'imagen')
+                                        <img src="{{ $media->url_archivo }}" alt="" class="gm-thumb">
                                     @else
-                                        <span style="color: var(--ink-4);">—</span>
+                                        <span class="gm-thumb-video"><i class="bi bi-play-fill"></i></span>
                                     @endif
-                                </td>
+                                </a>
+                            </td>
 
-                                <td class="gm-num">{{ $media->orden }}</td>
+                            {{-- COLUMNA TIPO: solo chips de media y portada --}}
+                            <td>
+                                <div class="d-flex align-items-center gap-1">
+                                    @if($media->tipo_multimedia == 'imagen')
+                                        <span class="gm-chip img"><i class="bi bi-image"></i>IMG</span>
+                                    @else
+                                        <span class="gm-chip vid"><i class="bi bi-camera-video"></i>VID</span>
+                                    @endif
 
+                                    @if($media->es_portada)
+                                        <span class="gm-chip ok" title="Portada principal"><i class="bi bi-star-fill"></i>P</span>
+                                    @endif
+                                </div>
+                            </td>
+
+                            {{-- COLUMNA INMUEBLE: nombre truncado --}}
+                            <td class="gm-ellip">
+                                <span class="gm-inmueble" title="{{ $media->inmueble->name ?? '—' }}">
+                                    {{ $media->inmueble->name ?? '—' }}
+                                </span>
+                            </td>
+
+                            {{-- COLUMNA TIPO INMUEBLE: chip verde o guion --}}
+                            <td class="gm-ellip-sm">
+                                @if($tipoInm)
+                                    <span class="gm-tipo" title="{{ $tipoInm }}">
+                                        <i class="bi bi-tag-fill"></i><span class="t">{{ $tipoInm }}</span>
+                                    </span>
+                                @else
+                                    <span style="color: var(--ink-4);">—</span>
+                                @endif
+                            </td>
+
+                            <td class="gm-num">{{ $media->orden }}</td>
+                            @if(empty($soloLectura))
                                 <td class="text-center">
                                     <button type="button"
-                                            class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-multimedia"
+                                            class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-multimedia-{{ $gmUid }}"
                                             style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
-                                            data-bs-toggle="modal" data-bs-target="#modalEditarMultimedia"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditarMultimedia-{{ $gmUid }}"
                                             data-url-update="{{ route('rsv.inmueble-multimedia.update', $media->id) }}"
                                             data-tipo-multimedia="{{ $media->tipo_multimedia }}"
                                             data-orden="{{ $media->orden }}"
@@ -326,23 +334,21 @@
                                         Editar
                                     </button>
                                 </td>
-
-                            </tr>
-
-                        @endforeach
-
-                    @else
-                        <tr>
-                            <td colspan="7" class="text-center py-2" style="color: #b3bcc7; font-size: 8.5px;">
-                                <i class="bi bi-images me-1"></i> Vitrina vacía. Sube fotos o videos.
-                            </td>
+                            @endif
                         </tr>
-                    @endif
-                </tbody>
 
-            </table>
+                    @endforeach
 
-        </div>
+                @else
+                    <tr>
+                        <td colspan="7" class="text-center py-2" style="color: #b3bcc7; font-size: 8.5px;">
+                            <i class="bi bi-images me-1"></i> Vitrina vacía. Sube fotos o videos.
+                        </td>
+                    </tr>
+                @endif
+            </tbody>
+
+        </table>
 
     </div>
 
@@ -350,9 +356,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL 3A · AGREGAR RECURSO MULTIMEDIA                            --}}
+{{-- MODAL 3A · AGREGAR RECURSO MULTIMEDIA (ID único por inclusión)   --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade galeria-soft-modal" id="modalAddMultimedia" tabindex="-1" aria-hidden="true">
+<div class="modal fade galeria-soft-modal" id="modalAddMultimedia-{{ $gmUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -382,7 +388,7 @@
                                 <option value="">-- Seleccione un inmueble --</option>
                                 @foreach ($listaInmueblesOpt as $propOpt)
                                     @php $tInmOpt = $tipoInmLabel($propOpt); @endphp
-                                    <option value="{{ $propOpt->id }}">{{ $propOpt->name }} ({{ $propOpt->city }}){{ $tInmOpt ? ' · ' . $tInmOpt : '' }}</option>
+                                    <option value="{{ $propOpt->id }}">{{ $propOpt->name }}{{ isset($propOpt->city) && $propOpt->city ? ' (' . $propOpt->city . ')' : '' }}{{ $tInmOpt ? ' · ' . $tInmOpt : '' }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -402,11 +408,11 @@
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-cloud-arrow-up"></i> Archivo (S3) <span class="req">*</span></div>
 
-                        <div class="gm-dropzone" id="dzAdd">
-                            <input type="file" class="gm-dz-input" name="url_archivo" accept="image/*,video/*" required id="inputAddFile">
+                        <div class="gm-dropzone" id="dzAdd-{{ $gmUid }}">
+                            <input type="file" class="gm-dz-input" name="url_archivo" accept="image/*,video/*" required id="inputAddFile-{{ $gmUid }}">
 
                             {{-- Estado: esperando archivo --}}
-                            <div class="gm-dz-idle" id="dzAddIdle">
+                            <div class="gm-dz-idle" id="dzAddIdle-{{ $gmUid }}">
                                 <i class="bi bi-cloud-arrow-up gm-dz-icon"></i>
                                 <div class="gm-dz-text">
                                     Pega con <b>Ctrl + V</b>, arrastra el archivo aquí<br>
@@ -415,14 +421,14 @@
                             </div>
 
                             {{-- Estado: archivo cargado (vista previa) --}}
-                            <div class="gm-dz-preview d-none" id="dzAddPreview">
-                                <img id="dzAddThumb" class="gm-dz-thumb d-none" alt="">
-                                <span id="dzAddThumbV" class="gm-dz-thumb-video d-none"><i class="bi bi-camera-video"></i></span>
+                            <div class="gm-dz-preview d-none" id="dzAddPreview-{{ $gmUid }}">
+                                <img id="dzAddThumb-{{ $gmUid }}" class="gm-dz-thumb d-none" alt="">
+                                <span id="dzAddThumbV-{{ $gmUid }}" class="gm-dz-thumb-video d-none"><i class="bi bi-camera-video"></i></span>
                                 <div style="min-width: 0;">
-                                    <div class="gm-dz-fname text-truncate" id="dzAddName"></div>
-                                    <div class="gm-dz-fsize" id="dzAddSize"></div>
+                                    <div class="gm-dz-fname text-truncate" id="dzAddName-{{ $gmUid }}"></div>
+                                    <div class="gm-dz-fsize" id="dzAddSize-{{ $gmUid }}"></div>
                                 </div>
-                                <button type="button" class="gm-dz-clear" id="dzAddClear" title="Quitar archivo">
+                                <button type="button" class="gm-dz-clear" id="dzAddClear-{{ $gmUid }}" title="Quitar archivo">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
@@ -451,7 +457,7 @@
                                         <div class="sw-desc">Aparece primero en la vitrina</div>
                                     </div>
                                     <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="addMediaPortada">
+                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="addMediaPortada-{{ $gmUid }}">
                                     </div>
                                 </div>
                             </div>
@@ -476,9 +482,9 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL 3B · EDITAR RECURSO MULTIMEDIA                             --}}
+{{-- MODAL 3B · EDITAR RECURSO MULTIMEDIA (ID único por inclusión)    --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade galeria-soft-modal" id="modalEditarMultimedia" tabindex="-1" aria-hidden="true">
+<div class="modal fade galeria-soft-modal" id="modalEditarMultimedia-{{ $gmUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
         <div class="modal-content border shadow-sm">
 
@@ -488,12 +494,12 @@
                     <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
                         Vitrina Visual · Editando
                     </div>
-                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_media_hint_title" style="font-size: 0.95rem;">Recurso Multimedia</h6>
-                    <small class="text-muted" id="edit_media_hint" style="font-size: 7.5px;">Selecciona un recurso…</small>
+                    <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_media_hint_title-{{ $gmUid }}" style="font-size: 0.95rem;">Recurso Multimedia</h6>
+                    <small class="text-muted" id="edit_media_hint-{{ $gmUid }}" style="font-size: 7.5px;">Selecciona un recurso…</small>
                 </div>
             </div>
 
-            <form id="formEditarMultimedia" method="POST" enctype="multipart/form-data">
+            <form id="formEditarMultimedia-{{ $gmUid }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -505,18 +511,18 @@
 
                         <div class="mb-2">
                             <label class="form-label">Inmueble <span class="req">*</span></label>
-                            <select class="form-select form-select-sm" id="edit_media_inmueble" name="id_rsv_catalogo_inmueble" required>
+                            <select class="form-select form-select-sm" id="edit_media_inmueble-{{ $gmUid }}" name="id_rsv_catalogo_inmueble" required>
                                 <option value="">-- Seleccione un inmueble --</option>
                                 @foreach ($listaInmueblesOpt as $propOpt)
                                     @php $tInmOpt = $tipoInmLabel($propOpt); @endphp
-                                    <option value="{{ $propOpt->id }}">{{ $propOpt->name }} ({{ $propOpt->city }}){{ $tInmOpt ? ' · ' . $tInmOpt : '' }}</option>
+                                    <option value="{{ $propOpt->id }}">{{ $propOpt->name }}{{ isset($propOpt->city) && $propOpt->city ? ' (' . $propOpt->city . ')' : '' }}{{ $tInmOpt ? ' · ' . $tInmOpt : '' }}</option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div class="mb-0">
                             <label class="form-label">Tipo de multimedia <span class="req">*</span></label>
-                            <select class="form-select form-select-sm" id="edit_media_tipo" name="tipo_multimedia" required>
+                            <select class="form-select form-select-sm" id="edit_media_tipo-{{ $gmUid }}" name="tipo_multimedia" required>
                                 <option value="imagen">Imagen</option>
                                 <option value="video">Video</option>
                             </select>
@@ -528,10 +534,10 @@
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-cloud-arrow-up"></i> Reemplazar Archivo</div>
 
-                        <div class="gm-dropzone" id="dzEdit">
-                            <input type="file" class="gm-dz-input" name="url_archivo" accept="image/*,video/*" id="inputEditFile">
+                        <div class="gm-dropzone" id="dzEdit-{{ $gmUid }}">
+                            <input type="file" class="gm-dz-input" name="url_archivo" accept="image/*,video/*" id="inputEditFile-{{ $gmUid }}">
 
-                            <div class="gm-dz-idle" id="dzEditIdle">
+                            <div class="gm-dz-idle" id="dzEditIdle-{{ $gmUid }}">
                                 <i class="bi bi-cloud-arrow-up gm-dz-icon"></i>
                                 <div class="gm-dz-text">
                                     Pega con <b>Ctrl + V</b> o arrastra para reemplazar<br>
@@ -539,14 +545,14 @@
                                 </div>
                             </div>
 
-                            <div class="gm-dz-preview d-none" id="dzEditPreview">
-                                <img id="dzEditThumb" class="gm-dz-thumb d-none" alt="">
-                                <span id="dzEditThumbV" class="gm-dz-thumb-video d-none"><i class="bi bi-camera-video"></i></span>
+                            <div class="gm-dz-preview d-none" id="dzEditPreview-{{ $gmUid }}">
+                                <img id="dzEditThumb-{{ $gmUid }}" class="gm-dz-thumb d-none" alt="">
+                                <span id="dzEditThumbV-{{ $gmUid }}" class="gm-dz-thumb-video d-none"><i class="bi bi-camera-video"></i></span>
                                 <div style="min-width: 0;">
-                                    <div class="gm-dz-fname text-truncate" id="dzEditName"></div>
-                                    <div class="gm-dz-fsize" id="dzEditSize"></div>
+                                    <div class="gm-dz-fname text-truncate" id="dzEditName-{{ $gmUid }}"></div>
+                                    <div class="gm-dz-fsize" id="dzEditSize-{{ $gmUid }}"></div>
                                 </div>
-                                <button type="button" class="gm-dz-clear" id="dzEditClear" title="Quitar y conservar el actual">
+                                <button type="button" class="gm-dz-clear" id="dzEditClear-{{ $gmUid }}" title="Quitar y conservar el actual">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
@@ -561,7 +567,7 @@
                         <div class="row g-2 align-items-center">
                             <div class="col-5">
                                 <label class="form-label">Orden</label>
-                                <input type="number" class="form-control form-control-sm" id="edit_media_orden" name="orden" min="1">
+                                <input type="number" class="form-control form-control-sm" id="edit_media_orden-{{ $gmUid }}" name="orden" min="1">
                             </div>
 
                             <div class="col-7">
@@ -572,7 +578,7 @@
                                         <div class="sw-desc">Se muestra primero en la vitrina</div>
                                     </div>
                                     <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="edit_media_portada">
+                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="edit_media_portada-{{ $gmUid }}">
                                     </div>
                                 </div>
                             </div>
@@ -582,7 +588,7 @@
                 </div>
 
                 <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
-                    <span class="text-muted" id="edit_media_hint_file" style="font-size: 7.5px;"></span>
+                    <span class="text-muted" id="edit_media_hint_file-{{ $gmUid }}" style="font-size: 7.5px;"></span>
                     <div class="d-flex gap-1">
                         <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-sm btn-dark py-1 px-2" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Actualizar</button>
@@ -597,8 +603,10 @@
 
 
 {{-- SCRIPT · Dropzones (pegar/arrastrar/clic) + llenado del modal de edición --}}
+{{-- Scoped por UID: cada copia de este partial solo controla SUS elementos --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const UID = '{{ $gmUid }}';
 
         /* ══════════════════════════════════════════════════════════
            HELPERS
@@ -629,7 +637,6 @@
             if (!dz || !input) return;
             let objUrl = null;
 
-            /* Muestra vista previa (thumb o icono video) + nombre + tamaño */
             const showPreview = (file) => {
                 if (objUrl) URL.revokeObjectURL(objUrl);
                 objUrl = URL.createObjectURL(file);
@@ -643,7 +650,6 @@
                 prev.classList.remove('d-none');
             };
 
-            /* Vuelve al estado inicial (input vacío → required vuelve a aplicar) */
             const reset = () => {
                 input.value = '';
                 if (objUrl) { URL.revokeObjectURL(objUrl); objUrl = null; }
@@ -651,7 +657,6 @@
                 idle.classList.remove('d-none');
             };
 
-            /* Asigna el archivo al input <input type="file"> vía DataTransfer */
             const setFile = (file) => {
                 if (!isMedia(file)) return;
                 const dt = new DataTransfer();
@@ -660,17 +665,14 @@
                 showPreview(file);
             };
 
-            /* Clic tradicional (el input invisible cubre toda la zona) */
             input.addEventListener('change', () => {
                 (input.files && input.files[0]) ? showPreview(input.files[0]) : reset();
             });
 
-            /* Botón quitar */
             clearB.addEventListener('click', e => {
                 e.preventDefault(); e.stopPropagation(); reset();
             });
 
-            /* Drag & Drop */
             ['dragenter', 'dragover'].forEach(ev =>
                 dz.addEventListener(ev, e => {
                     e.preventDefault(); e.stopPropagation();
@@ -691,23 +693,23 @@
         }
 
         setupDropzone({
-            modal: 'modalAddMultimedia',
-            dz: 'dzAdd', input: 'inputAddFile',
-            idle: 'dzAddIdle', preview: 'dzAddPreview',
-            thumb: 'dzAddThumb', thumbVideo: 'dzAddThumbV',
-            name: 'dzAddName', size: 'dzAddSize', clear: 'dzAddClear'
+            modal: 'modalAddMultimedia-' + UID,
+            dz: 'dzAdd-' + UID, input: 'inputAddFile-' + UID,
+            idle: 'dzAddIdle-' + UID, preview: 'dzAddPreview-' + UID,
+            thumb: 'dzAddThumb-' + UID, thumbVideo: 'dzAddThumbV-' + UID,
+            name: 'dzAddName-' + UID, size: 'dzAddSize-' + UID, clear: 'dzAddClear-' + UID
         });
 
         setupDropzone({
-            modal: 'modalEditarMultimedia',
-            dz: 'dzEdit', input: 'inputEditFile',
-            idle: 'dzEditIdle', preview: 'dzEditPreview',
-            thumb: 'dzEditThumb', thumbVideo: 'dzEditThumbV',
-            name: 'dzEditName', size: 'dzEditSize', clear: 'dzEditClear'
+            modal: 'modalEditarMultimedia-' + UID,
+            dz: 'dzEdit-' + UID, input: 'inputEditFile-' + UID,
+            idle: 'dzEditIdle-' + UID, preview: 'dzEditPreview-' + UID,
+            thumb: 'dzEditThumb-' + UID, thumbVideo: 'dzEditThumbV-' + UID,
+            name: 'dzEditName-' + UID, size: 'dzEditSize-' + UID, clear: 'dzEditClear-' + UID
         });
 
         /* ══════════════════════════════════════════════════════════
-           PEGAR (Ctrl+V) · Solo si el modal correspondiente está abierto
+           PEGAR (Ctrl+V) · Solo si el modal de ESTA copia está abierto
            ══════════════════════════════════════════════════════════ */
         document.addEventListener('paste', e => {
             const items = e.clipboardData && e.clipboardData.items;
@@ -737,29 +739,29 @@
         );
 
         /* ══════════════════════════════════════════════════════════
-           LLENADO DEL MODAL DE EDICIÓN (sin cambios funcionales)
+           LLENADO DEL MODAL DE EDICIÓN (scoped por UID)
            ══════════════════════════════════════════════════════════ */
-        const botonesEditar = document.querySelectorAll('.btn-editar-multimedia');
+        const botonesEditar = document.querySelectorAll('.btn-editar-multimedia-' + UID);
         botonesEditar.forEach(btn => {
             btn.addEventListener('click', function () {
-                const form = document.getElementById('formEditarMultimedia');
+                const form = document.getElementById('formEditarMultimedia-' + UID);
                 form.action = this.getAttribute('data-url-update');
 
-                document.getElementById('edit_media_inmueble').value = this.getAttribute('data-inmueble-id');
-                document.getElementById('edit_media_tipo').value = this.getAttribute('data-tipo-multimedia') || 'imagen';
-                document.getElementById('edit_media_orden').value = this.getAttribute('data-orden');
+                document.getElementById('edit_media_inmueble-' + UID).value = this.getAttribute('data-inmueble-id');
+                document.getElementById('edit_media_tipo-' + UID).value = this.getAttribute('data-tipo-multimedia') || 'imagen';
+                document.getElementById('edit_media_orden-' + UID).value = this.getAttribute('data-orden');
 
-                const portadaCheck = document.getElementById('edit_media_portada');
+                const portadaCheck = document.getElementById('edit_media_portada-' + UID);
                 portadaCheck.checked = this.getAttribute('data-es-portada') === '1';
 
                 /* Resetear la dropzone de edición al abrir otro registro */
-                const editZone = activeZones.find(z => z.modalId === 'modalEditarMultimedia');
+                const editZone = activeZones.find(z => z.modalId === 'modalEditarMultimedia-' + UID);
                 if (editZone) editZone.reset();
 
                 /* Contexto del header/footer */
-                const hintTitle = document.getElementById('edit_media_hint_title');
-                const hint      = document.getElementById('edit_media_hint');
-                const hintFile  = document.getElementById('edit_media_hint_file');
+                const hintTitle = document.getElementById('edit_media_hint_title-' + UID);
+                const hint      = document.getElementById('edit_media_hint-' + UID);
+                const hintFile  = document.getElementById('edit_media_hint_file-' + UID);
 
                 const nombreInm = this.getAttribute('data-inmueble-nombre') || '—';
                 const tipoInm   = this.getAttribute('data-tipo-inmueble') || '';

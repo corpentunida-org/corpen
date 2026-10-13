@@ -50,12 +50,23 @@ class AdminDashboardController extends Controller
             $inmuebleId = $request->input('inmueble_id', 'todos'); // Por defecto carga 'todos' si no se envía nada
 
             if ($inmuebleId === 'todos') {
-                // B. VISTA GLOBAL (inmuebles-tab.blade.php)
-                // Cargamos los inmuebles con paginación y sus relaciones básicas para las tarjetas/tablas
-                $inmueblesGrid = CatalogoInmueble::with(['multimedia' => function($q) {
-                        $q->orderBy('es_portada', 'desc') // Pone la portada de primera si la hay
-                        ->orderBy('orden', 'asc');     // Luego respeta el orden configurado
-                    }, 'latestTarifa'])
+                // B. VISTA GLOBAL (inmuebles-tab.blade.php / show.blade.php modo global)
+                // Cargamos los inmuebles con paginación y TODAS las relaciones que las tablas muestran
+
+                // ═══ FIX: se agrega 'tipoInmueble' al eager load y los counts
+                // de reservas y bloqueos (la tabla global de expedientes los consume)
+                $inmueblesGrid = CatalogoInmueble::with([
+                        'multimedia' => function($q) {
+                            $q->orderBy('es_portada', 'desc') // Pone la portada de primera si la hay
+                            ->orderBy('orden', 'asc');     // Luego respeta el orden configurado
+                        },
+                        'latestTarifa',
+                        'tipoInmueble', // ═══ FIX: chip "Tipo Inm." en tabla global
+                    ])
+                    ->withCount([ // ═══ FIX: columnas "Bloq." y "Reservas" de la tabla global
+                        'reservas',
+                        'bloqueosCalendario',
+                    ])
                     ->orderBy('name', 'asc')
                     ->paginate(12, ['*'], 'page_inmuebles');
 
@@ -71,16 +82,26 @@ class AdminDashboardController extends Controller
             } else {
                 // B. VISTA ESPECÍFICA POR INMUEBLE (partials/inmuebles/show.blade.php)
                 // Carga el Inmueble Maestro y TODAS sus relaciones para permitir edición completa
+
+                // ═══ FIX: se agrega 'tipoInmueble' al eager load y los counts
+                // (el expediente usa tipoInmueble->nombre, reservas_count y bloqueos_calendario_count)
                 $inmueble = CatalogoInmueble::with([
-                    'multimedia' => function($q) {
-                        $q->orderBy('orden', 'asc'); // Respetamos el orden configurado en el InmuebleMultimediaController
-                    },
-                    'tarifasTemporadas' => function($q) {
-                        $q->orderBy('fecha_inicio', 'asc');
-                    },
-                    'latestTarifa',
-                    'bloqueosCalendario'
-                ])->findOrFail($inmuebleId);
+                        'multimedia' => function($q) {
+                            $q->orderBy('es_portada', 'desc') // ═══ FIX: portada primero en el carrusel
+                            ->orderBy('orden', 'asc');     // Respetamos el orden configurado
+                        },
+                        'tarifasTemporadas' => function($q) {
+                            $q->orderBy('fecha_inicio', 'asc');
+                        },
+                        'latestTarifa',
+                        'bloqueosCalendario',
+                        'tipoInmueble', // ═══ FIX: chips y stat "Tipo de inmueble" del expediente
+                    ])
+                    ->withCount([ // ═══ FIX: stats "Reservas" y "Bloqueos" del Módulo 1
+                        'reservas',
+                        'bloqueosCalendario',
+                    ])
+                    ->findOrFail($inmuebleId);
 
                 // Filtrar Reservas SOLO de ESTE inmueble específico
                 $reservas = Reserva::with(['user', 'status'])
