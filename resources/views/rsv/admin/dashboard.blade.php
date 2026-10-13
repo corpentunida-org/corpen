@@ -307,7 +307,7 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-reservas" type="button" role="tab" style="border-radius: 0;">
-                                <i class="bi bi-calendar2-check me-1"></i> Reservas Globales <span class="tab-count">({{ $tabReservas ?? '—' }})</span>
+                                <i class="bi bi-calendar2-check me-1"></i> Reservas <span class="tab-count">({{ $tabReservas ?? '—' }})</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
