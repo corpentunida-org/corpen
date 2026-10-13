@@ -1,418 +1,469 @@
-{{--
-    ========================================================================
-    VISTA UNIFICADA: Detalle, Gestión y Vista Previa de Inmueble
-    RUTA: resources/views/rsv/admin/partials/inmuebles/show.blade.php
-    ESTILO: hoja de cálculo SUAVE · celdas 8px · encabezados 9px · pasteles
-    FIX: modales DENTRO de #showRoot para que el CSS les aplique
-    ========================================================================
---}}
+{{-- resources/views/rsv/admin/partials/inmuebles/show.blade.php --}}
+{{-- MODO GLOBAL = tabla resumen con TODAS las relaciones + botón Gestionar --}}
+{{-- MODO INDIVIDUAL = expediente SOLO LECTURA (tarifa/galeria se incluyen con --}}
+{{-- soloLectura=true: aparecen las tablas, JAMÁS los botones de acciones)     --}}
 
-<div id="showRoot">
+@php
+    // ── Detección de modo (idéntico a tarifas) ──
+    $modoGlobal = !isset($inmueble) || !$inmueble;
 
-    <style>
-        /* ═══ BASE — anclada a #showRoot ═══ */
-        #showRoot {
-            --grid:    #f1f5f9;
-            --grid-2:  #e9eef4;
-            --head:    #fafbfd;
-            --ink:     #64748b;
-            --ink-2:   #475569;
-            --ink-3:   #94a3b8;
-            --ink-4:   #b3bcc7;
-            --accent:  #3d7a5c;
-            --accent-bg: #f0f7f2;
-            --accent-bd: #d5e7dc;
-            --m1: #8fb0cc;  --m1-bg: #f2f7fb;  --m1-bd: #dde8f1;
-            --m2: #5d8a70;  --m2-bg: #f0f7f2;  --m2-bd: #d8e9de;
-            --m3: #8f7bb5;  --m3-bg: #f9f7fc;  --m3-bd: #e9e2f2;
-            font-family: Calibri, "Segoe UI", system-ui, sans-serif;
-            font-size: 8px;
-            line-height: 1.4;
-            color: var(--ink);
-        }
+    if ($modoGlobal) {
+        // ═══ GLOBAL: usar $inmueblesGrid (viene COMPLETO del controlador en modo 'todos').
+        // NUNCA usar $listaInmuebles para tablas: es SOLO id+name (selector ligero).
+        if (isset($inmueblesGrid) && $inmueblesGrid) {
+            $expedientes = $inmueblesGrid;
 
-        #showRoot .strong { color: var(--ink-2); font-weight: 600; }
-        #showRoot .kicker {
-            font-size: 7.5px; font-weight: 600; letter-spacing: .07em;
-            text-transform: uppercase; color: var(--ink-4);
-        }
-        #showRoot .sub { font-size: 7.5px; color: var(--ink-4); }
-        #showRoot .num { font-variant-numeric: tabular-nums; }
+            // Si es paginador, operar sobre su colección interna
+            $col = method_exists($expedientes, 'getCollection')
+                ? $expedientes->getCollection()
+                : $expedientes;
 
-        /* ═══ CINTA DE TÍTULO ═══ */
-        #showRoot .sh-titlebar {
-            display: flex; flex-wrap: wrap; gap: 10px;
-            align-items: center; justify-content: space-between;
-            padding: 2px 2px 10px;
-            border-bottom: 1px solid var(--grid);
-            margin-bottom: 12px;
+            // Red de seguridad por si el controlador no trajo el tipo (no-op si ya viene)
+            $col->loadMissing('tipoInmueble');
+        } else {
+            // Fallback: consulta fresca completa
+            $expedientes = \App\Models\Rsv\CatalogoInmueble::query()
+                ->with(['tipoInmueble', 'latestTarifa', 'tarifasTemporadas', 'multimedia'])
+                ->withCount(['reservas', 'bloqueosCalendario'])
+                ->orderBy('name')
+                ->get();
         }
-        #showRoot .sh-live {
-            display: inline-flex; align-items: center; gap: 5px;
-            font-size: 7.5px; font-weight: 600; letter-spacing: .06em;
-            color: var(--ink-3);
-            border: 1px solid var(--grid-2); background: var(--head);
-            border-radius: 9px; padding: 1px 9px;
-        }
-        #showRoot .sh-live .pulse {
-            width: 5px; height: 5px; border-radius: 50%;
-            background: var(--m1); opacity: .8;
-            animation: shPulse 2s infinite;
-        }
-        @keyframes shPulse { 0%,100% { opacity:.35; } 50% { opacity:.9; } }
+    } else {
+        // ═══ INDIVIDUAL · mismas relaciones sobre el inmueble único (solo lectura) ═══
+        $inmueble->loadMissing(['tipoInmueble', 'multimedia', 'tarifasTemporadas', 'latestTarifa']);
+        $inmueble->loadCount(['reservas', 'bloqueosCalendario']);
 
-        /* ═══ BOTONES ═══ */
-        #showRoot .btn-soft {
-            border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
-            font-family: inherit;
-            font-size: 8.5px; font-weight: 600; padding: 2px 10px; border-radius: 3px;
-            display: inline-flex; align-items: center; gap: 5px;
-            text-decoration: none; transition: all .15s ease;
-        }
-        #showRoot .btn-soft:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
+        // Galería ordenada: portada primero
+        $galeria = $inmueble->multimedia->sortByDesc('es_portada')->values();
 
-        #showRoot .btn-soft-m1 { background: var(--m1-bg); color: #5c7d99; border-color: var(--m1-bd); }
-        #showRoot .btn-soft-m1:hover { background: #e9f1f8; color: #47637c; }
+        // Última tarifa: prefiere latestTarifa, con fallback al historial
+        $ultimaTarifa = $inmueble->latestTarifa
+            ?: $inmueble->tarifasTemporadas->sortByDesc('fecha_inicio')->first();
+    }
 
-        #showRoot .btn-soft-m2 { background: var(--m2-bg); color: var(--m2); border-color: var(--m2-bd); }
-        #showRoot .btn-soft-m2:hover { background: #e5f0e9; color: #476f58; }
+    // Helper: portada de un inmueble (portada marcada primero)
+    $portadaDe = function ($prop) {
+        return $prop->multimedia->sortByDesc('es_portada')->first();
+    };
 
-        #showRoot .btn-soft-m3 { background: var(--m3-bg); color: var(--m3); border-color: var(--m3-bd); }
-        #showRoot .btn-soft-m3:hover { background: #f1ecf8; color: #75639c; }
+    // Helper: última tarifa de un inmueble (latestTarifa → fallback historial)
+    $ultimaTarifaDe = function ($prop) {
+        if ($prop->relationLoaded('latestTarifa') && $prop->latestTarifa) {
+            return $prop->latestTarifa;
+        }
+        return $prop->tarifasTemporadas->sortByDesc('fecha_inicio')->first();
+    };
+@endphp
 
-        /* ═══ MÓDULOS ═══ */
-        #showRoot .sh-module { margin-bottom: 10px; }
+{{-- Escala px del sistema (idéntica a tarifas/galería) --}}
+<style>
+    .show-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
 
-        #showRoot .sh-strip {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 8px; padding: 6px 10px;
-            background: var(--head);
-            border: 1px solid var(--grid); border-bottom: 0;
-            border-radius: 4px 4px 0 0;
-            border-left: 2px solid var(--module-color, var(--grid-2));
-        }
-        #showRoot .sh-strip.m1 { --module-color: var(--m1); }
-        #showRoot .sh-strip.m2 { --module-color: var(--m2); }
-        #showRoot .sh-strip.m3 { --module-color: var(--m3); }
+    /* ═══ TABLA GLOBAL: filas de 20px exactas (idéntica a tarifas) ═══ */
+    .show-soft .table > :not(caption) > * > * {
+        padding: 2px 6px; height: 20px;
+        line-height: 1.1; vertical-align: middle;
+    }
+    .show-soft .table thead th {
+        font-size: 9px; font-weight: 600;
+        letter-spacing: .05em; text-transform: uppercase;
+        color: var(--ink-3); background-color: var(--head);
+        border-bottom: 1px solid var(--grid) !important;
+        white-space: nowrap;
+    }
+    .show-soft .table tbody td {
+        font-size: 8px; color: var(--ink);
+        border-bottom: 1px solid var(--grid); border-top: 0;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+    .show-soft .table tbody tr:hover > * {
+        background-color: #fafcfe; --bs-table-accent-bg: transparent;
+    }
+    .show-soft .exp-num { color: var(--ink-4); text-align: center; width: 22px; }
 
-        #showRoot .sh-strip .head-btn {
-            display: flex; align-items: center; gap: 7px;
-            background: transparent; border: 0; padding: 0;
-            font-family: inherit; text-align: left; cursor: pointer;
-        }
-        #showRoot .sh-strip .m-id { font-size: 7px; font-weight: 600; letter-spacing: .08em; color: var(--ink-4); }
-        #showRoot .sh-strip .m-name { font-size: 10px; font-weight: 600; color: var(--ink-2); }
-        #showRoot .sh-strip .chev {
-            width: 10px; height: 10px; color: var(--ink-4);
-            transition: transform .2s ease;
-        }
-        #showRoot .sh-strip .head-btn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+    .show-soft .exp-ellip   { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+    .show-soft .exp-ellip-sm{ max-width: 84px;  overflow: hidden; text-overflow: ellipsis; }
 
-        #showRoot .sh-frame { background: #fff; border: 1px solid var(--grid); border-radius: 0 0 4px 4px; }
-        #showRoot .sh-body { padding: 10px; }
+    .show-soft .exp-nombre {
+        font-size: 8px; font-weight: 600; color: var(--ink-2);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
 
-        /* ═══ STAT CELLS ═══ */
-        #showRoot .stat-grid { display: flex; gap: 8px; flex-wrap: wrap; }
-        #showRoot .stat-cell {
-            flex: 1; min-width: 140px;
-            border: 1px solid var(--grid); border-radius: 4px;
-            padding: 8px 10px;
-        }
-        #showRoot .stat-cell .lbl {
-            display: flex; align-items: center; gap: 4px;
-            font-size: 7px; font-weight: 600; letter-spacing: .06em;
-            text-transform: uppercase; color: var(--ink-4); margin-bottom: 3px;
-        }
-        #showRoot .stat-cell .lbl i { font-size: 8.5px; color: #c3ccd6; }
-        #showRoot .stat-cell .big {
-            font-size: 11px; font-weight: 600; color: var(--ink-2);
-            font-variant-numeric: tabular-nums;
-        }
-        #showRoot .stat-cell .big small { font-size: 8px; font-weight: 400; color: var(--ink-4); }
+    /* Miniatura 18px (misma de galería) */
+    .show-soft .exp-link { line-height: 0; display: inline-block; }
+    .show-soft .exp-thumb {
+        width: 18px; height: 18px; object-fit: cover;
+        border-radius: 2px; border: 1px solid var(--grid-2);
+        display: block; margin: 0 auto;
+    }
+    .show-soft .exp-thumb-empty {
+        width: 18px; height: 18px; border-radius: 2px;
+        border: 1px dashed var(--grid-2); background: var(--head); color: #d4dae2;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 8px; margin: 0 auto;
+    }
 
-        #showRoot .vis-pill {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 2px 9px; border-radius: 9px;
-            font-size: 8px; font-weight: 600; border: 1px solid;
-        }
-        #showRoot .vis-on  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
-        #showRoot .vis-off { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
-        #showRoot .vis-on .dotp { width: 5px; height: 5px; border-radius: 50%; background: #a3cfb6; animation: shPulse 2s infinite; }
-        #showRoot .vis-off .dotp { width: 5px; height: 5px; border-radius: 50%; background: #d4dae2; }
+    /* Chips (mismo lenguaje de rsv-chip) */
+    .show-soft .sh-chip {
+        display: inline-flex; align-items: center; gap: 2px;
+        font-size: 7px; font-weight: 600;
+        padding: 0 5px; border-radius: 7px; line-height: 12px;
+        border: 1px solid; white-space: nowrap; flex-shrink: 0;
+    }
+    .show-soft .sh-chip i { font-size: 6.5px; line-height: 1; }
+    .show-soft .sh-chip.ok   { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
+    .show-soft .sh-chip.off  { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
+    .show-soft .sh-chip.tipo { color: #5b7fa6; background: #f2f6fb; border-color: #dbe6f2; }
+    .show-soft .sh-chip.tint { color: #8a6fae; background: #f7f3fb; border-color: #e6dcf2; }
+    .show-soft .sh-chip .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        /* ═══ TABLA TIPO HOJA ═══ */
-        #showRoot .xls-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        #showRoot .xls-table th,
-        #showRoot .xls-table td {
-            border-right: 1px solid var(--grid);
-            border-bottom: 1px solid var(--grid);
-            padding: 2px 7px; height: 20px;
-            vertical-align: middle; white-space: nowrap;
-            background: #fff; font-size: 8px; font-weight: 400; color: var(--ink);
-        }
-        #showRoot .xls-table thead th {
-            font-size: 9px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: .05em;
-            color: var(--ink-3); background: var(--head);
-        }
-        #showRoot .xls-table td.row-index {
-            background: var(--head); color: #d4dae2;
-            font-size: 7.5px; text-align: center;
-            width: 22px; min-width: 22px; padding: 0;
-        }
-        #showRoot .xls-table tbody tr:hover td { background: #fafcfe; }
+    /* ═══ CINTA DE TÍTULO (individual) ═══ */
+    .show-soft .sh-titlebar {
+        background: #fff; border: 1px solid var(--grid); border-radius: 5px;
+        padding: 10px 14px; display: flex; justify-content: space-between;
+        align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap;
+    }
+    .show-soft .sh-live {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 7px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+        color: var(--accent); background: var(--accent-bg);
+        border: 1px solid var(--accent-bd); border-radius: 8px;
+        padding: 1px 7px; line-height: 13px;
+    }
+    .show-soft .sh-live .pulse {
+        width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
+        animation: shPulse 2s infinite;
+    }
+    @keyframes shPulse {
+        0%   { box-shadow: 0 0 0 0 rgba(61,122,92,.45); }
+        70%  { box-shadow: 0 0 0 5px rgba(61,122,92,0); }
+        100% { box-shadow: 0 0 0 0 rgba(61,122,92,0); }
+    }
+    .show-soft .sh-titlebar .strong { font-size: 10.5px; font-weight: 700; color: var(--ink-2); }
+    .show-soft .sh-titlebar .sub    { font-size: 7.5px; color: var(--ink-4); }
+    .show-soft .btn-soft {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: var(--accent-bg); color: var(--accent);
+        border: 1px solid var(--accent-bd); border-radius: 3px;
+        font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 3px 10px;
+        text-decoration: none; transition: all .15s ease;
+    }
+    .show-soft .btn-soft:hover { background: #e3f1e9; color: #34684e; text-decoration: none; }
+    .show-soft .btn-soft i { font-size: 9px; }
 
-        #showRoot .chip {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 0 7px; border-radius: 8px;
-            font-size: 7.5px; font-weight: 600; border: 1px solid; line-height: 13px;
-        }
-        #showRoot .chip-green  { color:#5d8a70; background:#f0f7f2; border-color:#d8e9de; }
-        #showRoot .chip-gray   { color:#9aa5b1; background:#fafbfd; border-color:#eef2f6; }
-        #showRoot .chip-purple { color:#8f7bb5; background:#f9f7fc; border-color:#e9e2f2; }
-        #showRoot .chip-blue   { color:#5c7d99; background:#f2f7fb; border-color:#dde8f1; }
+    /* ═══ COLUMNA PREVIA (individual) ═══ */
+    .show-soft .pv-sticky { position: sticky; top: 12px; }
+    .show-soft .pv-label {
+        display: flex; align-items: center; gap: 5px;
+        font-size: 7.5px; font-weight: 700; letter-spacing: .07em;
+        text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px;
+    }
+    .show-soft .pv-label svg { width: 10px; height: 10px; stroke: var(--ink-4); }
 
-        #showRoot .btn-actions {
-            border: 0; background: transparent; color: var(--ink-3);
-            font-family: inherit;
-            font-size: 8px; font-weight: 600; padding: 1px 8px; border-radius: 3px;
-        }
-        #showRoot .btn-actions:hover { background: #eef2f6; color: var(--ink-2); }
+    .show-soft .pv-card { background: #fff; border: 1px solid var(--grid); border-radius: 5px; overflow: hidden; display: flex; flex-direction: column; }
+    .show-soft .pv-carousel { height: 170px; background: #f4f6f8; position: relative; flex-shrink: 0; border-bottom: 1px solid var(--grid); }
+    .show-soft .pv-carousel img { object-fit: cover; object-position: center; width: 100%; height: 100%; }
+    .show-soft .pv-carousel .carousel-inner,
+    .show-soft .pv-carousel .carousel-item { width: 100%; height: 100%; }
+    .show-soft .pv-carousel .carousel-control-prev,
+    .show-soft .pv-carousel .carousel-control-next { width: 24px; opacity: .2; transition: opacity .15s ease; z-index: 5; }
+    .show-soft .pv-carousel:hover .carousel-control-prev,
+    .show-soft .pv-carousel:hover .carousel-control-next { opacity: .55; }
+    .show-soft .pv-carousel .carousel-control-prev-icon,
+    .show-soft .pv-carousel .carousel-control-next-icon { width: 13px; height: 13px; filter: invert(.45); }
 
-        #showRoot .thumb {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 34px; height: 34px; border-radius: 3px;
-            border: 1px solid var(--grid); background: var(--head);
-            overflow: hidden; text-decoration: none;
-            transition: border-color .15s ease;
-        }
-        #showRoot .thumb:hover { border-color: var(--grid-2); }
-        #showRoot .thumb img { width: 100%; height: 100%; object-fit: cover; }
-        #showRoot .thumb i { font-size: 12px; color: var(--m3); opacity: .7; }
+    .show-soft .portada-badge {
+        position: absolute; bottom: 6px; left: 6px; z-index: 5;
+        font-size: 7px; font-weight: 600; letter-spacing: .05em;
+        color: var(--ink-3); background: rgba(255,255,255,.92);
+        border: 1px solid rgba(233,238,244,.9);
+        border-radius: 3px; padding: 0 6px; line-height: 14px;
+    }
+    .show-soft .pv-empty-media {
+        width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+        background: var(--head); color: #d4dae2; font-size: 8.5px; font-style: italic;
+    }
 
-        #showRoot .sh-empty {
-            text-align: center; padding: 22px 12px;
-            color: var(--ink-4); font-size: 8.5px; background: var(--head);
-        }
-        #showRoot .sh-empty i { font-size: 16px; color: #d4dae2; display: block; margin-bottom: 3px; }
+    /* Botón decorativo del corazón (solo visual, sin funcionalidad) */
+    .show-soft .float-btn {
+        width: 22px; height: 22px; border-radius: 4px; padding: 0;
+        background: rgba(255,255,255,.95); border: 1px solid var(--grid-2);
+        color: var(--ink-3); display: inline-flex; align-items: center; justify-content: center;
+        transition: all .15s ease; z-index: 5;
+    }
+    .show-soft .float-btn:hover { color: var(--accent); border-color: var(--accent-bd); }
+    .show-soft .float-btn svg { width: 10px; height: 10px; }
+    .show-soft .btn-favorito svg.heart { stroke: #c98a85; }
 
-        /* ═══ ALERTAS FLASH ═══ */
-        #showRoot .sh-alert {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 8px; padding: 5px 10px; margin-bottom: 10px;
-            border-radius: 4px; font-size: 8.5px; font-weight: 500; border: 1px solid;
-        }
-        #showRoot .sh-alert.ok  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
-        #showRoot .sh-alert.err { color: #b06a6a; background: #fdf4f4; border-color: #f0dcdc; }
-        #showRoot .sh-alert button {
-            border: 0; background: transparent; color: inherit;
-            font-size: 10px; line-height: 1; opacity: .6; cursor: pointer;
-        }
-        #showRoot .sh-alert button:hover { opacity: 1; }
+    .show-soft .pv-body { padding: 9px 11px 10px; display: flex; flex-direction: column; flex-grow: 1; }
+    .show-soft .pv-body .strong { font-size: 9.5px; font-weight: 600; color: var(--ink-2); }
 
-        /* ═══ TARJETA VISTA PREVIA ═══ */
-        #showRoot .pv-label {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 7.5px; font-weight: 600; letter-spacing: .07em;
-            text-transform: uppercase; color: var(--ink-4);
-            margin-bottom: 6px;
-        }
-        #showRoot .pv-label svg { width: 10px; height: 10px; stroke: #c3ccd6; }
+    .show-soft .star-row svg { width: 9px; height: 9px; }
+    .show-soft .star-row svg polygon { fill: #5d8a70; }
+    .show-soft .score { font-size: 8px; font-weight: 700; color: var(--ink-2); }
+    .show-soft .rev-count { font-size: 7.5px; color: var(--ink-4); display: inline-flex; align-items: center; gap: 3px; }
+    .show-soft .rev-count svg { width: 8px; height: 8px; stroke: var(--ink-4); }
 
-        #showRoot .pv-card {
-            background: #fff; border: 1px solid var(--grid);
-            border-radius: 5px; overflow: hidden;
-            display: flex; flex-direction: column;
-        }
-        #showRoot .pv-sticky { position: sticky; top: 14px; }
+    .show-soft .loc { font-size: 8px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .show-soft .loc i { color: #c3ccd6; }
 
-        #showRoot .pv-carousel {
-            height: 180px; background: #f4f6f8;
-            position: relative; flex-shrink: 0;
-            border-bottom: 1px solid var(--grid);
-        }
-        #showRoot .pv-carousel img { object-fit: cover; object-position: center; width: 100%; height: 100%; }
-        #showRoot .pv-carousel .carousel-inner,
-        #showRoot .pv-carousel .carousel-item { width: 100%; height: 100%; }
+    .show-soft .spec-box { display: flex; border: 1px solid var(--grid); border-radius: 4px; background: var(--head); margin-bottom: 8px; }
+    .show-soft .spec-box .half { flex: 1; padding: 6px 9px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .show-soft .spec-box .half + .half { border-left: 1px solid var(--grid); }
+    .show-soft .spec-box .lbl { font-size: 6.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4); }
+    .show-soft .spec-box .val { font-size: 10px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
-        #showRoot .float-btn {
-            width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            background: rgba(255,255,255,.92);
-            border: 1px solid rgba(233,238,244,.95);
-            color: var(--ink-3);
-            text-decoration: none;
-            box-shadow: 0 1px 4px rgba(15,23,42,.08);
-            z-index: 10;
-            transition: transform .15s ease, color .15s ease;
-        }
-        #showRoot .float-btn:hover { transform: scale(1.1); color: var(--ink-2); }
-        #showRoot .float-btn svg { width: 13px; height: 13px; }
-        #showRoot .float-btn .heart { stroke: #d98c8c; }
-        #showRoot .float-btn:hover .heart { stroke: #c46a6a; }
+    .show-soft .kicker { font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-4); }
 
-        #showRoot .pv-carousel .carousel-control-prev,
-        #showRoot .pv-carousel .carousel-control-next {
-            width: 26px; opacity: .25; transition: opacity .15s ease; z-index: 5;
-        }
-        #showRoot .pv-carousel:hover .carousel-control-prev,
-        #showRoot .pv-carousel:hover .carousel-control-next { opacity: .55; }
-        #showRoot .pv-carousel .carousel-control-prev-icon,
-        #showRoot .pv-carousel .carousel-control-next-icon {
-            width: 14px; height: 14px; filter: invert(.45);
-        }
+    .show-soft .tarifa-box { background: #fafdfb; border: 1px solid #eaf3ee; border-radius: 4px; padding: 8px 9px; }
+    .show-soft .tarifa-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+    .show-soft .tarifa-name  { font-size: 8.5px; font-weight: 700; color: var(--ink-2); }
+    .show-soft .tarifa-fecha { font-size: 7px; color: var(--ink-4); }
+    .show-soft .tarifa-precio { display: block; font-size: 10px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .show-soft .tarifa-precio small { display: block; font-size: 6.5px; font-weight: 600; color: var(--ink-4); }
+    .show-soft .restr-row { display: flex; gap: 6px; }
+    .show-soft .restr-cell { flex: 1; background: var(--head); border: 1px solid var(--grid); border-radius: 3px; padding: 4px 7px; display: flex; flex-direction: column; }
+    .show-soft .restr-cell .lbl { font-size: 6.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-4); }
+    .show-soft .restr-cell .val { font-size: 8.5px; font-weight: 700; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+    .show-soft .restr-cell .val.blue { color: #5b7fa6; }
+    .show-soft .tarifa-empty {
+        border: 1px dashed var(--grid-2); background: var(--head); border-radius: 4px;
+        padding: 10px; text-align: center; font-size: 8px; color: var(--ink-4); font-style: italic;
+    }
 
-        #showRoot .portada-badge {
-            position: absolute; bottom: 6px; left: 6px; z-index: 5;
-            font-size: 7px; font-weight: 600; letter-spacing: .05em;
-            color: var(--ink-3);
-            background: rgba(255,255,255,.9);
-            border: 1px solid rgba(233,238,244,.9);
-            border-radius: 3px; padding: 0 6px; line-height: 14px;
-        }
+    /* ═══ ALERTAS ═══ */
+    .show-soft .sh-alert {
+        display: flex; justify-content: space-between; align-items: center;
+        border-radius: 4px; padding: 6px 10px; font-size: 8.5px; font-weight: 600;
+        margin-bottom: 10px; border: 1px solid;
+    }
+    .show-soft .sh-alert.ok  { background: #f0f7f2; color: #5d8a70; border-color: #d8e9de; }
+    .show-soft .sh-alert.err { background: #fdf5f4; color: #c98a85; border-color: #f0dcd8; }
+    .show-soft .sh-alert button { background: none; border: 0; font-size: 12px; line-height: 1; color: inherit; padding: 0 2px; }
 
-        #showRoot .pv-body { padding: 9px 11px 8px; display: flex; flex-direction: column; flex-grow: 1; }
+    /* ═══ MÓDULO 1 (individual · solo lectura) ═══ */
+    .show-soft .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+    .show-soft .stat-cell { border: 1px solid var(--grid); background: var(--head); border-radius: 4px; padding: 7px 9px; min-width: 0; }
+    .show-soft .stat-cell .lbl { font-size: 7px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4); display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+    .show-soft .stat-cell .lbl i { font-size: 7.5px; }
+    .show-soft .stat-cell .big { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+    .show-soft .stat-cell .big small { font-size: 6.5px; font-weight: 600; color: var(--ink-4); }
+    .show-soft .stat-cell .sub { font-size: 7px; color: var(--ink-4); }
 
-        #showRoot .star-row svg { width: 9px; height: 9px; fill: #ecd3a0; stroke: none; }
-        #showRoot .star-row .score { font-size: 8px; font-weight: 600; color: var(--ink-3); }
-        #showRoot .rev-count {
-            font-size: 7.5px; color: var(--ink-4);
-            display: inline-flex; align-items: center; gap: 3px;
-        }
-        #showRoot .rev-count svg { width: 9px; height: 9px; stroke: #c3ccd6; }
+    .show-soft .vis-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 7.5px; font-weight: 700; padding: 1px 8px;
+        border-radius: 8px; line-height: 14px; border: 1px solid;
+    }
+    .show-soft .vis-pill .dotp { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+    .show-soft .vis-on  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
+    .show-soft .vis-off { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
 
-        #showRoot .loc {
-            font-size: 8px; color: var(--ink-3);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        #showRoot .loc i { font-size: 8px; color: #c3ccd6; }
+    .show-soft .m1-chev { width: 9px; height: 9px; stroke: var(--ink-4); transition: transform .2s ease; }
+    .show-soft [data-bs-toggle="collapse"][aria-expanded="false"] .m1-chev { transform: rotate(-90deg); }
+</style>
 
-        #showRoot .spec-box {
-            background: var(--head); border: 1px solid var(--grid);
-            border-radius: 4px; padding: 6px 8px; margin-bottom: 6px; display: flex;
-        }
-        #showRoot .spec-box .half { flex: 1; text-align: center; }
-        #showRoot .spec-box .half + .half { border-left: 1px solid var(--grid); }
-        #showRoot .spec-box .lbl {
-            display: block; font-size: 7px; font-weight: 600;
-            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
-        }
-        #showRoot .spec-box .val {
-            display: block; font-size: 9px; font-weight: 600;
-            color: var(--ink-2); font-variant-numeric: tabular-nums;
-        }
+<div id="showRoot" class="show-soft">
 
-        #showRoot .tarifa-box { border: 1px solid var(--grid); border-radius: 4px; padding: 7px 9px; background: #fff; }
-        #showRoot .tarifa-top {
-            display: flex; justify-content: space-between; align-items: baseline;
-            gap: 8px; padding-bottom: 6px; margin-bottom: 6px;
-            border-bottom: 1px solid var(--grid);
-        }
-        #showRoot .tarifa-name { font-size: 8.5px; font-weight: 600; color: var(--ink-2); line-height: 1.25; }
-        #showRoot .tarifa-fecha { font-size: 7px; color: var(--ink-4); }
-        #showRoot .tarifa-precio { font-size: 8.5px; font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-        #showRoot .tarifa-precio small {
-            display: block; font-size: 6.5px; font-weight: 600;
-            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
-        }
-        #showRoot .restr-row { display: flex; gap: 6px; }
-        #showRoot .restr-cell {
-            flex: 1; text-align: center;
-            background: var(--head); border: 1px solid var(--grid);
-            border-radius: 3px; padding: 3px 4px;
-        }
-        #showRoot .restr-cell .lbl {
-            display: block; font-size: 6.5px; font-weight: 600;
-            letter-spacing: .06em; text-transform: uppercase; color: var(--ink-4);
-        }
-        #showRoot .restr-cell .val {
-            display: block; font-size: 9px; font-weight: 600;
-            line-height: 1.3; font-variant-numeric: tabular-nums; color: #5d8a70;
-        }
-        #showRoot .restr-cell .val.blue { color: #7d9cb8; }
+@if($modoGlobal)
 
-        #showRoot .tarifa-empty {
-            border: 1px dashed var(--grid-2); border-radius: 4px;
-            padding: 7px; text-align: center;
-            font-size: 8px; font-style: italic; color: var(--ink-4);
-            background: var(--head);
-        }
+    {{-- ═══════════════════════════════════════════════════════════════ --}}
+    {{-- MODO GLOBAL · TABLA CON TODAS LAS RELACIONES + GESTIONAR         --}}
+    {{-- ═══════════════════════════════════════════════════════════════ --}}
+    <div class="p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
-        /* ═══ MODALES SUAVES ═══ */
-        #showRoot .sh-modal .modal-content {
-            border: 1px solid var(--grid-2); border-radius: 5px;
-            box-shadow: 0 8px 30px rgba(15,23,42,.06);
-            font-family: inherit; color: var(--ink);
-        }
-        #showRoot .sh-modal .modal-header { border-bottom: 1px solid var(--grid); padding: 9px 14px; }
-        #showRoot .sh-modal .modal-body { padding: 14px; }
-        #showRoot .sh-modal .form-label {
-            font-size: 7.5px; font-weight: 600; letter-spacing: .06em;
-            text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px;
-        }
-        #showRoot .sh-modal .form-label span {
-            text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--ink-4);
-        }
-        #showRoot .sh-modal .form-control,
-        #showRoot .sh-modal .form-select,
-        #showRoot .sh-modal .form-check-input {
-            font-size: 9.5px; color: var(--ink-2);
-            border: 1px solid var(--grid-2); border-radius: 3px;
-            padding: 4px 8px; box-shadow: none !important;
-        }
-        #showRoot .sh-modal .form-control:focus,
-        #showRoot .sh-modal .form-select:focus { border-color: #c8d6cd; }
-        #showRoot .sh-modal .form-check-label { font-size: 9px; color: var(--ink-2); font-weight: 600; }
-        #showRoot .sh-modal .switch-box {
-            background: var(--head); border: 1px solid var(--grid);
-            border-radius: 4px; padding: 8px 10px;
-        }
-        #showRoot .sh-modal .btn-cancel {
-            border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3);
-            font-family: inherit; font-size: 9px; font-weight: 600;
-            padding: 3px 14px; border-radius: 3px;
-        }
-        #showRoot .sh-modal .btn-cancel:hover { color: var(--ink-2); background: #fafcfe; }
-        #showRoot .sh-modal .btn-save {
-            background: var(--accent-bg); color: var(--accent);
-            border: 1px solid var(--accent-bd);
-            font-family: inherit; font-size: 9px; font-weight: 600;
-            padding: 3px 14px; border-radius: 3px;
-        }
-        #showRoot .sh-modal .btn-save:hover { background: #e3f1e9; color: #34684e; }
-    </style>
+        <div class="d-flex justify-content-between align-items-center mb-2">
 
+            <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
+                <i class="bi bi-houses me-1" style="font-size: 8px; color: #5d8a70;"></i>
+                Visión Global de Expedientes
+            </h6>
 
-    {{-- ═══ CINTA DE TÍTULO ═══ --}}
-    <div class="sh-titlebar">
-
-        <div>
-            <span class="sh-live mb-1">
-                <span class="pulse"></span> EXPEDIENTE #{{ $inmueble->id }}
+            <span class="sh-chip tipo" style="font-size: 7.5px;">
+                <i class="bi bi-collection"></i>{{ $expedientes->count() }} inmuebles
             </span>
-            <div class="strong" style="font-size: 13px;">
-                Panel de Gestión: {{ $inmueble->name }}
-            </div>
-            <div class="sub">
-                Administra información, tarifas y fotos con vista previa en tiempo real
-            </div>
+
         </div>
 
-        <a href="{{ route('rsv.admin.dashboard') }}" class="btn-soft">
-            <i class="bi bi-arrow-left" style="font-size: 9px;"></i> Volver al Catálogo
-        </a>
+        <div class="table-responsive">
+
+            <table class="table table-sm table-hover align-middle mb-0">
+
+                <thead>
+                    <tr>
+                        <th class="exp-num">#</th>
+                        <th class="text-center" style="width: 28px;">Vista</th>
+                        <th>Inmueble</th>
+                        <th style="width: 92px;">Tipo Inm.</th>
+                        <th style="width: 76px;">Ciudad</th>
+                        <th class="text-center" style="width: 38px;">Cap.</th>
+                        <th class="text-end" style="width: 72px;">Mín. Res.</th>
+                        <th class="text-center" style="width: 52px;">Máx. D.</th>
+                        <th class="text-center" style="width: 44px;">Fotos</th>
+                        <th class="text-center" style="width: 50px;">Bloq.</th>
+                        <th class="text-center" style="width: 56px;">Reservas</th>
+                        <th class="text-center" style="width: 58px;">Estado</th>
+                        {{-- ═══ FIX: columna Gestionar restaurada ═══ --}}
+                        <th class="text-center" style="width: 64px;">·</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @forelse($expedientes as $prop)
+
+                        @php
+                            $portada = $portadaDe($prop);
+                            $ut      = $ultimaTarifaDe($prop);
+                            $tipoInm = optional($prop->tipoInmueble)->nombre;
+                            $nFotos  = $prop->multimedia->count();
+                            $nBloq   = $prop->bloqueos_calendario_count ?? 0;
+                            $nRes    = $prop->reservas_count ?? 0;
+                        @endphp
+
+                        <tr>
+
+                            <td class="exp-num">{{ $loop->iteration }}</td>
+
+                            {{-- Portada (relación multimedia) --}}
+                            <td class="text-center">
+                                @if($portada)
+                                    <a href="{{ $portada->url_archivo }}" target="_blank" title="Ver portada" class="exp-link text-decoration-none">
+                                        <img src="{{ $portada->url_archivo }}" alt="" class="exp-thumb">
+                                    </a>
+                                @else
+                                    <span class="exp-thumb-empty"><i class="bi bi-image"></i></span>
+                                @endif
+                            </td>
+
+                            {{-- Nombre --}}
+                            <td class="exp-ellip">
+                                <span class="exp-nombre" title="{{ $prop->name }}">{{ $prop->name }}</span>
+                            </td>
+
+                            {{-- Tipo (relación tipoInmueble) --}}
+                            <td class="exp-ellip-sm">
+                                @if($tipoInm)
+                                    <span class="sh-chip tipo" title="{{ $tipoInm }}">
+                                        <i class="bi bi-tag-fill"></i><span class="t">{{ $tipoInm }}</span>
+                                    </span>
+                                @else
+                                    <span style="color: var(--ink-4);">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Ciudad --}}
+                            <td class="exp-ellip-sm" title="{{ $prop->city ?? '' }}" style="color: var(--ink-3);">
+                                {{ $prop->city ?? '—' }}
+                            </td>
+
+                            {{-- Capacidad --}}
+                            <td class="exp-num text-center">{{ $prop->capacidad_maxima ?? '—' }}</td>
+
+                            {{-- Mín. Reserva (relación latestTarifa) --}}
+                            <td class="text-end fw-bold" style="color: #5d8a70;">
+                                @if($ut)
+                                    ${{ number_format($ut->precio_minimo_reserva ?? 0, 0) }}
+                                @else
+                                    <span style="color: var(--ink-4);">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Máx. Días (relación latestTarifa) --}}
+                            <td class="text-center fw-bold" style="color: #5b7fa6;">
+                                @if($ut)
+                                    {{ $ut->dias_maximos ?: '∞' }}
+                                @else
+                                    <span style="color: var(--ink-4);">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Fotos (conteo multimedia) --}}
+                            <td class="text-center">
+                                @if($nFotos > 0)
+                                    <span class="sh-chip tipo"><i class="bi bi-images"></i>{{ $nFotos }}</span>
+                                @else
+                                    <span style="color: var(--ink-4);">0</span>
+                                @endif
+                            </td>
+
+                            {{-- Bloqueos (conteo bloqueosCalendario) --}}
+                            <td class="text-center">
+                                @if($nBloq > 0)
+                                    <span class="sh-chip tint"><i class="bi bi-calendar-x"></i>{{ $nBloq }}</span>
+                                @else
+                                    <span style="color: var(--ink-4);">0</span>
+                                @endif
+                            </td>
+
+                            {{-- RESERVAS (conteo reservas) --}}
+                            <td class="text-center">
+                                @if($nRes > 0)
+                                    <span class="sh-chip ok"><i class="bi bi-journal-check"></i>{{ $nRes }}</span>
+                                @else
+                                    <span style="color: var(--ink-4);">0</span>
+                                @endif
+                            </td>
+
+                            {{-- Estado --}}
+                            <td class="text-center">
+                                @if($prop->active)
+                                    <span class="sh-chip ok"><i class="bi bi-check-lg"></i>Activo</span>
+                                @else
+                                    <span class="sh-chip off"><i class="bi bi-dash-lg"></i>Inactivo</span>
+                                @endif
+                            </td>
+
+                            {{-- ═══ FIX: botón Gestionar restaurado (solo navega al expediente) ═══ --}}
+                            <td class="text-center">
+                                <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => $prop->id]) }}"
+                                   class="btn btn-sm btn-link p-0 text-decoration-none"
+                                   style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
+                                   title="Abrir expediente completo">
+                                    Gestionar
+                                </a>
+                            </td>
+
+                        </tr>
+
+                    @empty
+                        <tr>
+                            <td colspan="13" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px;">
+                                <i class="bi bi-houses me-1"></i> No hay inmuebles registrados en el catálogo.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+
+            </table>
+
+        </div>
 
     </div>
 
+@else
+
+    {{-- ═══════════════════════════════════════════════════════════════ --}}
+    {{-- MODO INDIVIDUAL · EXPEDIENTE COMPLETO · SOLO LECTURA            --}}
+    {{-- ═══════════════════════════════════════════════════════════════ --}}
+
+    {{-- CINTA DE TÍTULO --}}
+    <div class="sh-titlebar">
+        <div>
+            <span class="sh-live mb-1"><span class="pulse"></span> EXPEDIENTE #{{ $inmueble->id }}</span>
+            <div class="strong">Panel de Gestión: {{ $inmueble->name }}</div>
+            <div class="sub">Vista informativa: identidad, tarifas y fotos del inmueble</div>
+        </div>
+        <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => 'todos']) }}" class="btn-soft">
+            <i class="bi bi-arrow-left"></i> Volver al Catálogo
+        </a>
+    </div>
 
     <div class="row g-3">
 
-        {{-- ═══════════ COLUMNA IZQUIERDA · VISTA PREVIA DEL CLIENTE ═══════════ --}}
+        {{-- ──── COLUMNA IZQUIERDA · VISTA PREVIA DEL CLIENTE ──── --}}
         <div class="col-12 col-lg-5 col-xl-4">
-
             <div class="pv-sticky">
-
                 <div class="pv-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -422,33 +473,14 @@
                 </div>
 
                 <div class="pv-card">
+                    <div id="carouselInmueble{{ $inmueble->id }}" class="carousel slide pv-carousel" data-bs-ride="carousel">
 
-                    {{-- CARRUSEL + FLOTANTES --}}
-                    <div id="carouselInmueble{{ $inmueble->id }}"
-                         class="carousel slide pv-carousel"
-                         data-bs-ride="carousel">
-
-                        {{-- LÁPIZ (abre modal de edición) --}}
-                        <button type="button"
-                                class="float-btn position-absolute top-0 start-0 m-2"
-                                data-bs-toggle="modal" data-bs-target="#modalEditarInmueblePrincipal"
-                                title="Editar Inmueble">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                        </button>
-
-                        {{-- CORAZÓN (favorito) --}}
-                        <button type="button"
-                                class="float-btn position-absolute top-0 end-0 m-2 btn-favorito"
-                                title="Vista de favorito">
+                        {{-- Decorativo: corazón de favorito (sin funcionalidad) --}}
+                        <button type="button" class="float-btn position-absolute top-0 end-0 m-2 btn-favorito" title="Vista de favorito">
                             <svg class="heart" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                             </svg>
                         </button>
-
-                        @php $galeria = $inmueble->multimedia ?? collect(); @endphp
 
                         <div class="carousel-inner">
                             @forelse($galeria as $index => $media)
@@ -460,7 +492,7 @@
                                 </div>
                             @empty
                                 <div class="carousel-item active">
-                                    <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--head);color:#d4dae2;font-size:8.5px;font-style:italic;">
+                                    <div class="pv-empty-media">
                                         <i class="bi bi-image me-1"></i> Sube fotos en la galería
                                     </div>
                                 </div>
@@ -470,81 +502,64 @@
                         @if($galeria->count() > 1)
                             <button class="carousel-control-prev" type="button" data-bs-target="#carouselInmueble{{ $inmueble->id }}" data-bs-slide="prev">
                                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Anterior</span>
                             </button>
                             <button class="carousel-control-next" type="button" data-bs-target="#carouselInmueble{{ $inmueble->id }}" data-bs-slide="next">
                                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Siguiente</span>
                             </button>
                         @endif
-
                     </div>
 
-
-                    {{-- CUERPO --}}
                     <div class="pv-body">
-
-                        {{-- Título + estado --}}
                         <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
-                            <div class="strong text-truncate" style="font-size: 9.5px;" title="{{ $inmueble->name }}">
-                                {{ $inmueble->name }}
+                            <div class="strong text-truncate" title="{{ $inmueble->name }}">{{ $inmueble->name }}</div>
+                            <div class="d-flex align-items-center gap-1" style="flex-shrink: 0;">
+                                @if($inmueble->active)
+                                    <span class="sh-chip ok"><i class="bi bi-check-lg"></i>Activo</span>
+                                @else
+                                    <span class="sh-chip off"><i class="bi bi-dash-lg"></i>Inactivo</span>
+                                @endif
+                                @if(optional($inmueble->tipoInmueble)->nombre)
+                                    <span class="sh-chip tipo" title="Tipo de inmueble"><i class="bi bi-tag-fill"></i>{{ $inmueble->tipoInmueble->nombre }}</span>
+                                @endif
                             </div>
-
-                            @if($inmueble->active)
-                                <span class="chip chip-green" style="flex-shrink: 0;">Activo</span>
-                            @else
-                                <span class="chip chip-gray" style="flex-shrink: 0;">Inactivo</span>
-                            @endif
                         </div>
 
-
-                        {{-- Rating + reseñas --}}
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <div class="d-flex align-items-center gap-1 star-row">
                                 @for($i = 0; $i < 5; $i++)
-                                    <svg viewBox="0 0 24 24">
-                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                    </svg>
+                                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 @endfor
-                                <span class="score ms-0.5">5.0</span>
+                                <span class="score ms-1">5.0</span>
                             </div>
-
                             <span class="rev-count">
-                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                                </svg>
-                                {{ $inmueble->comentarios_count ?? 0 }} reseñas
+                                <i class="bi bi-journal-check"></i>
+                                {{ $inmueble->reservas_count ?? 0 }} reservas
                             </span>
                         </div>
 
-
-                        {{-- Ubicación --}}
                         <div class="loc mb-2">
                             <i class="bi bi-geo-alt me-1"></i>{{ $inmueble->city ?? 'Sin ciudad' }} — {{ $inmueble->ubicacion ?? 'Sin dirección' }}
                         </div>
 
-
-                        {{-- Valores --}}
+                        {{-- Especificaciones: capacidad · fotos · reservas --}}
                         <div class="spec-box">
                             <div class="half">
-                                <span class="lbl">Capacidad máx.</span>
-                                <span class="val">{{ $inmueble->capacidad_maxima ?? 'N/A' }} pers.</span>
+                                <span class="lbl">Capacidad</span>
+                                <span class="val">{{ $inmueble->capacidad_maxima ?? 'N/A' }} <small style="font-size:6.5px;color:var(--ink-4);">pers.</small></span>
                             </div>
                             <div class="half">
-                                <span class="lbl">Precio base</span>
-                                <span class="val" style="color: #5d8a70;">${{ number_format($inmueble->precio_base_noche ?? 0, 2) }}</span>
+                                <span class="lbl">Fotos</span>
+                                <span class="val" style="color: #5b7fa6;">{{ $inmueble->multimedia->count() }}</span>
+                            </div>
+                            <div class="half">
+                                <span class="lbl">Reservas</span>
+                                <span class="val" style="color: #5d8a70;">{{ $inmueble->reservas_count ?? 0 }}</span>
                             </div>
                         </div>
 
-
-                        {{-- Última tarifa --}}
                         <div class="kicker mb-1 mt-auto">Condiciones última tarifa</div>
-
-                        @php $ultimaTarifa = $inmueble->latestTarifa; @endphp
-
                         @if($ultimaTarifa)
                             <div class="tarifa-box">
-
                                 <div class="tarifa-top">
                                     <div>
                                         <div class="tarifa-name">{{ $ultimaTarifa->nombre_temporada }}</div>
@@ -554,41 +569,33 @@
                                     </div>
                                     <div class="text-end">
                                         <span class="tarifa-precio">
-                                            <small>Precio noche</small>
-                                            ${{ number_format($ultimaTarifa->precio_noche, 2) }}
+                                            <small>Mín. reserva</small>
+                                            ${{ number_format($ultimaTarifa->precio_minimo_reserva ?? 0, 2) }}
                                         </span>
                                     </div>
                                 </div>
-
                                 <div class="restr-row">
                                     <div class="restr-cell">
-                                        <span class="lbl">Mín. reserva</span>
-                                        <span class="val">${{ number_format($ultimaTarifa->precio_minimo_reserva, 2) }}</span>
+                                        <span class="lbl">Precio noche</span>
+                                        <span class="val">${{ number_format($ultimaTarifa->precio_noche ?? 0, 2) }}</span>
                                     </div>
                                     <div class="restr-cell">
                                         <span class="lbl">Máx. días</span>
                                         <span class="val blue">{{ $ultimaTarifa->dias_maximos ?: 'Ilimitado' }}</span>
                                     </div>
                                 </div>
-
                             </div>
                         @else
                             <div class="tarifa-empty">Sin tarifas temporales activas</div>
                         @endif
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
-
-        {{-- ═══════════ COLUMNA DERECHA · LOS 3 MÓDULOS ═══════════ --}}
+        {{-- ──── COLUMNA DERECHA · MÓDULOS (informativos) ──── --}}
         <div class="col-12 col-lg-7 col-xl-8">
 
-            {{-- Alertas flash --}}
             @if(session('success'))
                 <div class="sh-alert ok" role="alert">
                     <span><i class="bi bi-check-circle me-1"></i>{{ session('success') }}</span>
@@ -603,649 +610,75 @@
                 </div>
             @endif
 
-
-            {{-- ── MÓDULO 1 · NÚCLEO ── --}}
-            <div class="sh-module">
-
-                <div class="sh-strip m1">
-                    <button type="button" class="head-btn"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseNucleoInmueble"
-                            aria-expanded="false"
-                            aria-controls="collapseNucleoInmueble">
-                        <span class="m-id">MÓDULO 1/3</span>
-                        <span class="m-name">Identidad y Especificaciones</span>
-                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
+            {{-- MÓDULO 1 · NÚCLEO (solo lectura · colapsable) --}}
+            <div class="p-3 bg-white rounded-3 border mb-3" style="border-color: #f1f5f9 !important;">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <button type="button"
+                            class="btn btn-link p-0 text-decoration-none d-flex align-items-center gap-2"
+                            data-bs-toggle="collapse" data-bs-target="#collapseNucleoInmueble"
+                            aria-expanded="true" aria-controls="collapseNucleoInmueble">
+                        <i class="bi bi-fingerprint" style="font-size: 8px; color: #5d8a70;"></i>
+                        <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">Identidad y Especificaciones</h6>
+                        <svg class="m1-chev" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </button>
 
-                    <button type="button" class="btn-soft btn-soft-m1"
-                            data-bs-toggle="modal" data-bs-target="#modalEditarInmueblePrincipal">
-                        <i class="bi bi-pencil" style="font-size: 8.5px;"></i> Editar Propiedad
-                    </button>
+                    <span class="sh-chip off" style="font-size: 7px;">
+                        <i class="bi bi-eye"></i>Solo lectura
+                    </span>
                 </div>
 
-                <div id="collapseNucleoInmueble" class="collapse">
-                    <div class="sh-frame">
-                        <div class="sh-body">
-
-                            <div class="stat-grid">
-
-                                <div class="stat-cell">
-                                    <span class="lbl"><i class="bi bi-people"></i> Capacidad límite</span>
-                                    <span class="big">{{ $inmueble->capacidad_maxima ?? '0' }} <small>personas</small></span>
-                                </div>
-
-                                <div class="stat-cell">
-                                    <span class="lbl"><i class="bi bi-geo-alt"></i> Punto geográfico</span>
-                                    <span class="big d-block text-truncate" title="{{ $inmueble->city ?? '' }}">{{ $inmueble->city ?? 'N/A' }}</span>
-                                    <span class="sub d-block text-truncate" title="{{ $inmueble->ubicacion ?? '' }}">{{ $inmueble->ubicacion ?? 'Sin dirección' }}</span>
-                                </div>
-
-                                <div class="stat-cell">
-                                    <span class="lbl"><i class="bi bi-eye"></i> Visibilidad</span>
-                                    <div class="mt-1">
-                                        @if($inmueble->active)
-                                            <span class="vis-pill vis-on"><span class="dotp"></span> En vivo</span>
-                                        @else
-                                            <span class="vis-pill vis-off"><span class="dotp"></span> Borrador</span>
-                                        @endif
-                                    </div>
-                                </div>
-
+                <div id="collapseNucleoInmueble" class="collapse show">
+                    <div class="stat-grid">
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-people"></i> Capacidad límite</span>
+                            <span class="big">{{ $inmueble->capacidad_maxima ?? '0' }} <small>personas</small></span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-geo-alt"></i> Punto geográfico</span>
+                            <span class="big d-block text-truncate" title="{{ $inmueble->city ?? '' }}">{{ $inmueble->city ?? 'N/A' }}</span>
+                            <span class="sub d-block text-truncate" title="{{ $inmueble->ubicacion ?? '' }}">{{ $inmueble->ubicacion ?? 'Sin dirección' }}</span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-tag"></i> Tipo de inmueble</span>
+                            <span class="big d-block text-truncate" title="{{ optional($inmueble->tipoInmueble)->nombre }}">
+                                {{ optional($inmueble->tipoInmueble)->nombre ?? 'Sin tipo' }}
+                            </span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-images"></i> Galería</span>
+                            <span class="big">{{ $inmueble->multimedia->count() }} <small>fotos</small></span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-journal-check"></i> Reservas</span>
+                            <span class="big" style="color: #5d8a70;">{{ $inmueble->reservas_count ?? 0 }}</span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-calendar-x"></i> Bloqueos</span>
+                            <span class="big" style="color: #8a6fae;">{{ $inmueble->bloqueos_calendario_count ?? 0 }}</span>
+                        </div>
+                        <div class="stat-cell">
+                            <span class="lbl"><i class="bi bi-eye"></i> Visibilidad</span>
+                            <div class="mt-1">
+                                @if($inmueble->active)
+                                    <span class="vis-pill vis-on"><span class="dotp"></span> En vivo</span>
+                                @else
+                                    <span class="vis-pill vis-off"><span class="dotp"></span> Borrador</span>
+                                @endif
                             </div>
-
                         </div>
                     </div>
                 </div>
-
             </div>
 
+            {{-- ═══ FIX: Módulos 2 y 3 en modo SOLO LECTURA ═══ --}}
+            {{-- La bandera soloLectura=true hace que tarifa y galeria muestren --}}
+            {{-- sus tablas informativas SIN botones de crear/editar ni modales --}}
+            @include('rsv.admin.partials.inmuebles.tarifa', ['soloLectura' => true])
+            @include('rsv.admin.partials.inmuebles.galeria', ['soloLectura' => true])
 
-            {{-- ── MÓDULO 2 · MOTOR COMERCIAL ── --}}
-            <div class="sh-module">
-
-                <div class="sh-strip m2">
-                    <button type="button" class="head-btn"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseMotorComercial"
-                            aria-expanded="false"
-                            aria-controls="collapseMotorComercial">
-                        <span class="m-id">MÓDULO 2/3</span>
-                        <span class="m-name">Motor Comercial y Tarifas</span>
-                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-
-                    <button type="button" class="btn-soft btn-soft-m2"
-                            data-bs-toggle="modal" data-bs-target="#modalAddTarifa">
-                        <i class="bi bi-plus-lg" style="font-size: 8.5px;"></i> Nueva Tarifa
-                    </button>
-                </div>
-
-                <div id="collapseMotorComercial" class="collapse">
-                    <div class="sh-frame">
-                        <div class="sh-body">
-
-                            <div class="overflow-auto" style="border: 1px solid var(--grid); border-radius: 4px;">
-
-                                <table class="xls-table" style="min-width: 480px;">
-
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 22px;"></th>
-                                            <th>Temporada</th>
-                                            <th class="text-center">Fechas</th>
-                                            <th class="text-end">Precio / Noche</th>
-                                            <th class="text-center">·</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        @forelse($inmueble->tarifasTemporadas ?? [] as $tarifa)
-
-                                            <tr>
-                                                <td class="row-index">{{ $loop->iteration }}</td>
-
-                                                <td class="strong">
-                                                    {{ $tarifa->nombre_temporada }}
-                                                    <div class="mt-0.5">
-                                                        @if($tarifa->active)
-                                                            <span class="chip chip-green" style="font-size: 7px;">Activa</span>
-                                                        @else
-                                                            <span class="chip chip-gray" style="font-size: 7px;">Inactiva</span>
-                                                        @endif
-                                                    </div>
-                                                </td>
-
-                                                <td class="text-center num" style="color: #a8b3c1;">
-                                                    {{ optional($tarifa->fecha_inicio)->format('d/m') }} — {{ optional($tarifa->fecha_fin)->format('d/m/y') }}
-                                                </td>
-
-                                                <td class="text-end num strong" style="color: #5d8a70;">
-                                                    ${{ number_format($tarifa->precio_noche, 2) }}
-                                                </td>
-
-                                                <td class="text-center">
-                                                    <button type="button"
-                                                        class="btn-actions btn-editar-tarifa"
-                                                        data-bs-toggle="modal" data-bs-target="#modalEditarTarifa"
-                                                        data-url-update="{{ route('rsv.tarifas-temporadas.update', $tarifa->id) }}"
-                                                        data-nombre-temporada="{{ $tarifa->nombre_temporada }}"
-                                                        data-fecha-inicio="{{ optional($tarifa->fecha_inicio)->format('Y-m-d') }}"
-                                                        data-fecha-fin="{{ optional($tarifa->fecha_fin)->format('Y-m-d') }}"
-                                                        data-precio-noche="{{ $tarifa->precio_noche }}"
-                                                        data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
-                                                        data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
-                                                        data-dias-maximos="{{ $tarifa->dias_maximos }}"
-                                                        data-active="{{ $tarifa->active ? 1 : 0 }}">
-                                                        Editar
-                                                    </button>
-                                                </td>
-
-                                            </tr>
-
-                                        @empty
-                                            <tr>
-                                                <td class="row-index">1</td>
-                                                <td colspan="4">
-                                                    <div class="sh-empty" style="background: transparent;">
-                                                        <i class="bi bi-calendar-x"></i>
-                                                        No hay tarifas registradas.
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-
-                                </table>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-
-            {{-- ── MÓDULO 3 · VITRINA VISUAL ── --}}
-            <div class="sh-module">
-
-                <div class="sh-strip m3">
-                    <button type="button" class="head-btn"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseVitrinaVisual"
-                            aria-expanded="false"
-                            aria-controls="collapseVitrinaVisual">
-                        <span class="m-id">MÓDULO 3/3</span>
-                        <span class="m-name">Vitrina Visual y Galería</span>
-                        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </button>
-
-                    <button type="button" class="btn-soft btn-soft-m3"
-                            data-bs-toggle="modal" data-bs-target="#modalAddMultimedia">
-                        <i class="bi bi-plus-lg" style="font-size: 8.5px;"></i> Agregar Recurso
-                    </button>
-                </div>
-
-                <div id="collapseVitrinaVisual" class="collapse">
-                    <div class="sh-frame">
-                        <div class="sh-body">
-
-                            <div class="overflow-auto" style="border: 1px solid var(--grid); border-radius: 4px;">
-
-                                <table class="xls-table" style="min-width: 420px;">
-
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 22px;"></th>
-                                            <th class="text-center">Vista</th>
-                                            <th>Tipo / Portada</th>
-                                            <th class="text-center">Orden</th>
-                                            <th class="text-center">·</th>
-                                        </tr>
-                                    </thead>
-
-                                    <tbody>
-                                        @forelse($inmueble->multimedia ?? [] as $media)
-
-                                            <tr>
-                                                <td class="row-index">{{ $loop->iteration }}</td>
-
-                                                <td class="text-center">
-                                                    <a href="{{ $media->url_archivo }}" target="_blank" class="thumb" title="Ver archivo completo">
-                                                        @if($media->tipo_multimedia == 'imagen')
-                                                            <img src="{{ $media->url_archivo }}" alt="Miniatura">
-                                                        @else
-                                                            <i class="bi bi-play-btn"></i>
-                                                        @endif
-                                                    </a>
-                                                </td>
-
-                                                <td>
-                                                    <div class="mb-0.5">
-                                                        @if($media->tipo_multimedia == 'imagen')
-                                                            <span class="chip chip-blue"><i class="bi bi-image"></i> Imagen</span>
-                                                        @else
-                                                            <span class="chip chip-purple"><i class="bi bi-camera-video"></i> Video</span>
-                                                        @endif
-                                                    </div>
-                                                    @if($media->es_portada)
-                                                        <span class="chip chip-green" style="font-size: 7px;">Principal</span>
-                                                    @endif
-                                                </td>
-
-                                                <td class="text-center num">{{ $media->orden }}</td>
-
-                                                <td class="text-center">
-                                                    <button type="button"
-                                                        class="btn-actions btn-editar-multimedia"
-                                                        data-bs-toggle="modal" data-bs-target="#modalEditarMultimedia"
-                                                        data-url-update="{{ route('rsv.inmueble-multimedia.update', $media->id) }}"
-                                                        data-tipo-multimedia="{{ $media->tipo_multimedia }}"
-                                                        data-orden="{{ $media->orden }}"
-                                                        data-es-portada="{{ $media->es_portada ? 1 : 0 }}">
-                                                        Editar
-                                                    </button>
-                                                </td>
-
-                                            </tr>
-
-                                        @empty
-                                            <tr>
-                                                <td class="row-index">1</td>
-                                                <td colspan="4">
-                                                    <div class="sh-empty" style="background: transparent;">
-                                                        <i class="bi bi-images"></i>
-                                                        Vitrina vacía. Sube fotos o videos.
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-
-                                </table>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>  {{-- /row g-3 --}}
-
-
-    {{-- ═══════════════════════════════════════════════════════════ --}}
-    <!--  MODALES (DENTRO de #showRoot para que el CSS aplique)       -->
-    <!--  ═══════════════════════════════════════════════════════════ -->
-
-    {{-- MODAL 1 · EDITAR INMUEBLE PRINCIPAL --}}
-    <div class="modal fade sh-modal" id="modalEditarInmueblePrincipal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <div>
-                        <div class="kicker">Módulo 1/3 · Núcleo</div>
-                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar núcleo del inmueble</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                </div>
-
-                <div class="modal-body">
-                    <form action="{{ route('rsv.inmuebles.update', $inmueble->id) }}" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="mb-2">
-                            <label class="form-label">Nombre del inmueble <span>(`name`)</span></label>
-                            <input type="text" class="form-control" name="name" value="{{ old('name', $inmueble->name) }}" required>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Capacidad máxima <span>(`capacidad_maxima`)</span></label>
-                                <input type="number" class="form-control" name="capacidad_maxima" value="{{ old('capacidad_maxima', $inmueble->capacidad_maxima) }}">
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Tipo de inmueble ID <span>(`tipo_inmueble_id`)</span></label>
-                                <input type="number" class="form-control" name="tipo_inmueble_id" value="{{ old('tipo_inmueble_id', $inmueble->tipo_inmueble_id) }}" required>
-                            </div>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Ciudad <span>(`city`)</span></label>
-                                <input type="text" class="form-control" name="city" value="{{ old('city', $inmueble->city) }}">
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Ubicación / Dirección <span>(`ubicacion`)</span></label>
-                                <input type="text" class="form-control" name="ubicacion" value="{{ old('ubicacion', $inmueble->ubicacion) }}">
-                            </div>
-                        </div>
-
-                        <div class="switch-box mt-1">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="editActiveInmueble" {{ old('active', $inmueble->active) ? 'checked' : '' }}>
-                                <label class="form-check-label" for="editActiveInmueble">Activo (visible en catálogo general)</label>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Inmueble</button>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
         </div>
     </div>
 
+@endif
 
-    {{-- MODAL 2A · NUEVA TARIFA --}}
-    <div class="modal fade sh-modal" id="modalAddTarifa" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <div>
-                        <div class="kicker">Módulo 2/3 · Motor comercial</div>
-                        <div class="strong mt-0.5" style="font-size: 10.5px;">Nueva tarifa por temporada</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                </div>
-
-                <div class="modal-body">
-                    <form action="{{ route('rsv.tarifas-temporadas.store') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                        <div class="mb-2">
-                            <label class="form-label">Nombre de la temporada <span>(`nombre_temporada`)</span></label>
-                            <input type="text" class="form-control" name="nombre_temporada" placeholder="Ej. Temporada Alta Diciembre" required>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Fecha de inicio <span>(`fecha_inicio`)</span></label>
-                                <input type="date" class="form-control" name="fecha_inicio" required>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Fecha de fin <span>(`fecha_fin`)</span></label>
-                                <input type="date" class="form-control" name="fecha_fin" required>
-                            </div>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Precio noche</label>
-                                <input type="number" step="0.01" class="form-control" name="precio_noche" placeholder="0.00" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Precio fin sem.</label>
-                                <input type="number" step="0.01" class="form-control" name="precio_fin_semana" placeholder="0.00" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Mín. reserva</label>
-                                <input type="number" step="0.01" class="form-control" name="precio_minimo_reserva" placeholder="0.00" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Días máximos</label>
-                                <input type="number" class="form-control" name="dias_maximos" placeholder="Ej. 30" min="1">
-                            </div>
-                        </div>
-
-                        <div class="switch-box mt-1">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="tarifaActiveCheck" checked>
-                                <label class="form-check-label" for="tarifaActiveCheck">Tarifa activa comercialmente</label>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Guardar Tarifa</button>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-    {{-- MODAL 2B · EDITAR TARIFA --}}
-    <div class="modal fade sh-modal" id="modalEditarTarifa" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <div>
-                        <div class="kicker">Módulo 2/3 · Motor comercial</div>
-                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar tarifa comercial</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                </div>
-
-                <div class="modal-body">
-                    <form id="formEditarTarifa" method="POST">
-                        @csrf
-                        @method('PUT')
-                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                        <div class="mb-2">
-                            <label class="form-label">Nombre de la temporada</label>
-                            <input type="text" class="form-control" id="edit_tarifa_nombre" name="nombre_temporada" required>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Fecha de inicio</label>
-                                <input type="date" class="form-control" id="edit_tarifa_inicio" name="fecha_inicio" required>
-                            </div>
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Fecha de fin</label>
-                                <input type="date" class="form-control" id="edit_tarifa_fin" name="fecha_fin" required>
-                            </div>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Precio noche</label>
-                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_noche" name="precio_noche" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Precio fin sem.</label>
-                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_fin_semana" name="precio_fin_semana" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Mín. reserva</label>
-                                <input type="number" step="0.01" class="form-control" id="edit_tarifa_precio_minimo" name="precio_minimo_reserva" required>
-                            </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="form-label">Días máximos</label>
-                                <input type="number" class="form-control" id="edit_tarifa_dias_maximos" name="dias_maximos" min="1">
-                            </div>
-                        </div>
-
-                        <div class="switch-box mt-1">
-                            <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active">
-                                <label class="form-check-label" for="edit_tarifa_active">Tarifa activa</label>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Tarifa</button>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-    {{-- MODAL 3A · AGREGAR MULTIMEDIA --}}
-    <div class="modal fade sh-modal" id="modalAddMultimedia" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <div>
-                        <div class="kicker">Módulo 3/3 · Vitrina visual</div>
-                        <div class="strong mt-0.5" style="font-size: 10.5px;">Agregar recurso multimedia</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                </div>
-
-                <div class="modal-body">
-                    <form action="{{ route('rsv.inmueble-multimedia.store') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="id_rsv_catalogo_inmueble" value="{{ $inmueble->id }}">
-
-                        <div class="mb-2">
-                            <label class="form-label">Tipo de multimedia <span>(`tipo_multimedia`)</span></label>
-                            <select class="form-select" name="tipo_multimedia" required>
-                                <option value="imagen">Imagen</option>
-                                <option value="video">Video</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-2">
-                            <label class="form-label">URL del archivo (S3) <span>(`url_archivo`)</span></label>
-                            <input type="url" class="form-control" name="url_archivo" placeholder="https://bucket.s3.amazonaws.com/..." required>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Orden de aparición <span>(`orden`)</span></label>
-                                <input type="number" class="form-control" name="orden" placeholder="Ej. 1" min="1">
-                            </div>
-                            <div class="col-md-6 mb-2 d-flex align-items-end">
-                                <div class="switch-box w-100">
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="addMediaPortada">
-                                        <label class="form-check-label" for="addMediaPortada">Portada principal</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Guardar Recurso</button>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-    {{-- MODAL 3B · EDITAR MULTIMEDIA --}}
-    <div class="modal fade sh-modal" id="modalEditarMultimedia" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-
-                <div class="modal-header">
-                    <div>
-                        <div class="kicker">Módulo 3/3 · Vitrina visual</div>
-                        <div class="strong mt-0.5" style="font-size: 10.5px;">Editar recurso multimedia</div>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                </div>
-
-                <div class="modal-body">
-                    <form id="formEditarMultimedia" method="POST">
-                        @csrf
-                        @method('PUT')
-
-                        <div class="mb-2">
-                            <label class="form-label">Tipo de multimedia</label>
-                            <select class="form-select" id="edit_media_tipo" name="tipo_multimedia" required>
-                                <option value="imagen">Imagen</option>
-                                <option value="video">Video</option>
-                            </select>
-                        </div>
-
-                        <div class="row g-2">
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label">Orden</label>
-                                <input type="number" class="form-control" id="edit_media_orden" name="orden" min="1">
-                            </div>
-                            <div class="col-md-6 mb-2 d-flex align-items-end">
-                                <div class="switch-box w-100">
-                                    <div class="form-check form-switch mb-0">
-                                        <input class="form-check-input" type="checkbox" role="switch" name="es_portada" value="1" id="edit_media_portada">
-                                        <label class="form-check-label" for="edit_media_portada">Portada principal</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2 mt-3 pt-2" style="border-top: 1px solid var(--grid);">
-                            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn-save"><i class="bi bi-check-lg"></i> Actualizar Recurso</button>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-
-</div>{{-- /#showRoot --}}
-
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-
-        /* ── Poblar modal de editar TARIFA ── */
-        document.querySelectorAll('#showRoot .btn-editar-tarifa').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var f = document.getElementById('formEditarTarifa');
-                if (!f) return;
-
-                f.action = btn.dataset.urlUpdate;
-
-                document.getElementById('edit_tarifa_nombre').value            = btn.dataset.nombreTemporada || '';
-                document.getElementById('edit_tarifa_inicio').value            = btn.dataset.fechaInicio || '';
-                document.getElementById('edit_tarifa_fin').value               = btn.dataset.fechaFin || '';
-                document.getElementById('edit_tarifa_precio_noche').value      = btn.dataset.precioNoche || '';
-                document.getElementById('edit_tarifa_precio_fin_semana').value = btn.dataset.precioFinSemana || '';
-                document.getElementById('edit_tarifa_precio_minimo').value     = btn.dataset.precioMinimoReserva || '';
-                document.getElementById('edit_tarifa_dias_maximos').value      = btn.dataset.diasMaximos || '';
-                document.getElementById('edit_tarifa_active').checked          = btn.dataset.active === '1';
-            });
-        });
-
-        /* ── Poblar modal de editar MULTIMEDIA ── */
-        document.querySelectorAll('#showRoot .btn-editar-multimedia').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var f = document.getElementById('formEditarMultimedia');
-                if (!f) return;
-
-                f.action = btn.dataset.urlUpdate;
-
-                document.getElementById('edit_media_tipo').value      = btn.dataset.tipoMultimedia || 'imagen';
-                document.getElementById('edit_media_orden').value     = btn.dataset.orden || '';
-                document.getElementById('edit_media_portada').checked = btn.dataset.esPortada === '1';
-            });
-        });
-
-    });
-</script>
+</div>
