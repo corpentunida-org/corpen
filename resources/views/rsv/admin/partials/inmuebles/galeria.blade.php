@@ -2,16 +2,29 @@
     use App\Models\Rsv\InmuebleMultimedia;
     use App\Models\Rsv\CatalogoInmueble;
 
-    // ── Carga con relación ANIDADA tipoInmueble ──
-    $mediaCollection = isset($multimedia) ? $multimedia : null;
-    if ($mediaCollection === null) {
-        $mediaCollection = InmuebleMultimedia::with(['inmueble:id,name,active,tipo_inmueble_id', 'inmueble.tipoInmueble'])
+    // 1. Detectar si estamos en un inmueble específico o en la vista global
+    $modoGlobal = !isset($inmueble) || !$inmueble;
+
+    // 2. Cargar colección multimedia filtrada o global
+    if (!$modoGlobal) {
+        // FILTRO APLICADO: Solo las imágenes de ESTE inmueble
+        $mediaCollection = $inmueble->multimedia()
+            ->with(['inmueble:id,name,active,tipo_inmueble_id', 'inmueble.tipoInmueble'])
             ->orderBy('orden', 'asc')
             ->get();
-    } elseif (method_exists($mediaCollection, 'loadMissing')) {
-        $mediaCollection->loadMissing('inmueble.tipoInmueble');
+    } else {
+        // Modo global: carga todo o usa la variable $multimedia si el controlador la envió
+        $mediaCollection = isset($multimedia) ? $multimedia : null;
+        if ($mediaCollection === null) {
+            $mediaCollection = InmuebleMultimedia::with(['inmueble:id,name,active,tipo_inmueble_id', 'inmueble.tipoInmueble'])
+                ->orderBy('orden', 'asc')
+                ->get();
+        } elseif (method_exists($mediaCollection, 'loadMissing')) {
+            $mediaCollection->loadMissing('inmueble.tipoInmueble');
+        }
     }
 
+    // 3. Cargar lista de inmuebles para los Selects (Modal Crear/Editar)
     $listaInmueblesOpt = isset($listaInmuebles) ? $listaInmuebles : null;
     if ($listaInmueblesOpt === null) {
         $listaInmueblesOpt = CatalogoInmueble::with('tipoInmueble')->where('active', 1)->get();
@@ -19,7 +32,7 @@
         $listaInmueblesOpt->loadMissing('tipoInmueble');
     }
 
-    // Helper: resuelve el nombre del tipo sin importar cómo se llame la columna
+    // 4. Helper: resuelve el nombre del tipo sin importar cómo se llame la columna
     $tipoInmLabel = function ($inm) {
         $t = $inm?->tipoInmueble;
         return $t ? ($t->nombre ?? $t->name ?? $t->nom_tipo ?? null) : null;
@@ -242,7 +255,7 @@
                 <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Agregar Recurso
             </button>
         @endif
-        
+
     </div>
 
     <div class="table-responsive">
@@ -388,7 +401,10 @@
                                 <option value="">-- Seleccione un inmueble --</option>
                                 @foreach ($listaInmueblesOpt as $propOpt)
                                     @php $tInmOpt = $tipoInmLabel($propOpt); @endphp
-                                    <option value="{{ $propOpt->id }}">{{ $propOpt->name }}{{ isset($propOpt->city) && $propOpt->city ? ' (' . $propOpt->city . ')' : '' }}{{ $tInmOpt ? ' · ' . $tInmOpt : '' }}</option>
+                                    {{-- SELECCIÓN AUTOMÁTICA si estamos viendo un inmueble en específico --}}
+                                    <option value="{{ $propOpt->id }}" {{ (!$modoGlobal && isset($inmueble) && $inmueble->id == $propOpt->id) ? 'selected' : '' }}>
+                                        {{ $propOpt->name }}{{ isset($propOpt->city) && $propOpt->city ? ' (' . $propOpt->city . ')' : '' }}{{ $tInmOpt ? ' · ' . $tInmOpt : '' }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -482,7 +498,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL 3B · EDITAR RECURSO MULTIMEDIA (ID único por inclusión)    --}}
+{{-- MODAL 3B · EDITAR RECURSO MULTIMEDIA (ID único por inclusión)   --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="modal fade galeria-soft-modal" id="modalEditarMultimedia-{{ $gmUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">

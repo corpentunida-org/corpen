@@ -2,6 +2,7 @@
 {{-- ESTILO: sistema suave idéntico a tarifas · título 9.5px · textos 8px · pasteles --}}
 {{-- MODO GLOBAL   = grid de tarjetas + paginación + botón Nuevo      --}}
 {{-- MODO INDIVIDUAL = ficha única ampliada con stats y modal de edición PROPIO --}}
+{{-- FIX CARRUSEL: autoplay garantizado por JS + flechas SIEMPRE visibles --}}
 
 @php
     // Detectamos si estamos en la vista global o en un inmueble específico (idéntico a tarifas)
@@ -64,15 +65,34 @@
     .cat-soft .cat-carousel .carousel-inner,
     .cat-soft .cat-carousel .carousel-item { width: 100%; height: 100%; }
 
+    /* ═══ FLECHAS SIEMPRE VISIBLES: botón circular blanco con sombra ═══
+       Antes: opacity .2 (invisibles) y solo .55 al hover → nadie las veía.
+       Ahora: chip circular 20px, visible sobre cualquier foto, sube a opaco al hover. */
     .cat-soft .cat-carousel .carousel-control-prev,
     .cat-soft .cat-carousel .carousel-control-next {
-        width: 24px; opacity: .2; transition: opacity .15s ease; z-index: 5;
+        position: absolute; top: 50%; bottom: auto;
+        transform: translateY(-50%);
+        width: 20px; height: 20px;
+        margin: 0; padding: 0;
+        border: 1px solid rgba(233,238,244,.95);
+        border-radius: 50%;
+        background: rgba(255,255,255,.88);
+        box-shadow: 0 1px 4px rgba(15,23,42,.18);
+        opacity: .8;
+        transition: opacity .15s ease, background .15s ease, transform .15s ease;
+        z-index: 5;
     }
+    .cat-soft .cat-carousel .carousel-control-prev { left: 6px; }
+    .cat-soft .cat-carousel .carousel-control-next { right: 6px; }
     .cat-soft .cat-carousel:hover .carousel-control-prev,
-    .cat-soft .cat-carousel:hover .carousel-control-next { opacity: .55; }
+    .cat-soft .cat-carousel .carousel-control-prev:focus-visible,
+    .cat-soft .cat-carousel .carousel-control-next:focus-visible { opacity: 1; background: #fff; }
+    .cat-soft .cat-carousel .carousel-control-prev:hover,
+    .cat-soft .cat-carousel .carousel-control-next:hover { opacity: 1; background: #fff; transform: translateY(-50%) scale(1.12); }
     .cat-soft .cat-carousel .carousel-control-prev-icon,
     .cat-soft .cat-carousel .carousel-control-next-icon {
-        width: 13px; height: 13px; filter: invert(.45);
+        width: 10px; height: 10px;
+        filter: invert(.5);
     }
 
     .cat-soft .portada-badge {
@@ -324,13 +344,15 @@
                 <div class="cat-card">
 
                     {{-- Carrusel de Fotos del Inmueble --}}
+                    {{-- data-bs-interval = velocidad del autoplay (5s) · data-bs-ride="carousel" arranca solo --}}
                     <div id="carouselInmuebleGlobal{{ $prop->id }}"
                          class="carousel slide cat-carousel"
-                         data-bs-ride="carousel">
+                         data-bs-ride="carousel"
+                         data-bs-interval="5000">
 
                         <div class="carousel-inner">
                             @forelse($galeriaGlobal as $index => $media)
-                                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                <div class="carousel-item {{ $index === 0 ? 'active' : '' }}" data-bs-interval="5000">
                                     <img src="{{ $media->url_archivo }}" alt="Foto inmueble">
                                     @if($media->es_portada)
                                         <span class="portada-badge">PORTADA</span>
@@ -465,6 +487,53 @@
     @endif
 
 </div>
+
+
+{{-- ═══════════════════════════════════════════════════════════════ --}}
+{{-- SCRIPT · CARRUSEL: autoplay garantizado + re-init al mostrar tabs --}}
+{{-- El data-bs-ride de Bootstrap solo inicializa al cargar la página;  --}}
+{{-- si este partial está en una tab oculta o llega por AJAX, nunca     --}}
+{{-- arranca. Este init explícito lo garantiza SIEMPRE.                 --}}
+{{-- ═══════════════════════════════════════════════════════════════ --}}
+<script>
+    (function () {
+        var CAT_INTERVAL = 5000; /* velocidad del autoplay en ms */
+
+        function initCatCarousels(root) {
+            if (typeof bootstrap === 'undefined' || !bootstrap.Carousel) return;
+            var scope = (root && root.querySelectorAll) ? root : document;
+            scope.querySelectorAll('.cat-carousel:not([data-cat-carousel-init])').forEach(function (el) {
+                el.setAttribute('data-cat-carousel-init', '1');
+                var cfg = { interval: CAT_INTERVAL, ride: 'carousel', pause: 'hover', wrap: true, touch: true };
+                try {
+                    /* getInstance+new (compat 5.0/5.1) con fallback a getOrCreateInstance (5.2+) */
+                    var inst = bootstrap.Carousel.getInstance(el);
+                    if (!inst && typeof bootstrap.Carousel.getOrCreateInstance === 'function') {
+                        inst = bootstrap.Carousel.getOrCreateInstance(el, cfg);
+                    } else if (!inst) {
+                        inst = new bootstrap.Carousel(el, cfg);
+                    }
+                    /* Si ya existía instancia pero estaba detenida, reanudar autoplay */
+                    if (inst && inst.cycle && el.closest('.tab-pane.show, .tab-pane.active, body')) {
+                        inst.cycle();
+                    }
+                } catch (e) { /* silencioso: nunca romper la página */ }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () { initCatCarousels(); });
+
+        /* Si el partial vive en tabs: al mostrarse una tab, inicializar carruseles dentro de ella */
+        document.addEventListener('shown.bs.tab', function (e) {
+            var sel = e.target && e.target.getAttribute && e.target.getAttribute('data-bs-target');
+            var pane = sel ? document.querySelector(sel) : null;
+            if (pane) initCatCarousels(pane);
+        });
+
+        /* Gancho global por si el dashboard inyecta este partial vía AJAX */
+        window.initCatCarousels = initCatCarousels;
+    })();
+</script>
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
