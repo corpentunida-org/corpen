@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Throwable;
+use App\Http\Requests\Rsv\StoreStatusRequest;
 
 class StatusController extends Controller
 {
@@ -23,21 +24,13 @@ class StatusController extends Controller
         try {
             $query = Status::query();
 
-            // Búsqueda por nombre del estado
             if ($request->has('search') && !empty($request->search)) {
-                $search = $request->search;
-                $query->where('name', 'like', "%{$search}%");
-            }
-
-            // Filtro por estado activo/inactivo
-            if ($request->has('active')) {
-                $query->where('active', filter_var($request->active, FILTER_VALIDATE_BOOLEAN));
+                $query->where('name', 'like', "%{$request->search}%");
             }
 
             $perPage = $request->get('per_page', 15);
             $statuses = $query->orderBy('name', 'asc')->paginate($perPage);
 
-            // Si la petición es por API o AJAX, devolvemos JSON
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -46,202 +39,151 @@ class StatusController extends Controller
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
             return view('rsv.statuses.index', compact('statuses'));
 
         } catch (Throwable $e) {
-            Log::error('Error en StatusController@index: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ocurrió un error al obtener el listado de estados.',
-                    'error' => config('app.debug') ? $e->getMessage() : null,
-                ], 500);
-            }
-
-            return back()->with('error', 'Ocurrió un error al obtener el listado de estados.');
+            Log::error('Error en StatusController@index: ' . $e->getMessage());
+            return $request->wantsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => 'Error al obtener estados.'], 500)
+                : back()->with('error', 'Ocurrió un error al obtener el listado de estados.');
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Método no implementado para API REST.',
-        ], 405);
-    }
+    public function create(): JsonResponse { return response()->json(['success' => false], 405); }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created resource.
+     * Dual: Web → redirect con flash · AJAX → JSON.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreStatusRequest $request): JsonResponse|RedirectResponse
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:rsv_statuses,name',
-            'active' => 'boolean',
-        ]);
+        $esWeb = !($request->wantsJson() || $request->ajax());
 
         DB::beginTransaction();
-
         try {
-            $status = DB::transaction(function () use ($validatedData) {
-                return Status::create($validatedData);
-            });
+            $status = DB::transaction(fn() => Status::create($request->validated()));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Estado creado exitosamente.',
-                'data' => $status,
-            ], 201);
+            return $esWeb
+                ? back()->with('success', 'Estado "' . $status->name . '" creado exitosamente.')
+                : response()->json(['success' => true, 'message' => 'Estado creado exitosamente.', 'data' => $status], 201);
 
         } catch (Throwable $e) {
             DB::rollBack();
-            Log::error('Error en StatusController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Error en StatusController@store: ' . $e->getMessage());
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al registrar el estado.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return $esWeb
+                ? back()->with('error', 'Ocurrió un error al registrar el estado.')->withInput()
+                : response()->json(['success' => false, 'message' => 'Error al registrar el estado.'], 500);
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id): JsonResponse
+    public function show(string $rsvStatus): JsonResponse
     {
         try {
-            $status = Status::find($id);
+            $status = Status::find($rsvStatus);
+            if (!$status) return response()->json(['success' => false, 'message' => 'No existe.'], 404);
+            return response()->json(['success' => true, 'data' => $status], 200);
+        } catch (Throwable $e) {
+            return response()->json(['success' => false, 'message' => 'Error al obtener.'], 500);
+        }
+    }
 
+    public function edit(string $id): JsonResponse { return response()->json(['success' => false], 405); }
+
+    /**
+     * Update the specified resource.
+     *
+     * FIX CRÍTICO: validación INLINE en lugar de UpdateStatusRequest.
+     *
+     * Antes: UpdateStatusRequest hacía $this->route('rsvStatus') para el
+     * unique. Si el nombre del parámetro en web.php no coincidía EXACTAMENTE,
+     * llegaba null y la regla "unique:rsv_statuses,name," (sin ID a ignorar)
+     * rechazaba el nombre aunque fuera el mismo → validación fallaba en
+     * silencio → redirect sin mensaje → "no se aplican los cambios".
+     *
+     * Ahora: el ID a ignorar viene del propio parámetro del método
+     * ($rsvStatus), que Laravel SIEMPRE inyecta correctamente.
+     */
+    public function update(Request $request, string $rsvStatus): JsonResponse|RedirectResponse
+    {
+        $esWeb = !($request->wantsJson() || $request->ajax());
+
+        DB::beginTransaction();
+        try {
+            $status = Status::find($rsvStatus);
             if (!$status) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El estado solicitado no existe.',
-                ], 404);
+                return $esWeb
+                    ? back()->with('error', 'El estado solicitado no existe.')
+                    : response()->json(['success' => false, 'message' => 'No existe.'], 404);
             }
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Estado obtenido exitosamente.',
-                'data' => $status,
-            ], 200);
-
-        } catch (Throwable $e) {
-            Log::error('Error en StatusController@show: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            // Validación INLINE: $rsvStatus del método es el ID a ignorar en unique
+            $validated = $request->validate([
+                'name'      => 'required|string|max:255|unique:rsv_statuses,name,' . $rsvStatus,
+                'color_hex' => 'nullable|string|max:7',
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al obtener el estado.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            DB::transaction(fn() => $status->update($validated));
+
+            return $esWeb
+                ? back()->with('success', 'Estado "' . $status->name . '" actualizado exitosamente.')
+                : response()->json(['success' => true, 'message' => 'Actualizado exitosamente.', 'data' => $status], 200);
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            Log::error('Error en StatusController@update: ' . $e->getMessage());
+
+            return $esWeb
+                ? back()->with('error', 'Ocurrió un error al actualizar el estado.')->withInput()
+                : response()->json(['success' => false, 'message' => 'Error al actualizar.'], 500);
         }
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Remove the specified resource.
+     *
+     * Guard server-side: no eliminar si tiene reservas asociadas.
+     * Dual: Web → redirect con flash · AJAX → JSON.
      */
-    public function edit(string $id): JsonResponse
+    public function destroy(Request $request, string $rsvStatus): JsonResponse|RedirectResponse
     {
-        return response()->json([
-            'success' => false,
-            'message' => 'Método no implementado para API REST.',
-        ], 405);
-    }
+        $esWeb = !($request->wantsJson() || $request->ajax());
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id): JsonResponse
-    {
         DB::beginTransaction();
-
         try {
-            $status = Status::find($id);
-
+            $status = Status::find($rsvStatus);
             if (!$status) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El estado solicitado no existe.',
-                ], 404);
+                return $esWeb
+                    ? back()->with('error', 'El estado solicitado no existe.')
+                    : response()->json(['success' => false, 'message' => 'No existe.'], 404);
             }
 
-            $validatedData = $request->validate([
-                'name' => 'sometimes|required|string|max:255|unique:rsv_statuses,name,' . $id,
-                'active' => 'sometimes|boolean',
-            ]);
+            // Guard server-side: no eliminar si tiene reservas asociadas
+            $conReservas = $status->reservas()->exists();
+            if ($conReservas) {
+                $n = $status->reservas()->count();
+                return $esWeb
+                    ? back()->with('error', "No se puede eliminar: el estado tiene {$n} reserva(s) asociada(s).")
+                    : response()->json(['success' => false, 'message' => 'No se puede eliminar: tiene reservas asociadas.'], 422);
+            }
 
-            DB::transaction(function () use ($status, $validatedData) {
-                $status->update($validatedData);
-            });
+            $nombre = $status->name;
+            DB::transaction(fn() => $status->delete());
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Estado actualizado exitosamente.',
-                'data' => $status,
-            ], 200);
+            return $esWeb
+                ? back()->with('success', 'Estado "' . $nombre . '" eliminado exitosamente.')
+                : response()->json(['success' => true, 'message' => 'Eliminado exitosamente.'], 200);
 
         } catch (Throwable $e) {
             DB::rollBack();
-            Log::error('Error en StatusController@update: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Error en StatusController@destroy: ' . $e->getMessage());
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al actualizar el estado.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id): JsonResponse
-    {
-        DB::beginTransaction();
-
-        try {
-            $status = Status::find($id);
-
-            if (!$status) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El estado solicitado no existe.',
-                ], 404);
-            }
-
-            DB::transaction(function () use ($status) {
-                $status->delete();
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Estado eliminado exitosamente.',
-            ], 200);
-
-        } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en StatusController@destroy: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al eliminar el estado.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            return $esWeb
+                ? back()->with('error', 'Ocurrió un error al eliminar el estado.')
+                : response()->json(['success' => false, 'message' => 'Error al eliminar.'], 500);
         }
     }
 }
