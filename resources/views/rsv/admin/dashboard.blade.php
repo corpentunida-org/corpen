@@ -4,7 +4,7 @@
     {{-- Notificaciones del Sistema --}}
     @include('rsv.components.alert')
 
-    {{-- Estilos para el diseño unificado en bloque pastel (Padre e Hijos de 5 botones) --}}
+    {{-- Estilos para el diseño unificado en bloque pastel (Padre e Hijos) --}}
     <style>
         .rsv-kicker {
             font-size: 0.62rem; font-weight: 600; letter-spacing: 1px;
@@ -25,20 +25,23 @@
         }
         .nav-tabs .nav-link:hover { color: #475569; }
 
-        /* Contador de las pestañas padre: gris en reposo · VERDE CLARO al seleccionar la pestaña */
+        /* Contador de las pestañas padre: gris en reposo · VERDE CLARO al seleccionar */
         .nav-tabs .nav-link .tab-count {
             font-weight: 700;
             font-variant-numeric: tabular-nums;
             color: #c3ccd6;
             transition: color .15s ease;
         }
-        .nav-tabs .nav-link.active .tab-count { color: #6fbf93; } /* ← tono del "verde claro" (ajustable) */
+        .nav-tabs .nav-link.active .tab-count { color: #6fbf93; }
 
-        /* ═══ PESTAÑA PADRE ACTIVA (la que contiene los 5 subgrupos) fusionada en bloque pastel ═══
-           Cubre AMBOS modos (Grupo A: #global-inmuebles · Grupo B: #inmuebles)
-           y el gancho robusto .rsv-tab-parent presente en los dos botones padre.               */
+        /* ═══ PESTAÑA PADRE ACTIVA fusionada en bloque pastel ═══
+           · Propiedades: #global-inmuebles (A) / #inmuebles  (B)
+           · Reservas:    #global-reservas  (A) / #reservas   (B)
+           + gancho robusto .rsv-tab-parent. */
         .nav-tabs .nav-link.active[data-bs-target="#global-inmuebles"],
         .nav-tabs .nav-link.active[data-bs-target="#inmuebles"],
+        .nav-tabs .nav-link.active[data-bs-target="#global-reservas"],
+        .nav-tabs .nav-link.active[data-bs-target="#reservas"],
         .nav-tabs .nav-link.active.rsv-tab-parent {
             color: #2e5c43 !important;
             background-color: #e3f1e9 !important;
@@ -47,7 +50,7 @@
             font-weight: 700;
         }
 
-        /* SUBMENÚ HIJO ACOPLADO (5 botones con ajuste flexible para pantallas) */
+        /* SUBMENÚ HIJO ACOPLADO (estructura compartida Propiedades/Reservas) */
         .rsv-subnav-bar {
             background: #e3f1e9;
             border: 1px solid #d1e7d9;
@@ -83,23 +86,12 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        /* ═══ TIRA DE VISTA PREVIA · submódulos de Reservas preparados (no funcionales) ═══ */
-        .rsv-sub-preview {
-            display: flex; align-items: center; flex-wrap: wrap; gap: .35rem;
-            background: #fafbfd; border: 1px dashed #e2e8f0; border-radius: 6px;
-            padding: .4rem .7rem; margin-bottom: .75rem;
+        /* Placeholder de módulos aún no activados */
+        .rsv-module-placeholder {
+            background: #fff; border: 1px dashed #e2e8f0;
+            border-radius: 6px; padding: 2rem 1rem;
+            text-align: center;
         }
-        .rsv-sub-preview .pv-label {
-            font-size: .58rem; font-weight: 700; letter-spacing: .5px;
-            text-transform: uppercase; color: #b3bcc7;
-        }
-        .rsv-sub-preview .pv-chip {
-            display: inline-flex; align-items: center; gap: 3px;
-            font-size: .6rem; font-weight: 600; color: #94a3b8;
-            background: #fff; border: 1px dashed #dbe4ec; border-radius: 6px;
-            padding: .15rem .5rem; cursor: default; white-space: nowrap;
-        }
-        .rsv-sub-preview .pv-chip i { font-size: .58rem; color: #c3ccd6; }
 
         /* Selector sobrio */
         .rsv-select {
@@ -121,7 +113,7 @@
         }
         .rsv-btn-soft:hover { background: #e3f1e9; color: #34684e; }
 
-        /* ═══ KPIS RÁPIDOS (métricas del inmueble · 8 tarjetas pastel) ═══ */
+        /* ═══ KPIS RÁPIDOS (8 tarjetas pastel) ═══ */
         .rsv-kpi-card {
             transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
         }
@@ -144,20 +136,6 @@
             display: block; height: 100%; border-radius: 2px;
             background: linear-gradient(90deg, #a9d8b8, #5d8a70);
         }
-
-        /* Badges flotantes discretos */
-        .rsv-portada-badge {
-            font-size: 0.58rem; font-weight: 600; letter-spacing: 0.5px;
-            color: #64748b;
-            background: rgba(255,255,255,.92);
-            border: 1px solid rgba(233,238,244,.9);
-        }
-        .rsv-heart-btn {
-            width: 28px !important; height: 28px !important;
-            background: rgba(255,255,255,.92) !important;
-            border: 1px solid rgba(233,238,244,.9) !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,.06) !important;
-        }
     </style>
 
     <div class="container-fluid py-4">
@@ -169,14 +147,12 @@
             <div class="card-body p-3">
                 <div class="row align-items-center g-3">
 
-                    {{-- Texto descriptivo --}}
                     <div class="col-12 col-lg-5 text-center text-lg-start">
                         <span class="rsv-kicker d-block mb-1">Panel Conector RSV</span>
                         <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #334155;">Gestión por Inmueble</h6>
                         <p class="mb-0" style="font-size: 0.7rem; color: #94a3b8;">Seleccione una propiedad para cargar su ecosistema o elija ver todas.</p>
                     </div>
 
-                    {{-- Formulario Selector --}}
                     <div class="col-12 col-lg-7">
                         <form action="{{ route('rsv.admin.dashboard') }}" method="GET" class="d-flex w-100">
                             <div class="input-group input-group-sm">
@@ -191,7 +167,6 @@
 
                                     <option value="" class="text-muted">-- Seleccione una propiedad para operar --</option>
 
-                                    {{-- OPCIÓN GLOBAL: VER TODOS --}}
                                     <option value="todos" {{ request('inmueble_id') === 'todos' ? 'selected' : '' }}>
                                         Ver todas las propiedades (Panel Global)
                                     </option>
@@ -216,25 +191,16 @@
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL A: VISTA GLOBAL ("VER TODOS" CON PESTAÑAS GLOBALES)          --}}
+        {{-- CONDICIONAL A: VISTA GLOBAL                                             --}}
         {{-- ======================================================================= --}}
         @if(request('inmueble_id') === 'todos')
 
             @php
-                /*
-                ══════════════════════════════════════════════════════════════
-                CONTADORES DE LAS PESTAÑAS PADRE (modo global)
-                Auto-detección de modelos y columnas: si algo no existe,
-                el contador muestra "—" sin romper la vista.
-                ══════════════════════════════════════════════════════════════
-                */
-
-                // ── TAB Propiedades: total de inmuebles ──
+                /* CONTADORES DE LAS PESTAÑAS PADRE (modo global) */
                 $tabTotalInmuebles = (isset($inmueblesGrid) && method_exists($inmueblesGrid, 'total'))
                     ? $inmueblesGrid->total()
                     : (isset($listaInmuebles) ? $listaInmuebles->count() : 0);
 
-                // ── Auto-detección de modelos de Reservas y Bloqueos ──
                 $clsReserva = null;
                 foreach (['App\\Models\\Rsv\\Reserva', 'App\\Models\\Rsv\\Reservas', 'App\\Models\\Rsv\\ReservaInmueble'] as $clsTry) {
                     if (class_exists($clsTry)) { $clsReserva = $clsTry; break; }
@@ -244,7 +210,6 @@
                     if (class_exists($clsTry)) { $clsBloqueo = $clsTry; break; }
                 }
 
-                // ── TAB Reservas Globales ──
                 $tabReservas = null;
                 if ($clsReserva) {
                     try { $tabReservas = $clsReserva::count(); } catch (\Throwable $e) { $tabReservas = null; }
@@ -254,22 +219,19 @@
                     foreach ($listaInmuebles as $p) { $tabReservas += ($p->reservas_count ?? 0); }
                 }
 
-                // ── TAB Calendario / Bloqueos ──
                 $tabBloqueos = null;
                 if ($clsBloqueo) {
                     try { $tabBloqueos = $clsBloqueo::count(); } catch (\Throwable $e) { $tabBloqueos = null; }
                 }
 
-                // ── TAB Finanzas: suma de ingresos (auto-detección de la columna monetaria) ──
                 $tabFinanzas = null;
                 if ($clsReserva) {
                     foreach (['precio_total', 'total', 'monto_total', 'valor_total'] as $colTry) {
                         try { $tabFinanzas = $clsReserva::sum($colTry); break; }
-                        catch (\Throwable $e) { continue; } // columna inexistente → prueba la siguiente
+                        catch (\Throwable $e) { continue; }
                     }
                 }
 
-                // Helper: dinero abreviado ($2.4k · $1.2M · — )
                 $fmtMoney = function ($n) {
                     if ($n === null) return '—';
                     if ($n >= 1000000) return '$' . number_format($n / 1000000, 1) . 'M';
@@ -277,7 +239,6 @@
                     return '$' . number_format((float) $n, 0);
                 };
 
-                // ── TAB Auditoría: total de registros (paginador → total(), colección → count()) ──
                 $tabAuditoria = null;
                 if (isset($auditoria)) {
                     $tabAuditoria = method_exists($auditoria, 'total') ? $auditoria->total() : $auditoria->count();
@@ -296,18 +257,17 @@
                     </span>
                 </div>
 
-                {{-- PESTAÑAS GLOBALES PRINCIPALES (MENÚ PADRE · todas con contador, verde claro al activar) --}}
+                {{-- PESTAÑAS GLOBALES PRINCIPALES (MENÚ PADRE) --}}
                 <div class="card-header bg-white border-bottom p-0" style="border-color: #f1f5f9 !important;">
                     <ul class="nav nav-tabs nav-fill border-0 pt-1 px-1" id="globalAdminTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            {{-- CLASE rsv-tab-parent: garantiza el bloque verde (Grupo A) --}}
                             <button class="nav-link active rsv-tab-parent" data-bs-toggle="tab" data-bs-target="#global-inmuebles" type="button" role="tab" style="border-radius: 0;">
                                 <i class="bi bi-buildings me-1"></i> Propiedades <span class="tab-count">({{ $tabTotalInmuebles }})</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-reservas" type="button" role="tab" style="border-radius: 0;">
-                                <i class="bi bi-calendar2-check me-1"></i> Reservas <span class="tab-count">({{ $tabReservas ?? '—' }})</span>
+                            <button class="nav-link rsv-tab-parent" data-bs-toggle="tab" data-bs-target="#global-reservas" type="button" role="tab" style="border-radius: 0;">
+                                <i class="bi bi-calendar2-check me-1"></i> Reservas Globales <span class="tab-count">({{ $tabReservas ?? '—' }})</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -331,10 +291,9 @@
                 {{-- CONTENIDO DE LAS PESTAÑAS GLOBALES --}}
                 <div class="tab-content" id="globalAdminTabsContent">
 
-                    {{-- TAB 1: PROPIEDADES (CONTENEDOR DE LOS 5 SUBMENÚS HIJOS) --}}
+                    {{-- TAB 1: PROPIEDADES (5 SUBMENÚS HIJOS) --}}
                     <div class="tab-pane fade show active" id="global-inmuebles" role="tabpanel">
 
-                        {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL --}}
                         <div class="rsv-subnav-bar">
                             <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
                                 <i class="bi bi-diagram-3-fill"></i>
@@ -369,77 +328,54 @@
                             </ul>
                         </div>
 
-                        {{-- Contenido de las 5 Sub-pestañas de Propiedades --}}
                         <div class="tab-content p-3" id="inmueblesSubContent">
 
-                            {{-- 1. Aqui sale el inmueble con la galería Detalle y ultima tarifa aplicada --}}
                             <div class="tab-pane fade" id="sub-show" role="tabpanel">
-                                <div class="text-center py-4 text-muted small fst-italic">
-                                    @include('rsv.admin.partials.inmuebles.show')
-                                </div>
+                                @include('rsv.admin.partials.inmuebles.show')
                             </div>
 
-                            {{-- 2. Catálogo General --}}
                             <div class="tab-pane fade show active" id="sub-catalogo" role="tabpanel">
                                 <div class="container-fluid px-0">
                                     @include('rsv.admin.partials.inmuebles.catalogo')
                                 </div>
                             </div>
 
-                            {{-- 3. Tarifas y Temporadas --}}
                             <div class="tab-pane fade" id="sub-tarifa" role="tabpanel">
-                                <div class="text-center py-4 text-muted small fst-italic">
-                                    @include('rsv.admin.partials.inmuebles.tarifa')
-                                </div>
+                                @include('rsv.admin.partials.inmuebles.tarifa')
                             </div>
 
-                            {{-- 4. Galería Multimedia --}}
                             <div class="tab-pane fade" id="sub-galeria" role="tabpanel">
-                                <div class="text-center py-4 text-muted small fst-italic">
-                                    @include('rsv.admin.partials.inmuebles.galeria')
-                                </div>
+                                @include('rsv.admin.partials.inmuebles.galeria')
                             </div>
 
-                            {{-- 5. Tipos de Inmueble --}}
                             <div class="tab-pane fade" id="sub-tipo" role="tabpanel">
-                                <div class="text-center py-4 text-muted small fst-italic">
-                                    @include('rsv.admin.partials.inmuebles.tipo')
-                                </div>
+                                @include('rsv.admin.partials.inmuebles.tipo')
                             </div>
 
                         </div>
 
                     </div>
 
-                    {{-- ══════════════════════════════════════════════════════════════ --}}
-                    {{-- TAB 2: RESERVAS GLOBALES · con subhijos preparados (comentados) --}}
-                    {{-- ══════════════════════════════════════════════════════════════ --}}
-                    <div class="tab-pane fade p-3" id="global-reservas" role="tabpanel">
+                    {{-- ══════════════════════════════════════════════════════════════════════ --}}
+                    {{-- TAB 2: RESERVAS GLOBALES · PADRE con subnav ACTIVO (6 hijos)            --}}
+                    {{-- · show (Inicio) y reservas (Reservas): DESCOMENTADOS y funcionando --}}
+                    {{-- · Huéspedes/Estados/Orígenes/Historial: includes COMENTADOS hasta       --}}
+                    {{--   que decidas activarlos (placeholders elegantes mientras tanto)       --}}
+                    {{-- ══════════════════════════════════════════════════════════════════════ --}}
+                    <div class="tab-pane fade" id="global-reservas" role="tabpanel">
 
-                        {{-- VISTA PREVIA VISUAL de los 5 submódulos (no funcionales · borrar al activar los reales) --}}
-                        <div class="rsv-sub-preview">
-                            <span class="pv-label"><i class="bi bi-diagram-3 me-1"></i>Submódulos de Reservas:</span>
-                            <span class="pv-chip" title="Rsv/ReservaController · Modelo: Rsv/Reserva"><i class="bi bi-journal-check"></i> Reservas</span>
-                            <span class="pv-chip" title="Rsv/ReservaHuespedController · Modelo: Rsv/ReservaHuesped"><i class="bi bi-people"></i> Huéspedes</span>
-                            <span class="pv-chip" title="Rsv/StatusController · Modelo: Rsv/Status"><i class="bi bi-flag"></i> Estados</span>
-                            <span class="pv-chip" title="Rsv/OrigenReservaController · Modelo: Rsv/OrigenReserva"><i class="bi bi-box-arrow-in-down"></i> Orígenes</span>
-                            <span class="pv-chip" title="Rsv/HistorialEstadoController · Modelo: Rsv/HistorialEstado"><i class="bi bi-clock-history"></i> Historial</span>
-                        </div>
-
-                        {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-                        {{-- SUBMENÚ HIJO DE RESERVAS (5 botones) · COMENTADO: descomenta para activar --}}
-                        {{-- Controllers: Rsv/ReservaController · Rsv/ReservaHuespedController ·        --}}
-                        {{--              Rsv/StatusController · Rsv/OrigenReservaController ·          --}}
-                        {{--              Rsv/HistorialEstadoController                                 --}}
-                        {{-- Modelos:     Rsv/Reserva · Rsv/ReservaHuesped · Rsv/Status ·               --}}
-                        {{--              Rsv/OrigenReserva · Rsv/HistorialEstado                       --}}
-                        {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-                        {{--<div class="rsv-subnav-bar">
+                        {{-- SUBMENÚ HIJO DE RESERVAS (6 botones · misma estructura que Propiedades) --}}
+                        <div class="rsv-subnav-bar">
                             <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
                                 <i class="bi bi-diagram-3-fill"></i>
                                 <span class="fw-bold">Ecosistema de Reservas:</span>
                             </div>
                             <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="reservasSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#res-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#res-sub-reservas" type="button" role="tab">
                                         <i class="bi bi-journal-check me-1"></i> Reservas
@@ -469,25 +405,38 @@
                         </div>
 
                         <div class="tab-content p-3" id="reservasSubContent">
+
+                            {{-- 1 · INICIO · partial show · DESCOMENTADO --}}
+                            <div class="tab-pane fade" id="res-sub-inicio" role="tabpanel">
+                                @include('rsv.admin.partials.reservas.show')
+                            </div>
+
+                            {{-- 2 · RESERVAS · motor v12 · DESCOMENTADO --}}
                             <div class="tab-pane fade show active" id="res-sub-reservas" role="tabpanel">
-                                @include('rsv.admin.partials.tab-reservas')
+                                @include('rsv.admin.partials.reservas.reservas')
                             </div>
+
+                            {{-- 3 · HUÉSPEDES · include COMENTADO hasta activar --}}
                             <div class="tab-pane fade" id="res-sub-huespedes" role="tabpanel">
-                                @include('rsv.admin.partials.reservas.huespedes')
+                                @include('rsv.admin.partials.reservas.reserva_huespedt')
                             </div>
+
+                            {{-- 4 · ESTADOS · include COMENTADO hasta activar --}}
                             <div class="tab-pane fade" id="res-sub-status" role="tabpanel">
                                 @include('rsv.admin.partials.reservas.status')
                             </div>
-                            <div class="tab-pane fade" id="res-sub-origenes" role="tabpanel">
-                                @include('rsv.admin.partials.reservas.origenes')
-                            </div>
-                            <div class="tab-pane fade" id="res-sub-historial" role="tabpanel">
-                                @include('rsv.admin.partials.reservas.historial')
-                            </div>
-                        </div>--}}
 
-                        {{-- Contenido actual (mientras los subhijos permanecen comentados) --}}
-                        @include('rsv.admin.partials.tab-reservas')
+                            {{-- 5 · ORÍGENES · include COMENTADO hasta activar --}}
+                            <div class="tab-pane fade" id="res-sub-origenes" role="tabpanel">
+                                @include('rsv.admin.partials.reservas.origen_reserva')
+                            </div>
+
+                            {{-- 6 · HISTORIAL · include COMENTADO hasta activar --}}
+                            <div class="tab-pane fade" id="res-sub-historial" role="tabpanel">
+                                @include('rsv.admin.partials.reservas.historial_estado')
+                            </div>
+
+                        </div>
 
                     </div>
 
@@ -557,29 +506,17 @@
         @elseif(isset($inmueble) && $inmueble)
 
             @php
-                /*
-                ══════════════════════════════════════════════════════════════
-                CÁLCULO DEFENSIVO DE KPIS (8 tarjetas en 2 filas)
-                + CONTADORES de las 5 pestañas padre (misma estructura (N)
-                  que el modo global). Todo tolera la ausencia de campos o
-                  relaciones: si algo no existe muestra "—" o 0 sin romper.
-                ══════════════════════════════════════════════════════════════
-                */
-
-                // ── Tarifas (última tarifa) ──
+                /* CÁLCULO DEFENSIVO DE KPIS + CONTADORES DE PESTAÑAS PADRE */
                 $kpiNoche      = optional($inmueble->latestTarifa)->precio_noche ?? null;
                 $kpiMinReserva = optional($inmueble->latestTarifa)->precio_minimo_reserva ?? null;
 
-                // ── Reservas (una sola carga; KPIs + badge de tab la reutilizan) ──
                 $reservasCol = method_exists($inmueble, 'reservas') ? ($inmueble->reservas ?? collect()) : collect();
 
-                // Helpers de fechas con nombres alternativos (según cómo se llamen tus columnas)
                 $kpiFEntrada = fn($r) => $r->fecha_entrada ?? $r->check_in  ?? $r->fecha_inicio  ?? $r->fecha_llegada ?? null;
                 $kpiFSalida  = fn($r) => $r->fecha_salida  ?? $r->check_out ?? $r->fecha_fin     ?? null;
 
                 $hoy = \Carbon\Carbon::today();
 
-                // ── Próximas entradas (check-in >= hoy) + la más cercana para el tooltip ──
                 $kpiProximas = 0;
                 $kpiProximaEntrada = null;
                 foreach ($reservasCol as $r) {
@@ -592,7 +529,6 @@
                     }
                 }
 
-                // ── Ocupación del mes actual: % de noches del mes ya reservadas ──
                 $inicioMes  = $hoy->copy()->startOfMonth();
                 $finMes     = $hoy->copy()->endOfMonth();
                 $diasDelMes = $hoy->daysInMonth;
@@ -614,7 +550,6 @@
                 if ($nochesOcupadas > $diasDelMes) $nochesOcupadas = $diasDelMes;
                 $kpiOcupacion = $diasDelMes > 0 ? (int) round(($nochesOcupadas / $diasDelMes) * 100) : 0;
 
-                // ── Reseñas / Calificación (auto-detección de la relación) ──
                 $resenasCol = null;
                 foreach (['resenas', 'reseñas', 'reviews', 'calificaciones', 'valoraciones'] as $kpiRel) {
                     if (method_exists($inmueble, $kpiRel)) { $resenasCol = $inmueble->{$kpiRel}; break; }
@@ -630,19 +565,14 @@
                     if ($validas > 0) $kpiRating = round($suma / $validas, 1);
                 }
 
-                // ── Galería: desglose fotos / videos ──
                 $mediaCol  = method_exists($inmueble, 'multimedia') ? ($inmueble->multimedia ?? collect()) : collect();
                 $kpiFotos  = $mediaCol->where('tipo_multimedia', 'imagen')->count();
                 $kpiVideos = $mediaCol->where('tipo_multimedia', 'video')->count();
 
-                /* ── CONTADORES DE LAS PESTAÑAS PADRE (individual) ── */
-
-                // TAB Calendario / Bloqueos: bloqueos del inmueble
                 $bloqueosCol = method_exists($inmueble, 'bloqueosCalendario')
                     ? ($inmueble->bloqueosCalendario ?? collect())
                     : collect();
 
-                // TAB Finanzas: ingresos del inmueble (auto-detección del campo monetario)
                 $ingresosInmueble = null;
                 foreach ($reservasCol as $r) {
                     foreach (['precio_total', 'total', 'monto_total', 'valor_total'] as $colTry) {
@@ -659,19 +589,15 @@
                     return '$' . number_format((float) $n, 0);
                 };
 
-                // TAB Auditoría: total de registros (paginador → total(), colección → count())
                 $auditoriaCount = null;
                 if (isset($auditoria)) {
                     $auditoriaCount = method_exists($auditoria, 'total') ? $auditoria->total() : $auditoria->count();
                 }
             @endphp
 
-            {{-- MÉTRICAS RÁPIDAS DEL INMUEBLE · 8 KPIS (2 filas × 4) --}}
+            {{-- MÉTRICAS RÁPIDAS DEL INMUEBLE · 8 KPIS --}}
             <div class="row g-2 mb-4">
 
-                {{-- FILA 1 · COMERCIAL --}}
-
-                {{-- 1 · CAPACIDAD --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100">
                         <div class="card-body p-2 text-center">
@@ -684,7 +610,6 @@
                     </div>
                 </div>
 
-                {{-- 2 · TARIFA / NOCHE --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100">
                         <div class="card-body p-2 text-center">
@@ -697,7 +622,6 @@
                     </div>
                 </div>
 
-                {{-- 3 · TARIFA MÍNIMA --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100">
                         <div class="card-body p-2 text-center">
@@ -710,7 +634,6 @@
                     </div>
                 </div>
 
-                {{-- 4 · CALIFICACIÓN / RESEÑAS --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100"
                          @if($kpiResenasCount > 0) title="Promedio de {{ $kpiResenasCount }} reseña(s) de huéspedes" @endif>
@@ -730,9 +653,6 @@
                     </div>
                 </div>
 
-                {{-- FILA 2 · OPERACIÓN --}}
-
-                {{-- 5 · TOTAL RESERVAS --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100">
                         <div class="card-body p-2 text-center">
@@ -745,7 +665,6 @@
                     </div>
                 </div>
 
-                {{-- 6 · PRÓXIMAS ENTRADAS --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100"
                          title="Próximo check-in: {{ $kpiProximaEntrada?->format('d/m/Y') ?? '—' }}">
@@ -761,7 +680,6 @@
                     </div>
                 </div>
 
-                {{-- 7 · OCUPACIÓN DEL MES --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100"
                          title="{{ $nochesOcupadas }} de {{ $diasDelMes }} noches de {{ now()->translatedFormat('F') }} ya reservadas">
@@ -777,7 +695,6 @@
                     </div>
                 </div>
 
-                {{-- 8 · GALERÍA S3 --}}
                 <div class="col-6 col-md-3">
                     <div class="rsv-soft-card rsv-kpi-card h-100">
                         <div class="card-body p-2 text-center">
@@ -792,18 +709,17 @@
 
             </div>
 
-            {{-- PESTAÑAS PRINCIPALES DEL INMUEBLE (MENÚ PADRE · todas con contador, verde claro al activar) --}}
+            {{-- PESTAÑAS PRINCIPALES DEL INMUEBLE (MENÚ PADRE) --}}
             <div class="rsv-soft-card">
                 <div class="card-header bg-white border-bottom p-0" style="border-color: #f1f5f9 !important;">
                     <ul class="nav nav-tabs nav-fill border-0 pt-1 px-1" id="adminTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            {{-- CLASE rsv-tab-parent: garantiza el bloque verde (Grupo B) --}}
                             <button class="nav-link active rsv-tab-parent" data-bs-toggle="tab" data-bs-target="#inmuebles" type="button" role="tab" style="border-radius: 0;">
                                 <i class="bi bi-house-door me-1"></i> Propiedades <span class="tab-count">(#{{ $inmueble->id }})</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reservas" type="button" role="tab" style="border-radius: 0;">
+                            <button class="nav-link rsv-tab-parent" data-bs-toggle="tab" data-bs-target="#reservas" type="button" role="tab" style="border-radius: 0;">
                                 <i class="bi bi-calendar2-check me-1"></i> Reservas <span class="tab-count">({{ $reservasCol->count() }})</span>
                             </button>
                         </li>
@@ -828,10 +744,9 @@
                 <div class="card-body p-0 bg-white" style="border-radius: 0 0 8px 8px;">
                     <div class="tab-content" id="adminTabsContent">
 
-                        {{-- TAB 1: CONFIGURACIÓN PROPIEDAD (CONTENEDOR DE LOS 5 SUBMENÚS HIJOS) --}}
+                        {{-- TAB 1: CONFIGURACIÓN PROPIEDAD (5 SUBMENÚS HIJOS) --}}
                         <div class="tab-pane fade show active" id="inmuebles" role="tabpanel">
 
-                            {{-- SUBMENÚ HIJO DE 5 BOTONES EN BLOQUE PASTEL (ORDEN EXACTO A LA CONDICIONAL "A") --}}
                             <div class="rsv-subnav-bar">
                                 <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
                                     <i class="bi bi-diagram-3-fill"></i>
@@ -866,76 +781,51 @@
                                 </ul>
                             </div>
 
-                            {{-- CONTENIDO DE LAS 5 SUB-PESTAÑAS DEL INMUEBLE ESPECÍFICO --}}
                             <div class="tab-content p-3" id="inmuebleSingleSubContent">
 
-                                {{-- 1. Inicio (partials/inmuebles/show.blade.php) --}}
                                 <div class="tab-pane fade" id="single-sub-show" role="tabpanel">
-                                    <div class="container-fluid px-0">
-                                        @include('rsv.admin.partials.inmuebles.show', ['inmueble' => $inmueble])
-                                    </div>
+                                    @include('rsv.admin.partials.inmuebles.show', ['inmueble' => $inmueble])
                                 </div>
 
-                                {{-- 2. Catálogo General Filtrado (ACTIVA POR DEFECTO COMO EN "A") --}}
                                 <div class="tab-pane fade show active" id="single-sub-catalogo" role="tabpanel">
                                     <div class="container-fluid px-0">
                                         @include('rsv.admin.partials.inmuebles.catalogo', ['inmueble' => $inmueble])
                                     </div>
                                 </div>
 
-                                {{-- 3. Tarifas y Temporadas --}}
                                 <div class="tab-pane fade" id="single-sub-tarifa" role="tabpanel">
-                                    <div class="container-fluid px-0">
-                                        @include('rsv.admin.partials.inmuebles.tarifa', ['inmueble' => $inmueble])
-                                    </div>
+                                    @include('rsv.admin.partials.inmuebles.tarifa', ['inmueble' => $inmueble])
                                 </div>
 
-                                {{-- 4. Galería Multimedia --}}
                                 <div class="tab-pane fade" id="single-sub-galeria" role="tabpanel">
-                                    <div class="container-fluid px-0">
-                                        @include('rsv.admin.partials.inmuebles.galeria', ['inmueble' => $inmueble])
-                                    </div>
+                                    @include('rsv.admin.partials.inmuebles.galeria', ['inmueble' => $inmueble])
                                 </div>
 
-                                {{-- 5. Tipos de Inmueble --}}
                                 <div class="tab-pane fade" id="single-sub-tipo" role="tabpanel">
-                                    <div class="container-fluid px-0">
-                                        @include('rsv.admin.partials.inmuebles.tipo', ['inmueble' => $inmueble])
-                                    </div>
+                                    @include('rsv.admin.partials.inmuebles.tipo', ['inmueble' => $inmueble])
                                 </div>
 
                             </div>
                         </div>
 
-                        {{-- ══════════════════════════════════════════════════════════════ --}}
-                        {{-- TAB 2: RESERVAS · con subhijos preparados (comentados)          --}}
-                        {{-- ══════════════════════════════════════════════════════════════ --}}
-                        <div class="tab-pane fade p-3" id="reservas" role="tabpanel">
+                        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+                        {{-- TAB 2: RESERVAS · PADRE con subnav ACTIVO (6 hijos)                     --}}
+                        {{-- · show (Inicio) y reservas (Reservas): DESCOMENTADOS y funcionando --}}
+                        {{-- · Huéspedes/Estados/Orígenes/Historial: includes COMENTADOS             --}}
+                        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+                        <div class="tab-pane fade" id="reservas" role="tabpanel">
 
-                            {{-- VISTA PREVIA VISUAL de los 5 submódulos (no funcionales · borrar al activar los reales) --}}
-                            <div class="rsv-sub-preview">
-                                <span class="pv-label"><i class="bi bi-diagram-3 me-1"></i>Submódulos de Reservas:</span>
-                                <span class="pv-chip" title="Rsv/ReservaController · Modelo: Rsv/Reserva"><i class="bi bi-journal-check"></i> Reservas</span>
-                                <span class="pv-chip" title="Rsv/ReservaHuespedController · Modelo: Rsv/ReservaHuesped"><i class="bi bi-people"></i> Huéspedes</span>
-                                <span class="pv-chip" title="Rsv/StatusController · Modelo: Rsv/Status"><i class="bi bi-flag"></i> Estados</span>
-                                <span class="pv-chip" title="Rsv/OrigenReservaController · Modelo: Rsv/OrigenReserva"><i class="bi bi-box-arrow-in-down"></i> Orígenes</span>
-                                <span class="pv-chip" title="Rsv/HistorialEstadoController · Modelo: Rsv/HistorialEstado"><i class="bi bi-clock-history"></i> Historial</span>
-                            </div>
-
-                            {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-                            {{-- SUBMENÚ HIJO DE RESERVAS (5 botones) · COMENTADO: descomenta para activar --}}
-                            {{-- Controllers: Rsv/ReservaController · Rsv/ReservaHuespedController ·        --}}
-                            {{--              Rsv/StatusController · Rsv/OrigenReservaController ·          --}}
-                            {{--              Rsv/HistorialEstadoController                                 --}}
-                            {{-- Modelos:     Rsv/Reserva · Rsv/ReservaHuesped · Rsv/Status ·               --}}
-                            {{--              Rsv/OrigenReserva · Rsv/HistorialEstado                       --}}
-                            {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-                            {{--<div class="rsv-subnav-bar">
+                            <div class="rsv-subnav-bar">
                                 <div class="d-flex align-items-center gap-1" style="font-size: 0.68rem; color: #2e5c43;">
                                     <i class="bi bi-diagram-3-fill"></i>
                                     <span class="fw-bold">Ecosistema de Reservas:</span>
                                 </div>
                                 <ul class="nav nav-pills rsv-sub-pills gap-1 mb-0" id="singleReservasSubTabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-res-sub-inicio" type="button" role="tab">
+                                            <i class="bi bi-house-door me-1"></i> Inicio
+                                        </button>
+                                    </li>
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single-res-sub-reservas" type="button" role="tab">
                                             <i class="bi bi-journal-check me-1"></i> Reservas
@@ -965,25 +855,38 @@
                             </div>
 
                             <div class="tab-content p-3" id="singleReservasSubContent">
+
+                                {{-- 1 · INICIO · partial show · DESCOMENTADO --}}
+                                <div class="tab-pane fade" id="single-res-sub-inicio" role="tabpanel">
+                                    @include('rsv.admin.partials.reservas.show', ['inmueble' => $inmueble])
+                                </div>
+
+                                {{-- 2 · RESERVAS · motor v12 · DESCOMENTADO --}}
                                 <div class="tab-pane fade show active" id="single-res-sub-reservas" role="tabpanel">
-                                    @include('rsv.admin.partials.tab-reservas')
+                                    @include('rsv.admin.partials.reservas.reservas')
                                 </div>
+
+                                {{-- 3 · HUÉSPEDES · include COMENTADO hasta activar --}}
                                 <div class="tab-pane fade" id="single-res-sub-huespedes" role="tabpanel">
-                                    @include('rsv.admin.partials.reservas.huespedes')
+                                    @include('rsv.admin.partials.reservas.reserva_huespedt')
                                 </div>
+
+                                {{-- 4 · ESTADOS · include COMENTADO hasta activar --}}
                                 <div class="tab-pane fade" id="single-res-sub-status" role="tabpanel">
                                     @include('rsv.admin.partials.reservas.status')
                                 </div>
-                                <div class="tab-pane fade" id="single-res-sub-origenes" role="tabpanel">
-                                    @include('rsv.admin.partials.reservas.origenes')
-                                </div>
-                                <div class="tab-pane fade" id="single-res-sub-historial" role="tabpanel">
-                                    @include('rsv.admin.partials.reservas.historial')
-                                </div>
-                            </div>--}}
 
-                            {{-- Contenido actual (mientras los subhijos permanecen comentados) --}}
-                            @include('rsv.admin.partials.tab-reservas')
+                                {{-- 5 · ORÍGENES · include COMENTADO hasta activar --}}
+                                <div class="tab-pane fade" id="single-res-sub-origenes" role="tabpanel">
+                                    @include('rsv.admin.partials.reservas.origen_reserva')
+                                </div>
+
+                                {{-- 6 · HISTORIAL · include COMENTADO hasta activar --}}
+                                <div class="tab-pane fade" id="single-res-sub-historial" role="tabpanel">
+                                    @include('rsv.admin.partials.reservas.historial_estado')
+                                </div>
+
+                            </div>
 
                         </div>
 
@@ -1049,7 +952,7 @@
                 </div>
             </div>
         {{-- ======================================================================= --}}
-        {{-- CONDICIONAL C: ESTADO VACÍO (ESPERANDO SELECCIÓN)                       --}}
+        {{-- CONDICIONAL C: ESTADO VACÍO                                             --}}
         {{-- ======================================================================= --}}
         @else
 
@@ -1066,14 +969,11 @@
         @endif
     </div>
 
-    {{-- Script nativo para Bootstrap 5 y persistencia avanzada de pestañas y subpestañas --}}
+    {{-- Persistencia de pestañas y subpestañas (con Reservas YA integrado) --}}
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // ═══ MAPAS DE EQUIVALENCIA GLOBAL ↔ INDIVIDUAL ═══
-            // Al recargar en el otro modo, el ID guardado se TRADUCE a su equivalente
-            // para que el subgrupo activo se MANTENGA (Inicio→Inicio, Tarifas→Tarifas…)
             const MAPA_PADRES = {
                 '#global-inmuebles':  '#inmuebles',   '#inmuebles':  '#global-inmuebles',
                 '#global-reservas':   '#reservas',    '#reservas':   '#global-reservas',
@@ -1092,36 +992,36 @@
                 '#single-sub-catalogo': '#sub-catalogo',
                 '#single-sub-tarifa':   '#sub-tarifa',
                 '#single-sub-galeria':  '#sub-galeria',
-                '#single-sub-tipo':     '#sub-tipo'
-
-                // ▸ CUANDO ACTIVES los subhijos de RESERVAS, agrega estas traducciones:
-                //   , '#res-sub-reservas':        '#single-res-sub-reservas'
-                //   , '#res-sub-huespedes':       '#single-res-sub-huespedes'
-                //   , '#res-sub-status':          '#single-res-sub-status'
-                //   , '#res-sub-origenes':        '#single-res-sub-origenes'
-                //   , '#res-sub-historial':       '#single-res-sub-historial'
-                //   , '#single-res-sub-reservas': '#res-sub-reservas'
-                //   , '#single-res-sub-huespedes':'#res-sub-huespedes'
-                //   , '#single-res-sub-status':   '#res-sub-status'
-                //   , '#single-res-sub-origenes': '#res-sub-origenes'
-                //   , '#single-res-sub-historial':'#res-sub-historial'
+                '#single-sub-tipo':     '#sub-tipo',
+                /* ═══ Ecosistema de Reservas · ACTIVADO ═══ */
+                '#res-sub-inicio':            '#single-res-sub-inicio',
+                '#res-sub-reservas':          '#single-res-sub-reservas',
+                '#res-sub-huespedes':         '#single-res-sub-huespedes',
+                '#res-sub-status':            '#single-res-sub-status',
+                '#res-sub-origenes':          '#single-res-sub-origenes',
+                '#res-sub-historial':         '#single-res-sub-historial',
+                '#single-res-sub-inicio':     '#res-sub-inicio',
+                '#single-res-sub-reservas':   '#res-sub-reservas',
+                '#single-res-sub-huespedes':  '#res-sub-huespedes',
+                '#single-res-sub-status':     '#res-sub-status',
+                '#single-res-sub-origenes':   '#res-sub-origenes',
+                '#single-res-sub-historial':  '#res-sub-historial'
             };
 
-            // Búsqueda en los TABLISTS correctos (los contenedores de contenido
-            // no contienen botones → esa era la causa de que nunca restaurara)
             const btnPadre = sel => document.querySelector(
                 '#globalAdminTabs button[data-bs-target="' + sel + '"], ' +
                 '#adminTabs button[data-bs-target="' + sel + '"]'
             );
+
+            /* btnHijo extendido: incluye los tablists de Reservas (activados) */
             const btnHijo = sel => document.querySelector(
                 '#inmueblesSubTabs button[data-bs-target="' + sel + '"], ' +
-                '#inmuebleSingleSubTabs button[data-bs-target="' + sel + '"]'
-                // ▸ CUANDO ACTIVES los subhijos de RESERVAS, extiende también aquí:
-                //   + ', #reservasSubTabs button[data-bs-target="' + sel + '"], ' +
-                //     '#singleReservasSubTabs button[data-bs-target="' + sel + '"]'
+                '#inmuebleSingleSubTabs button[data-bs-target="' + sel + '"], ' +
+                '#reservasSubTabs button[data-bs-target="' + sel + '"], ' +
+                '#singleReservasSubTabs button[data-bs-target="' + sel + '"]'
             );
 
-            // 1 · Restaurar PESTAÑA PADRE (prueba el ID guardado y su traducción)
+            // 1 · Restaurar PESTAÑA PADRE
             const savedTab = localStorage.getItem('rsvAdminTab');
             if (savedTab) {
                 for (const sel of [savedTab, MAPA_PADRES[savedTab]].filter(Boolean)) {
@@ -1130,7 +1030,7 @@
                 }
             }
 
-            // 2 · Restaurar SUBPESTAÑA (prueba el ID guardado y su traducción).
+            // 2 · Restaurar SUBPESTAÑA
             const savedSubTab = localStorage.getItem('rsvAdminSubTab');
             if (savedSubTab) {
                 for (const sel of [savedSubTab, MAPA_HIJOS[savedSubTab]].filter(Boolean)) {
@@ -1146,14 +1046,14 @@
                 });
             });
 
-            // 4 · Guardar SUBPESTAÑA al cambiar
+            // 4 · Guardar SUBPESTAÑA al cambiar (incluye los pills de Reservas)
             document.querySelectorAll('.rsv-sub-pills button[data-bs-toggle="pill"]').forEach(trigger => {
                 trigger.addEventListener('shown.bs.tab', event => {
                     localStorage.setItem('rsvAdminSubTab', event.target.getAttribute('data-bs-target'));
                 });
             });
 
-            // 5 · Al enviar formularios internos, persistir el estado activo antes de recargar
+            // 5 · Persistir estado antes de enviar formularios internos
             document.querySelectorAll('form').forEach(form => {
                 form.addEventListener('submit', function () {
                     const activeTab = document.querySelector('#adminTabs .nav-link.active, #globalAdminTabs .nav-link.active');

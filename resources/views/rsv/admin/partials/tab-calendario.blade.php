@@ -1,10 +1,31 @@
 {{-- resources/views/rsv/admin/partials/tab-calendario.blade.php --}}
-{{-- ESTILO: hoja de cálculo SUAVE · encabezados 9px · eventos 8px · pasteles --}}
+{{-- v2 · FIX GLOBAL: lista de inmuebles corregida ($listaInmuebles),        --}}
+{{-- updateSize() para AMBOS tabs (#global-calendario y #calendario),        --}}
+{{-- contexto preseleccionado en individual. Resto idéntico (estaba super).  --}}
 
 <div id="calRoot">
 
     @php
-        $listaInmuebles = $inmuebles ?? collect();
+        /*
+        ══════════════════════════════════════════════════════════════
+        FIX 1: el dashboard pasa $listaInmuebles (no $inmuebles).
+        Antes el select quedaba vacío y en global no se podía filtrar.
+        FIX 2: contexto — en individual se preselecciona el inmueble
+        activo para que los eventos ya nazcan filtrados.
+        ══════════════════════════════════════════════════════════════
+        */
+        $listaInmuebles = $listaInmuebles ?? $inmuebles ?? collect();
+
+        $calInm = null; $calInmId = null; $calGlobal = true;
+        if (isset($inmueble) && $inmueble) {
+            $calInm = $inmueble;
+            $calInmId = is_object($calInm) ? ($calInm->id ?? null) : $calInm;
+        } elseif (!empty($inmuebleId) && is_numeric($inmuebleId)) {
+            $calInmId = $inmuebleId;
+        } elseif (request('inmueble_id') && is_numeric(request('inmueble_id'))) {
+            $calInmId = request('inmueble_id');
+        }
+        $calGlobal = empty($calInmId);
     @endphp
 
     <!-- ═══ CINTA SUPERIOR: leyenda + filtro ═══ -->
@@ -24,6 +45,9 @@
             <span class="cal-chip"><span class="ldot" style="background:#e5b8b8;"></span> Cancelada</span>
             <span class="cal-chip"><span class="ldot" style="background:#c98a85;"></span> Mantenimiento</span>
 
+            {{-- Verificación de versión --}}
+            <span class="cal-chip" style="border-color:#d5e7dc; color:#3d7a5c; font-weight:600;">CAL2</span>
+
         </div>
 
         <!-- Filtro de inmueble (suave) -->
@@ -31,9 +55,11 @@
             <i class="bi bi-building" style="font-size: 9px; color: #c3ccd6;"></i>
             <select id="filtro_inmueble_cal" class="cal-select" title="Filtrar por inmueble">
                 <option value="">Todos los inmuebles</option>
-                @foreach($listaInmuebles as $inm)
-                    <option value="{{ $inm->id }}">{{ $inm->name }}</option>
-                @endforeach
+                @forelse(($listaInmuebles ?? collect()) as $inm)
+                    <option value="{{ $inm->id }}" @selected((string) $calInmId === (string) $inm->id)>{{ $inm->name }}</option>
+                @empty
+                    <option value="" disabled>Sin inmuebles cargados</option>
+                @endforelse
             </select>
         </div>
 
@@ -245,7 +271,7 @@
               filtro = document.getElementById('filtro_inmueble_cal'),
               loader = document.getElementById('calendar-loader');
 
-        if (!calEl) return;
+        if (!calEl || typeof FullCalendar === 'undefined') return;
 
         /* Paleta pastel por inmueble (saturación rebajada) */
         const getInmuebleStyle = (inmuebleName) => {
@@ -311,7 +337,8 @@
 
             events: async (info, success, fail) => {
                 const fIni = info.startStr.split('T')[0], fFin = info.endStr.split('T')[0];
-                const qInm = filtro.value ? `&id_rsv_catalogo_inmueble=${filtro.value}` : '';
+                /* El select ya nace preseleccionado en individual → el contexto viaja solo */
+                const qInm = (filtro && filtro.value) ? `&id_rsv_catalogo_inmueble=${filtro.value}` : '';
                 loader.classList.remove('d-none');
 
                 try {
@@ -451,10 +478,26 @@
         });
 
         calendar.render();
+
         filtro.addEventListener('change', () => calendar.refetchEvents());
 
-        const tab = document.querySelector('button[data-bs-target="#calendario"]');
-        if (tab) tab.addEventListener('shown.bs.tab', () => calendar.updateSize());
+        /* ═══ FIX 2 · updateSize para AMBOS modos ═══
+           El calendario se inicializa con su tab oculto (ancho 0).
+           Antes solo escuchaba el tab individual (#calendario); en global
+           el tab es #global-calendario y nunca se re-dimensionaba → blanco.
+           Ahora: CUALQUIER tab cuyo pane contenga el calendario lo redibuja. */
+        document.addEventListener('shown.bs.tab', (e) => {
+            const sel = e.target?.getAttribute?.('data-bs-target');
+            if (!sel) return;
+            const pane = document.querySelector(sel);
+            if (pane && pane.contains(calEl)) {
+                setTimeout(() => calendar.updateSize(), 60);
+            }
+        });
+
+        /* Red de seguridad: resize de ventana y primer pintado */
+        window.addEventListener('resize', () => calendar.updateSize());
+        setTimeout(() => calendar.updateSize(), 300);
     });
 </script>
 @endpush
