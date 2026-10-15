@@ -35,15 +35,12 @@ class UpdateCatalogoInmuebleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'             => ['sometimes', 'required', 'string', 'max:255'],
-            'city'             => ['sometimes', 'required', 'string', 'max:255'],
-            'ubicacion'        => ['nullable', 'string', 'max:500'],
-            'capacidad_maxima' => ['sometimes', 'required', 'integer', 'min:1'],
-
-            // CORREGIDO: Apuntando a la tabla correcta con tu prefijo
-            'tipo_inmueble_id' => ['sometimes', 'required', 'integer', 'exists:rsv_tipo_inmueble,id'],
-
-            'active'           => ['sometimes', 'boolean'],
+            'name'             => ['required', 'string', 'max:255'],
+            'city'             => ['required', 'string', 'max:255'],
+            'ubicacion'        => ['nullable', 'string', 'max:500'], // Asegúrate de incluirlo aquí también
+            'capacidad_maxima' => ['required', 'integer', 'min:1'],
+            'tipo_inmueble_id' => ['nullable', 'integer', 'exists:rsv_tipo_inmueble,id'],
+            'active'           => ['required', 'boolean'],
         ];
     }
 

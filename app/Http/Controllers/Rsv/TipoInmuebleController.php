@@ -93,9 +93,11 @@ class TipoInmuebleController extends Controller
     /**
      * Actualizar un tipo de inmueble.
      */
-    public function update(UpdateTipoInmuebleRequest $request, TipoInmueble $tipoInmueble): JsonResponse|RedirectResponse
+    public function update(UpdateTipoInmuebleRequest $request, $id): JsonResponse|RedirectResponse
     {
         try {
+            // Buscamos manualmente para evitar errores de nombres en las rutas
+            $tipoInmueble = TipoInmueble::findOrFail($id);
             $validatedData = $request->validated();
 
             DB::transaction(function () use ($tipoInmueble, $validatedData) {
@@ -114,10 +116,7 @@ class TipoInmuebleController extends Controller
 
         } catch (Throwable $e) {
             Log::error('Error en TipoInmuebleController@update: ' . $e->getMessage());
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Ocurrió un error al actualizar.'], 500);
-            }
+            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Ocurrió un error al actualizar.'], 500);
             return back()->withInput()->with('error', 'Ocurrió un error al actualizar.');
         }
     }
@@ -125,43 +124,30 @@ class TipoInmuebleController extends Controller
     /**
      * Eliminar o desactivar el tipo de inmueble.
      */
-    public function destroy(Request $request, TipoInmueble $tipoInmueble): JsonResponse|RedirectResponse
+    public function destroy(Request $request, $id): JsonResponse|RedirectResponse
     {
         try {
-            // Protección de Integridad Referencial: Verificamos si hay inmuebles usando esta categoría
+            $tipoInmueble = TipoInmueble::findOrFail($id);
+
+            // Protección de Integridad Referencial
             $inmueblesAsociados = CatalogoInmueble::where('tipo_inmueble_id', $tipoInmueble->id)->count();
 
             if ($inmueblesAsociados > 0) {
                 $msg = "No se puede eliminar o desactivar este tipo porque tiene {$inmueblesAsociados} inmueble(s) asociado(s).";
-
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json(['success' => false, 'message' => $msg], 422);
-                }
+                if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => $msg], 422);
                 return back()->with('error', $msg);
             }
 
-            // Respetando tu lógica original: desactivar en lugar de eliminar físicamente (Soft-Delete manual)
             DB::transaction(function () use ($tipoInmueble) {
                 $tipoInmueble->update(['active' => false]);
-                // Si prefieres eliminarlo físicamente de la base de datos, cambia la línea anterior por:
-                // $tipoInmueble->delete();
             });
 
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Tipo de inmueble desactivado exitosamente.'
-                ], 200);
-            }
-
+            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => true, 'message' => 'Tipo de inmueble desactivado exitosamente.'], 200);
             return back()->with('success', 'Tipo de inmueble desactivado exitosamente.');
 
         } catch (Throwable $e) {
             Log::error('Error en TipoInmuebleController@destroy: ' . $e->getMessage());
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar desactivar el registro.'], 500);
-            }
+            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar desactivar el registro.'], 500);
             return back()->with('error', 'Ocurrió un error al intentar desactivar el registro.');
         }
     }

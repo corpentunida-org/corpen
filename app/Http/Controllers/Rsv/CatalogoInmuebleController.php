@@ -104,7 +104,6 @@ class CatalogoInmuebleController extends Controller
     public function store(StoreCatalogoInmuebleRequest $request): RedirectResponse|JsonResponse
     {
         try {
-            // Obtenemos únicamente los datos que pasaron la validación en el Form Request
             $validatedData = $request->validated();
 
             DB::transaction(function () use ($validatedData) {
@@ -118,13 +117,14 @@ class CatalogoInmuebleController extends Controller
             return redirect()->back()->with('success', 'Inmueble creado exitosamente.');
 
         } catch (\Throwable $e) {
+            // Si vuelve a fallar algo en la BD, ahora sí lo verás en el log de Laravel (storage/logs/laravel.log)
             Log::error('Error al crear inmueble: ' . $e->getMessage());
 
             if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Error interno al guardar el inmueble.'], 500);
+                return response()->json(['success' => false, 'message' => 'Error interno al guardar el inmueble: ' . $e->getMessage()], 500);
             }
 
-            return redirect()->back()->with('error', 'Ocurrió un error al registrar el inmueble.')->withInput();
+            return redirect()->back()->with('error', 'Ocurrió un error al registrar el inmueble: ' . $e->getMessage())->withInput();
         }
     }
 

@@ -70,6 +70,19 @@ class InmuebleMultimediaController extends Controller
         }
     }
 
+    public function show(Request $request, string $id): JsonResponse
+    {
+        try {
+            $multimedia = InmuebleMultimedia::with('inmueble')->findOrFail($id);
+            return response()->json(['success' => true, 'data' => $multimedia], 200);
+        } catch (ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'El recurso no existe.'], 404);
+        } catch (Throwable $e) {
+            Log::error('Error en InmuebleMultimediaController@show: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error interno.'], 500);
+        }
+    }
+    
     public function create(): JsonResponse
     {
         return response()->json(['success' => false, 'message' => 'Método no implementado para API REST.'], 405);
@@ -131,18 +144,6 @@ class InmuebleMultimediaController extends Controller
         }
     }
 
-    public function show(Request $request, string $id): JsonResponse
-    {
-        try {
-            $multimedia = InmuebleMultimedia::with('inmueble')->findOrFail($id);
-            return response()->json(['success' => true, 'data' => $multimedia], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'El recurso no existe.'], 404);
-        } catch (Throwable $e) {
-            Log::error('Error en InmuebleMultimediaController@show: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error interno.'], 500);
-        }
-    }
 
     public function edit(string $id): JsonResponse
     {
