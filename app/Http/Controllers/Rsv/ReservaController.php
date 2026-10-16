@@ -137,7 +137,7 @@ class ReservaController extends Controller
                 HistorialEstado::create([
                     'id_rsv_reservas'          => $reserva->id,
                     'id_rsv_statuses_anterior' => null,
-                    'id_rsv_status_nuevo'      => $reserva->id_rsv_statuses,
+                    'id_rsv_statuses_nuevo'      => $reserva->id_rsv_statuses,
                     'id_user'                  => Auth::id() ?? $reserva->id_user,
                     'comentario'               => 'Creación inicial de la reserva.',
                 ]);
@@ -251,7 +251,7 @@ class ReservaController extends Controller
                     HistorialEstado::create([
                         'id_rsv_reservas'          => $reserva->id,
                         'id_rsv_statuses_anterior' => $estadoAnterior,
-                        'id_rsv_status_nuevo'      => $nuevoEstado,
+                        'id_rsv_statuses_nuevo'      => $nuevoEstado,
                         'id_user'                  => Auth::id() ?? $reserva->id_user,
                         'comentario'               => 'Actualización de estado en modificación general de reserva.',
                     ]);
@@ -352,7 +352,7 @@ class ReservaController extends Controller
                 HistorialEstado::create([
                     'id_rsv_reservas'          => $reserva->id,
                     'id_rsv_statuses_anterior' => $estadoAnterior,
-                    'id_rsv_status_nuevo'      => $nuevoEstado,
+                    'id_rsv_statuses_nuevo'      => $nuevoEstado,
                     'id_user'                  => Auth::id() ?? $reserva->id_user,
                     'comentario'               => $validatedData['comentario'] ?? 'Cambio manual de estado.',
                 ]);

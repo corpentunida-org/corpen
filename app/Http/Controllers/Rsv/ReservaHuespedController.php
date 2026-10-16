@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 class ReservaHuespedController extends Controller
@@ -76,62 +77,6 @@ class ReservaHuespedController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create(): JsonResponse
-    {
-        return response()->json([
-            'success' => false,
-            'message' => 'Método no implementado para API REST.',
-        ], 405);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request): JsonResponse
-    {
-        $validatedData = $request->validate([
-            'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
-            'nombres' => 'required|string|max:255',
-            'apellidos' => 'required|string|max:255',
-            'tipo_documento' => 'nullable|string|max:50',
-            'numero_documento' => 'nullable|string|max:50',
-            'email' => 'nullable|email|max:255',
-            'telefono' => 'nullable|string|max:50',
-            'es_principal' => 'boolean',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $huesped = DB::transaction(function () use ($validatedData) {
-                // Por defecto, si no se envía, asumimos que no es el principal
-                $validatedData['es_principal'] = $validatedData['es_principal'] ?? false;
-                return ReservaHuesped::create($validatedData);
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Huésped registrado exitosamente.',
-                'data' => $huesped,
-            ], 201);
-
-        } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en ReservaHuespedController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al registrar el huésped.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
-    }
-
-    /**
      * Display the specified resource.
      */
     public function show(string $id): JsonResponse
@@ -166,9 +111,9 @@ class ReservaHuespedController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for creating a new resource.
      */
-    public function edit(string $id): JsonResponse
+    public function create(): JsonResponse
     {
         return response()->json([
             'success' => false,
@@ -177,12 +122,58 @@ class ReservaHuespedController extends Controller
     }
 
     /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id_rsv_reservas'  => 'required|exists:rsv_reservas,id',
+            'nombres'          => 'required_without:nombre|nullable|string|max:255',
+            'nombre'           => 'required_without:nombres|nullable|string|max:255',
+            'apellidos'        => 'required|string|max:255',
+            'tipo_documento'   => 'nullable|string|max:50',
+            'numero_documento' => 'nullable|string|max:50',
+            'es_principal'     => 'nullable|boolean',
+            'es_titular'       => 'nullable|boolean',
+        ]);
+
+        try {
+            $huesped = DB::transaction(function () use ($request, $validated) {
+                return ReservaHuesped::create([
+                    'id_rsv_reservas'     => $validated['id_rsv_reservas'],
+                    'id_user_registrador' => Auth::id() ?? $request->user()?->id,
+                    'nombre'              => $validated['nombre'] ?? $validated['nombres'],
+                    'apellidos'           => $validated['apellidos'],
+                    'tipo_documento'      => $validated['tipo_documento'] ?? null,
+                    'numero_documento'    => $validated['numero_documento'] ?? null,
+                    'es_titular'          => $request->boolean('es_titular', $request->boolean('es_principal', false)),
+                ]);
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Huésped registrado exitosamente.',
+                'data'    => $huesped,
+            ], 201);
+
+        } catch (Throwable $e) {
+            Log::error('Error en ReservaHuespedController@store: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al registrar el huésped.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             $huesped = ReservaHuesped::find($id);
 
@@ -193,28 +184,45 @@ class ReservaHuespedController extends Controller
                 ], 404);
             }
 
-            $validatedData = $request->validate([
-                'nombres' => 'sometimes|required|string|max:255',
-                'apellidos' => 'sometimes|required|string|max:255',
-                'tipo_documento' => 'nullable|string|max:50',
+            $validated = $request->validate([
+                'nombres'          => 'nullable|string|max:255',
+                'nombre'           => 'nullable|string|max:255',
+                'apellidos'        => 'sometimes|required|string|max:255',
+                'tipo_documento'   => 'nullable|string|max:50',
                 'numero_documento' => 'nullable|string|max:50',
-                'email' => 'nullable|email|max:255',
-                'telefono' => 'nullable|string|max:50',
-                'es_principal' => 'sometimes|boolean',
+                'es_principal'     => 'nullable|boolean',
+                'es_titular'       => 'nullable|boolean',
             ]);
 
-            DB::transaction(function () use ($huesped, $validatedData) {
-                $huesped->update($validatedData);
+            $datosActualizar = [];
+
+            if (array_key_exists('nombre', $validated) || array_key_exists('nombres', $validated)) {
+                $datosActualizar['nombre'] = $validated['nombre'] ?? $validated['nombres'];
+            }
+            if (array_key_exists('apellidos', $validated)) {
+                $datosActualizar['apellidos'] = $validated['apellidos'];
+            }
+            if (array_key_exists('tipo_documento', $validated)) {
+                $datosActualizar['tipo_documento'] = $validated['tipo_documento'];
+            }
+            if (array_key_exists('numero_documento', $validated)) {
+                $datosActualizar['numero_documento'] = $validated['numero_documento'];
+            }
+            if ($request->has('es_titular') || $request->has('es_principal')) {
+                $datosActualizar['es_titular'] = $request->boolean('es_titular', $request->boolean('es_principal'));
+            }
+
+            DB::transaction(function () use ($huesped, $datosActualizar) {
+                $huesped->update($datosActualizar);
             });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Datos del huésped actualizados exitosamente.',
-                'data' => $huesped,
+                'data'    => $huesped->fresh(),
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error en ReservaHuespedController@update: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
@@ -222,9 +230,20 @@ class ReservaHuespedController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar los datos del huésped.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Método no implementado para API REST.',
+        ], 405);
     }
 
     /**

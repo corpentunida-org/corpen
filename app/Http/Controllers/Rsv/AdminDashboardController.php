@@ -314,4 +314,79 @@ class AdminDashboardController extends Controller
             ]);
         }
     }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * NUEVO: Devuelve SOLO el fragmento HTML del parcial de reservas.
+     * Lo usa el JS de reservas.blade.php para hacer swaps AJAX in-place
+     * (buscar, seleccionar reserva, refrescar tras una acción) SIN
+     * recargar la página completa.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function reservasFragmento(Request $request)
+    {
+        $inmuebleId = $request->query('inmueble_id');
+        $inmueble   = null;
+
+        if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+            $inmueble = CatalogoInmueble::find($inmuebleId);
+        }
+
+        return response()
+            ->view('rsv.admin.partials.reservas.reservas', [
+                'inmueble'   => $inmueble,
+                'inmuebleId' => $inmuebleId,
+            ])
+            ->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * NUEVO: Busca usuarios por cédula (nid), nombre o email.
+     * Lo usa el autocomplete del modal de Endoso (reservas.blade.php).
+     * Versión blindada: verifica columnas antes de usarlas y NUNCA
+     * devuelve 500 (cualquier fallo interno responde success:false).
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function buscarUsuarios(Request $request)
+    {
+        try {
+            $q = trim((string) $request->query('q'));
+            if (mb_strlen($q) < 2) {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+
+            // Solo consulta columnas que REALMENTE existen (evita 500 si falta 'nid')
+            $tieneNid   = \Illuminate\Support\Facades\Schema::hasColumn('users', 'nid');
+            $tieneEmail = \Illuminate\Support\Facades\Schema::hasColumn('users', 'email');
+            $campos = array_values(array_filter(['id', 'name', $tieneNid ? 'nid' : null, $tieneEmail ? 'email' : null]));
+
+            $users = \App\Models\User::query()
+                ->where(function ($w) use ($q, $tieneNid, $tieneEmail) {
+                    $like = '%' . $q . '%';
+                    $w->where('name', 'like', $like);
+                    if ($tieneEmail) { $w->orWhere('email', 'like', $like); }
+                    if ($tieneNid)   { $w->orWhere('nid', 'like', $like); }
+                })
+                ->orderBy('name')
+                ->limit(10)
+                ->get($campos);
+
+            // Array plano: evita que accessors/casts del modelo User exploten al serializar
+            $data = $users->map(function ($u) use ($tieneNid, $tieneEmail) {
+                return [
+                    'id'    => $u->id,
+                    'name'  => (string) $u->name,
+                    'nid'   => $tieneNid   ? (string) ($u->nid ?? '')   : '',
+                    'email' => $tieneEmail ? (string) ($u->email ?? '') : '',
+                ];
+            })->values();
+
+            return response()->json(['success' => true, 'data' => $data]);
+
+        } catch (\Throwable $e) {
+            Log::error('buscarUsuarios: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'error', 'data' => []]);
+        }
+    }
 }

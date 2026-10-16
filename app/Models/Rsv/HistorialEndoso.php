@@ -22,6 +22,7 @@ class HistorialEndoso extends Model
         return $this->belongsTo(Reserva::class, 'id_rsv_reservas');
     }
 
+    /* Español: los que usa la VISTA (reservas.blade.php) */
     public function usuarioAnterior(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'id_user_anterior');
@@ -35,5 +36,18 @@ class HistorialEndoso extends Model
     public function autorizadoPor(): BelongsTo
     {
         return $this->belongsTo(\App\Models\User::class, 'id_user_autorizado_por');
+    }
+
+    /* ═══ ALIAS (inglés): los nombres EXACTOS que exige el CONTROLADOR
+       en load(['reserva', 'userAnterior', 'userNuevo', 'autorizadoPor']).
+       Sin estos, el store responde 500 aunque el endoso ya se haya guardado. ═══ */
+    public function userAnterior(): BelongsTo
+    {
+        return $this->usuarioAnterior();
+    }
+
+    public function userNuevo(): BelongsTo
+    {
+        return $this->usuarioNuevo();
     }
 }
