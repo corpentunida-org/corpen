@@ -122,8 +122,8 @@
     }
 
     /* ═══ FILA DEL TIPO ASIGNADO (individual) — ahora IMPOSIBLE de no ver:
-       fondo verde + barra lateral de acento. Antes solo el fondo (invisible
-       en filas de 20px) → parecía que la vista no filtraba. ═══ */
+        fondo verde + barra lateral de acento. Antes solo el fondo (invisible
+        en filas de 20px) → parecía que la vista no filtraba. ═══ */
     .tipo-soft tr.ti-assigned > * { background-color: #f0f7f2 !important; }
     .tipo-soft tr.ti-assigned > td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 
@@ -246,10 +246,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL (CRUD en AMBOS modos)        --}}
-{{-- FIX: en individual ahora SÍ refleja el inmueble seleccionado:    --}}
-{{--      ordena el tipo asignado primero, lo resalta y nace con el   --}}
-{{--      toggle "Solo asignado" activo (vista filtrada por defecto). --}}
+{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL (CRUD en AMBOS modos)         --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="tipo-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
@@ -263,16 +260,13 @@
         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
 
             @if($modoGlobal)
-                {{-- GLOBAL: contador total --}}
                 <span class="ti-contador" id="tiContador-{{ $tiUid }}"></span>
             @else
-                {{-- INDIVIDUAL: contexto visible del inmueble seleccionado --}}
                 @if($tipoAsignado)
                     <span class="ti-chip asg" title="Tipo asignado a este inmueble">
                         <i class="bi bi-house-door"></i>Tipo asignado: {{ $tipoAsignado->nombre }}
                     </span>
 
-                    {{-- Toggle "Solo asignado": la vista NACE filtrada (checked) --}}
                     <div class="form-check form-switch mb-0 ti-toggle d-flex align-items-center gap-1">
                         <input class="form-check-input" type="checkbox" role="switch"
                                id="tiSoloAsignado-{{ $tiUid }}" checked>
@@ -290,11 +284,9 @@
                 <span class="ti-contador" id="tiContador-{{ $tiUid }}"></span>
             @endif
 
-            {{-- Búsqueda por texto (ambos modos) --}}
             <input type="search" id="tiBuscar-{{ $tiUid }}" class="ti-buscar"
                    placeholder="Buscar tipo…" autocomplete="off">
 
-            {{-- Botón Nuevo Tipo disponible en AMBOS modos --}}
             <button type="button"
                     class="btn btn-sm"
                     style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
@@ -331,7 +323,6 @@
                             $esAsignado = (!$modoGlobal && !is_null($tipoAsignadoId) && $tipoAsignadoId == $tipo->id);
                         @endphp
 
-                        {{-- data-es-asignado + data-search: los usan el toggle y la búsqueda client-side --}}
                         <tr class="{{ $esAsignado ? 'ti-assigned' : '' }}"
                             data-tipo-id="{{ $tipo->id }}"
                             data-es-asignado="{{ $esAsignado ? 1 : 0 }}"
@@ -343,7 +334,6 @@
                                 <span class="ti-nombre" title="{{ $tipo->nombre }}">
                                     <i class="bi bi-tag-fill me-1" style="font-size: 6.5px; color: #5d8a70;"></i>{{ $tipo->nombre }}
                                 </span>
-                                {{-- Destacar el tipo asignado a este inmueble (solo individual) --}}
                                 @if($esAsignado)
                                     <span class="ti-chip asg ms-1" title="Tipo asignado a este inmueble">
                                         <i class="bi bi-house-door"></i>Asignado
@@ -355,7 +345,6 @@
                                 {{ $tipo->descripcion ?: '—' }}
                             </td>
 
-                            {{-- Contador de inmuebles que usan este tipo --}}
                             <td class="text-center">
                                 @if($nInmuebles > 0)
                                     <span class="ti-chip cnt" title="{{ $nInmuebles }} inmueble(s) usan este tipo">
@@ -374,7 +363,6 @@
                                 @endif
                             </td>
 
-                            {{-- Acciones disponibles en AMBOS modos --}}
                             <td class="text-center">
                                 <button type="button"
                                         class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tipo-{{ $tiUid }}"
@@ -411,7 +399,6 @@
                     </tr>
                 @endif
 
-                {{-- Fila informativa: el filtro (búsqueda / solo-asignado) no arrojó resultados --}}
                 <tr id="filaSinFiltro-{{ $tiUid }}" class="d-none">
                     <td colspan="6" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px;">
                         <i class="bi bi-funnel me-1"></i> Sin tipos que coincidan con el filtro o la búsqueda.
@@ -427,7 +414,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · NUEVO TIPO DE INMUEBLE (ID único por inclusión)          --}}
+{{-- MODAL · NUEVO TIPO DE INMUEBLE                                  --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="modal fade tipo-soft-modal" id="modalAddTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
@@ -449,7 +436,6 @@
 
                 <div class="modal-body p-3">
 
-                    {{-- 1 · INFORMACIÓN --}}
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-tag"></i> Información</div>
 
@@ -465,8 +451,6 @@
                         </div>
                     </div>
 
-
-                    {{-- 2 · ESTADO --}}
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-toggle-on"></i> Estado</div>
 
@@ -499,7 +483,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · EDITAR TIPO DE INMUEBLE (ID único por inclusión)         --}}
+{{-- MODAL · EDITAR TIPO DE INMUEBLE                                  --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="modal fade tipo-soft-modal" id="modalEditarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
@@ -522,7 +506,6 @@
 
                 <div class="modal-body p-3">
 
-                    {{-- 1 · INFORMACIÓN --}}
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-tag"></i> Información</div>
 
@@ -537,8 +520,6 @@
                         </div>
                     </div>
 
-
-                    {{-- 2 · ESTADO --}}
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-toggle-on"></i> Estado</div>
 
@@ -571,8 +552,7 @@
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · DESACTIVAR TIPO (ID único por inclusión)                 --}}
-{{-- Coincide con el comportamiento real del controlador (soft-off)   --}}
+{{-- MODAL · DESACTIVAR TIPO                                          --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 <div class="modal fade tipo-soft-modal" id="modalEliminarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -598,7 +578,6 @@
                         ¿Desactivar el tipo <b id="del_tipo_nombre-{{ $tiUid }}" style="color: #334155;">—</b>? Pasará a estado <b>Inactivo</b> sin eliminarse físicamente.
                     </p>
 
-                    {{-- Advertencia solo si hay inmuebles usando este tipo (el controlador lo bloqueará) --}}
                     <div class="ti-warn d-none" id="del_tipo_warning-{{ $tiUid }}">
                         <i class="bi bi-exclamation-triangle-fill"></i>
                         <span>Tiene <b id="del_tipo_count-{{ $tiUid }}">0</b> inmueble(s) asociado(s). El sistema no permitirá desactivarlo.</span>
@@ -621,17 +600,11 @@
 </div>
 
 
-{{-- SCRIPT · Filtros (búsqueda + solo-asignado) + llenado de modales (scoped por UID) --}}
+{{-- SCRIPT · Filtros y llenado de modales --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const UID = '{{ $tiUid }}';
 
-        /* ══════════════════════════════════════════════════════════
-           FILTROS: búsqueda por texto + toggle "Solo asignado"
-           · En individual con tipo asignado, el toggle NACE activo
-             (server-side: checked) → la vista nace filtrada.
-           · En global solo opera la búsqueda.
-           ══════════════════════════════════════════════════════════ */
         const tbody    = document.getElementById('tbodyTipos-' + UID);
         const filas    = tbody ? Array.from(tbody.querySelectorAll('tr[data-tipo-id]')) : [];
         const total    = filas.length;
@@ -672,9 +645,7 @@
         if (soloChk) soloChk.addEventListener('change', aplicarFiltrosTipos);
         aplicarFiltrosTipos();
 
-        /* ══════════════════════════════════════════════════════════
-           EDITAR TIPO (scoped por UID)
-           ══════════════════════════════════════════════════════════ */
+        // Llenado de modal Editar
         document.querySelectorAll('.btn-editar-tipo-' + UID).forEach(btn => {
             btn.addEventListener('click', function () {
                 const form = document.getElementById('formEditarTipo-' + UID);
@@ -686,7 +657,6 @@
                 const activeCheck = document.getElementById('edit_tipo_active-' + UID);
                 activeCheck.checked = this.getAttribute('data-active') === '1';
 
-                /* Contexto del header/footer */
                 const hintTitle = document.getElementById('edit_tipo_hint_title-' + UID);
                 const hint      = document.getElementById('edit_tipo_hint-' + UID);
                 const hintCount = document.getElementById('edit_tipo_hint_count-' + UID);
@@ -695,13 +665,11 @@
                 const count  = parseInt(this.getAttribute('data-count') || 0);
 
                 if (hintTitle) hintTitle.textContent = nombre;
-
                 if (hint) {
                     hint.innerHTML = this.getAttribute('data-active') === '1'
                         ? 'Estado: <b style="color:#5d8a70;">Activo</b>'
                         : 'Estado: <b style="color:#9aa5b1;">Inactivo</b>';
                 }
-
                 if (hintCount) {
                     hintCount.innerHTML = count > 0
                         ? 'Usado por <b style="color:#5d8a70;">' + count + '</b> inmueble(s)'
@@ -710,9 +678,7 @@
             });
         });
 
-        /* ══════════════════════════════════════════════════════════
-           DESACTIVAR TIPO (scoped por UID)
-           ══════════════════════════════════════════════════════════ */
+        // Llenado de modal Desactivar (Validación visual de dependencias)
         document.querySelectorAll('.btn-eliminar-tipo-' + UID).forEach(btn => {
             btn.addEventListener('click', function () {
                 const form = document.getElementById('formEliminarTipo-' + UID);
@@ -724,11 +690,15 @@
                 document.getElementById('del_tipo_nombre-' + UID).textContent = '“' + nombre + '”';
 
                 const warn = document.getElementById('del_tipo_warning-' + UID);
+                const btnSubmit = form.querySelector('button[type="submit"]'); // Capturamos el botón
+
                 if (count > 0) {
                     document.getElementById('del_tipo_count-' + UID).textContent = count;
                     warn.classList.remove('d-none');
+                    btnSubmit.disabled = true; // BLOQUEAMOS EL BOTÓN
                 } else {
                     warn.classList.add('d-none');
+                    btnSubmit.disabled = false; // HABILITAMOS EL BOTÓN
                 }
             });
         });

@@ -27,7 +27,7 @@
     // 3. Cargar lista de inmuebles para los Selects (Modal Crear/Editar)
     $listaInmueblesOpt = isset($listaInmuebles) ? $listaInmuebles : null;
     if ($listaInmueblesOpt === null) {
-        $listaInmueblesOpt = CatalogoInmueble::with('tipoInmueble')->where('active', 1)->get();
+        $listaInmueblesOpt = CatalogoInmueble::with('tipoInmueble')->orderBy('name', 'asc')->get();
     } elseif (method_exists($listaInmueblesOpt, 'loadMissing')) {
         $listaInmueblesOpt->loadMissing('tipoInmueble');
     }

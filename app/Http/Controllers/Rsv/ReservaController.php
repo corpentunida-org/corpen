@@ -3,14 +3,16 @@
 namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
-use App\Models\Rsv\Reserva;
+use App\Http\Requests\Rsv\StoreReservaRequest;
+use App\Http\Requests\Rsv\UpdateReservaRequest;
 use App\Models\Rsv\HistorialEstado;
-use Illuminate\Http\Request;
+use App\Models\Rsv\Reserva;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Throwable;
 
@@ -19,25 +21,19 @@ class ReservaController extends Controller
     /**
      * Display a listing of the resource.
      * Soporte Dual (Web/AJAX/JSON) con filtros de búsqueda, fechas, relaciones y paginación.
-     *
-     * @param Request $request
-     * @return View|JsonResponse|RedirectResponse
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         try {
-            /*
-             * 1. RELACIONES CORREGIDAS Y OPTIMIZADAS
-             * Se corrigió 'origenReserva' por 'origen' (como está en tu modelo).
-             */
+            // 1. Relaciones optimizadas
             $query = Reserva::with([
                 'inmueble',
                 'user',
                 'status',
-                'origen', // <--- CORREGIDO: Antes era origenReserva y causaba el Error 500
+                'origen',
                 'huespedes',
                 'transacciones',
-                'historialEndosos' // <--- VITAL para las franjas azules del calendario
+                'historialEndosos',
             ]);
 
             // 2. Filtro de Búsqueda
@@ -74,16 +70,15 @@ class ReservaController extends Controller
                 $query->whereDate('fecha_fin', '<=', $request->fecha_hasta);
             }
 
-            // Paginación dinámica (El calendario pide 2000)
+            // Paginación dinámica
             $perPage = $request->get('per_page', 15);
             $reservas = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-            // 🚀 5. RESPUESTA JSON PARA EL CALENDARIO (A PRUEBA DE FALLOS)
+            // 5. Respuesta JSON para el Calendario / API REST
             if ($request->wantsJson() && !$request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    // Devolvemos items() para que JavaScript no tenga problemas con la paginación
-                    'data' => $reservas->items()
+                    'data' => $reservas->items(),
                 ], 200);
             }
 
@@ -98,14 +93,15 @@ class ReservaController extends Controller
             // Respuesta Vista Tradicional
             return view('rsv.reservas.index', compact('reservas'));
 
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Error en ReservaController@index: ' . $e->getMessage());
+        } catch (Throwable $e) {
+            Log::error('Error en ReservaController@index: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             if ($request->wantsJson() || $request->ajax()) {
-                // Devolvemos el error real en JSON para poder verlo en la consola del navegador si vuelve a fallar
                 return response()->json([
                     'success' => false,
-                    'message' => $e->getMessage()
+                    'message' => $e->getMessage(),
                 ], 500);
             }
 
@@ -127,22 +123,11 @@ class ReservaController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreReservaRequest $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'required|exists:rsv_catalogo_inmueble,id',
-            'id_user' => 'required|integer',
-            'id_rsv_statuses' => 'required|exists:rsv_statuses,id',
-            'fecha_inicio' => 'required|date',
-            'fecha_fin' => 'required|date|after:fecha_inicio',
-            'monto_total' => 'required|numeric|min:0',
-            'id_rsv_origen_reservas' => 'required|exists:rsv_origen_reservas,id',
-            'comentario_reserva' => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
         try {
+            $validatedData = $request->validated();
+
             $reserva = DB::transaction(function () use ($validatedData) {
                 $validatedData['codigo_reserva'] = 'RSV-' . strtoupper(uniqid());
 
@@ -150,34 +135,33 @@ class ReservaController extends Controller
 
                 // Registrar automáticamente el estado inicial
                 HistorialEstado::create([
-                    'id_rsv_reservas' => $reserva->id,
+                    'id_rsv_reservas'          => $reserva->id,
                     'id_rsv_statuses_anterior' => null,
-                    'id_rsv_status_nuevo' => $reserva->id_rsv_statuses,
-                    'id_user' => Auth::id() ?? $reserva->id_user,
-                    'comentario' => 'Creación inicial de la reserva.',
+                    'id_rsv_statuses_nuevo'      => $reserva->id_rsv_statuses,
+                    'id_user'                  => Auth::id() ?? $reserva->id_user,
+                    'comentario'               => 'Creación inicial de la reserva.',
                 ]);
 
                 return $reserva;
             });
 
-            $reserva->load(['inmueble', 'user', 'status', 'origenReserva']);
+            $reserva->load(['inmueble', 'user', 'status', 'origen']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva creada exitosamente.',
-                'data' => $reserva,
+                'data'    => $reserva,
             ], 201);
 
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error en ReservaController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la reserva.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -192,7 +176,7 @@ class ReservaController extends Controller
                 'inmueble',
                 'user',
                 'status',
-                'origenReserva',
+                'origen',
                 'huespedes',
                 'transacciones.pasarela',
                 'itinerarios',
@@ -212,18 +196,18 @@ class ReservaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva obtenida exitosamente.',
-                'data' => $reserva,
+                'data'    => $reserva,
             ], 200);
 
         } catch (Throwable $e) {
             Log::error('Error en ReservaController@show: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al obtener la reserva.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -242,10 +226,8 @@ class ReservaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateReservaRequest $request, string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             $reserva = Reserva::find($id);
 
@@ -256,16 +238,7 @@ class ReservaController extends Controller
                 ], 404);
             }
 
-            $validatedData = $request->validate([
-                'id_rsv_catalogo_inmueble' => 'sometimes|required|exists:rsv_catalogo_inmueble,id',
-                'id_user' => 'sometimes|required|integer',
-                'id_rsv_statuses' => 'sometimes|required|exists:rsv_statuses,id',
-                'fecha_inicio' => 'sometimes|required|date',
-                'fecha_fin' => 'sometimes|required|date|after:fecha_inicio',
-                'monto_total' => 'sometimes|required|numeric|min:0',
-                'id_rsv_origen_reservas' => 'sometimes|required|exists:rsv_origen_reservas,id',
-                'comentario_reserva' => 'nullable|string',
-            ]);
+            $validatedData = $request->validated();
 
             DB::transaction(function () use ($reserva, $validatedData) {
                 $estadoAnterior = $reserva->id_rsv_statuses;
@@ -276,33 +249,32 @@ class ReservaController extends Controller
                 // Registrar en historial si el estado cambió
                 if ($estadoAnterior !== $nuevoEstado) {
                     HistorialEstado::create([
-                        'id_rsv_reservas' => $reserva->id,
+                        'id_rsv_reservas'          => $reserva->id,
                         'id_rsv_statuses_anterior' => $estadoAnterior,
-                        'id_rsv_status_nuevo' => $nuevoEstado,
-                        'id_user' => Auth::id() ?? $reserva->id_user,
-                        'comentario' => 'Actualización de estado en modificación general de reserva.',
+                        'id_rsv_statuses_nuevo'      => $nuevoEstado,
+                        'id_user'                  => Auth::id() ?? $reserva->id_user,
+                        'comentario'               => 'Actualización de estado en modificación general de reserva.',
                     ]);
                 }
             });
 
-            $reserva->load(['inmueble', 'user', 'status', 'origenReserva']);
+            $reserva->load(['inmueble', 'user', 'status', 'origen']);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reserva actualizada exitosamente.',
-                'data' => $reserva,
+                'data'    => $reserva,
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error en ReservaController@update: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar la reserva.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -312,8 +284,6 @@ class ReservaController extends Controller
      */
     public function destroy(string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             $reserva = Reserva::find($id);
 
@@ -334,15 +304,14 @@ class ReservaController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error en ReservaController@destroy: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al eliminar la reserva.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
@@ -352,8 +321,6 @@ class ReservaController extends Controller
      */
     public function cambiarEstado(Request $request, string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
             $reserva = Reserva::find($id);
 
@@ -366,7 +333,7 @@ class ReservaController extends Controller
 
             $validatedData = $request->validate([
                 'id_rsv_statuses' => 'required|exists:rsv_statuses,id',
-                'comentario' => 'nullable|string',
+                'comentario'      => 'nullable|string',
             ]);
 
             $estadoAnterior = $reserva->id_rsv_statuses;
@@ -383,11 +350,11 @@ class ReservaController extends Controller
                 $reserva->update(['id_rsv_statuses' => $nuevoEstado]);
 
                 HistorialEstado::create([
-                    'id_rsv_reservas' => $reserva->id,
+                    'id_rsv_reservas'          => $reserva->id,
                     'id_rsv_statuses_anterior' => $estadoAnterior,
-                    'id_rsv_status_nuevo' => $nuevoEstado,
-                    'id_user' => Auth::id() ?? $reserva->id_user,
-                    'comentario' => $validatedData['comentario'] ?? 'Cambio manual de estado.',
+                    'id_rsv_statuses_nuevo'      => $nuevoEstado,
+                    'id_user'                  => Auth::id() ?? $reserva->id_user,
+                    'comentario'               => $validatedData['comentario'] ?? 'Cambio manual de estado.',
                 ]);
             });
 
@@ -396,19 +363,18 @@ class ReservaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Estado de la reserva cambiado exitosamente.',
-                'data' => $reserva,
+                'data'    => $reserva,
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error en ReservaController@cambiarEstado: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al cambiar el estado de la reserva.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

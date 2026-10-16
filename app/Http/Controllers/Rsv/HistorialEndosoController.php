@@ -55,7 +55,7 @@ class HistorialEndosoController extends Controller
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade
+            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
             return view('rsv.endosos.index', compact('endosos'));
 
         } catch (Throwable $e) {
@@ -93,10 +93,10 @@ class HistorialEndosoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
-            'id_user_nuevo' => 'required|integer',
+            'id_rsv_reservas'        => 'required|exists:rsv_reservas,id',
+            'id_user_nuevo'          => 'required|integer',
             'id_user_autorizado_por' => 'required|integer',
-            'motivo_endoso' => 'required|string',
+            'motivo_endoso'          => 'required|string',
         ]);
 
         DB::beginTransaction();
@@ -106,6 +106,7 @@ class HistorialEndosoController extends Controller
             $reserva = Reserva::lockForUpdate()->find($validatedData['id_rsv_reservas']);
 
             if (!$reserva) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'La reserva especificada no existe.',
@@ -113,6 +114,7 @@ class HistorialEndosoController extends Controller
             }
 
             if ($reserva->id_user == $validatedData['id_user_nuevo']) {
+                DB::rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'El nuevo usuario no puede ser el mismo titular actual.',
@@ -132,7 +134,14 @@ class HistorialEndosoController extends Controller
 
             DB::commit();
 
-            $endoso->load(['reserva', 'userAnterior', 'userNuevo', 'autorizadoPor']);
+            // ── MEJORA DEFENSIVA: la carga de relaciones ocurre DESPUÉS del commit.
+            // Si algún nombre de relación volviera a fallar, NO convertimos un endoso
+            // exitoso en un error 500: respondemos éxito con el registro tal cual. ──
+            try {
+                $endoso->load(['reserva', 'userAnterior', 'userNuevo', 'autorizadoPor']);
+            } catch (Throwable $eLoad) {
+                Log::warning('HistorialEndosoController@store: relaciones opcionales no cargadas: ' . $eLoad->getMessage());
+            }
 
             return response()->json([
                 'success' => true,
@@ -206,7 +215,8 @@ class HistorialEndosoController extends Controller
 
     /**
      * Update the specified resource in storage.
-     * Permite actualizar únicamente el motivo (para correcciones menores), manteniendo la inmutabilidad de los actores.
+     * Permite actualizar únicamente el motivo (para correcciones menores),
+     * manteniendo la inmutabilidad de los actores.
      */
     public function update(Request $request, string $id): JsonResponse
     {

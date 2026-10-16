@@ -96,18 +96,32 @@ class MensajeController extends Controller
         $validatedData = $request->validate([
             'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
             'id_user_remitente' => 'required|integer',
-            'id_user_destinatario' => 'required|integer',
+            'id_user_destinatario' => 'nullable|integer', // La BD no lo usa estrictamente en el modelo
             'mensaje' => 'required|string',
+            'url_archivo' => 'nullable|file|max:5120', // Permite adjuntos hasta 5MB
         ]);
 
         DB::beginTransaction();
 
         try {
-            $validatedData['leido'] = false; // Por defecto el mensaje no está leído al crearse
+            // Mapeamos los datos al nombre exacto que tiene el Modelo (contenido)
+            $dataInsert = [
+                'id_rsv_reservas'   => $validatedData['id_rsv_reservas'],
+                'id_user_remitente' => $validatedData['id_user_remitente'],
+                'contenido'         => $validatedData['mensaje'],
+                'tipo_mensaje'      => 'texto',
+                'leido'             => false
+            ];
 
-            $mensaje = DB::transaction(function () use ($validatedData) {
-                return Mensaje::create($validatedData);
-            });
+            // Si subió un archivo por el chat, lo guardamos
+            if ($request->hasFile('url_archivo')) {
+                $path = $request->file('url_archivo')->store('mensajes_chat', 'public');
+                $dataInsert['url_archivo'] = '/storage/' . $path;
+                $dataInsert['tipo_mensaje'] = 'archivo';
+            }
+
+            $mensaje = Mensaje::create($dataInsert);
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -115,12 +129,8 @@ class MensajeController extends Controller
                 'data' => $mensaje,
             ], 201);
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error en MensajeController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al enviar el mensaje.',

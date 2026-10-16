@@ -4,11 +4,12 @@ namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rsv\TransaccionFinanciera;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Throwable;
 
@@ -121,32 +122,33 @@ class TransaccionFinancieraController extends Controller
 
     /**
      * Registrar una transacción financiera.
+     * Soporta tanto carga de archivos (Drag & Drop / Paste / Upload) como URL/Texto.
      */
     public function store(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
-            'id_rsv_reservas' => [
-                'required',
-                'exists:rsv_reservas,id',
-            ],
-            'id_rsv_pasarela' => [
-                'nullable',
-                'exists:rsv_pasarelas,id',
-            ],
-            'monto' => 'required|numeric|min:0',
-            'moneda' => 'nullable|string|max:10',
-            'estado_pago' => 'nullable|string|max:50',
-            'metodo_pago' => 'nullable|string|max:100',
+            'id_rsv_reservas'    => 'required|exists:rsv_reservas,id',
+            'id_rsv_pasarela'    => 'nullable|exists:rsv_pasarelas,id',
+            'monto'              => 'required|numeric|min:0',
+            'moneda'             => 'nullable|string|max:10',
+            'estado_pago'        => 'nullable|string|max:50',
+            'metodo_pago'        => 'nullable|string|max:100',
             'referencia_externa' => 'nullable|string|max:255',
-            'soporte_pago' => 'nullable|string|max:2048',
+            'soporte_pago'       => 'nullable',
         ]);
+
+        // Procesar archivo cargado si proviene de multipart/form-data
+        if ($request->hasFile('soporte_pago')) {
+            $request->validate([
+                'soporte_pago' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            ]);
+            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
+            $validatedData['soporte_pago'] = $path;
+        }
 
         try {
             $transaccion = DB::transaction(function () use ($validatedData) {
-                $transaccion = TransaccionFinanciera::create(
-                    $validatedData
-                );
-
+                $transaccion = TransaccionFinanciera::create($validatedData);
                 $transaccion->load(['reserva', 'pasarela']);
 
                 return $transaccion;
@@ -155,7 +157,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transacción financiera registrada exitosamente.',
-                'data' => $transaccion,
+                'data'    => $transaccion,
             ], 201);
 
         } catch (Throwable $e) {
@@ -168,7 +170,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la transacción financiera.',
-                'error' => config('app.debug')
+                'error'   => config('app.debug')
                     ? $e->getMessage()
                     : null,
             ], 500);
@@ -196,7 +198,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transacción financiera obtenida exitosamente.',
-                'data' => $transaccion,
+                'data'    => $transaccion,
             ], 200);
 
         } catch (Throwable $e) {
@@ -209,7 +211,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al obtener la transacción financiera.',
-                'error' => config('app.debug')
+                'error'   => config('app.debug')
                     ? $e->getMessage()
                     : null,
             ], 500);
@@ -230,28 +232,26 @@ class TransaccionFinancieraController extends Controller
     /**
      * Actualizar una transacción financiera.
      */
-    public function update(
-        Request $request,
-        string $id
-    ): JsonResponse {
+    public function update(Request $request, string $id): JsonResponse
+    {
         $validatedData = $request->validate([
-            'id_rsv_reservas' => [
-                'sometimes',
-                'required',
-                'exists:rsv_reservas,id',
-            ],
-            'id_rsv_pasarela' => [
-                'sometimes',
-                'nullable',
-                'exists:rsv_pasarelas,id',
-            ],
-            'monto' => 'sometimes|required|numeric|min:0',
-            'moneda' => 'sometimes|nullable|string|max:10',
-            'estado_pago' => 'sometimes|nullable|string|max:50',
-            'metodo_pago' => 'sometimes|nullable|string|max:100',
+            'id_rsv_reservas'    => 'sometimes|required|exists:rsv_reservas,id',
+            'id_rsv_pasarela'    => 'sometimes|nullable|exists:rsv_pasarelas,id',
+            'monto'              => 'sometimes|required|numeric|min:0',
+            'moneda'             => 'sometimes|nullable|string|max:10',
+            'estado_pago'        => 'sometimes|nullable|string|max:50',
+            'metodo_pago'        => 'sometimes|nullable|string|max:100',
             'referencia_externa' => 'sometimes|nullable|string|max:255',
-            'soporte_pago' => 'sometimes|nullable|string|max:2048',
+            'soporte_pago'       => 'sometimes|nullable',
         ]);
+
+        if ($request->hasFile('soporte_pago')) {
+            $request->validate([
+                'soporte_pago' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            ]);
+            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
+            $validatedData['soporte_pago'] = $path;
+        }
 
         try {
             $transaccion = TransaccionFinanciera::find($id);
@@ -263,10 +263,7 @@ class TransaccionFinancieraController extends Controller
                 ], 404);
             }
 
-            DB::transaction(function () use (
-                $transaccion,
-                $validatedData
-            ) {
+            DB::transaction(function () use ($transaccion, $validatedData) {
                 $transaccion->update($validatedData);
             });
 
@@ -275,7 +272,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Transacción financiera actualizada exitosamente.',
-                'data' => $transaccion,
+                'data'    => $transaccion,
             ], 200);
 
         } catch (Throwable $e) {
@@ -288,7 +285,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar la transacción financiera.',
-                'error' => config('app.debug')
+                'error'   => config('app.debug')
                     ? $e->getMessage()
                     : null,
             ], 500);
@@ -311,6 +308,11 @@ class TransaccionFinancieraController extends Controller
             }
 
             DB::transaction(function () use ($transaccion) {
+                // Eliminar el soporte físico en S3 si existía un archivo almacenado
+                if ($transaccion->soporte_pago && Storage::disk('s3')->exists($transaccion->soporte_pago)) {
+                    Storage::disk('s3')->delete($transaccion->soporte_pago);
+                }
+
                 $transaccion->delete();
             });
 
@@ -329,7 +331,7 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al eliminar la transacción financiera.',
-                'error' => config('app.debug')
+                'error'   => config('app.debug')
                     ? $e->getMessage()
                     : null,
             ], 500);

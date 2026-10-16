@@ -90,17 +90,24 @@ class ReviewController extends Controller
     {
         $validatedData = $request->validate([
             'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
-            'id_user' => 'required|integer',
-            'calificacion' => 'required|integer|min:1|max:5',
-            'comentario' => 'nullable|string',
+            'id_user'         => 'required|integer',
+            'calificacion'    => 'required|integer|min:1|max:5',
+            'comentario'      => 'nullable|string',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $review = DB::transaction(function () use ($validatedData) {
-                return Review::create($validatedData);
-            });
+            // Mapeamos a los nombres de columna correctos del Modelo
+            $review = Review::create([
+                'id_rsv_reservas' => $validatedData['id_rsv_reservas'],
+                'id_user_autor'   => $validatedData['id_user'],       // <--- Corregido
+                'puntuacion'      => $validatedData['calificacion'],  // <--- Corregido
+                'comentario'      => $validatedData['comentario'] ?? null,
+                'tipo_evaluacion' => 'general'
+            ]);
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -108,12 +115,8 @@ class ReviewController extends Controller
                 'data' => $review,
             ], 201);
 
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            Log::error('Error en ReviewController@store: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la reseña.',

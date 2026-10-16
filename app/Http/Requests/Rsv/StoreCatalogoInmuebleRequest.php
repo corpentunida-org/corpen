@@ -39,10 +39,7 @@ class StoreCatalogoInmuebleRequest extends FormRequest
             'city'             => ['required', 'string', 'max:255'],
             'ubicacion'        => ['nullable', 'string', 'max:500'],
             'capacidad_maxima' => ['required', 'integer', 'min:1'],
-
-            // CORREGIDO: Apuntando a la tabla correcta con tu prefijo
-            'tipo_inmueble_id' => ['required', 'integer', 'exists:rsv_tipo_inmueble,id'],
-
+            'tipo_inmueble_id' => ['nullable', 'integer', 'exists:rsv_tipo_inmueble,id'],
             'active'           => ['required', 'boolean'],
         ];
     }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Carbon\Carbon; // Importante para el cálculo de fechas de ocupación
 use Throwable;
 
 // Modelos PARTE_1: "Configuración Propiedad"
@@ -22,7 +23,7 @@ use App\Models\Rsv\AuditLog;
 /**
  * Controlador Maestro del Panel de Administración (Orquestador).
  * Se encarga de cargar todo el ecosistema necesario para dashboard.blade.php
- * y distribuir los datos a sus respectivos partials (inmuebles-tab, show, etc.).
+ * y calcular todos los KPIs (Globales y Específicos) antes de enviarlos a la vista.
  */
 class AdminDashboardController extends Controller
 {
@@ -33,8 +34,11 @@ class AdminDashboardController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         try {
-            // 1. SELECTOR MAESTRO: Ligero, solo ID y Nombre para llenar el <select> del frontend
-            $listaInmuebles = CatalogoInmueble::select('id', 'name')->orderBy('name', 'asc')->get();
+            // 1. SELECTOR MAESTRO: Ligero para llenar el <select> del frontend
+            // Añadimos 'active' y 'city' porque se usan en el blade
+            $listaInmuebles = CatalogoInmueble::select('id', 'name', 'active', 'city')
+                ->orderBy('name', 'asc')
+                ->get();
 
             // 2. INICIALIZAR ECOSISTEMA: Variables vacías por defecto
             $inmueble = null;      // Para partials/inmuebles/show.blade.php
@@ -42,35 +46,52 @@ class AdminDashboardController extends Controller
             $reservas = null;
             $transacciones = null;
 
+            // Inicializamos las variables de KPIs Globales (para evitar undefined variables)
+            $tabTotalInmuebles = 0;
+            $tabReservas       = 0;
+            $tabBloqueos       = 0;
+            $tabFinanzas       = 0;
+            $tabAuditoria      = 0;
+
+            // Inicializamos las variables de KPIs Específicos (para evitar undefined variables)
+            $kpiNoche          = null;
+            $kpiMinReserva     = null;
+            $kpiProximas       = 0;
+            $kpiProximaEntrada = null;
+            $kpiOcupacion      = 0;
+            $kpiResenasCount   = 0;
+            $kpiRating         = null;
+            $kpiFotos          = 0;
+            $kpiVideos         = 0;
+            $ingresosInmueble  = 0;
+            $auditoriaCount    = 0;
+            $nochesOcupadas    = 0;
+            $diasDelMes        = Carbon::today()->daysInMonth;
+
             // 3. VARIABLES GLOBALES
             $pasarelas = Pasarela::all();
             $auditoria = AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
 
             // 4. FILTRADO CONECTOR: Comportamiento según el selector maestro
-            $inmuebleId = $request->input('inmueble_id', 'todos'); // Por defecto carga 'todos' si no se envía nada
+            $inmuebleId = $request->input('inmueble_id', 'todos'); // Por defecto carga 'todos'
 
             if ($inmuebleId === 'todos') {
-                // B. VISTA GLOBAL (inmuebles-tab.blade.php / show.blade.php modo global)
-                // Cargamos los inmuebles con paginación y TODAS las relaciones que las tablas muestran
+                // ==============================================================================
+                // A. VISTA GLOBAL Y SUS KPIs
+                // ==============================================================================
 
-                // ═══ FIX: se agrega 'tipoInmueble' al eager load y los counts
-                // de reservas y bloqueos (la tabla global de expedientes los consume)
                 $inmueblesGrid = CatalogoInmueble::with([
                         'multimedia' => function($q) {
-                            $q->orderBy('es_portada', 'desc') // Pone la portada de primera si la hay
-                            ->orderBy('orden', 'asc');     // Luego respeta el orden configurado
+                            $q->orderBy('es_portada', 'desc')
+                              ->orderBy('orden', 'asc');
                         },
                         'latestTarifa',
-                        'tipoInmueble', // ═══ FIX: chip "Tipo Inm." en tabla global
+                        'tipoInmueble',
                     ])
-                    ->withCount([ // ═══ FIX: columnas "Bloq." y "Reservas" de la tabla global
-                        'reservas',
-                        'bloqueosCalendario',
-                    ])
+                    ->withCount(['reservas', 'bloqueosCalendario'])
                     ->orderBy('name', 'asc')
                     ->paginate(12, ['*'], 'page_inmuebles');
 
-                // Reservas y finanzas globales
                 $reservas = Reserva::with(['user', 'status', 'inmueble:id,name'])
                     ->orderBy('created_at', 'desc')
                     ->paginate(10, ['*'], 'page_reservas');
@@ -79,47 +100,141 @@ class AdminDashboardController extends Controller
                     ->orderBy('created_at', 'desc')
                     ->paginate(10, ['*'], 'page_finanzas');
 
-            } else {
-                // B. VISTA ESPECÍFICA POR INMUEBLE (partials/inmuebles/show.blade.php)
-                // Carga el Inmueble Maestro y TODAS sus relaciones para permitir edición completa
+                // --- CÁLCULOS DE KPIS GLOBALES (Movidos del Blade) ---
+                $tabTotalInmuebles = $inmueblesGrid->total();
+                $tabReservas = class_exists(Reserva::class) ? Reserva::count() : 0;
 
-                // ═══ FIX: se agrega 'tipoInmueble' al eager load y los counts
-                // (el expediente usa tipoInmueble->nombre, reservas_count y bloqueos_calendario_count)
+                // Manejo dinámico del modelo BloqueoCalendario
+                $clsBloqueo = null;
+                foreach (['App\\Models\\Rsv\\BloqueoCalendario', 'App\\Models\\Rsv\\BloqueosCalendario', 'App\\Models\\Rsv\\CalendarioBloqueo'] as $clsTry) {
+                    if (class_exists($clsTry)) { $clsBloqueo = $clsTry; break; }
+                }
+                $tabBloqueos = $clsBloqueo ? $clsBloqueo::count() : 0;
+
+                // Cálculo total financiero (busca la columna correcta dinámicamente)
+                foreach (['precio_total', 'total', 'monto_total', 'valor_total'] as $colTry) {
+                    try {
+                        $tabFinanzas = Reserva::sum($colTry);
+                        break;
+                    } catch (\Throwable $e) { continue; }
+                }
+
+                $tabAuditoria = method_exists($auditoria, 'total') ? $auditoria->total() : $auditoria->count();
+
+            } else {
+                // ==============================================================================
+                // B. VISTA ESPECÍFICA POR INMUEBLE Y SUS KPIs
+                // ==============================================================================
+
                 $inmueble = CatalogoInmueble::with([
                         'multimedia' => function($q) {
-                            $q->orderBy('es_portada', 'desc') // ═══ FIX: portada primero en el carrusel
-                            ->orderBy('orden', 'asc');     // Respetamos el orden configurado
+                            $q->orderBy('es_portada', 'desc')
+                              ->orderBy('orden', 'asc');
                         },
                         'tarifasTemporadas' => function($q) {
                             $q->orderBy('fecha_inicio', 'asc');
                         },
                         'latestTarifa',
                         'bloqueosCalendario',
-                        'tipoInmueble', // ═══ FIX: chips y stat "Tipo de inmueble" del expediente
+                        'tipoInmueble',
                     ])
-                    ->withCount([ // ═══ FIX: stats "Reservas" y "Bloqueos" del Módulo 1
-                        'reservas',
-                        'bloqueosCalendario',
-                    ])
+                    ->withCount(['reservas', 'bloqueosCalendario'])
                     ->findOrFail($inmuebleId);
 
-                // Filtrar Reservas SOLO de ESTE inmueble específico
                 $reservas = Reserva::with(['user', 'status'])
                     ->where('id_rsv_catalogo_inmueble', $inmuebleId)
                     ->orderBy('created_at', 'desc')
                     ->paginate(10, ['*'], 'page_reservas');
 
-                // Filtrar Finanzas ligadas a las reservas de ESTE inmueble
                 $transacciones = TransaccionFinanciera::with(['reserva.inmueble:id,name', 'pasarela'])
                     ->whereHas('reserva', function ($query) use ($inmuebleId) {
                         $query->where('id_rsv_catalogo_inmueble', $inmuebleId);
                     })
                     ->orderBy('created_at', 'desc')
                     ->paginate(10, ['*'], 'page_finanzas');
+
+                // --- CÁLCULOS DE KPIS ESPECÍFICOS (Movidos del Blade) ---
+                $kpiNoche      = optional($inmueble->latestTarifa)->precio_noche;
+                $kpiMinReserva = optional($inmueble->latestTarifa)->precio_minimo_reserva;
+
+                $reservasCol = method_exists($inmueble, 'reservas') ? ($inmueble->reservas ?? collect()) : collect();
+
+                $hoy       = Carbon::today();
+                $inicioMes = $hoy->copy()->startOfMonth();
+                $finMes    = $hoy->copy()->endOfMonth();
+
+                foreach ($reservasCol as $r) {
+                    // Cálculo de Ingresos
+                    foreach (['precio_total', 'total', 'monto_total', 'valor_total'] as $colTry) {
+                        if (isset($r->{$colTry}) && is_numeric($r->{$colTry})) {
+                            $ingresosInmueble += (float) $r->{$colTry};
+                            break;
+                        }
+                    }
+
+                    // Cálculo de Fechas y Ocupación
+                    $fe = $r->fecha_entrada ?? $r->check_in  ?? $r->fecha_inicio  ?? $r->fecha_llegada ?? null;
+                    $fs = $r->fecha_salida  ?? $r->check_out ?? $r->fecha_fin     ?? null;
+
+                    if ($fe) {
+                        try {
+                            $feC = Carbon::parse($fe);
+                            if ($feC->gte($hoy)) {
+                                $kpiProximas++;
+                                if (!$kpiProximaEntrada || $feC->lt($kpiProximaEntrada)) {
+                                    $kpiProximaEntrada = $feC;
+                                }
+                            }
+
+                            if ($fs) {
+                                $ini = Carbon::parse($fe);
+                                $fin = Carbon::parse($fs);
+                                $desde = $ini->gt($inicioMes) ? $ini : $inicioMes;
+                                $hasta = $fin->lt($finMes) ? $fin : $finMes;
+
+                                if ($hasta->gt($desde)) {
+                                    $nochesOcupadas += (int) ceil($desde->diffInDays($hasta));
+                                }
+                            }
+                        } catch (\Throwable $e) {}
+                    }
+                }
+
+                $nochesOcupadas = min($nochesOcupadas, $diasDelMes);
+                $kpiOcupacion = $diasDelMes > 0 ? (int) round(($nochesOcupadas / $diasDelMes) * 100) : 0;
+
+                // Cálculo de Reseñas / Rating
+                $resenasCol = collect();
+                foreach (['resenas', 'reseñas', 'reviews', 'calificaciones', 'valoraciones'] as $kpiRel) {
+                    if (method_exists($inmueble, $kpiRel)) {
+                        $resenasCol = $inmueble->{$kpiRel};
+                        break;
+                    }
+                }
+
+                $kpiResenasCount = $resenasCol ? $resenasCol->count() : 0;
+                if ($kpiResenasCount > 0) {
+                    $suma = 0; $validas = 0;
+                    foreach ($resenasCol as $res) {
+                        $v = $res->calificacion ?? $res->puntaje ?? $res->puntuacion ?? $res->rating ?? $res->estrellas ?? null;
+                        if (!is_null($v) && is_numeric($v)) {
+                            $suma += (float) $v;
+                            $validas++;
+                        }
+                    }
+                    if ($validas > 0) $kpiRating = round($suma / $validas, 1);
+                }
+
+                // Cálculo de Multimedia
+                $mediaCol  = method_exists($inmueble, 'multimedia') ? ($inmueble->multimedia ?? collect()) : collect();
+                $kpiFotos  = $mediaCol->where('tipo_multimedia', 'imagen')->count();
+                $kpiVideos = $mediaCol->where('tipo_multimedia', 'video')->count();
+
+                // Auditoría Específica
+                $auditoriaCount = method_exists($auditoria, 'total') ? $auditoria->total() : $auditoria->count();
             }
 
             // 5. RESPUESTA DUAL (AJAX / JSON)
-            // Muy útil si quieres que el selector del dashboard actualice las tablas sin recargar la página
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -128,12 +243,18 @@ class AdminDashboardController extends Controller
                         'inmueblesGrid' => $inmueblesGrid,
                         'reservas'      => $reservas,
                         'transacciones' => $transacciones,
-                        'auditoria'     => $auditoria
+                        'auditoria'     => $auditoria,
+                        // Añadimos métricas al JSON por si el Frontend en Vue/React/JS los requiere
+                        'kpis' => [
+                            'ocupacion' => $kpiOcupacion,
+                            'ingresos'  => $ingresosInmueble,
+                            'rating'    => $kpiRating
+                        ]
                     ]
                 ]);
             }
 
-            // 6. RENDERIZADO WEB
+            // 6. RENDERIZADO WEB CON TODOS LOS KPIs INYECTADOS
             return view('rsv.admin.dashboard', compact(
                 'listaInmuebles',
                 'inmueble',
@@ -142,7 +263,29 @@ class AdminDashboardController extends Controller
                 'transacciones',
                 'pasarelas',
                 'auditoria',
-                'inmuebleId' // Pasamos el ID seleccionado para mantener el <select> en su estado correcto
+                'inmuebleId',
+
+                // KPIs Globales Inyectados
+                'tabTotalInmuebles',
+                'tabReservas',
+                'tabBloqueos',
+                'tabFinanzas',
+                'tabAuditoria',
+
+                // KPIs Específicos Inyectados
+                'kpiNoche',
+                'kpiMinReserva',
+                'kpiProximas',
+                'kpiProximaEntrada',
+                'kpiOcupacion',
+                'kpiResenasCount',
+                'kpiRating',
+                'kpiFotos',
+                'kpiVideos',
+                'ingresosInmueble',
+                'auditoriaCount',
+                'nochesOcupadas',
+                'diasDelMes'
             ));
 
         } catch (Throwable $e) {
@@ -157,9 +300,9 @@ class AdminDashboardController extends Controller
                 ], 500);
             }
 
-            // Retorno de emergencia a la vista base en caso de fallo, para no romper la pantalla blanca
+            // Retorno de emergencia en caso de fallo crítico
             return view('rsv.admin.dashboard', [
-                'listaInmuebles' => CatalogoInmueble::select('id', 'name')->get(),
+                'listaInmuebles' => CatalogoInmueble::select('id', 'name', 'active', 'city')->get(),
                 'inmueblesGrid'  => null,
                 'inmueble'       => null,
                 'reservas'       => null,
@@ -169,6 +312,81 @@ class AdminDashboardController extends Controller
                 'inmuebleId'     => 'todos',
                 'error'          => 'Ocurrió un error al cargar los datos del panel. Por favor, recargue la página.'
             ]);
+        }
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * NUEVO: Devuelve SOLO el fragmento HTML del parcial de reservas.
+     * Lo usa el JS de reservas.blade.php para hacer swaps AJAX in-place
+     * (buscar, seleccionar reserva, refrescar tras una acción) SIN
+     * recargar la página completa.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function reservasFragmento(Request $request)
+    {
+        $inmuebleId = $request->query('inmueble_id');
+        $inmueble   = null;
+
+        if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+            $inmueble = CatalogoInmueble::find($inmuebleId);
+        }
+
+        return response()
+            ->view('rsv.admin.partials.reservas.reservas', [
+                'inmueble'   => $inmueble,
+                'inmuebleId' => $inmuebleId,
+            ])
+            ->header('Cache-Control', 'no-store, max-age=0');
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * NUEVO: Busca usuarios por cédula (nid), nombre o email.
+     * Lo usa el autocomplete del modal de Endoso (reservas.blade.php).
+     * Versión blindada: verifica columnas antes de usarlas y NUNCA
+     * devuelve 500 (cualquier fallo interno responde success:false).
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function buscarUsuarios(Request $request)
+    {
+        try {
+            $q = trim((string) $request->query('q'));
+            if (mb_strlen($q) < 2) {
+                return response()->json(['success' => true, 'data' => []]);
+            }
+
+            // Solo consulta columnas que REALMENTE existen (evita 500 si falta 'nid')
+            $tieneNid   = \Illuminate\Support\Facades\Schema::hasColumn('users', 'nid');
+            $tieneEmail = \Illuminate\Support\Facades\Schema::hasColumn('users', 'email');
+            $campos = array_values(array_filter(['id', 'name', $tieneNid ? 'nid' : null, $tieneEmail ? 'email' : null]));
+
+            $users = \App\Models\User::query()
+                ->where(function ($w) use ($q, $tieneNid, $tieneEmail) {
+                    $like = '%' . $q . '%';
+                    $w->where('name', 'like', $like);
+                    if ($tieneEmail) { $w->orWhere('email', 'like', $like); }
+                    if ($tieneNid)   { $w->orWhere('nid', 'like', $like); }
+                })
+                ->orderBy('name')
+                ->limit(10)
+                ->get($campos);
+
+            // Array plano: evita que accessors/casts del modelo User exploten al serializar
+            $data = $users->map(function ($u) use ($tieneNid, $tieneEmail) {
+                return [
+                    'id'    => $u->id,
+                    'name'  => (string) $u->name,
+                    'nid'   => $tieneNid   ? (string) ($u->nid ?? '')   : '',
+                    'email' => $tieneEmail ? (string) ($u->email ?? '') : '',
+                ];
+            })->values();
+
+            return response()->json(['success' => true, 'data' => $data]);
+
+        } catch (\Throwable $e) {
+            Log::error('buscarUsuarios: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'error', 'data' => []]);
         }
     }
 }

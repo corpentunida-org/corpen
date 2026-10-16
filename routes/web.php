@@ -704,6 +704,11 @@ Route::middleware(['auth'])
         // AHORA USA EL CONTROLADOR PARA LLENAR TODAS LAS PESTAÑAS
         Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
+        Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
+             ->name('admin.reservas.fragmento');
+        Route::get('usuarios-buscar', [AdminDashboardController::class, 'buscarUsuarios'])
+             ->name('admin.usuarios.buscar');
+
         // Vista del Portal de Clientes
         Route::view('/cliente', 'rsv.cliente.portal')->name('cliente.portal');
 

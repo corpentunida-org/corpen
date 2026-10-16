@@ -32,12 +32,23 @@ class UpdateTipoInmuebleRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Obtenemos el ID del tipo de inmueble que se está actualizando desde la ruta
-        // para permitir que mantenga su propio nombre sin lanzar error de "unique"
-        $tipoInmuebleId = $this->route('tipoInmueble') ? $this->route('tipoInmueble')->id : null;
+        // Solución a prueba de fallos DEFINITIVA:
+        // Obtenemos el primer parámetro de la ruta dinámicamente,
+        // así no importa si el router lo llamó 'tipos_inmueble', 'id' o 'tipo'.
+        $routeParams = $this->route()->parameters();
+        $param = reset($routeParams);
+
+        // Extraemos el ID (ya sea que el router haya inyectado el Modelo completo o solo el ID numérico)
+        $tipoInmuebleId = is_object($param) ? $param->id : $param;
 
         return [
-            'nombre'      => ['sometimes', 'required', 'string', 'max:255', Rule::unique('rsv_tipo_inmueble', 'nombre')->ignore($tipoInmuebleId)],
+            'nombre'      => [
+                'sometimes',
+                'required',
+                'string',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('rsv_tipo_inmueble', 'nombre')->ignore($tipoInmuebleId)
+            ],
             'descripcion' => ['nullable', 'string', 'max:500'],
             'active'      => ['sometimes', 'boolean'],
         ];

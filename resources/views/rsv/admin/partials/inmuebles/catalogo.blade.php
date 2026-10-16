@@ -586,9 +586,14 @@
                     <div class="tz-section">
                         <div class="tz-label"><i class="bi bi-geo-alt"></i> Ubicación</div>
 
-                        <div class="mb-0">
+                        <div class="mb-2">
                             <label class="form-label">Ciudad <span class="req">*</span></label>
-                            <input type="text" class="form-control form-control-sm" name="city" placeholder="Ej. Cartagena" required>
+                            <input type="text" class="form-control form-control-sm" name="city" placeholder="Ej. Bogotá" required>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label">Dirección / Ubicación física</label>
+                            <input type="text" class="form-control form-control-sm" name="ubicacion" placeholder="Ej. Calle 100 # 15-20">
                         </div>
                     </div>
 
