@@ -15,8 +15,43 @@ use Throwable;
 class ReviewController extends Controller
 {
     /**
+     * Resuelve el id de rsv_tipo_receptor para una reseña de CLIENTE.
+     * Busca primero un tipo "Cliente/Huésped"; si no hay, toma el primero del catálogo.
+     */
+    private function resolverTipoReceptorCliente(): ?int
+    {
+        try {
+            if (!class_exists(\App\Models\Rsv\TipoReceptor::class)) {
+                return null;
+            }
+
+            $col = \Illuminate\Support\Facades\Schema::hasColumn('rsv_tipo_receptor', 'name')
+                ? 'name' : 'nombre';
+
+            $tipo = \App\Models\Rsv\TipoReceptor::query()
+                ->where(function ($w) use ($col) {
+                    $w->where($col, 'like', '%cliente%')
+                      ->orWhere($col, 'like', '%huesped%')
+                      ->orWhere($col, 'like', '%huésped%');
+                })
+                ->orderBy('id')
+                ->first();
+
+            if (!$tipo) {
+                $tipo = \App\Models\Rsv\TipoReceptor::query()->orderBy('id')->first();
+            }
+
+            return $tipo?->id;
+        } catch (\Throwable $e) {
+            Log::warning('resolverTipoReceptorCliente: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
      * Display a listing of the resource.
      * Soporte Dual (Web/JSON) con filtros y paginación.
+     * FIX: filtros con las columnas REALES (id_user_autor · puntuacion).
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
@@ -28,11 +63,13 @@ class ReviewController extends Controller
             }
 
             if ($request->has('id_user')) {
-                $query->where('id_user', $request->id_user);
+                // Columna real: id_user_autor
+                $query->where('id_user_autor', $request->id_user);
             }
 
             if ($request->has('calificacion')) {
-                $query->where('calificacion', $request->calificacion);
+                // Columna real: puntuacion
+                $query->where('puntuacion', $request->calificacion);
             }
 
             if ($request->has('search') && !empty($request->search)) {
@@ -43,7 +80,6 @@ class ReviewController extends Controller
             $perPage = $request->get('per_page', 15);
             $reviews = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-            // Si la petición es por API o AJAX, devolvemos JSON
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -52,7 +88,6 @@ class ReviewController extends Controller
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
             return view('rsv.reviews.index', compact('reviews'));
 
         } catch (Throwable $e) {
@@ -72,9 +107,6 @@ class ReviewController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create(): JsonResponse
     {
         return response()->json([
@@ -85,6 +117,8 @@ class ReviewController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * FIX 1364: incluye id_rsv_tipo_receptor (columna NOT NULL sin default),
+     * resuelto automáticamente como el tipo "Cliente" del catálogo.
      */
     public function store(Request $request): JsonResponse
     {
@@ -98,13 +132,25 @@ class ReviewController extends Controller
         DB::beginTransaction();
 
         try {
+            // ── Resolver el tipo de receptor (obligatorio en la tabla) ──
+            $idTipoReceptor = $this->resolverTipoReceptorCliente();
+
+            if (!$idTipoReceptor) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede registrar la reseña: el catálogo rsv_tipo_receptor está vacío. Configure al menos un tipo (ej. "Cliente").',
+                ], 422);
+            }
+
             // Mapeamos a los nombres de columna correctos del Modelo
             $review = Review::create([
-                'id_rsv_reservas' => $validatedData['id_rsv_reservas'],
-                'id_user_autor'   => $validatedData['id_user'],       // <--- Corregido
-                'puntuacion'      => $validatedData['calificacion'],  // <--- Corregido
-                'comentario'      => $validatedData['comentario'] ?? null,
-                'tipo_evaluacion' => 'general'
+                'id_rsv_reservas'      => $validatedData['id_rsv_reservas'],
+                'id_user_autor'        => $validatedData['id_user'],
+                'id_rsv_tipo_receptor' => $idTipoReceptor,   // ← FIX 1364
+                'puntuacion'           => $validatedData['calificacion'],
+                'comentario'           => $validatedData['comentario'] ?? null,
+                'tipo_evaluacion'      => 'general',
             ]);
 
             DB::commit();
@@ -112,22 +158,23 @@ class ReviewController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Reseña creada exitosamente.',
-                'data' => $review,
+                'data'    => $review,
             ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Error en ReviewController@store: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la reseña.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id): JsonResponse
     {
         try {
@@ -143,7 +190,7 @@ class ReviewController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Reseña obtenida exitosamente.',
-                'data' => $review,
+                'data'    => $review,
             ], 200);
 
         } catch (Throwable $e) {
@@ -154,14 +201,11 @@ class ReviewController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al obtener la reseña.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id): JsonResponse
     {
         return response()->json([
@@ -170,9 +214,6 @@ class ReviewController extends Controller
         ], 405);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id): JsonResponse
     {
         DB::beginTransaction();
@@ -189,17 +230,22 @@ class ReviewController extends Controller
 
             $validatedData = $request->validate([
                 'calificacion' => 'sometimes|required|integer|min:1|max:5',
-                'comentario' => 'nullable|string',
+                'comentario'   => 'nullable|string',
             ]);
 
-            DB::transaction(function () use ($review, $validatedData) {
-                $review->update($validatedData);
+            // Mapeo a columnas reales (la vista/controlador usan calificacion)
+            $datos = [];
+            if (array_key_exists('calificacion', $validatedData)) { $datos['puntuacion'] = $validatedData['calificacion']; }
+            if (array_key_exists('comentario', $validatedData))   { $datos['comentario']  = $validatedData['comentario']; }
+
+            DB::transaction(function () use ($review, $datos) {
+                $review->update($datos);
             });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Reseña actualizada exitosamente.',
-                'data' => $review,
+                'data'    => $review->fresh(),
             ], 200);
 
         } catch (Throwable $e) {
@@ -211,14 +257,11 @@ class ReviewController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar la reseña.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id): JsonResponse
     {
         DB::beginTransaction();
@@ -251,7 +294,7 @@ class ReviewController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al eliminar la reseña.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

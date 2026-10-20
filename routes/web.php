@@ -75,6 +75,8 @@ use App\Http\Controllers\Rsv\AdminDashboardController;
 use App\Http\Controllers\Rsv\CatalogoInmuebleController;
 use App\Http\Controllers\Rsv\ReservaController;
 
+use App\Http\Controllers\Rsv\ClientePortalController;
+
 
 //SGRH
 use App\Http\Controllers\Sgrh\EmpleadoController as SgrhEmpleadoController;
@@ -697,63 +699,223 @@ Route::middleware(['auth'])
     ->name('rsv.')
     ->group(function () {
 
-        // ---------------------------------------------------
-        // 0. VISTAS PRINCIPALES (PANEL ÚNICO / DASHBOARDS)
-        // ---------------------------------------------------
+        /* ====================================================================
+           0 · VISTAS PRINCIPALES (PANEL ÚNICO / DASHBOARDS)
+           ====================================================================
+           Endpoints que devuelven vistas HTML (o fragmentos Blade para
+           actualizaciones AJAX de los paneles). No son CRUD estricto.
+           ==================================================================== */
 
-        // AHORA USA EL CONTROLADOR PARA LLENAR TODAS LAS PESTAÑAS
-        Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        // Dashboard principal del admin.
+        // Llena TODAS las pestañas del panel (reservas, inmuebles, etc.)
+        // en una sola consulta coordinada por el AdminDashboardController.
+        // URL:  GET  /rsv/admin             Nombre: rsv.admin.dashboard
+        Route::get('/admin', [AdminDashboardController::class, 'index'])
+              ->name('admin.dashboard');
 
+        // Fragmento HTML con la tabla de reservas (para refrescar vía AJAX).
+        // Devuelve vista parcial que se inyecta en el DOM existente.
+        // URL:  GET  /rsv/reservas-fragmento   Nombre: rsv.admin.reservas.fragmento
         Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
              ->name('admin.reservas.fragmento');
+
+        // Buscador live de usuarios (para autocompletar el select de titulares).
+        // Devuelve JSON con [{id, name, email, nid}, ...]
+        // URL:  GET  /rsv/usuarios-buscar?q=...  Nombre: rsv.admin.usuarios.buscar
         Route::get('usuarios-buscar', [AdminDashboardController::class, 'buscarUsuarios'])
              ->name('admin.usuarios.buscar');
 
-        // Vista del Portal de Clientes
-        Route::view('/cliente', 'rsv.cliente.portal')->name('cliente.portal');
+        // Portal del CLIENTE (con KPIs dinámicos: reservas, balance, soporte).
+        // Reemplaza el antiguo Route::view · mismo URL y mismo nombre de ruta,
+        // por lo que nada más en el sistema deja de funcionar.
+        // URL:  GET  /rsv/cliente              Nombre: rsv.cliente.portal
+        Route::get('/cliente', [ClientePortalController::class, 'index'])
+              ->name('cliente.portal');
+
+        // Fragmentos AJAX del portal cliente (buscador, mis-reservas, chat,
+        // pagos, historial…). Cada parcial se refresca in-place sin recargar.
+        // Whitelist de tab en ClientePortalController::FRAGMENTOS.
+        // URL:  GET  /rsv/cliente-fragmento?tab=...   Nombre: rsv.cliente.fragmento
+        Route::get('cliente-fragmento', [ClientePortalController::class, 'fragmento'])
+             ->name('cliente.fragmento');
 
 
-        // ---------------------------------------------------
-        // 1. CATÁLOGO DE INMUEBLES Y CONFIGURACIONES
-        // ---------------------------------------------------
-        Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
-        Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
-        Route::resource('tipos-inmuebles', TipoInmuebleController::class)->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);
-        Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
-        Route::resource('tarifas-temporadas', TarifaTemporadaController::class)->parameters(['tarifas-temporadas' => 'rsvTarifa']);
-        Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
+        /* ====================================================================
+           1 · CATÁLOGO DE INMUEBLES Y CONFIGURACIONES
+           ====================================================================
+           Inventario físico + tipologías + multimedia + temporadas de tarifa
+           + bloqueos manuales del calendario.
+           ==================================================================== */
 
-        // ---------------------------------------------------
-        // 2. NÚCLEO TRANSACCIONAL (RESERVAS)
-        // ---------------------------------------------------
-        Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
-        Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
-        Route::resource('reservas', ReservaController::class)->parameters(['reservas' => 'rsvReserva']);
-        Route::resource('reserva-huespedes', ReservaHuespedController::class)->parameters(['reserva-huespedes' => 'rsvHuesped']);
-        Route::resource('itinerarios', ItinerarioEventoController::class)->parameters(['itinerarios' => 'rsvItinerario']);
-        Route::resource('historial-endosos', HistorialEndosoController::class)->parameters(['historial-endosos' => 'rsvEndoso']);
-        Route::resource('historial-estados', HistorialEstadoController::class)->parameters(['historial-estados' => 'rsvEstadoLog']);
+        // Cambiar el flag `active` de un inmueble (alta/baja sin borrar).
+        // URL:  PATCH /rsv/inmuebles/{id}/cambiar-estado   Nombre: rsv.inmuebles.cambiar_estado
+        Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])
+              ->name('inmuebles.cambiar_estado');
 
-        // ---------------------------------------------------
-        // 3. FINANZAS Y PAGOS
-        // ---------------------------------------------------
-        Route::resource('transacciones', TransaccionFinancieraController::class)->parameters(['transacciones' => 'rsvTransaccion']);
-        Route::resource('pasarelas', PasarelaController::class)->parameters(['pasarelas' => 'rsvPasarela']);
+        // CRUD de inmuebles.
+        // URL:  /rsv/inmuebles                Nombre: rsv.inmuebles.{index|create|store|show|edit|update|destroy}
+        // Parameter binding: {rsvCatalogoInmueble} en vez de {inmueble} (para no chocar con el modelo).
+        Route::resource('inmuebles', CatalogoInmuebleController::class)
+              ->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
 
-        // ---------------------------------------------------
-        // 4. COMUNICACIÓN Y REPUTACIÓN
-        // ---------------------------------------------------
-        Route::resource('mensajes', MensajeController::class)->parameters(['mensajes' => 'rsvMensaje']);
-        Route::resource('reviews', ReviewController::class)->parameters(['reviews' => 'rsvReview']);
+        // CRUD de tipos de inmueble (Apartamento, Casa, Habitación…).
+        // URL:  /rsv/tipos-inmuebles          Nombre: rsv.tipos-inmuebles.*
+        Route::resource('tipos-inmuebles', TipoInmuebleController::class)
+              ->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);
 
-        // ---------------------------------------------------
-        // 5. PARÁMETROS, CATÁLOGOS AUXILIARES Y AUDITORÍA
-        // ---------------------------------------------------
-        Route::resource('statuses', StatusController::class)->parameters(['statuses' => 'rsvStatus']);
-        Route::resource('origen-reservas', OrigenReservaController::class)->parameters(['origen-reservas' => 'rsvOrigen']);
-        Route::resource('tipo-receptor', TipoReceptorController::class)->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
-        Route::resource('audit-logs', AuditLogController::class)->parameters(['audit-logs' => 'rsvAuditLog']);
+        // CRUD de multimedia (fotos/videos) de cada inmueble.
+        // URL:  /rsv/inmueble-multimedia      Nombre: rsv.inmueble-multimedia.*
+        Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)
+              ->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
+
+        // CRUD de tarifas por temporada (alta/baja/media temporada).
+        // URL:  /rsv/tarifas-temporadas       Nombre: rsv.tarifas-temporadas.*
+        Route::resource('tarifas-temporadas', TarifaTemporadaController::class)
+              ->parameters(['tarifas-temporadas' => 'rsvTarifa']);
+
+        // CRUD de bloqueos manuales del calendario (mantenimiento, overbooking…).
+        // URL:  /rsv/bloqueos-calendario      Nombre: rsv.bloqueos-calendario.*
+        Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)
+              ->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
+
+
+        /* ====================================================================
+           2 · NÚCLEO TRANSACCIONAL (RESERVAS)
+           ====================================================================
+           El corazón del módulo: reservas, huéspedes, itinerarios e
+           historiales (estados y endosos). Las reservas son la entidad
+           central y todas las demás dependen de ella.
+           ==================================================================== */
+
+        /* ─── RUTAS CUSTOM DE RESERVAS (antes del resource) ──────────────
+           IMPORTANTE: cualquier ruta con path fijo (store-ajax,
+           fechas-ocupadas, cambiar-estado, comprobante-pdf) debe ir
+           ANTES del Route::resource('reservas', ...) para evitar que
+           el parámetro {rsvReserva} capture el sub-path estático.
+           ─────────────────────────────────────────────────────────────── */
+
+        // Consultar fechas ocupadas de un inmueble (reservas + bloqueos).
+        // Lo usa el mini-calendario del modal Nueva Reserva para pintar
+        // los días como disponibles/ocupados en tiempo real.
+        // URL:  GET  /rsv/reservas/fechas-ocupadas/{inmueble}
+        // Nombre: rsv.reservas.fechas-ocupadas
+        // Respuesta: { ok:true, inmueble:{id,name}, ocupadas:[{inicio,fin,tipo}] }
+        Route::get('reservas/fechas-ocupadas/{inmueble}', [ReservaController::class, 'fechasOcupadasAjax'])
+              ->name('reservas.fechas-ocupadas');
+
+        // Crear reserva desde el modal (AJAX, no recarga página).
+        // Flujo:
+        //   1. Valida campos (inmueble, titular, fechas, monto ≥ 200.000).
+        //   2. Fuerza estado inicial = "Pendiente" (no lo pide al usuario).
+        //   3. Genera código único RSV-YYYYMMDD-NNNN.
+        //   4. Crea Reserva + HistorialEstado (transición null → Pendiente).
+        //   5. Devuelve JSON {ok, message, reserva:{...}} para que el
+        //      front recargue la tabla.
+        // URL:  POST /rsv/reservas/store-ajax    Nombre: rsv.reservas.store-ajax
+        Route::post('reservas/store-ajax', [ReservaController::class, 'storeAjax'])
+              ->name('reservas.store-ajax');
+
+        // Cambiar el estado de una reserva existente (Confirmar / Cancelar / etc.).
+        // Crea un HistorialEstado registrando la transición.
+        // URL:  PATCH /rsv/reservas/{id}/cambiar-estado   Nombre: rsv.reservas.cambiar_estado
+        Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])
+              ->name('reservas.cambiar_estado');
+
+        // Descargar PDF comprobante de una reserva (para enviar al cliente).
+        // URL:  GET  /rsv/reservas/{id}/comprobante-pdf   Nombre: rsv.reservas.pdf
+        Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])
+              ->name('reservas.pdf');
+
+        // CRUD estándar de reservas.
+        // URL:  /rsv/reservas                Nombre: rsv.reservas.{index|create|store|show|edit|update|destroy}
+        // Parameter binding: {rsvReserva} en vez de {reserva}.
+        Route::resource('reservas', ReservaController::class)
+              ->parameters(['reservas' => 'rsvReserva']);
+
+        // Huéspedes asociados a cada reserva (titular + acompañantes).
+        // URL:  /rsv/reserva-huespedes       Nombre: rsv.reserva-huespedes.*
+        Route::resource('reserva-huespedes', ReservaHuespedController::class)
+              ->parameters(['reserva-huespedes' => 'rsvHuesped']);
+
+        // Eventos de itinerario asociados a la reserva (check-in, tour, etc.).
+        // URL:  /rsv/itinerarios             Nombre: rsv.itinerarios.*
+        Route::resource('itinerarios', ItinerarioEventoController::class)
+              ->parameters(['itinerarios' => 'rsvItinerario']);
+
+        // Historial de endosos (cambio de titularidad de la reserva).
+        // URL:  /rsv/historial-endosos       Nombre: rsv.historial-endosos.*
+        Route::resource('historial-endosos', HistorialEndosoController::class)
+              ->parameters(['historial-endosos' => 'rsvEndoso']);
+
+        // Historial de estados de cada reserva (auditoría de transiciones).
+        // URL:  /rsv/historial-estados       Nombre: rsv.historial-estados.*
+        Route::resource('historial-estados', HistorialEstadoController::class)
+              ->parameters(['historial-estados' => 'rsvEstadoLog']);
+
+
+        /* ====================================================================
+           3 · FINANZAS Y PAGOS
+           ====================================================================
+           Transacciones financieras (pagos, reembolsos) + configuración de
+           pasarelas (Stripe, PayPal, Wompi, etc.).
+           ==================================================================== */
+
+        // Transacciones financieras por reserva.
+        // URL:  /rsv/transacciones           Nombre: rsv.transacciones.*
+        Route::resource('transacciones', TransaccionFinancieraController::class)
+              ->parameters(['transacciones' => 'rsvTransaccion']);
+
+        // Catálogo de pasarelas de pago activas.
+        // URL:  /rsv/pasarelas               Nombre: rsv.pasarelas.*
+        Route::resource('pasarelas', PasarelaController::class)
+              ->parameters(['pasarelas' => 'rsvPasarela']);
+
+
+        /* ====================================================================
+           4 · COMUNICACIÓN Y REPUTACIÓN
+           ====================================================================
+           Mensajería entre titular ↔ sistema + reviews de clientes.
+           ==================================================================== */
+
+        // Mensajes asociados a reservas (preguntas, notificaciones, etc.).
+        // URL:  /rsv/mensajes                Nombre: rsv.mensajes.*
+        Route::resource('mensajes', MensajeController::class)
+              ->parameters(['mensajes' => 'rsvMensaje']);
+
+        // Reseñas/calificaciones de los clientes sobre el servicio.
+        // URL:  /rsv/reviews                 Nombre: rsv.reviews.*
+        Route::resource('reviews', ReviewController::class)
+              ->parameters(['reviews' => 'rsvReview']);
+
+
+        /* ====================================================================
+           5 · PARÁMETROS, CATÁLOGOS AUXILIARES Y AUDITORÍA
+           ====================================================================
+           Tablas paramétricas que sostienen el resto del módulo:
+           estados, orígenes, tipos de receptor y logs de auditoría.
+           ==================================================================== */
+
+        // Catálogo de estados de reserva (Pendiente, Confirmada, Cancelada…).
+        // URL:  /rsv/statuses                Nombre: rsv.statuses.*
+        Route::resource('statuses', StatusController::class)
+              ->parameters(['statuses' => 'rsvStatus']);
+
+        // Catálogo de orígenes de la reserva (Web, Booking, Airbnb, WhatsApp…).
+        // URL:  /rsv/origen-reservas         Nombre: rsv.origen-reservas.*
+        Route::resource('origen-reservas', OrigenReservaController::class)
+              ->parameters(['origen-reservas' => 'rsvOrigen']);
+
+        // Catálogo de tipos de receptor (para el sistema de reviews).
+        // URL:  /rsv/tipo-receptor           Nombre: rsv.tipo-receptor.*
+        Route::resource('tipo-receptor', TipoReceptorController::class)
+              ->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
+
+        // Logs de auditoría globales del módulo RSV (cambios sensibles).
+        // URL:  /rsv/audit-logs              Nombre: rsv.audit-logs.*
+        Route::resource('audit-logs', AuditLogController::class)
+              ->parameters(['audit-logs' => 'rsvAuditLog']);
     });
+
 // FIN MÓDULO RESERVAS
 
 

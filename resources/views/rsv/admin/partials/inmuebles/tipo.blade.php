@@ -2,257 +2,19 @@
     use App\Models\Rsv\TipoInmueble;
     use App\Models\Rsv\CatalogoInmueble;
 
-    /*
-    ══════════════════════════════════════════════════════════════
-    MODO Y CONTEXTO DEL INMUEBLE (FIX "NO FILTRA EN INDIVIDUAL")
-    · GLOBAL: catálogo completo de tipos + búsqueda por texto.
-    · INDIVIDUAL: además de la búsqueda, el tipo asignado al
-      inmueble se ORDENA PRIMERO, se RESALTA con borde verde y hay
-      un toggle "Solo asignado" que nace ACTIVO (la vista nace
-      filtrada), igual que galería y tarifas.
-    ══════════════════════════════════════════════════════════════
-    */
-
-    // ── Inmueble objetivo: modelo $inmueble → $inmuebleId → request numérico ──
-    $tiInm = (isset($inmueble) && $inmueble) ? $inmueble : null;
-
-    if (!$tiInm) {
-        $tiInmIdReq = null;
-        if (!empty($inmuebleId)) {
-            $tiInmIdReq = $inmuebleId;
-        } elseif (request('inmueble_id') && is_numeric(request('inmueble_id'))) {
-            $tiInmIdReq = request('inmueble_id');
-        }
-        if ($tiInmIdReq) {
-            $tiInm = CatalogoInmueble::find($tiInmIdReq);
-        }
-    }
-
-    $modoGlobal = !$tiInm;
-
-    // ── Tipo asignado al inmueble (garantizado aunque el controlador no cargue nada) ──
-    $tipoAsignadoId = null;
-    $tipoAsignado   = null;
-
-    if (!$modoGlobal && $tiInm) {
-        $tipoAsignadoId = $tiInm->tipo_inmueble_id ?? null;
-        if ($tipoAsignadoId) {
-            // Resolver el modelo del tipo: de la colección ya cargada si existe, si no, consulta puntual
-            $coleccionTmp = isset($tiposInmuebles) ? collect($tiposInmuebles) : (isset($tipos) ? collect($tipos) : null);
-            if ($coleccionTmp) {
-                $tipoAsignado = $coleccionTmp->firstWhere('id', $tipoAsignadoId);
-            }
-            if (!$tipoAsignado) {
-                $tipoAsignado = TipoInmueble::find($tipoAsignadoId);
-            }
-        }
-    }
-
-    // ── Colección de tipos (CRUD de catálogo global en ambos modos) ──
-    if (isset($tiposInmuebles)) {
-        $tiposCollection = collect($tiposInmuebles);
-    } elseif (isset($tipos)) {
-        $tiposCollection = collect($tipos);
-    } else {
-        $tiposCollection = TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre')->get();
-    }
-
-    // ═══ FIX CONTADORES EN 0 ═══
-    // Si la colección vino del controlador SIN withCount y SIN la relación
-    // cargada (típico en modo individual), la columna "Inmuebles" mostraba 0.
-    // Se resuelven los counts REALES una sola vez y se consultan por mapa.
-    $tiCountsMap = null;
-    $primera = $tiposCollection->first();
-    $countsCargados = !$primera
-        || !is_null($primera->catalogo_inmuebles_count ?? null)
-        || (method_exists($primera, 'relationLoaded') && $primera->relationLoaded('catalogoInmuebles'));
-    if (!$countsCargados) {
-        $tiCountsMap = TipoInmueble::withCount('catalogoInmuebles')->pluck('catalogo_inmuebles_count', 'id');
-    }
-
-    // Conteo de inmuebles asociados (usa withCount → relación → mapa de respaldo)
-    $conteoInmuebles = function ($tipo) use ($tiCountsMap) {
-        if (!is_null($tipo->catalogo_inmuebles_count ?? null)) return (int) $tipo->catalogo_inmuebles_count;
-        if (method_exists($tipo, 'relationLoaded') && $tipo->relationLoaded('catalogoInmuebles')) {
-            return $tipo->catalogoInmuebles->count();
-        }
-        if ($tiCountsMap !== null) return (int) ($tiCountsMap[$tipo->id] ?? 0);
-        return 0;
-    };
-
-    // ═══ ORDEN EN INDIVIDUAL: el tipo asignado PRIMERO (visible sin scroll) ═══
-    if (!$modoGlobal && $tipoAsignadoId) {
-        $tiposCollection = $tiposCollection
-            ->sortByDesc(function ($t) use ($tipoAsignadoId) {
-                return $t->id == $tipoAsignadoId ? 1 : 0;
-            })
-            ->values();
-    }
-
-    // UID único por inclusión: si este partial se renderiza más de una vez en la
-    // página, cada copia obtiene sus PROPIOS ids de modales/campos/botones/script.
-    // Sin esto, Bootstrap abriría el modal de una copia oculta → gris congelado.
-    $tiUid = 'ti' . substr(md5(uniqid('', true)), 0, 8);
+    // Fallbacks de seguridad
+    $modoGlobal       = $modoGlobal ?? true;
+    $tiposCollection  = $tiposCollection ?? TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get();
+    $tipoAsignado     = $tipoAsignado ?? null;
+    $tiUid            = $tiUid ?? ('ti' . substr(md5(uniqid('', true)), 0, 8));
 @endphp
 
-{{-- Escala px del sistema (idéntica a tarifas y galería) --}}
-<style>
-    .tipo-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
-
-    /* ═══ TABLA ULTRA-COMPACTA: filas de 20px exactas ═══ */
-    .tipo-soft .table > :not(caption) > * > * {
-        padding: 2px 6px; height: 20px;
-        line-height: 1.1; vertical-align: middle;
-    }
-    .tipo-soft .table thead th {
-        font-size: 9px; font-weight: 600;
-        letter-spacing: .05em; text-transform: uppercase;
-        color: var(--ink-3); background-color: var(--head);
-        border-bottom: 1px solid var(--grid) !important;
-        white-space: nowrap;
-    }
-    .tipo-soft .table tbody td {
-        font-size: 8px; color: var(--ink);
-        border-bottom: 1px solid var(--grid); border-top: 0;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-    .tipo-soft .table tbody tr:hover > * {
-        background-color: #fafcfe; --bs-table-accent-bg: transparent;
-    }
-
-    /* ═══ FILA DEL TIPO ASIGNADO (individual) — ahora IMPOSIBLE de no ver:
-        fondo verde + barra lateral de acento. Antes solo el fondo (invisible
-        en filas de 20px) → parecía que la vista no filtraba. ═══ */
-    .tipo-soft tr.ti-assigned > * { background-color: #f0f7f2 !important; }
-    .tipo-soft tr.ti-assigned > td:first-child { box-shadow: inset 2px 0 0 var(--accent); }
-
-    /* Chips (misma escala que rsv-chip / gm-chip) */
-    .tipo-soft .ti-chip {
-        display: inline-flex; align-items: center; gap: 2px;
-        font-size: 7px; font-weight: 600;
-        padding: 0 5px; border-radius: 7px; line-height: 12px;
-        border: 1px solid; white-space: nowrap; flex-shrink: 0;
-    }
-    .tipo-soft .ti-chip i { font-size: 6.5px; line-height: 1; }
-    .tipo-soft .ti-chip.ok  { color: #5d8a70; background: #f0f7f2; border-color: #d8e9de; }
-    .tipo-soft .ti-chip.off { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
-    .tipo-soft .ti-chip.cnt { color: #5b7fa6; background: #f2f6fb; border-color: #dbe6f2; }
-    .tipo-soft .ti-chip.asg { color: #3d7a5c; background: #e3f1e9; border-color: #d5e7dc; }
-
-    /* Celdas con truncado limpio */
-    .tipo-soft .ti-ellip { max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Nombre del tipo: bold */
-    .tipo-soft .ti-nombre {
-        font-size: 8px; font-weight: 600; color: var(--ink-2);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-
-    .tipo-soft .ti-num { color: var(--ink-4); text-align: center; width: 22px; }
-
-    /* ═══ FILTROS DEL HEADER: búsqueda + toggle "Solo asignado" + contador ═══ */
-    .tipo-soft .ti-buscar {
-        font-size: 8.5px; color: var(--ink-2); background: #fff;
-        border: 1px solid var(--grid-2); border-radius: 3px;
-        padding: 2px 8px; width: 150px;
-        box-shadow: none !important; outline: 0;
-    }
-    .tipo-soft .ti-buscar:focus { border-color: #c8d6cd; }
-    .tipo-soft .ti-contador { font-size: 7.5px; color: var(--ink-4); white-space: nowrap; }
-    .tipo-soft .ti-toggle { cursor: pointer; }
-    .tipo-soft .ti-toggle .form-check-input {
-        width: 26px; height: 14px; margin-top: 0; cursor: pointer;
-        box-shadow: none !important;
-    }
-
-    /* ═══ MODALES — escala px idéntica al sistema ═══ */
-    .tipo-soft-modal .modal-content {
-        border: 1px solid var(--grid-2); border-radius: 5px;
-        box-shadow: 0 8px 30px rgba(15,23,42,.06);
-        font-family: Calibri, "Segoe UI", system-ui, sans-serif;
-        font-size: 8px; line-height: 1.4; color: var(--ink);
-    }
-    .tipo-soft-modal .modal-header { border-bottom: 1px solid var(--grid); padding: 9px 14px; }
-    .tipo-soft-modal .modal-title { font-size: 10.5px; font-weight: 600; color: var(--ink-2); }
-    .tipo-soft-modal .modal-body { padding: 12px 14px; }
-    .tipo-soft-modal .modal-footer {
-        border-top: 1px solid var(--grid); padding: 9px 14px;
-        display: flex; align-items: center; justify-content: space-between;
-    }
-
-    .tipo-soft-modal .tz-section { margin-bottom: 9px; }
-    .tipo-soft-modal .tz-section:last-of-type { margin-bottom: 0; }
-    .tipo-soft-modal .tz-label {
-        display: flex; align-items: center; gap: 5px;
-        font-size: 7px; font-weight: 600; letter-spacing: .07em;
-        text-transform: uppercase; color: var(--ink-4);
-        margin-bottom: 4px;
-    }
-    .tipo-soft-modal .tz-label i { font-size: 7.5px; opacity: .7; }
-    .tipo-soft-modal .tz-label::after { content: ''; flex: 1; height: 1px; background: var(--grid); }
-
-    .tipo-soft-modal .form-label {
-        font-size: 7.5px; font-weight: 600; letter-spacing: .05em;
-        text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px;
-    }
-    .tipo-soft-modal .req { color: #c98a85; }
-    .tipo-soft-modal .form-control,
-    .tipo-soft-modal .form-select {
-        font-size: 9.5px; color: var(--ink-2);
-        border-color: var(--grid-2); border-radius: 3px;
-        padding: 3px 8px; box-shadow: none !important;
-    }
-    .tipo-soft-modal .form-control:focus,
-    .tipo-soft-modal .form-select:focus { border-color: #c8d6cd; }
-    .tipo-soft-modal .tz-hint { font-size: 7px; color: #c3ccd6; margin-top: 1px; }
-
-    .tipo-soft-modal .tz-switch-box {
-        background: var(--head); border: 1px solid var(--grid);
-        border-radius: 4px; padding: 6px 9px;
-        display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    }
-    .tipo-soft-modal .tz-switch-box .sw-title { font-size: 8.5px; font-weight: 600; color: var(--ink-2); }
-    .tipo-soft-modal .tz-switch-box .sw-desc  { font-size: 7px; color: var(--ink-4); }
-    .tipo-soft-modal .form-check-input { margin-top: 0; }
-
-    /* Caja de advertencia (desactivar con inmuebles asociados) */
-    .tipo-soft-modal .ti-warn {
-        background: #fdf5f4; border: 1px solid #f0dcd8; border-radius: 4px;
-        color: #c98a85; font-size: 8px; font-weight: 600;
-        padding: 7px 9px; display: flex; align-items: center; gap: 6px;
-    }
-    .tipo-soft-modal .ti-warn i { font-size: 9px; flex-shrink: 0; }
-
-    .tipo-soft-modal .btn-cancel-soft {
-        background: #fff; color: var(--ink-3);
-        border: 1px solid var(--grid-2); border-radius: 3px;
-        font-family: inherit; font-size: 9px; font-weight: 600; padding: 3px 14px;
-    }
-    .tipo-soft-modal .btn-cancel-soft:hover { color: var(--ink-2); background: #fafcfe; }
-    .tipo-soft-modal .btn-save-soft {
-        background: var(--accent-bg); color: var(--accent);
-        border: 1px solid var(--accent-bd); border-radius: 3px;
-        font-family: inherit; font-size: 9px; font-weight: 600; padding: 3px 14px;
-    }
-    .tipo-soft-modal .btn-save-soft:hover { background: #e3f1e9; color: #34684e; }
-    .tipo-soft-modal .btn-delete-soft {
-        background: #fdf5f4; color: #c98a85;
-        border: 1px solid #f0dcd8; border-radius: 3px;
-        font-family: inherit; font-size: 9px; font-weight: 600; padding: 3px 14px;
-    }
-    .tipo-soft-modal .btn-delete-soft:hover { background: #fbeae7; color: #b05f58; }
-</style>
-
-
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL (CRUD en AMBOS modos)         --}}
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="tipo-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
+{{-- TIPOS DE INMUEBLE · PANEL PRINCIPAL (Bootstrap nativo + inline, sin <style>) --}}
+<div class="p-3 bg-white rounded-3 border" style="border-color: #f1f5f9;">
 
     <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 8px;">
 
-        <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
+        <h6 class="fw-bold mb-0 d-flex align-items-center" style="font-size: 9.5px; color: #334155;">
             <i class="bi bi-tags me-1" style="font-size: 8px; color: #5d8a70;"></i>
             {{ $modoGlobal ? 'Tipos de Inmueble del Catálogo' : 'Tipos de Inmueble · Catálogo' }}
         </h6>
@@ -260,38 +22,37 @@
         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
 
             @if($modoGlobal)
-                <span class="ti-contador" id="tiContador-{{ $tiUid }}"></span>
+                <span id="tiContador-{{ $tiUid }}" style="font-size: 7.5px; color: #b3bcc7; white-space: nowrap;"></span>
             @else
                 @if($tipoAsignado)
-                    <span class="ti-chip asg" title="Tipo asignado a este inmueble">
-                        <i class="bi bi-house-door"></i>Tipo asignado: {{ $tipoAsignado->nombre }}
+                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #3d7a5c; background: #e3f1e9; border: 1px solid #d5e7dc; white-space: nowrap;" title="Tipo asignado a este inmueble">
+                        <i class="bi bi-house-door" style="font-size: 6.5px; line-height: 1;"></i>Tipo asignado: {{ $tipoAsignado->nombre }}
                     </span>
 
-                    <div class="form-check form-switch mb-0 ti-toggle d-flex align-items-center gap-1">
-                        <input class="form-check-input" type="checkbox" role="switch"
-                               id="tiSoloAsignado-{{ $tiUid }}" checked>
-                        <label class="form-check-label mb-0" for="tiSoloAsignado-{{ $tiUid }}"
-                               style="font-size: 7.5px; font-weight: 600; color: var(--ink-3); letter-spacing: .05em; text-transform: uppercase;">
+                    <div class="form-check form-switch mb-0 d-flex align-items-center" style="gap: 4px; cursor: pointer;">
+                        <input class="form-check-input" type="checkbox" role="switch" id="tiSoloAsignado-{{ $tiUid }}" checked style="width: 26px; height: 14px; margin-top: 0; cursor: pointer; box-shadow: none;">
+                        <label class="form-check-label mb-0" for="tiSoloAsignado-{{ $tiUid }}" style="font-size: 7.5px; font-weight: 600; color: #94a3b8; letter-spacing: .05em; text-transform: uppercase;">
                             Solo asignado
                         </label>
                     </div>
                 @else
-                    <span class="ti-chip off" title="Este inmueble no tiene tipo asignado">
-                        <i class="bi bi-house"></i>Sin tipo asignado
+                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #9aa5b1; background: #fafbfd; border: 1px solid #eef2f6; white-space: nowrap;" title="Este inmueble no tiene tipo asignado">
+                        <i class="bi bi-house" style="font-size: 6.5px; line-height: 1;"></i>Sin tipo asignado
                     </span>
                 @endif
 
-                <span class="ti-contador" id="tiContador-{{ $tiUid }}"></span>
+                <span id="tiContador-{{ $tiUid }}" style="font-size: 7.5px; color: #b3bcc7; white-space: nowrap;"></span>
             @endif
 
-            <input type="search" id="tiBuscar-{{ $tiUid }}" class="ti-buscar"
-                   placeholder="Buscar tipo…" autocomplete="off">
+            <input type="search" id="tiBuscar-{{ $tiUid }}" placeholder="Buscar tipo…" autocomplete="off"
+                   class="form-control form-control-sm"
+                   style="font-size: 8.5px; color: #475569; background: #fff; border: 1px solid #e9eef4; border-radius: 3px; padding: 2px 8px; width: 150px; box-shadow: none; outline: 0;">
 
             <button type="button"
-                    class="btn btn-sm"
-                    style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
+                    class="btn btn-sm d-inline-flex align-items-center"
+                    style="background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px;"
                     data-bs-toggle="modal" data-bs-target="#modalAddTipo-{{ $tiUid }}">
-                <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nuevo Tipo
+                <i class="bi bi-plus-lg me-1" style="font-size: 8px;"></i> Nuevo Tipo
             </button>
 
         </div>
@@ -300,73 +61,89 @@
 
     <div class="table-responsive">
 
-        <table class="table table-sm table-hover align-middle mb-0">
+        {{-- Tabla ultra-compacta: variables Bootstrap para padding 2px/6px + font-size 8px heredado --}}
+        <table class="table table-sm table-hover align-middle mb-0"
+               style="font-size: 8px; color: #64748b; line-height: 1.1; --bs-table-cell-padding-x: 6px; --bs-table-cell-padding-y: 2px; --bs-table-hover-bg: #fafcfe; --bs-table-hover-color: #64748b;">
 
-            <thead>
+            <thead style="background-color: #fafbfd;">
                 <tr>
-                    <th class="ti-num">#</th>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th class="text-center" style="width: 70px;">Inmuebles</th>
-                    <th class="text-center" style="width: 60px;">Estado</th>
-                    <th class="text-center" style="width: 110px;">·</th>
+                    <th class="text-center" style="width: 22px; font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">#</th>
+                    <th style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">Nombre</th>
+                    <th style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">Descripción</th>
+                    <th class="text-center" style="width: 70px; font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">Inmuebles</th>
+                    <th class="text-center" style="width: 60px; font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">Estado</th>
+                    <th class="text-center" style="width: 70px; font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #b3bcc7; border-bottom: 1px solid #f1f5f9;">Acciones</th>
                 </tr>
             </thead>
 
             <tbody id="tbodyTipos-{{ $tiUid }}">
                 @if(isset($tiposCollection) && count($tiposCollection) > 0)
-
                     @foreach($tiposCollection as $tipo)
-
                         @php
-                            $nInmuebles = $conteoInmuebles($tipo);
+                            $nInmuebles = $tipo->catalogo_inmuebles_count ?? 0;
                             $esAsignado = (!$modoGlobal && !is_null($tipoAsignadoId) && $tipoAsignadoId == $tipo->id);
+                            // Estilos inline para simular fila "ti-assigned" sin CSS custom
+                            $tdBg     = $esAsignado ? 'background-color: #f0f7f2;' : '';
+                            $tdAccent = $esAsignado ? 'box-shadow: inset 2px 0 0 #3d7a5c;' : '';
                         @endphp
 
-                        <tr class="{{ $esAsignado ? 'ti-assigned' : '' }}"
-                            data-tipo-id="{{ $tipo->id }}"
+                        <tr data-tipo-id="{{ $tipo->id }}"
                             data-es-asignado="{{ $esAsignado ? 1 : 0 }}"
                             data-search="{{ $tipo->nombre }} {{ $tipo->descripcion }}">
 
-                            <td class="ti-num"><span class="ti-idx">{{ $loop->iteration }}</span></td>
+                            {{-- # --}}
+                            <td class="text-center" style="{{ $tdBg }} {{ $tdAccent }} color: #b3bcc7;">
+                                <span class="ti-idx">{{ $loop->iteration }}</span>
+                            </td>
 
-                            <td class="ti-ellip">
-                                <span class="ti-nombre" title="{{ $tipo->nombre }}">
-                                    <i class="bi bi-tag-fill me-1" style="font-size: 6.5px; color: #5d8a70;"></i>{{ $tipo->nombre }}
+                            {{-- Nombre + chip "Asignado" --}}
+                            <td style="{{ $tdBg }} max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <span class="fw-semibold d-inline-flex align-items-center" style="font-size: 8px; color: #475569; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ $tipo->nombre }}">
+                                    <i class="bi bi-tag-fill me-1" style="font-size: 6.5px; color: #5d8a70; flex-shrink: 0;"></i>{{ $tipo->nombre }}
                                 </span>
                                 @if($esAsignado)
-                                    <span class="ti-chip asg ms-1" title="Tipo asignado a este inmueble">
-                                        <i class="bi bi-house-door"></i>Asignado
+                                    <span class="badge d-inline-flex align-items-center ms-1" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #3d7a5c; background: #e3f1e9; border: 1px solid #d5e7dc; white-space: nowrap;" title="Tipo asignado a este inmueble">
+                                        <i class="bi bi-house-door" style="font-size: 6.5px; line-height: 1;"></i>Asignado
                                     </span>
                                 @endif
                             </td>
 
-                            <td class="ti-ellip" title="{{ $tipo->descripcion }}" style="color: #94a3b8;">
+                            {{-- Descripción --}}
+                            <td style="{{ $tdBg }} max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #94a3b8;" title="{{ $tipo->descripcion }}">
                                 {{ $tipo->descripcion ?: '—' }}
                             </td>
 
-                            <td class="text-center">
+                            {{-- Inmuebles (count) --}}
+                            <td class="text-center" style="{{ $tdBg }}">
                                 @if($nInmuebles > 0)
-                                    <span class="ti-chip cnt" title="{{ $nInmuebles }} inmueble(s) usan este tipo">
-                                        <i class="bi bi-house-door"></i>{{ $nInmuebles }}
+                                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #5b7fa6; background: #f2f6fb; border: 1px solid #dbe6f2; white-space: nowrap;" title="{{ $nInmuebles }} inmueble(s) usan este tipo">
+                                        <i class="bi bi-house-door" style="font-size: 6.5px; line-height: 1;"></i>{{ $nInmuebles }}
                                     </span>
                                 @else
-                                    <span class="ti-chip off"><i class="bi bi-house"></i>0</span>
+                                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #9aa5b1; background: #fafbfd; border: 1px solid #eef2f6; white-space: nowrap;">
+                                        <i class="bi bi-house" style="font-size: 6.5px; line-height: 1;"></i>0
+                                    </span>
                                 @endif
                             </td>
 
-                            <td class="text-center">
+                            {{-- Estado --}}
+                            <td class="text-center" style="{{ $tdBg }}">
                                 @if($tipo->active)
-                                    <span class="ti-chip ok"><i class="bi bi-check-lg"></i>Activo</span>
+                                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #5d8a70; background: #f0f7f2; border: 1px solid #d8e9de; white-space: nowrap;">
+                                        <i class="bi bi-check-lg" style="font-size: 6.5px; line-height: 1;"></i>Activo
+                                    </span>
                                 @else
-                                    <span class="ti-chip off"><i class="bi bi-dash-lg"></i>Inactivo</span>
+                                    <span class="badge d-inline-flex align-items-center" style="gap: 2px; font-size: 7px; font-weight: 600; padding: 0 5px; border-radius: 7px; line-height: 12px; color: #9aa5b1; background: #fafbfd; border: 1px solid #eef2f6; white-space: nowrap;">
+                                        <i class="bi bi-dash-lg" style="font-size: 6.5px; line-height: 1;"></i>Inactivo
+                                    </span>
                                 @endif
                             </td>
 
-                            <td class="text-center">
+                            {{-- Acciones --}}
+                            <td class="text-center" style="{{ $tdBg }}">
                                 <button type="button"
                                         class="btn btn-sm btn-link p-0 text-decoration-none btn-editar-tipo-{{ $tiUid }}"
-                                        style="font-size: 8px; color: #3d7a5c; font-weight: 600;"
+                                        style="font-size: 8px; color: #3d7a5c; font-weight: 600; line-height: 1.4;"
                                         data-bs-toggle="modal" data-bs-target="#modalEditarTipo-{{ $tiUid }}"
                                         data-url-update="{{ route('rsv.tipos-inmuebles.update', $tipo->id) }}"
                                         data-nombre="{{ $tipo->nombre }}"
@@ -375,57 +152,41 @@
                                         data-count="{{ $nInmuebles }}">
                                     Editar
                                 </button>
-                                <span style="color: #e2e8f0;">·</span>
-                                <button type="button"
-                                        class="btn btn-sm btn-link p-0 text-decoration-none btn-eliminar-tipo-{{ $tiUid }}"
-                                        style="font-size: 8px; color: #c98a85; font-weight: 600;"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarTipo-{{ $tiUid }}"
-                                        data-url-delete="{{ route('rsv.tipos-inmuebles.destroy', $tipo->id) }}"
-                                        data-nombre="{{ $tipo->nombre }}"
-                                        data-count="{{ $nInmuebles }}">
-                                    Desactivar
-                                </button>
                             </td>
 
                         </tr>
-
                     @endforeach
-
                 @else
                     <tr>
-                        <td colspan="6" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px;">
+                        <td colspan="6" class="text-center" style="padding: 12px; color: #b3bcc7; font-size: 8.5px;">
                             <i class="bi bi-tags me-1"></i> No hay tipos de inmueble registrados.
                         </td>
                     </tr>
                 @endif
 
+                {{-- Fila "sin resultados de filtro" --}}
                 <tr id="filaSinFiltro-{{ $tiUid }}" class="d-none">
-                    <td colspan="6" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px;">
+                    <td colspan="6" class="text-center" style="padding: 12px; color: #b3bcc7; font-size: 8.5px;">
                         <i class="bi bi-funnel me-1"></i> Sin tipos que coincidan con el filtro o la búsqueda.
                     </td>
                 </tr>
             </tbody>
-
         </table>
-
     </div>
-
 </div>
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · NUEVO TIPO DE INMUEBLE                                  --}}
+{{-- MODAL · NUEVO TIPO DE INMUEBLE                                    --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalAddTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalAddTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content border shadow-sm">
+        <div class="modal-content border shadow-sm" style="border-color: #e9eef4; border-radius: 5px; box-shadow: 0 8px 30px rgba(15,23,42,.06); font-size: 8px; line-height: 1.4; color: #64748b;">
 
-            <div class="modal-header bg-light border-bottom px-3 py-2 d-flex justify-content-between align-items-center">
+            <div class="modal-header bg-light border-bottom d-flex justify-content-between align-items-center" style="border-color: #f1f5f9; padding: 9px 14px;">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
                 <div class="text-end">
-                    <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
-                        Catálogo · Tipos
-                    </div>
+                    <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">Catálogo · Tipos</div>
                     <h6 class="modal-title mb-0 text-dark fw-bold" style="font-size: 0.95rem;">Nuevo Tipo de Inmueble</h6>
                     <small class="text-muted" style="font-size: 7.5px;">Los campos con <b>*</b> son obligatorios</small>
                 </div>
@@ -433,68 +194,73 @@
 
             <form action="{{ route('rsv.tipos-inmuebles.store') }}" method="POST">
                 @csrf
+                <div class="modal-body" style="padding: 12px 14px;">
 
-                <div class="modal-body p-3">
-
-                    <div class="tz-section">
-                        <div class="tz-label"><i class="bi bi-tag"></i> Información</div>
+                    {{-- 1 · INFORMACIÓN --}}
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center mb-1" style="gap: 5px;">
+                            <i class="bi bi-tag" style="font-size: 7.5px; opacity: .7;"></i>
+                            <span style="font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">Información</span>
+                            <span style="flex: 1; height: 1px; background: #f1f5f9;"></span>
+                        </div>
 
                         <div class="mb-2">
-                            <label class="form-label">Nombre del tipo <span class="req">*</span></label>
-                            <input type="text" class="form-control form-control-sm" name="nombre" placeholder="Ej. Apartamento, Casa, Finca…" maxlength="100" required>
-                            <div class="tz-hint">Se muestra en el catálogo público como clasificación</div>
+                            <label class="form-label" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Nombre del tipo <span style="color: #c98a85;">*</span></label>
+                            <input type="text" class="form-control form-control-sm" name="nombre" placeholder="Ej. Apartamento, Casa, Finca…" maxlength="100" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4; border-radius: 3px; padding: 3px 8px; box-shadow: none;">
+                            <div style="font-size: 7px; color: #c3ccd6; margin-top: 1px;">Se muestra en el catálogo público como clasificación</div>
                         </div>
 
-                        <div class="mb-0">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control form-control-sm" name="descripcion" rows="2" placeholder="Detalles opcionales sobre este tipo…"></textarea>
+                        <div>
+                            <label class="form-label" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Descripción</label>
+                            <textarea class="form-control form-control-sm" name="descripcion" rows="2" placeholder="Detalles opcionales sobre este tipo…" style="font-size: 9.5px; color: #475569; border-color: #e9eef4; border-radius: 3px; padding: 3px 8px; box-shadow: none;"></textarea>
                         </div>
                     </div>
 
-                    <div class="tz-section">
-                        <div class="tz-label"><i class="bi bi-toggle-on"></i> Estado</div>
+                    {{-- 2 · ESTADO --}}
+                    <div>
+                        <div class="d-flex align-items-center mb-1" style="gap: 5px;">
+                            <i class="bi bi-toggle-on" style="font-size: 7.5px; opacity: .7;"></i>
+                            <span style="font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">Estado</span>
+                            <span style="flex: 1; height: 1px; background: #f1f5f9;"></span>
+                        </div>
 
-                        <div class="tz-switch-box">
+                        <div class="d-flex align-items-center justify-content-between" style="background: #fafbfd; border: 1px solid #f1f5f9; border-radius: 4px; padding: 6px 9px; gap: 8px;">
                             <div class="text-start">
-                                <div class="sw-title">Activo</div>
-                                <div class="sw-desc">Disponible al crear inmuebles</div>
+                                <div style="font-size: 8.5px; font-weight: 600; color: #475569;">Activo</div>
+                                <div style="font-size: 7px; color: #b3bcc7;">Disponible al crear inmuebles</div>
                             </div>
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addTipoActive-{{ $tiUid }}" checked>
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="addTipoActive-{{ $tiUid }}" checked style="margin-top: 0; box-shadow: none;">
                             </div>
                         </div>
                     </div>
 
                 </div>
 
-                <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+                <div class="modal-footer bg-light border-top d-flex justify-content-between align-items-center" style="border-color: #f1f5f9; padding: 9px 14px;">
                     <span class="text-muted" style="font-size: 7.5px;">Clasifica los inmuebles del catálogo</span>
-                    <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-sm btn-dark py-1 px-2" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Guardar</button>
+                    <div class="d-flex" style="gap: 4px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="font-size: 11px; padding: 4px 8px;">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-dark" style="font-size: 11px; padding: 4px 8px;"><i class="bi bi-check-lg"></i> Guardar</button>
                     </div>
                 </div>
-
             </form>
-
         </div>
     </div>
 </div>
 
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · EDITAR TIPO DE INMUEBLE                                  --}}
+{{-- MODAL · EDITAR TIPO DE INMUEBLE                                   --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalEditarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalEditarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-md">
-        <div class="modal-content border shadow-sm">
+        <div class="modal-content border shadow-sm" style="border-color: #e9eef4; border-radius: 5px; box-shadow: 0 8px 30px rgba(15,23,42,.06); font-size: 8px; line-height: 1.4; color: #64748b;">
 
-            <div class="modal-header bg-light border-bottom px-3 py-2 d-flex justify-content-between align-items-center">
+            <div class="modal-header bg-light border-bottom d-flex justify-content-between align-items-center" style="border-color: #f1f5f9; padding: 9px 14px;">
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
                 <div class="text-end">
-                    <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
-                        Catálogo · Editando
-                    </div>
+                    <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">Catálogo · Editando</div>
                     <h6 class="modal-title mb-0 text-dark fw-bold" id="edit_tipo_hint_title-{{ $tiUid }}" style="font-size: 0.95rem;">Tipo de Inmueble</h6>
                     <small class="text-muted" id="edit_tipo_hint-{{ $tiUid }}" style="font-size: 7.5px;">Selecciona un tipo…</small>
                 </div>
@@ -503,104 +269,62 @@
             <form id="formEditarTipo-{{ $tiUid }}" method="POST">
                 @csrf
                 @method('PUT')
+                <div class="modal-body" style="padding: 12px 14px;">
 
-                <div class="modal-body p-3">
-
-                    <div class="tz-section">
-                        <div class="tz-label"><i class="bi bi-tag"></i> Información</div>
+                    {{-- 1 · INFORMACIÓN --}}
+                    <div class="mb-2">
+                        <div class="d-flex align-items-center mb-1" style="gap: 5px;">
+                            <i class="bi bi-tag" style="font-size: 7.5px; opacity: .7;"></i>
+                            <span style="font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">Información</span>
+                            <span style="flex: 1; height: 1px; background: #f1f5f9;"></span>
+                        </div>
 
                         <div class="mb-2">
-                            <label class="form-label">Nombre del tipo <span class="req">*</span></label>
-                            <input type="text" class="form-control form-control-sm" id="edit_tipo_nombre-{{ $tiUid }}" name="nombre" maxlength="100" required>
+                            <label class="form-label" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Nombre del tipo <span style="color: #c98a85;">*</span></label>
+                            <input type="text" class="form-control form-control-sm" id="edit_tipo_nombre-{{ $tiUid }}" name="nombre" maxlength="100" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4; border-radius: 3px; padding: 3px 8px; box-shadow: none;">
                         </div>
 
-                        <div class="mb-0">
-                            <label class="form-label">Descripción</label>
-                            <textarea class="form-control form-control-sm" id="edit_tipo_descripcion-{{ $tiUid }}" name="descripcion" rows="2"></textarea>
+                        <div>
+                            <label class="form-label" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; margin-bottom: 2px;">Descripción</label>
+                            <textarea class="form-control form-control-sm" id="edit_tipo_descripcion-{{ $tiUid }}" name="descripcion" rows="2" style="font-size: 9.5px; color: #475569; border-color: #e9eef4; border-radius: 3px; padding: 3px 8px; box-shadow: none;"></textarea>
                         </div>
                     </div>
 
-                    <div class="tz-section">
-                        <div class="tz-label"><i class="bi bi-toggle-on"></i> Estado</div>
+                    {{-- 2 · ESTADO --}}
+                    <div>
+                        <div class="d-flex align-items-center mb-1" style="gap: 5px;">
+                            <i class="bi bi-toggle-on" style="font-size: 7.5px; opacity: .7;"></i>
+                            <span style="font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">Estado</span>
+                            <span style="flex: 1; height: 1px; background: #f1f5f9;"></span>
+                        </div>
 
-                        <div class="tz-switch-box">
+                        <div class="d-flex align-items-center justify-content-between" style="background: #fafbfd; border: 1px solid #f1f5f9; border-radius: 4px; padding: 6px 9px; gap: 8px;">
                             <div class="text-start">
-                                <div class="sw-title">Activo</div>
-                                <div class="sw-desc">Pausar sin eliminar</div>
+                                <div style="font-size: 8.5px; font-weight: 600; color: #475569;">Activo</div>
+                                <div style="font-size: 7px; color: #b3bcc7;">Pausar sin eliminar</div>
                             </div>
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tipo_active-{{ $tiUid }}">
+                                <input class="form-check-input" type="checkbox" role="switch" name="active" value="1" id="edit_tipo_active-{{ $tiUid }}" style="margin-top: 0; box-shadow: none;">
                             </div>
                         </div>
                     </div>
 
                 </div>
 
-                <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
+                <div class="modal-footer bg-light border-top d-flex justify-content-between align-items-center" style="border-color: #f1f5f9; padding: 9px 14px;">
                     <span class="text-muted" id="edit_tipo_hint_count-{{ $tiUid }}" style="font-size: 7.5px;"></span>
-                    <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-sm btn-dark py-1 px-2" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Actualizar</button>
+                    <div class="d-flex" style="gap: 4px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal" style="font-size: 11px; padding: 4px 8px;">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-dark" style="font-size: 11px; padding: 4px 8px;"><i class="bi bi-check-lg"></i> Actualizar</button>
                     </div>
                 </div>
-
             </form>
-
         </div>
     </div>
 </div>
 
 
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · DESACTIVAR TIPO                                          --}}
-{{-- ═══════════════════════════════════════════════════════════════ --}}
-<div class="modal fade tipo-soft-modal" id="modalEliminarTipo-{{ $tiUid }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border shadow-sm">
-
-            <div class="modal-header bg-light border-bottom px-3 py-2 d-flex justify-content-between align-items-center">
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 9px;"></button>
-                <div class="text-end">
-                    <div style="font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #6c757d;">
-                        Catálogo · Desactivar
-                    </div>
-                    <h6 class="modal-title mb-0 text-dark fw-bold" style="font-size: 0.95rem;">Confirmar Desactivación</h6>
-                </div>
-            </div>
-
-            <form id="formEliminarTipo-{{ $tiUid }}" method="POST">
-                @csrf
-                @method('DELETE')
-
-                <div class="modal-body p-3">
-
-                    <p class="mb-2 text-start" style="font-size: 9.5px; color: var(--ink-2);">
-                        ¿Desactivar el tipo <b id="del_tipo_nombre-{{ $tiUid }}" style="color: #334155;">—</b>? Pasará a estado <b>Inactivo</b> sin eliminarse físicamente.
-                    </p>
-
-                    <div class="ti-warn d-none" id="del_tipo_warning-{{ $tiUid }}">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <span>Tiene <b id="del_tipo_count-{{ $tiUid }}">0</b> inmueble(s) asociado(s). El sistema no permitirá desactivarlo.</span>
-                    </div>
-
-                </div>
-
-                <div class="modal-footer bg-light border-top px-3 py-2 d-flex justify-content-between align-items-center">
-                    <span class="text-muted" style="font-size: 7.5px;">Reversible desde Editar</span>
-                    <div class="d-flex gap-1">
-                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-sm btn-delete-soft py-1 px-2" style="font-size: 11px;"><i class="bi bi-power"></i> Desactivar</button>
-                    </div>
-                </div>
-
-            </form>
-
-        </div>
-    </div>
-</div>
-
-
-{{-- SCRIPT · Filtros y llenado de modales --}}
+{{-- SCRIPT · Filtros (búsqueda + "solo asignado") + llenado del modal Editar --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const UID = '{{ $tiUid }}';
@@ -674,31 +398,6 @@
                     hintCount.innerHTML = count > 0
                         ? 'Usado por <b style="color:#5d8a70;">' + count + '</b> inmueble(s)'
                         : 'Sin inmuebles asociados';
-                }
-            });
-        });
-
-        // Llenado de modal Desactivar (Validación visual de dependencias)
-        document.querySelectorAll('.btn-eliminar-tipo-' + UID).forEach(btn => {
-            btn.addEventListener('click', function () {
-                const form = document.getElementById('formEliminarTipo-' + UID);
-                form.action = this.getAttribute('data-url-delete');
-
-                const nombre = this.getAttribute('data-nombre') || '—';
-                const count  = parseInt(this.getAttribute('data-count') || 0);
-
-                document.getElementById('del_tipo_nombre-' + UID).textContent = '“' + nombre + '”';
-
-                const warn = document.getElementById('del_tipo_warning-' + UID);
-                const btnSubmit = form.querySelector('button[type="submit"]'); // Capturamos el botón
-
-                if (count > 0) {
-                    document.getElementById('del_tipo_count-' + UID).textContent = count;
-                    warn.classList.remove('d-none');
-                    btnSubmit.disabled = true; // BLOQUEAMOS EL BOTÓN
-                } else {
-                    warn.classList.add('d-none');
-                    btnSubmit.disabled = false; // HABILITAMOS EL BOTÓN
                 }
             });
         });

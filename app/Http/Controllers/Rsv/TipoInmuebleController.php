@@ -18,23 +18,59 @@ use Throwable;
 class TipoInmuebleController extends Controller
 {
     /**
-     * Listar todos los tipos de inmuebles.
-     * Soporte Dual (Web/JSON).
+     * Listar todos los tipos de inmuebles con soporte de contexto global o por inmueble.
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         try {
-            $tiposInmueble = TipoInmueble::orderBy('nombre', 'asc')->get();
+            // 1. Resolver inmueble objetivo (modo individual vs global)
+            $inmuebleId = $request->input('inmueble_id');
+            $tiInm = null;
+
+            if (!empty($inmuebleId) && is_numeric($inmuebleId)) {
+                $tiInm = CatalogoInmueble::find($inmuebleId);
+            }
+
+            $modoGlobal = !$tiInm;
+
+            // 2. Resolver tipo asignado si estamos en modo individual
+            $tipoAsignadoId = null;
+            $tipoAsignado = null;
+
+            if (!$modoGlobal && $tiInm) {
+                $tipoAsignadoId = $tiInm->tipo_inmueble_id ?? null;
+            }
+
+            // 3. Obtener colección de tipos con conteo de inmuebles
+            $tiposCollection = TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get();
+
+            // 4. Si hay tipo asignado, ordenarlo primero (visible sin scroll)
+            if (!$modoGlobal && $tipoAsignadoId) {
+                $tipoAsignado = $tiposCollection->firstWhere('id', $tipoAsignadoId);
+
+                $tiposCollection = $tiposCollection
+                    ->sortByDesc(fn ($t) => $t->id == $tipoAsignadoId ? 1 : 0)
+                    ->values();
+            }
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'data'    => $tiposInmueble
+                    'data'    => $tiposCollection,
+                    'context' => [
+                        'modoGlobal'     => $modoGlobal,
+                        'tipoAsignadoId' => $tipoAsignadoId,
+                    ]
                 ], 200);
             }
 
-            // Aquí puedes retornar a una vista si decides administrar esto en una pantalla propia
-            return view('rsv.admin.partials.tab-tipos-inmuebles', compact('tiposInmueble'));
+            return view('rsv.admin.partials.tab-tipos-inmuebles', compact(
+                'tiposCollection',
+                'modoGlobal',
+                'tiInm',
+                'tipoAsignado',
+                'tipoAsignadoId'
+            ));
 
         } catch (Throwable $e) {
             Log::error('Error en TipoInmuebleController@index: ' . $e->getMessage());
@@ -83,7 +119,6 @@ class TipoInmuebleController extends Controller
      */
     public function show(Request $request, TipoInmueble $tipoInmueble): JsonResponse
     {
-        // Generalmente 'show' para catálogos pequeños se consume vía AJAX para rellenar modales de edición
         return response()->json([
             'success' => true,
             'data'    => $tipoInmueble
@@ -96,7 +131,6 @@ class TipoInmuebleController extends Controller
     public function update(UpdateTipoInmuebleRequest $request, $id): JsonResponse|RedirectResponse
     {
         try {
-            // Buscamos manualmente para evitar errores de nombres en las rutas
             $tipoInmueble = TipoInmueble::findOrFail($id);
             $validatedData = $request->validated();
 
@@ -118,37 +152,6 @@ class TipoInmuebleController extends Controller
             Log::error('Error en TipoInmuebleController@update: ' . $e->getMessage());
             if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Ocurrió un error al actualizar.'], 500);
             return back()->withInput()->with('error', 'Ocurrió un error al actualizar.');
-        }
-    }
-
-    /**
-     * Eliminar o desactivar el tipo de inmueble.
-     */
-    public function destroy(Request $request, $id): JsonResponse|RedirectResponse
-    {
-        try {
-            $tipoInmueble = TipoInmueble::findOrFail($id);
-
-            // Protección de Integridad Referencial
-            $inmueblesAsociados = CatalogoInmueble::where('tipo_inmueble_id', $tipoInmueble->id)->count();
-
-            if ($inmueblesAsociados > 0) {
-                $msg = "No se puede eliminar o desactivar este tipo porque tiene {$inmueblesAsociados} inmueble(s) asociado(s).";
-                if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => $msg], 422);
-                return back()->with('error', $msg);
-            }
-
-            DB::transaction(function () use ($tipoInmueble) {
-                $tipoInmueble->update(['active' => false]);
-            });
-
-            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => true, 'message' => 'Tipo de inmueble desactivado exitosamente.'], 200);
-            return back()->with('success', 'Tipo de inmueble desactivado exitosamente.');
-
-        } catch (Throwable $e) {
-            Log::error('Error en TipoInmuebleController@destroy: ' . $e->getMessage());
-            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar desactivar el registro.'], 500);
-            return back()->with('error', 'Ocurrió un error al intentar desactivar el registro.');
         }
     }
 }

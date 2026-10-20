@@ -9,12 +9,57 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Throwable;
 
 class TransaccionFinancieraController extends Controller
 {
+    /**
+     * FIX 1364: la columna id_rsv_pasarela es NOT NULL sin default.
+     * Cuando el formulario no envía pasarela ("— Directo —"), resolvemos
+     * automáticamente una pasarela representativa del catálogo:
+     *   1) Busca una llamada "Directo"/"Efectivo".
+     *   2) Si no existe, la CREA automáticamente.
+     *   3) Si falla la creación, toma la primera del catálogo.
+     * Devuelve null solo si la tabla rsv_pasarelas está vacía e infutable.
+     */
+    private function resolverPasarelaDirecta(): ?int
+    {
+        try {
+            if (!class_exists(\App\Models\Rsv\Pasarela::class)) {
+                return null;
+            }
+
+            $col = Schema::hasColumn('rsv_pasarelas', 'name') ? 'name' : 'nombre';
+
+            // 1) Buscar una pasarela "Directo" o "Efectivo"
+            $pasarela = \App\Models\Rsv\Pasarela::query()
+                ->where(function ($w) use ($col) {
+                    $w->where($col, 'like', '%directo%')
+                      ->orWhere($col, 'like', '%efectivo%');
+                })
+                ->orderBy('id')
+                ->first();
+
+            // 2) No existe → crearla (así "Directo" siempre está disponible)
+            if (!$pasarela) {
+                try {
+                    $pasarela = \App\Models\Rsv\Pasarela::create([$col => 'Directo']);
+                } catch (Throwable $eCreate) {
+                    Log::warning('resolverPasarelaDirecta (create): ' . $eCreate->getMessage());
+                    // 3) Fallback: primera del catálogo
+                    $pasarela = \App\Models\Rsv\Pasarela::orderBy('id')->first();
+                }
+            }
+
+            return $pasarela?->id;
+        } catch (\Throwable $e) {
+            Log::warning('resolverPasarelaDirecta: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     /**
      * Listado de transacciones con filtros y paginación.
      * Compatible con web y JSON.
@@ -25,17 +70,11 @@ class TransaccionFinancieraController extends Controller
             $query = TransaccionFinanciera::with(['reserva', 'pasarela']);
 
             if ($request->filled('id_rsv_reservas')) {
-                $query->where(
-                    'id_rsv_reservas',
-                    $request->id_rsv_reservas
-                );
+                $query->where('id_rsv_reservas', $request->id_rsv_reservas);
             }
 
             if ($request->filled('id_rsv_pasarela')) {
-                $query->where(
-                    'id_rsv_pasarela',
-                    $request->id_rsv_pasarela
-                );
+                $query->where('id_rsv_pasarela', $request->id_rsv_pasarela);
             }
 
             if ($request->filled('estado_pago')) {
@@ -50,22 +89,12 @@ class TransaccionFinancieraController extends Controller
                 $search = $request->search;
 
                 $query->where(function ($q) use ($search) {
-                    $q->where(
-                        'referencia_externa',
-                        'like',
-                        "%{$search}%"
-                    )->orWhere(
-                        'metodo_pago',
-                        'like',
-                        "%{$search}%"
-                    );
+                    $q->where('referencia_externa', 'like', "%{$search}%")
+                      ->orWhere('metodo_pago', 'like', "%{$search}%");
                 });
             }
 
-            $perPage = max(
-                1,
-                min((int) $request->input('per_page', 15), 100)
-            );
+            $perPage = max(1, min((int) $request->input('per_page', 15), 100));
 
             $transacciones = $query
                 ->orderByDesc('created_at')
@@ -76,42 +105,29 @@ class TransaccionFinancieraController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Listado de transacciones financieras obtenido exitosamente.',
-                    'data' => $transacciones,
+                    'data'    => $transacciones,
                 ], 200);
             }
 
-            return view(
-                'rsv.transacciones-financieras.index',
-                compact('transacciones')
-            );
+            return view('rsv.transacciones-financieras.index', compact('transacciones'));
 
         } catch (Throwable $e) {
-            Log::error(
-                'Error en TransaccionFinancieraController@index: '
-                . $e->getMessage(),
-                ['trace' => $e->getTraceAsString()]
-            );
+            Log::error('Error en TransaccionFinancieraController@index: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Ocurrió un error al obtener el listado de transacciones financieras.',
-                    'error' => config('app.debug')
-                        ? $e->getMessage()
-                        : null,
+                    'error'   => config('app.debug') ? $e->getMessage() : null,
                 ], 500);
             }
 
-            return back()->with(
-                'error',
-                'Ocurrió un error al obtener el listado de transacciones financieras.'
-            );
+            return back()->with('error', 'Ocurrió un error al obtener el listado de transacciones financieras.');
         }
     }
 
-    /**
-     * Creación de formularios no implementada.
-     */
     public function create(): JsonResponse
     {
         return response()->json([
@@ -122,7 +138,7 @@ class TransaccionFinancieraController extends Controller
 
     /**
      * Registrar una transacción financiera.
-     * Soporta tanto carga de archivos (Drag & Drop / Paste / Upload) como URL/Texto.
+     * FIX 1364: garantiza id_rsv_pasarela (resolución automática si viene vacío).
      */
     public function store(Request $request): JsonResponse
     {
@@ -146,13 +162,31 @@ class TransaccionFinancieraController extends Controller
             $validatedData['soporte_pago'] = $path;
         }
 
+        DB::beginTransaction();
+
         try {
+            // ── FIX 1364: la columna es NOT NULL — resolvemos pasarela si viene vacía ──
+            if (empty($validatedData['id_rsv_pasarela'])) {
+                $idPasarela = $this->resolverPasarelaDirecta();
+
+                if (!$idPasarela) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se puede registrar el pago: el catálogo rsv_pasarelas está vacío. Configure al menos una pasarela (ej. "Directo").',
+                    ], 422);
+                }
+                $validatedData['id_rsv_pasarela'] = $idPasarela;
+            }
+
             $transaccion = DB::transaction(function () use ($validatedData) {
                 $transaccion = TransaccionFinanciera::create($validatedData);
                 $transaccion->load(['reserva', 'pasarela']);
 
                 return $transaccion;
             });
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -161,32 +195,23 @@ class TransaccionFinancieraController extends Controller
             ], 201);
 
         } catch (Throwable $e) {
-            Log::error(
-                'Error en TransaccionFinancieraController@store: '
-                . $e->getMessage(),
-                ['trace' => $e->getTraceAsString()]
-            );
+            DB::rollBack();
+            Log::error('Error en TransaccionFinancieraController@store: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la transacción financiera.',
-                'error'   => config('app.debug')
-                    ? $e->getMessage()
-                    : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
-    /**
-     * Consultar una transacción financiera.
-     */
     public function show(string $id): JsonResponse
     {
         try {
-            $transaccion = TransaccionFinanciera::with([
-                'reserva',
-                'pasarela',
-            ])->find($id);
+            $transaccion = TransaccionFinanciera::with(['reserva', 'pasarela'])->find($id);
 
             if (!$transaccion) {
                 return response()->json([
@@ -202,25 +227,18 @@ class TransaccionFinancieraController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            Log::error(
-                'Error en TransaccionFinancieraController@show: '
-                . $e->getMessage(),
-                ['trace' => $e->getTraceAsString()]
-            );
+            Log::error('Error en TransaccionFinancieraController@show: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al obtener la transacción financiera.',
-                'error'   => config('app.debug')
-                    ? $e->getMessage()
-                    : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
-    /**
-     * Edición de formularios no implementada.
-     */
     public function edit(string $id): JsonResponse
     {
         return response()->json([
@@ -229,9 +247,6 @@ class TransaccionFinancieraController extends Controller
         ], 405);
     }
 
-    /**
-     * Actualizar una transacción financiera.
-     */
     public function update(Request $request, string $id): JsonResponse
     {
         $validatedData = $request->validate([
@@ -276,24 +291,27 @@ class TransaccionFinancieraController extends Controller
             ], 200);
 
         } catch (Throwable $e) {
-            Log::error(
-                'Error en TransaccionFinancieraController@update: '
-                . $e->getMessage(),
-                ['trace' => $e->getTraceAsString()]
-            );
+            Log::error('Error en TransaccionFinancieraController@update: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al actualizar la transacción financiera.',
-                'error'   => config('app.debug')
-                    ? $e->getMessage()
-                    : null,
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
     /**
-     * Eliminar una transacción financiera.
+     * ════════════════════════════════════════════════════════════════
+     * ELIMINACIÓN LÓGICA (ANULACIÓN) — REGULA DE NEGOCIO:
+     * · NUNCA se borra el registro.
+     * · NUNCA se borra el soporte de S3: permanece visible/auditable.
+     * · Se marca estado_pago = 'Anulado' (excluido del balance).
+     * El endpoint se mantiene para compatibilidad con consumidores API,
+     * pero su efecto es la anulación, no la destrucción.
+     * ════════════════════════════════════════════════════════════════
      */
     public function destroy(string $id): JsonResponse
     {
@@ -307,33 +325,38 @@ class TransaccionFinancieraController extends Controller
                 ], 404);
             }
 
-            DB::transaction(function () use ($transaccion) {
-                // Eliminar el soporte físico en S3 si existía un archivo almacenado
-                if ($transaccion->soporte_pago && Storage::disk('s3')->exists($transaccion->soporte_pago)) {
-                    Storage::disk('s3')->delete($transaccion->soporte_pago);
-                }
+            // Idempotente: si ya está anulada, informar sin re-procesar
+            if (mb_strtolower((string) ($transaccion->estado_pago ?? '')) === 'anulado') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'La transacción ya se encontraba ANULADA. El registro y su soporte se conservan.',
+                ], 200);
+            }
 
-                $transaccion->delete();
+            DB::transaction(function () use ($transaccion) {
+                $transaccion->update(['estado_pago' => 'Anulado']);
             });
+
+            Log::info('Transacción financiera ANULADA (eliminación lógica)', [
+                'id'      => $transaccion->id,
+                'reserva' => $transaccion->id_rsv_reservas,
+                'soporte' => $transaccion->soporte_pago, // se conserva
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transacción financiera eliminada exitosamente.',
+                'message' => 'Transacción ANULADA (eliminación lógica). El registro y su soporte se conservan para auditoría.',
             ], 200);
 
         } catch (Throwable $e) {
-            Log::error(
-                'Error en TransaccionFinancieraController@destroy: '
-                . $e->getMessage(),
-                ['trace' => $e->getTraceAsString()]
-            );
+            Log::error('Error en TransaccionFinancieraController@destroy: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al eliminar la transacción financiera.',
-                'error'   => config('app.debug')
-                    ? $e->getMessage()
-                    : null,
+                'message' => 'Ocurrió un error al anular la transacción financiera.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
