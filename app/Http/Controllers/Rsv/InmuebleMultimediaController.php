@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rsv\InmuebleMultimedia;
+use App\Models\Rsv\CatalogoInmueble;
 use App\Http\Requests\Rsv\StoreInmuebleMultimediaRequest;
 use App\Http\Requests\Rsv\UpdateInmuebleMultimediaRequest;
 use Illuminate\Http\Request;
@@ -18,20 +19,18 @@ use Throwable;
 
 /**
  * Controlador para la gestión de la Galería Multimedia de los Inmuebles.
- * Maneja subida a S3, reemplazo y eliminación segura de archivos junto a registros en DB.
+ * Maneja subida a S3, reemplazo y transacciones en DB.
  */
 class InmuebleMultimediaController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Soporte Dual (Web/JSON) con filtros dinámicos, ordenamiento y paginación.
      */
     public function index(Request $request): View|JsonResponse|RedirectResponse
     {
         try {
-            $query = InmuebleMultimedia::with('inmueble:id,name,active');
+            $query = InmuebleMultimedia::with(['inmueble:id,name,active,tipo_inmueble_id', 'inmueble.tipoInmueble']);
 
-            // Filtros limpios usando 'when'
             $query->when($request->filled('id_rsv_catalogo_inmueble'), function ($q) use ($request) {
                 $q->where('id_rsv_catalogo_inmueble', $request->id_rsv_catalogo_inmueble);
             })->when($request->filled('tipo_multimedia'), function ($q) use ($request) {
@@ -45,6 +44,12 @@ class InmuebleMultimediaController extends Controller
                                 ->orderBy('created_at', 'desc')
                                 ->paginate($perPage);
 
+            // Variables globales extraídas de la vista
+            $modoGlobal = true;
+            $mediaCollection = $multimedia;
+            $listaInmueblesOpt = CatalogoInmueble::with('tipoInmueble')->orderBy('name', 'asc')->get();
+            $gmUid = 'gm' . substr(md5(uniqid('', true)), 0, 8);
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -53,7 +58,7 @@ class InmuebleMultimediaController extends Controller
                 ], 200);
             }
 
-            return view('rsv.multimedia.index', compact('multimedia'));
+            return view('rsv.multimedia.index', compact('multimedia', 'modoGlobal', 'mediaCollection', 'listaInmueblesOpt', 'gmUid'));
 
         } catch (Throwable $e) {
             Log::error('Error en InmuebleMultimediaController@index: ' . $e->getMessage());
@@ -70,11 +75,25 @@ class InmuebleMultimediaController extends Controller
         }
     }
 
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse|View
     {
         try {
-            $multimedia = InmuebleMultimedia::with('inmueble')->findOrFail($id);
-            return response()->json(['success' => true, 'data' => $multimedia], 200);
+            $inmueble = CatalogoInmueble::with([
+                'multimedia.inmueble:id,name,active,tipo_inmueble_id',
+                'multimedia.inmueble.tipoInmueble'
+            ])->findOrFail($id);
+
+            $modoGlobal = false;
+            $mediaCollection = $inmueble->multimedia->sortBy('orden');
+            $listaInmueblesOpt = CatalogoInmueble::with('tipoInmueble')->orderBy('name', 'asc')->get();
+            $gmUid = 'gm' . substr(md5(uniqid('', true)), 0, 8);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'data' => $mediaCollection], 200);
+            }
+
+            return view('rsv.multimedia.show', compact('inmueble', 'modoGlobal', 'mediaCollection', 'listaInmueblesOpt', 'gmUid'));
+
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'El recurso no existe.'], 404);
         } catch (Throwable $e) {
@@ -82,7 +101,7 @@ class InmuebleMultimediaController extends Controller
             return response()->json(['success' => false, 'message' => 'Error interno.'], 500);
         }
     }
-    
+
     public function create(): JsonResponse
     {
         return response()->json(['success' => false, 'message' => 'Método no implementado para API REST.'], 405);
@@ -90,7 +109,6 @@ class InmuebleMultimediaController extends Controller
 
     /**
      * Sube un archivo a AWS S3 y guarda su registro.
-     * Implementa rollback de S3 si la base de datos falla.
      */
     public function store(StoreInmuebleMultimediaRequest $request): JsonResponse|RedirectResponse
     {
@@ -98,15 +116,13 @@ class InmuebleMultimediaController extends Controller
         $uploadedPath = null;
 
         try {
-            // 1. Subir a S3 primero
             if ($request->hasFile('url_archivo')) {
                 $uploadedPath = $request->file('url_archivo')->store('inmuebles/multimedia', 's3');
                 $validatedData['url_archivo'] = $uploadedPath;
             }
 
-            // 2. Ejecutar lógica de DB en transacción
             $multimedia = DB::transaction(function () use ($validatedData) {
-                if ($validatedData['es_portada']) {
+                if (!empty($validatedData['es_portada'])) {
                     InmuebleMultimedia::where('id_rsv_catalogo_inmueble', $validatedData['id_rsv_catalogo_inmueble'])
                         ->update(['es_portada' => false]);
                 }
@@ -122,11 +138,10 @@ class InmuebleMultimediaController extends Controller
                 ], 201);
             }
 
-            return redirect()->route('rsv.inmuebles.show', $validatedData['id_rsv_catalogo_inmueble'])
+            return redirect()->back()
                 ->with('success', 'Multimedia registrada exitosamente.');
 
         } catch (Throwable $e) {
-            // Rollback manual de S3: si falla la DB, borramos el archivo huérfano
             if ($uploadedPath) {
                 Storage::disk('s3')->delete($uploadedPath);
             }
@@ -143,7 +158,6 @@ class InmuebleMultimediaController extends Controller
             return back()->withInput()->with('error', 'Ocurrió un error al registrar el recurso multimedia.');
         }
     }
-
 
     public function edit(string $id): JsonResponse
     {
@@ -162,23 +176,18 @@ class InmuebleMultimediaController extends Controller
             $multimedia = InmuebleMultimedia::findOrFail($id);
             $validatedData = $request->validated();
 
-            // 1. Manejo del nuevo archivo en S3
             if ($request->hasFile('url_archivo')) {
                 $oldPathToDelete = $multimedia->getRawOriginal('url_archivo');
-
                 $newUploadedPath = $request->file('url_archivo')->store('inmuebles/multimedia', 's3');
                 $validatedData['url_archivo'] = $newUploadedPath;
             } else {
-                // Evitamos sobrescribir la URL actual con null
                 unset($validatedData['url_archivo']);
             }
 
-            // 2. Transacción de Base de Datos
             DB::transaction(function () use ($multimedia, $validatedData) {
                 $idInmueble = $validatedData['id_rsv_catalogo_inmueble'] ?? $multimedia->id_rsv_catalogo_inmueble;
                 $esPortada  = array_key_exists('es_portada', $validatedData) ? $validatedData['es_portada'] : $multimedia->es_portada;
 
-                // Lógica singleton de Portada
                 if ($esPortada && (!$multimedia->es_portada || $idInmueble != $multimedia->id_rsv_catalogo_inmueble)) {
                     InmuebleMultimedia::where('id_rsv_catalogo_inmueble', $idInmueble)
                         ->where('id', '!=', $multimedia->id)
@@ -188,7 +197,6 @@ class InmuebleMultimediaController extends Controller
                 $multimedia->update($validatedData);
             });
 
-            // 3. Borrado del archivo anterior de S3 SOLO si la DB se actualizó correctamente
             if ($oldPathToDelete && !filter_var($oldPathToDelete, FILTER_VALIDATE_URL)) {
                 Storage::disk('s3')->delete($oldPathToDelete);
             }
@@ -198,55 +206,18 @@ class InmuebleMultimediaController extends Controller
                 return response()->json(['success' => true, 'message' => 'Actualizado exitosamente.', 'data' => $multimedia], 200);
             }
 
-            return redirect()->route('rsv.inmuebles.show', $multimedia->id_rsv_catalogo_inmueble)
+            return redirect()->back()
                 ->with('success', 'Multimedia actualizada exitosamente.');
 
         } catch (ModelNotFoundException $e) {
             if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'No existe.'], 404);
             return back()->with('error', 'El recurso no existe.');
         } catch (Throwable $e) {
-            // Si la DB falla y habíamos subido un archivo nuevo, lo borramos de S3
             if ($newUploadedPath) Storage::disk('s3')->delete($newUploadedPath);
 
             Log::error('Error en InmuebleMultimediaController@update: ' . $e->getMessage());
             if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Error al actualizar.'], 500);
             return back()->withInput()->with('error', 'Ocurrió un error al actualizar.');
-        }
-    }
-
-    /**
-     * Borra el registro en DB y el archivo físico de S3.
-     */
-    public function destroy(Request $request, string $id): JsonResponse|RedirectResponse
-    {
-        try {
-            $multimedia = InmuebleMultimedia::findOrFail($id);
-            $inmuebleId = $multimedia->id_rsv_catalogo_inmueble;
-            $oldPath = $multimedia->getRawOriginal('url_archivo');
-
-            // 1. Borrar de la BD
-            DB::transaction(function () use ($multimedia) {
-                $multimedia->delete();
-            });
-
-            // 2. Borrar de S3 si la DB fue exitosa
-            if ($oldPath && !filter_var($oldPath, FILTER_VALIDATE_URL)) {
-                Storage::disk('s3')->delete($oldPath);
-            }
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => true, 'message' => 'Recurso eliminado exitosamente.'], 200);
-            }
-
-            return redirect()->route('rsv.inmuebles.show', $inmuebleId)->with('success', 'Multimedia eliminada.');
-
-        } catch (ModelNotFoundException $e) {
-            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'No existe.'], 404);
-            return back()->with('error', 'El recurso no existe.');
-        } catch (Throwable $e) {
-            Log::error('Error en InmuebleMultimediaController@destroy: ' . $e->getMessage());
-            if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => 'Error al eliminar.'], 500);
-            return back()->with('error', 'Ocurrió un error al eliminar.');
         }
     }
 
@@ -261,15 +232,13 @@ class InmuebleMultimediaController extends Controller
             if ($multimedia->es_portada) {
                 $msg = 'Este recurso ya es la portada del inmueble.';
                 if ($request->wantsJson() || $request->ajax()) return response()->json(['success' => false, 'message' => $msg], 422);
-                return redirect()->route('rsv.inmuebles.show', $multimedia->id_rsv_catalogo_inmueble)->with('info', $msg);
+                return redirect()->back()->with('info', $msg);
             }
 
             DB::transaction(function () use ($multimedia) {
-                // Quitar portada a las demás
                 InmuebleMultimedia::where('id_rsv_catalogo_inmueble', $multimedia->id_rsv_catalogo_inmueble)
                     ->update(['es_portada' => false]);
 
-                // Asignar a la actual
                 $multimedia->update(['es_portada' => true]);
             });
 
@@ -277,7 +246,7 @@ class InmuebleMultimediaController extends Controller
                 return response()->json(['success' => true, 'message' => 'Portada establecida exitosamente.', 'data' => $multimedia], 200);
             }
 
-            return redirect()->route('rsv.inmuebles.show', $multimedia->id_rsv_catalogo_inmueble)
+            return redirect()->back()
                 ->with('success', 'Portada establecida exitosamente.');
 
         } catch (ModelNotFoundException $e) {

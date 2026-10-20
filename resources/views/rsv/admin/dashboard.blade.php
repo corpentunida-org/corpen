@@ -183,7 +183,7 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-calendario" type="button" role="tab">
-                                <i class="bi bi-calendar3 me-1"></i> Calendario / Bloqueos <span class="badge bg-light text-secondary ms-1">{{ $tabBloqueos ?? 0 }}</span>
+                                <i class="bi bi-calendar3 me-1"></i> Bloqueos <span class="badge bg-light text-secondary ms-1">{{ $tabBloqueos ?? 0 }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -265,15 +265,11 @@
                                 <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="calendarioSubTabs" role="tablist">
                                     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#cal-sub-inicio" type="button" role="tab"><i class="bi bi-house-door me-1"></i> Inicio</button></li>
                                     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cal-sub-bloqueos" type="button" role="tab"><i class="bi bi-calendar-x me-1"></i> Bloqueos</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cal-sub-reservas" type="button" role="tab"><i class="bi bi-calendar-check me-1"></i> Reservas</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#cal-sub-inmuebles" type="button" role="tab"><i class="bi bi-building me-1"></i> Inmuebles</button></li>
                                 </ul>
                             </div>
                             <div class="tab-content p-4" id="calendarioSubContent">
                                 <div class="tab-pane fade show active" id="cal-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-calendario')</div>
                                 <div class="tab-pane fade" id="cal-sub-bloqueos" role="tabpanel"><p class="text-muted small mb-0">Bloqueos (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="cal-sub-reservas" role="tabpanel"><p class="text-muted small mb-0">Reservas (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="cal-sub-inmuebles" role="tabpanel"><p class="text-muted small mb-0">Inmuebles (Próximamente)</p></div>
                             </div>
                         </div>
 
@@ -287,14 +283,12 @@
                                     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#fin-sub-inicio" type="button" role="tab"><i class="bi bi-house-door me-1"></i> Inicio</button></li>
                                     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#fin-sub-transacciones" type="button" role="tab"><i class="bi bi-receipt me-1"></i> Transacciones</button></li>
                                     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#fin-sub-pasarelas" type="button" role="tab"><i class="bi bi-credit-card me-1"></i> Pasarelas</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#fin-sub-reservas" type="button" role="tab"><i class="bi bi-journal-check me-1"></i> Reservas</button></li>
                                 </ul>
                             </div>
                             <div class="tab-content p-4" id="finanzasSubContent">
                                 <div class="tab-pane fade show active" id="fin-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-finanzas')</div>
                                 <div class="tab-pane fade" id="fin-sub-transacciones" role="tabpanel"><p class="text-muted small mb-0">Transacciones Financieras (Próximamente)</p></div>
                                 <div class="tab-pane fade" id="fin-sub-pasarelas" role="tabpanel"><p class="text-muted small mb-0">Pasarelas de Pago (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="fin-sub-reservas" role="tabpanel"><p class="text-muted small mb-0">Reservas Vinculadas (Próximamente)</p></div>
                             </div>
                         </div>
 
@@ -513,7 +507,7 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#calendario" type="button" role="tab">
-                                <i class="bi bi-calendar3 me-1"></i> Calendario / Bloqueos <span class="badge bg-light text-secondary ms-1">({{ $inmueble->bloqueos_calendario_count ?? 0 }})</span>
+                                <i class="bi bi-calendar3 me-1"></i> Bloqueos <span class="badge bg-light text-secondary ms-1">({{ $inmueble->bloqueos_calendario_count ?? 0 }})</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -590,7 +584,7 @@
                             </div>
                         </div>
 
-                        {{-- INMUEBLE - TAB 3: CALENDARIO / BLOQUEOS (Estructura de hijos añadida) --}}
+                        {{-- INMUEBLE - TAB 3: BLOQUEOS (Estructura de hijos añadida) --}}
                         <div class="tab-pane fade" id="calendario" role="tabpanel">
                             <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -599,7 +593,6 @@
                                 <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="singleCalendarioSubTabs" role="tablist">
                                     <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single-cal-sub-inicio" type="button" role="tab"><i class="bi bi-house-door me-1"></i> Inicio</button></li>
                                     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-cal-sub-bloqueos" type="button" role="tab"><i class="bi bi-calendar-x me-1"></i> Bloqueos</button></li>
-                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-cal-sub-reservas" type="button" role="tab"><i class="bi bi-calendar-check me-1"></i> Reservas</button></li>
                                 </ul>
                             </div>
                             <div class="tab-content p-4" id="singleCalendarioSubContent">

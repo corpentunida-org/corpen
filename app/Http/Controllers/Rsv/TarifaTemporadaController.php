@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rsv\TarifaTemporada;
+use App\Models\Rsv\CatalogoInmueble;
 use App\Http\Requests\Rsv\StoreTarifaTemporadaRequest;
 use App\Http\Requests\Rsv\UpdateTarifaTemporadaRequest;
 use Illuminate\Http\Request;
@@ -38,6 +39,25 @@ class TarifaTemporadaController extends Controller
             $perPage = $request->get('per_page', 15);
             $tarifas = $query->orderBy('fecha_inicio', 'asc')->paginate($perPage);
 
+            // ════ LOGICA EXTRAÍDA DE LA VISTA ════
+            $modoGlobal = true;
+            $tarifasMostrar = [];
+            $listaInmuebles = CatalogoInmueble::with('tarifasTemporadas')->get(); // Se cargan los inmuebles con sus tarifas
+
+            // Mapeo global de tarifas
+            foreach ($listaInmuebles as $prop) {
+                if (isset($prop->tarifasTemporadas) && $prop->tarifasTemporadas) {
+                    foreach ($prop->tarifasTemporadas as $t) {
+                        $t->id_rsv_catalogo_inmueble = $prop->id;
+                        $t->nombre_inmueble_padre = $prop->name ?? 'Inmueble';
+                        $tarifasMostrar[] = $t;
+                    }
+                }
+            }
+
+            // Generación de UID único anti-congelamiento para modales
+            $tzUid = 'tz' . substr(md5(uniqid('', true)), 0, 8);
+
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -46,7 +66,7 @@ class TarifaTemporadaController extends Controller
                 ], 200);
             }
 
-            return view('rsv.tarifas-temporada.index', compact('tarifas'));
+            return view('rsv.tarifas-temporada.index', compact('tarifas', 'modoGlobal', 'tarifasMostrar', 'listaInmuebles', 'tzUid'));
 
         } catch (Throwable $e) {
             Log::error('Error en TarifaTemporadaController@index: ' . $e->getMessage());
@@ -58,6 +78,12 @@ class TarifaTemporadaController extends Controller
                     'error'   => config('app.debug') ? $e->getMessage() : null,
                 ], 500);
             }
+
+            // Fallback seguro en caso de error
+            $modoGlobal = true;
+            $tarifasMostrar = [];
+            $listaInmuebles = collect([]);
+            $tzUid = uniqid('tz');
 
             return back()->with('error', 'Ocurrió un error al cargar las tarifas de temporada.');
         }
@@ -91,7 +117,6 @@ class TarifaTemporadaController extends Controller
                 ], 201);
             }
 
-            // MEJORA: Retorna exactamente a la misma vista actual (Global o Individual)
             return redirect()->back()
                 ->with('success', 'Tarifa de temporada registrada exitosamente.');
 
@@ -109,16 +134,25 @@ class TarifaTemporadaController extends Controller
         }
     }
 
-    public function show(Request $request, string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse|View
     {
         try {
-            $tarifa = TarifaTemporada::findOrFail($id);
+            // Lógica individual preparada para la vista si se requiere
+            $inmueble = CatalogoInmueble::with('tarifasTemporadas')->findOrFail($id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tarifa de temporada obtenida exitosamente.',
-                'data'    => $tarifa,
-            ], 200);
+            $modoGlobal = false;
+            $tarifasMostrar = $inmueble->tarifasTemporadas ?? [];
+            $tzUid = 'tz' . substr(md5(uniqid('', true)), 0, 8);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarifas del inmueble obtenidas exitosamente.',
+                    'data'    => $tarifasMostrar,
+                ], 200);
+            }
+
+            return view('rsv.tarifas-temporada.show', compact('inmueble', 'modoGlobal', 'tarifasMostrar', 'tzUid'));
 
         } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'La tarifa solicitada no existe.'], 404);
@@ -157,7 +191,6 @@ class TarifaTemporadaController extends Controller
                 ], 200);
             }
 
-            // MEJORA: Retorna exactamente a la misma vista actual (Global o Individual)
             return redirect()->back()
                 ->with('success', 'Tarifa actualizada exitosamente.');
 
@@ -177,42 +210,5 @@ class TarifaTemporadaController extends Controller
         }
     }
 
-    /**
-     * Elimina la tarifa especificada.
-     */
-    public function destroy(Request $request, string $id): JsonResponse|RedirectResponse
-    {
-        try {
-            $tarifa = TarifaTemporada::findOrFail($id);
-
-            DB::transaction(function () use ($tarifa) {
-                $tarifa->delete();
-            });
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Tarifa de temporada eliminada exitosamente.',
-                ], 200);
-            }
-
-            // MEJORA: Retorna exactamente a la misma vista actual (Global o Individual)
-            return redirect()->back()
-                ->with('success', 'Tarifa eliminada exitosamente.');
-
-        } catch (ModelNotFoundException $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'La tarifa a eliminar no existe.'], 404);
-            }
-            return back()->with('error', 'La tarifa solicitada no existe.');
-
-        } catch (Throwable $e) {
-            Log::error('Error en TarifaTemporadaController@destroy: ' . $e->getMessage());
-
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => 'Ocurrió un error al eliminar la tarifa.'], 500);
-            }
-            return back()->with('error', 'Ocurrió un error al eliminar la tarifa de temporada.');
-        }
-    }
+    // ELIMINADO EL METODO destroy()
 }
