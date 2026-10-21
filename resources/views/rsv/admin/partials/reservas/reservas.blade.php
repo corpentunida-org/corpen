@@ -27,7 +27,7 @@
      data-inm="{{ $modoGlobal ? '' : $xlsInmId }}"
      data-q="{{ request('reserva_q') }}"
      data-res="{{ is_numeric(request('reserva_id')) ? request('reserva_id') : '' }}"
-     data-poll="15000"
+     data-poll="120000"
      style="border-color:#f1f5f9 !important;">
 
 <style>

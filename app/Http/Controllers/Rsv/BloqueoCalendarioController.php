@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Rsv\StoreBloqueoCalendarioRequest;
+use App\Http\Requests\Rsv\UpdateBloqueoCalendarioRequest;
 use App\Models\Rsv\BloqueoCalendario;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -83,16 +85,11 @@ class BloqueoCalendarioController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * Valida integridad, fechas lógicas y previene superposición de bloqueos.
+     * Valida integridad, fechas lógicas y previene superposición de bloqueos mediante Form Request.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreBloqueoCalendarioRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'required|integer|exists:rsv_catalogo_inmueble,id',
-            'fecha_inicio' => 'required|date|after_or_equal:today',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'motivo' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             // Regla de Negocio: Validar que no exista un bloqueo superpuesto para este inmueble
@@ -109,9 +106,8 @@ class BloqueoCalendarioController extends Controller
                 ], 422);
             }
 
-            $bloqueo = null;
-            DB::transaction(function () use ($validated, &$bloqueo) {
-                $bloqueo = BloqueoCalendario::create($validated);
+            $bloqueo = DB::transaction(function () use ($validated) {
+                return BloqueoCalendario::create($validated);
             });
 
             return response()->json([
@@ -167,14 +163,9 @@ class BloqueoCalendarioController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateBloqueoCalendarioRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'sometimes|required|integer|exists:rsv_catalogo_inmueble,id',
-            'fecha_inicio' => 'sometimes|required|date',
-            'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
-            'motivo' => 'sometimes|required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $bloqueo = BloqueoCalendario::findOrFail($id);
@@ -227,7 +218,7 @@ class BloqueoCalendarioController extends Controller
             $bloqueo = BloqueoCalendario::findOrFail($id);
 
             DB::transaction(function () use ($bloqueo) {
-                $bloqueo->delete();
+                $bloqueo->delete(); // Eliminará lógicamente si el modelo usa SoftDeletes
             });
 
             return response()->json([

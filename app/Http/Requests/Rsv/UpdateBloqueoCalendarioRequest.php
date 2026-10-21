@@ -6,23 +6,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateBloqueoCalendarioRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return true; // <-- Cambiar a true
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
     public function rules(): array
     {
         return [
-            //
+            'id_rsv_catalogo_inmueble' => 'sometimes|required|integer|exists:rsv_catalogo_inmueble,id',
+            'fecha_inicio' => 'sometimes|required|date',
+            'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
+            'motivo' => 'sometimes|required|string|max:500',
         ];
     }
 }

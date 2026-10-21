@@ -269,7 +269,7 @@
                             </div>
                             <div class="tab-content p-4" id="calendarioSubContent">
                                 <div class="tab-pane fade show active" id="cal-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-calendario')</div>
-                                <div class="tab-pane fade" id="cal-sub-bloqueos" role="tabpanel"><p class="text-muted small mb-0">Bloqueos (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="cal-sub-bloqueos" role="tabpanel">@include('rsv.admin.partials.calendario.bloqueos')</div>
                             </div>
                         </div>
 
@@ -597,8 +597,7 @@
                             </div>
                             <div class="tab-content p-4" id="singleCalendarioSubContent">
                                 <div class="tab-pane fade show active" id="single-cal-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-calendario', ['inmueble' => $inmueble])</div>
-                                <div class="tab-pane fade" id="single-cal-sub-bloqueos" role="tabpanel"><p class="text-muted small mb-0">Bloqueos específicos (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="single-cal-sub-reservas" role="tabpanel"><p class="text-muted small mb-0">Reservas específicas (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="single-cal-sub-bloqueos" role="tabpanel">@include('rsv.admin.partials.calendario.bloqueos', ['inmueble' => $inmueble])</div>
                             </div>
                         </div>
 
