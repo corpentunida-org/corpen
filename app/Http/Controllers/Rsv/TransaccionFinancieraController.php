@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Rsv\StoreTransaccionFinancieraRequest;
+use App\Http\Requests\Rsv\UpdateTransaccionFinancieraRequest;
 use App\Models\Rsv\TransaccionFinanciera;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -137,27 +139,15 @@ class TransaccionFinancieraController extends Controller
     }
 
     /**
-     * Registrar una transacción financiera.
+     * Registrar una transacción financiera mediante StoreTransaccionFinancieraRequest.
      * FIX 1364: garantiza id_rsv_pasarela (resolución automática si viene vacío).
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreTransaccionFinancieraRequest $request): JsonResponse
     {
-        $validatedData = $request->validate([
-            'id_rsv_reservas'    => 'required|exists:rsv_reservas,id',
-            'id_rsv_pasarela'    => 'nullable|exists:rsv_pasarelas,id',
-            'monto'              => 'required|numeric|min:0',
-            'moneda'             => 'nullable|string|max:10',
-            'estado_pago'        => 'nullable|string|max:50',
-            'metodo_pago'        => 'nullable|string|max:100',
-            'referencia_externa' => 'nullable|string|max:255',
-            'soporte_pago'       => 'nullable',
-        ]);
+        $validatedData = $request->validated();
 
         // Procesar archivo cargado si proviene de multipart/form-data
         if ($request->hasFile('soporte_pago')) {
-            $request->validate([
-                'soporte_pago' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
-            ]);
             $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
             $validatedData['soporte_pago'] = $path;
         }
@@ -180,10 +170,9 @@ class TransaccionFinancieraController extends Controller
             }
 
             $transaccion = DB::transaction(function () use ($validatedData) {
-                $transaccion = TransaccionFinanciera::create($validatedData);
-                $transaccion->load(['reserva', 'pasarela']);
-
-                return $transaccion;
+                $trx = TransaccionFinanciera::create($validatedData);
+                $trx->load(['reserva', 'pasarela']);
+                return $trx;
             });
 
             DB::commit();
@@ -203,6 +192,53 @@ class TransaccionFinancieraController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Ocurrió un error al registrar la transacción financiera.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar una transacción financiera mediante UpdateTransaccionFinancieraRequest.
+     */
+    public function update(UpdateTransaccionFinancieraRequest $request, string $id): JsonResponse
+    {
+        $validatedData = $request->validated();
+
+        if ($request->hasFile('soporte_pago')) {
+            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
+            $validatedData['soporte_pago'] = $path;
+        }
+
+        try {
+            $transaccion = TransaccionFinanciera::find($id);
+
+            if (!$transaccion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La transacción financiera solicitada no existe.',
+                ], 404);
+            }
+
+            DB::transaction(function () use ($transaccion, $validatedData) {
+                $transaccion->update($validatedData);
+            });
+
+            $transaccion->load(['reserva', 'pasarela']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transacción financiera actualizada exitosamente.',
+                'data'    => $transaccion,
+            ], 200);
+
+        } catch (Throwable $e) {
+            Log::error('Error en TransaccionFinancieraController@update: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al actualizar la transacción financiera.',
                 'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
@@ -245,62 +281,6 @@ class TransaccionFinancieraController extends Controller
             'success' => false,
             'message' => 'Método no implementado para API REST.',
         ], 405);
-    }
-
-    public function update(Request $request, string $id): JsonResponse
-    {
-        $validatedData = $request->validate([
-            'id_rsv_reservas'    => 'sometimes|required|exists:rsv_reservas,id',
-            'id_rsv_pasarela'    => 'sometimes|nullable|exists:rsv_pasarelas,id',
-            'monto'              => 'sometimes|required|numeric|min:0',
-            'moneda'             => 'sometimes|nullable|string|max:10',
-            'estado_pago'        => 'sometimes|nullable|string|max:50',
-            'metodo_pago'        => 'sometimes|nullable|string|max:100',
-            'referencia_externa' => 'sometimes|nullable|string|max:255',
-            'soporte_pago'       => 'sometimes|nullable',
-        ]);
-
-        if ($request->hasFile('soporte_pago')) {
-            $request->validate([
-                'soporte_pago' => 'file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
-            ]);
-            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
-            $validatedData['soporte_pago'] = $path;
-        }
-
-        try {
-            $transaccion = TransaccionFinanciera::find($id);
-
-            if (!$transaccion) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La transacción financiera solicitada no existe.',
-                ], 404);
-            }
-
-            DB::transaction(function () use ($transaccion, $validatedData) {
-                $transaccion->update($validatedData);
-            });
-
-            $transaccion->load(['reserva', 'pasarela']);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Transacción financiera actualizada exitosamente.',
-                'data'    => $transaccion,
-            ], 200);
-
-        } catch (Throwable $e) {
-            Log::error('Error en TransaccionFinancieraController@update: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al actualizar la transacción financiera.',
-                'error'   => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
-        }
     }
 
     /**
