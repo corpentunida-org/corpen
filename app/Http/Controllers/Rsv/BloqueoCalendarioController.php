@@ -1,9 +1,15 @@
 <?php
+// app/Http/Controllers/Rsv/BloqueoCalendarioController.php
 
 namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Rsv\StoreBloqueoCalendarioRequest;
+use App\Http\Requests\Rsv\UpdateBloqueoCalendarioRequest;
 use App\Models\Rsv\BloqueoCalendario;
+use App\Models\Rsv\Reserva;
+use App\Models\Rsv\Status;
+use App\Models\Rsv\CatalogoInmueble;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -11,9 +17,16 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class BloqueoCalendarioController extends Controller
 {
+    /**
+     * Estados de reserva que BLOQUEAN el calendario.
+     * Ajusta los nombres a los que tengas en tu tabla rsv_status.
+     */
+    private const ESTATUS_QUE_BLOQUEAN = ['Pendiente', 'Confirmada', 'Pagada', 'En Curso'];
+
     /**
      * Display a listing of the resource.
      * Implementa paginación, carga ansiosa (N+1), filtros por inmueble y fechas, y soporte Dual (Web/JSON).
@@ -55,8 +68,9 @@ class BloqueoCalendarioController extends Controller
                 ]);
             }
 
-            // Si es una petición del navegador web, renderizamos la vista Blade
-            return view('rsv.calendarios.index', compact('bloqueos'));
+            // 🆕 Si es una petición del navegador web, cargamos también el catálogo para el modal
+            $listaInmuebles = CatalogoInmueble::orderBy('name')->get(['id', 'name']);
+            return view('rsv.calendarios.index', compact('bloqueos', 'listaInmuebles'));
 
         } catch (\Throwable $e) {
             Log::error('Error al listar bloqueos de calendario: ' . $e->getMessage());
@@ -73,7 +87,7 @@ class BloqueoCalendarioController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * 🆕 Show the form for creating a new resource.
      * No aplica en una arquitectura API REST pura.
      */
     public function create(): JsonResponse
@@ -83,19 +97,15 @@ class BloqueoCalendarioController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     * Valida integridad, fechas lógicas y previene superposición de bloqueos.
+     * Valida integridad, fechas lógicas y previene superposición con BLOQUEOS y RESERVAS activas.
+     * La validación de campos se ejecuta ANTES en StoreBloqueoCalendarioRequest.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreBloqueoCalendarioRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'required|integer|exists:rsv_catalogo_inmueble,id',
-            'fecha_inicio' => 'required|date|after_or_equal:today',
-            'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'motivo' => 'required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
-            // Regla de Negocio: Validar que no exista un bloqueo superpuesto para este inmueble
+            // Regla de Negocio: no debe existir un bloqueo NI una reserva activa superpuesta
             $hasOverlap = $this->checkOverlap(
                 $validated['id_rsv_catalogo_inmueble'],
                 $validated['fecha_inicio'],
@@ -109,9 +119,8 @@ class BloqueoCalendarioController extends Controller
                 ], 422);
             }
 
-            $bloqueo = null;
-            DB::transaction(function () use ($validated, &$bloqueo) {
-                $bloqueo = BloqueoCalendario::create($validated);
+            $bloqueo = DB::transaction(function () use ($validated) {
+                return BloqueoCalendario::create($validated);
             });
 
             return response()->json([
@@ -166,15 +175,11 @@ class BloqueoCalendarioController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * La validación de campos se ejecuta ANTES en UpdateBloqueoCalendarioRequest.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateBloqueoCalendarioRequest $request, string $id): JsonResponse
     {
-        $validated = $request->validate([
-            'id_rsv_catalogo_inmueble' => 'sometimes|required|integer|exists:rsv_catalogo_inmueble,id',
-            'fecha_inicio' => 'sometimes|required|date',
-            'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
-            'motivo' => 'sometimes|required|string|max:500',
-        ]);
+        $validated = $request->validated();
 
         try {
             $bloqueo = BloqueoCalendario::findOrFail($id);
@@ -183,14 +188,14 @@ class BloqueoCalendarioController extends Controller
             $fechaInicio = $validated['fecha_inicio'] ?? $bloqueo->fecha_inicio->format('Y-m-d');
             $fechaFin = $validated['fecha_fin'] ?? $bloqueo->fecha_fin->format('Y-m-d');
 
-            // Validar superposición excluyendo el bloqueo actual
+            // Validar superposición (bloqueos y reservas) excluyendo el bloqueo actual
             if (isset($validated['fecha_inicio']) || isset($validated['fecha_fin']) || isset($validated['id_rsv_catalogo_inmueble'])) {
                 $hasOverlap = $this->checkOverlap($inmuebleId, $fechaInicio, $fechaFin, $bloqueo->id);
 
                 if ($hasOverlap) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Las nuevas fechas entran en conflicto con un bloqueo existente.',
+                        'message' => 'Las nuevas fechas entran en conflicto con un bloqueo o reserva existente.',
                     ], 422);
                 }
             }
@@ -227,7 +232,7 @@ class BloqueoCalendarioController extends Controller
             $bloqueo = BloqueoCalendario::findOrFail($id);
 
             DB::transaction(function () use ($bloqueo) {
-                $bloqueo->delete();
+                $bloqueo->delete(); // Eliminará lógicamente si el modelo usa SoftDeletes
             });
 
             return response()->json([
@@ -249,24 +254,135 @@ class BloqueoCalendarioController extends Controller
     }
 
     /**
+     * 🆕🆕🆕 FECHAS OCUPADAS (para el mini calendario del modal)
+     * GET /rsv/bloqueos-calendario/fechas-ocupadas/{inmueble}?exclude=ID
+     *
+     * Devuelve los días ocupados del inmueble con el DETALLE completo que el
+     * popup necesita (tipo, motivo, código, titular, estado), consistente con
+     * las mismas reglas de negocio de checkOverlap():
+     *   - Bloqueos del inmueble (excluyendo el propio si viene ?exclude=).
+     *   - Reservas activas (solo estados de ESTATUS_QUE_BLOQUEAN).
+     */
+    public function fechasOcupadas(Request $request, int $inmueble): JsonResponse
+    {
+        try {
+            $excludeId = $request->query('exclude');
+            $ocupadas = [];
+
+            // ─── 1) BLOQUEOS (con motivo) ───
+            $bq = BloqueoCalendario::with('inmueble:id,name')
+                ->where('id_rsv_catalogo_inmueble', $inmueble);
+
+            if ($excludeId) {
+                $bq->where('id', '!=', (int) $excludeId);
+            }
+
+            $bq->get(['id', 'id_rsv_catalogo_inmueble', 'fecha_inicio', 'fecha_fin', 'motivo'])
+                ->each(function ($b) use (&$ocupadas) {
+                    $ocupadas[] = [
+                        'tipo'     => 'bloqueo',
+                        'id'       => $b->id,
+                        'inicio'   => Carbon::parse($b->fecha_inicio)->toDateString(),
+                        'fin'      => Carbon::parse($b->fecha_fin)->toDateString(),
+                        'motivo'   => (string) ($b->motivo ?? ''),
+                        'inmueble' => $b->inmueble->name ?? '',
+                    ];
+                });
+
+            // ─── 2) RESERVAS ACTIVAS (con titular y código) ───
+            $statusIdsBloqueantes = Status::whereIn('name', self::ESTATUS_QUE_BLOQUEAN)->pluck('id');
+
+            if ($statusIdsBloqueantes->isNotEmpty()) {
+                Reserva::with(['user:id,name,nid,email', 'status:id,name'])
+                    ->where('id_rsv_catalogo_inmueble', $inmueble)
+                    ->whereIn('id_rsv_status', $statusIdsBloqueantes)
+                    ->get(['id', 'id_rsv_catalogo_inmueble', 'fecha_inicio', 'fecha_fin', 'codigo_reserva', 'id_rsv_status'])
+                    ->each(function ($r) use (&$ocupadas) {
+                        $ocupadas[] = [
+                            'tipo'    => 'reserva',
+                            'id'      => $r->id,
+                            'inicio'  => Carbon::parse($r->fecha_inicio)->toDateString(),
+                            'fin'     => Carbon::parse($r->fecha_fin)->toDateString(),
+                            'codigo'  => (string) ($r->codigo_reserva ?? ''),
+                            'titular' => [
+                                'name'  => $r->user->name  ?? 'Sin asignar',
+                                'nid'   => $r->user->nid   ?? '',
+                                'email' => $r->user->email ?? '',
+                            ],
+                            'estado'  => $r->status->name ?? 'Pendiente',
+                        ];
+                    });
+            }
+
+            return response()->json([
+                'success'  => true,
+                'ocupadas' => $ocupadas,
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('Error al obtener fechas ocupadas: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al obtener la disponibilidad del inmueble.',
+            ], 500);
+        }
+    }
+
+    /**
      * Método auxiliar para verificar solapamiento de fechas.
+     * Regla de Negocio completa:
+     * 1. No debe existir un BLOQUEO que se superponga.
+     * 2. No debe existir una RESERVA ACTIVA (Pendiente, Confirmada, Pagada, En Curso) que se superponga.
      */
     private function checkOverlap(int $inmuebleId, string $fechaInicio, string $fechaFin, ?int $excludeId = null): bool
     {
-        $query = BloqueoCalendario::where('id_rsv_catalogo_inmueble', $inmuebleId)
-            ->where(function ($q) use ($fechaInicio, $fechaFin) {
-                $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin])
-                  ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
-                  ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
-                      $q2->where('fecha_inicio', '<=', $fechaInicio)
-                         ->where('fecha_fin', '>=', $fechaFin);
+        $inicio = Carbon::parse($fechaInicio)->toDateString();
+        $fin    = Carbon::parse($fechaFin)->toDateString();
+
+        // --- 1) BLOQUEOS existentes superpuestos ---
+        $bloqueoQuery = BloqueoCalendario::where('id_rsv_catalogo_inmueble', $inmuebleId)
+            ->where(function ($q) use ($inicio, $fin) {
+                $q->whereBetween('fecha_inicio', [$inicio, $fin])
+                  ->orWhereBetween('fecha_fin', [$inicio, $fin])
+                  ->orWhere(function ($q2) use ($inicio, $fin) {
+                      $q2->where('fecha_inicio', '<=', $inicio)
+                         ->where('fecha_fin', '>=', $fin);
                   });
             });
 
         if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
+            $bloqueoQuery->where('id', '!=', $excludeId);
         }
 
-        return $query->exists();
+        if ($bloqueoQuery->exists()) {
+            return true;
+        }
+
+        // --- 2) RESERVAS ACTIVAS superpuestas ---
+        return $this->checkReservaOverlap($inmuebleId, $inicio, $fin);
+    }
+
+    /**
+     * Verifica si existe una RESERVA en estado activo que se superponga con las fechas dadas.
+     */
+    private function checkReservaOverlap(int $inmuebleId, string $inicio, string $fin): bool
+    {
+        $statusIdsBloqueantes = Status::whereIn('name', self::ESTATUS_QUE_BLOQUEAN)->pluck('id');
+
+        if ($statusIdsBloqueantes->isEmpty()) {
+            return false;
+        }
+
+        return Reserva::where('id_rsv_catalogo_inmueble', $inmuebleId)
+            ->whereIn('id_rsv_status', $statusIdsBloqueantes)
+            ->where(function ($q) use ($inicio, $fin) {
+                $q->whereBetween('fecha_inicio', [$inicio, $fin])
+                  ->orWhereBetween('fecha_fin', [$inicio, $fin])
+                  ->orWhere(function ($q2) use ($inicio, $fin) {
+                      $q2->where('fecha_inicio', '<=', $inicio)
+                         ->where('fecha_fin', '>=', $fin);
+                  });
+            })
+            ->exists();
     }
 }

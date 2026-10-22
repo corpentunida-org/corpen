@@ -389,4 +389,106 @@ class AdminDashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'error', 'data' => []]);
         }
     }
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve el parcial de pasarelas para refrescar SOLO esa sección
+     * por AJAX, sin recargar el dashboard (mismo patrón que
+     * reservasFragmento). Lo usa el JS de pasarela.blade.php.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function pasarelasFragmento()
+    {
+        try {
+            return response()
+                ->view('rsv.admin.partials.finanzas.pasarela', [
+                    'pasarelas' => Pasarela::orderBy('nombre')->get(),
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('pasarelasFragmento: ' . $e->getMessage());
+
+            // 500 → el JS detecta !r.ok y cae a recarga completa como plan B
+            return response('error', 500)
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve SOLO el fragmento de transacciones financieras para
+     * refrescar esa sección por AJAX (mismo patrón que pasarelasFragmento).
+     * Respeta el contexto global/inmueble y la paginación page_finanzas.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function transaccionesFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $pagina     = max(1, (int) $request->query('page_finanzas', 1));
+
+            $query = TransaccionFinanciera::with(['reserva.inmueble:id,name', 'pasarela']);
+
+            if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $query->whereHas('reserva', function ($q) use ($inmuebleId) {
+                    $q->where('id_rsv_catalogo_inmueble', $inmuebleId);
+                });
+            }
+
+            $transacciones = $query->orderByDesc('created_at')
+                ->paginate(10, ['*'], 'page_finanzas', $pagina)
+                ->appends($request->query());
+
+            return response()
+                ->view('rsv.admin.partials.finanzas.transacciones', [
+                    'transacciones' => $transacciones,
+                    'pasarelas'     => Pasarela::orderBy('nombre')->get(),
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('transaccionesFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve SOLO el tab de finanzas completo (transacciones +
+     * pasarelas) para refrescar esa sección por AJAX, sin recargar
+     * el dashboard (mismo patrón que pasarelasFragmento y
+     * transaccionesFragmento). Lo usa el JS de tab-finanzas.blade.php.
+     * Respeta el contexto global/inmueble y la paginación page_finanzas.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function finanzasFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $pagina     = max(1, (int) $request->query('page_finanzas', 1));
+
+            $query = TransaccionFinanciera::with(['reserva.inmueble:id,name', 'pasarela']);
+
+            if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $query->whereHas('reserva', function ($q) use ($inmuebleId) {
+                    $q->where('id_rsv_catalogo_inmueble', $inmuebleId);
+                });
+            }
+
+            $transacciones = $query->orderByDesc('created_at')
+                ->paginate(10, ['*'], 'page_finanzas', $pagina)
+                ->appends($request->query());
+
+            return response()
+                ->view('rsv.admin.partials.tab-finanzas', [
+                    'transacciones' => $transacciones,
+                    'pasarelas'     => Pasarela::orderBy('nombre')->get(),
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('finanzasFragmento: ' . $e->getMessage());
+
+            // 500 → el JS detecta !r.ok y cae a recarga completa como plan B
+            return response('error', 500)
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
 }

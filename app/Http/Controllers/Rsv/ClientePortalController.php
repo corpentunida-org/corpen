@@ -77,11 +77,11 @@ class ClientePortalController extends Controller
             'kpiProximo'   => $kpiProximo,
             'kpiAbonado'   => $kpiAbonado,
             'kpiSaldo'     => $kpiSaldo,
-            
+
             // CORRECCIÓN AQUÍ: Contar mensajes asociados a las reservas del cliente
             'kpiMensajes'  => class_exists(Mensaje::class)
                 ? Mensaje::whereIn('id_rsv_reservas', $misReservas->pluck('id'))->count() : 0,
-                
+
             'kpiReviews'   => class_exists(Review::class) ? Review::where('id_user_autor', $userId)->count() : 0,
             'kpiHistorial' => $kpiTotal,
             'misReservas'  => $misReservas->take(10),

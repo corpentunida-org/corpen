@@ -4,9 +4,12 @@ namespace App\Models\Rsv;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes; // <-- Importar
 
 class BloqueoCalendario extends Model
 {
+    use SoftDeletes; // <-- pendiente no hay columnas de borrado suave en la tabla, pero se agrega por si acaso
+
     protected $table = 'rsv_bloqueos_calendario';
 
     protected $fillable = [

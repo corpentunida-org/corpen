@@ -269,7 +269,7 @@
                             </div>
                             <div class="tab-content p-4" id="calendarioSubContent">
                                 <div class="tab-pane fade show active" id="cal-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-calendario')</div>
-                                <div class="tab-pane fade" id="cal-sub-bloqueos" role="tabpanel"><p class="text-muted small mb-0">Bloqueos (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="cal-sub-bloqueos" role="tabpanel">@include('rsv.admin.partials.calendario.bloqueos')</div>
                             </div>
                         </div>
 
@@ -287,8 +287,8 @@
                             </div>
                             <div class="tab-content p-4" id="finanzasSubContent">
                                 <div class="tab-pane fade show active" id="fin-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-finanzas')</div>
-                                <div class="tab-pane fade" id="fin-sub-transacciones" role="tabpanel"><p class="text-muted small mb-0">Transacciones Financieras (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="fin-sub-pasarelas" role="tabpanel"><p class="text-muted small mb-0">Pasarelas de Pago (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="fin-sub-transacciones" role="tabpanel">@include('rsv.admin.partials.finanzas.transacciones')</div>
+                                <div class="tab-pane fade" id="fin-sub-pasarelas" role="tabpanel">@include('rsv.admin.partials.finanzas.pasarela')</div>
                             </div>
                         </div>
 
@@ -597,8 +597,7 @@
                             </div>
                             <div class="tab-content p-4" id="singleCalendarioSubContent">
                                 <div class="tab-pane fade show active" id="single-cal-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-calendario', ['inmueble' => $inmueble])</div>
-                                <div class="tab-pane fade" id="single-cal-sub-bloqueos" role="tabpanel"><p class="text-muted small mb-0">Bloqueos específicos (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="single-cal-sub-reservas" role="tabpanel"><p class="text-muted small mb-0">Reservas específicas (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="single-cal-sub-bloqueos" role="tabpanel">@include('rsv.admin.partials.calendario.bloqueos', ['inmueble' => $inmueble])</div>
                             </div>
                         </div>
 
@@ -616,8 +615,8 @@
                             </div>
                             <div class="tab-content p-4" id="singleFinanzasSubContent">
                                 <div class="tab-pane fade show active" id="single-fin-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-finanzas', ['inmueble' => $inmueble])</div>
-                                <div class="tab-pane fade" id="single-fin-sub-transacciones" role="tabpanel"><p class="text-muted small mb-0">Transacciones del inmueble (Próximamente)</p></div>
-                                <div class="tab-pane fade" id="single-fin-sub-pasarelas" role="tabpanel"><p class="text-muted small mb-0">Pasarelas (Próximamente)</p></div>
+                                <div class="tab-pane fade" id="single-fin-sub-transacciones" role="tabpanel">@include('rsv.admin.partials.finanzas.transacciones', ['inmueble' => $inmueble])</div>
+                                <div class="tab-pane fade" id="single-fin-sub-pasarelas" role="tabpanel">@include('rsv.admin.partials.finanzas.pasarela', ['inmueble' => $inmueble])</div>
                             </div>
                         </div>
 
@@ -760,4 +759,144 @@
             }
         });
     </script>
+        {{-- ======================================================================= --}}
+    {{-- NEUTRALIZADOR MAESTRO v2 (REEMPLAZA al neutralizador viejo de la ruedita) --}}
+    {{-- ======================================================================= --}}
+    <style>
+        /* Anti-ruedita: preloaders, spinners y overlays de carga.
+           Ya NO incluye html,body{overflow:auto!important} (rompia el scroll-lock
+           de los modales legitimos) ni los selectores del modal (los maneja el JS). */
+        #preloader, .preloader, [id*="preloader"], [class*="preloader"],
+        #loader, #loader-overlay, .loader-overlay,
+        #loading, .loading, .loading-overlay, .loading-screen,
+        #cargando, .cargando, .cargando-overlay,
+        .page-loader, #page-loader, .page-loading,
+        .spinner-overlay, .overlay-spinner, .spinner-container,
+        .pace .pace-activity, .pace-active, #nprogress
+        {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+        }
+    </style>
+
+    <script>
+    (function () {
+        'use strict';
+
+        /* ============ CONFIG - SOLO EDITA ESTO ============ */
+
+        // 1) Selector del MODAL GLOBAL a bloquear (clic derecho sobre el modal
+        //    -> Inspeccionar -> copia su id o clase; viene del x-base-layout).
+        var MODAL = '#modalCargando, .modal-cargando';   // <- PON EL ID/CLASE REAL
+
+        // 2) '' = bloquearlo en todo el maestro | '#id' = solo en esa seccion:
+        //    #global-inmuebles | #global-reservas | #global-calendario
+        //    #global-finanzas  | #global-auditoria
+        //    #inmuebles | #reservas | #calendario | #finanzas | #auditoria
+        var SECCION = '';
+
+        /* =================================================== */
+
+        /* -- PARTE 1: ANTI-RUEDITA -- */
+        try {
+            if (window.NProgress) { window.NProgress.remove(); }
+            if (window.Pace && window.Pace.stop)  { window.Pace.stop(); }
+        } catch (e) {}
+
+        function esRuedita(el) {
+            if (!el || el.nodeType !== 1) return false;
+            var marca = ((el.id || '') + ' ' + (el.className || '')).toLowerCase();
+            return /preloader|loader|loading|cargando|spinner/.test(marca);
+        }
+
+        function limpiarRuedita() {
+            document.querySelectorAll('body > *').forEach(function (el) {
+                if (esRuedita(el) && !(el.matches && el.matches(MODAL))) el.remove();
+            });
+            ['html', 'body'].forEach(function (tag) {
+                var n = document[tag];
+                n.classList.remove('loading', 'is-loading', 'js-loading',
+                                   'page-is-loading', 'preloader-active');
+            });
+        }
+        limpiarRuedita();
+        new MutationObserver(function () { limpiarRuedita(); })
+            .observe(document.body, { childList: true });
+
+        /* -- PARTE 2: NEUTRALIZADOR QUIRURGICO DEL MODAL -- */
+
+        function seccionActiva() {
+            if (!SECCION) return true;
+            var sec = document.querySelector(SECCION);
+            if (!sec) return false;
+            if (sec.classList.contains('tab-pane')) {
+                return sec.classList.contains('show') && sec.classList.contains('active');
+            }
+            return !!(sec.offsetWidth || sec.offsetHeight || sec.getClientRects().length);
+        }
+
+        if (!SECCION) {
+            var t = document.createElement('style');
+            t.textContent = MODAL + '{display:none!important;opacity:0!important;' +
+                            'visibility:hidden!important;pointer-events:none!important;}';
+            document.head.appendChild(t);
+        }
+
+        // Cancela show.bs.modal ANTES de que Bootstrap cree backdrop o bloquee scroll
+        document.addEventListener('show.bs.modal', function (e) {
+            var el = e.target;
+            if (!el || el.nodeType !== 1 || !(el.matches && el.matches(MODAL))) return;
+            if (!seccionActiva()) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }, true);
+
+        // Red de seguridad para aperturas "a lo bruto" sin API de Bootstrap
+        function limpiarRestosModal() {
+            document.querySelectorAll(MODAL).forEach(function (m) {
+                if (m.classList.contains('show') || m.style.display === 'block') {
+                    m.classList.remove('show');
+                    m.style.display = 'none';
+                    m.setAttribute('aria-hidden', 'true');
+                }
+            });
+            if (!document.querySelector('.modal.show')) {
+                document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            }
+        }
+
+        function vigilarModal() {
+            document.querySelectorAll(MODAL).forEach(function (m) {
+                if (m.__vigilado) return;
+                m.__vigilado = true;
+                new MutationObserver(function () {
+                    if (seccionActiva() &&
+                       (m.classList.contains('show') || m.style.display === 'block')) {
+                        limpiarRestosModal();
+                    }
+                }).observe(m, { attributes: true, attributeFilter: ['class', 'style'] });
+            });
+        }
+        vigilarModal();
+        new MutationObserver(function () { vigilarModal(); })
+            .observe(document.body, { childList: true, subtree: true });
+
+        // Diagnostico en consola (F12)
+        document.addEventListener('DOMContentLoaded', function () {
+            var n = document.querySelectorAll(MODAL).length;
+            if (n === 0) {
+                console.warn('[Neutralizador RSV] No encontre "' + MODAL +
+                             '". Revisa la variable MODAL.');
+            } else {
+                console.info('[Neutralizador RSV] Bloqueando ' + n + ' modal(es): ' + MODAL);
+            }
+        });
+    })();
+    </script>
+
 </x-base-layout>
