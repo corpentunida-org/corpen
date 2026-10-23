@@ -3,10 +3,13 @@
 namespace App\Models\Rsv;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ReservaHuesped extends Model
 {
+    use SoftDeletes; 
+
     protected $table = 'rsv_reserva_huespedes';
 
     protected $fillable = [

@@ -2,694 +2,873 @@
      RSV · ADMIN · CALENDARIO · BLOQUEOS
      Parcial: resources/views/rsv/admin/partials/calendario/bloqueos.blade.php
 
-     Variables (OPCIONALES — si el controlador no las pasa, la parcial se
-     autoabastece consultando los modelos):
-       - $bloqueos   Colección de bloqueos (idealmente con `inmueble` precargada)
-       - $inmuebles  Colección de inmuebles para el select del modal
+     · DISEÑO UNIFICADO: misma estética "reservas-soft" que
+       partials/reservas/status.blade.php (variables CSS, tipografía,
+       tabla, botones btn-mini/btn-green, count-badge, xls-search y
+       modales Bootstrap idénticos al ejemplo).
+     · AUTOABASTECIDA: si el controlador no pasa $bloqueos / $inmuebles,
+       los consulta sola (modelos candidatos y, como último recurso, tablas
+       reales detectadas con Schema::hasTable).
+     · TABLA EN CLIENTE: se pinta desde #blqDataset (mismo patrón que
+       status.blade.php), con búsqueda instantánea y refresco AJAX del
+       fragmento tras guardar/eliminar.
+     · MODALES BOOTSTRAP: mismo patrón de modales del ejemplo
+       (modal-sm para eliminar, modal ancho para el formulario).
+     · FILTRO SUPERIOR: si en la página ya hay un select de inmueble visible
+       con valor, el modal se precarga con él.
+     · CALENDARIO: Flatpickr con carga perezosa (CDN) y fallback a inputs
+       date; pinta reservas y bloqueos ya ocupados; aviso de solape no
+       bloqueante (permite overbooking intencional).
+     · CALENDARIO GLOBAL: tras guardar/eliminar refresca window.rsvCalendar
+       (refetchEvents) si existe en la página.
 
      Rutas que usa (todas por route(), nunca hardcodeadas):
        - rsv.reservas.fechas-ocupadas   GET  /rsv/reservas/fechas-ocupadas/{inmueble}
-                                        → { ok, inmueble:{id,name}, ocupadas:[{inicio,fin,tipo}] }
-       - rsv.bloqueos-calendario.store    POST /rsv/bloqueos-calendario
-       - rsv.bloqueos-calendario.update   PUT  /rsv/bloqueos-calendario/{id}   (spoof _method)
-       - rsv.bloqueos-calendario.destroy  DEL /rsv/bloqueos-calendario/{id}
-       - rsv.admin.bloqueos.fragmento     GET  /rsv/bloqueos-fragmento (refresco AJAX)
+       - rsv.bloqueos-calendario.store  / update / destroy (resource)
+       - rsv.admin.bloqueos.fragmento   GET  /rsv/bloqueos-fragmento
      ============================================================================ --}}
 
 @php
-    /*
-     * Autoabastecimiento de datos.
-     * Si el controlador ya pasó $bloqueos / $inmuebles (bloqueosFragmento()),
-     * se respetan tal cual. Si no llegaron (include del dashboard, fragmento
-     * sin datos, etc.), se consultan aquí para que la parcial nunca reviente
-     * con count(null).
-     */
-    if (!isset($bloqueos) || $bloqueos === null) {
-        $bloqueos = collect();
-        foreach ([
-            \App\Models\RsvBloqueoCalendario::class,
-            \App\Models\BloqueoCalendario::class,
-            \App\Models\RsvBloqueo::class,
-            \App\BloqueoCalendario::class,
-        ] as $claseBloqueo) {
-            if (class_exists($claseBloqueo)) {
-                try {
-                    $bloqueos = $claseBloqueo::with('inmueble')->orderBy('fecha_inicio')->get();
-                } catch (\Throwable $e) {
-                    // Si la relación 'inmueble' no existiera, degradamos sin eager loading.
-                    $bloqueos = $claseBloqueo::orderBy('fecha_inicio')->get();
-                }
-                break;
-            }
-        }
-    }
+    /* ── Datos: solo se autoconsultan si el controlador NO pasó las variables ── */
+    $inmueblesFaltan = !isset($inmuebles) || $inmuebles === null;
+    $bloqueosFaltan  = !isset($bloqueos)  || $bloqueos  === null;
 
-    if (!isset($inmuebles) || $inmuebles === null) {
+    if ($inmueblesFaltan) {
         $inmuebles = collect();
         foreach ([
-            \App\Models\RsvCatalogoInmueble::class,
-            \App\Models\CatalogoInmueble::class,
-            \App\Models\RsvInmueble::class,
-            \App\CatalogoInmueble::class,
-        ] as $claseInmueble) {
-            if (class_exists($claseInmueble)) {
-                try {
-                    $inmuebles = $claseInmueble::orderBy('name')->get();
-                } catch (\Throwable $e) {
-                    // Si la columna se llamara 'nombre' u otra, ordenamos por id.
-                    $inmuebles = $claseInmueble::orderBy('id')->get();
+            '\App\Models\Rsv\BloqueoCalendario',
+            '\App\Models\Rsv\CatalogoInmueble',
+            '\App\Models\RsvCatalogoInmueble',
+            '\App\Models\CatalogoInmueble',
+            '\App\Models\RsvInmueble',
+            '\App\Models\Inmueble',
+        ] as $blqClase) {
+            if (!class_exists($blqClase)) continue;
+            try {
+                try { $inmuebles = $blqClase::orderBy('name')->get(); }
+                catch (\Throwable $blqE) { $inmuebles = $blqClase::orderBy('nombre')->get(); }
+                break; // la consulta funcionó: modelo y tabla válidos
+            } catch (\Throwable $blqE) { continue; }
+        }
+        if (count($inmuebles) === 0) {
+            foreach (['rsv_catalogo_inmueble', 'rsv_catalogo_inmuebles', 'catalogo_inmuebles', 'rsv_inmuebles', 'inmuebles'] as $blqTabla) {
+                if (\Illuminate\Support\Facades\Schema::hasTable($blqTabla)) {
+                    $blqCols = \Illuminate\Support\Facades\Schema::getColumnListing($blqTabla);
+                    $blqColNombre = in_array('name', $blqCols) ? 'name'
+                                  : (in_array('nombre', $blqCols) ? 'nombre' : 'id');
+                    $inmuebles = collect(\Illuminate\Support\Facades\DB::table($blqTabla)->orderBy($blqColNombre)->get());
+                    break;
                 }
-                break;
             }
         }
     }
+
+    if ($bloqueosFaltan) {
+        $bloqueos = collect();
+        foreach ([
+            '\App\Models\RsvBloqueoCalendario',
+            '\App\Models\BloqueoCalendario',
+            '\App\Models\RsvBloqueo',
+            '\App\BloqueoCalendario',
+        ] as $blqClase) {
+            if (!class_exists($blqClase)) continue;
+            try {
+                try { $bloqueos = $blqClase::with('inmueble')->orderBy('fecha_inicio')->get(); }
+                catch (\Throwable $blqE) { $bloqueos = $blqClase::orderBy('id')->get(); }
+                break;
+            } catch (\Throwable $blqE) { continue; }
+        }
+        if (count($bloqueos) === 0) {
+            foreach (['rsv_bloqueos_calendario','bloqueos_calendario','rsv_bloqueos','bloqueo_calendarios','bloqueos'] as $blqTabla) {
+                if (\Illuminate\Support\Facades\Schema::hasTable($blqTabla)) {
+                    $blqCols = \Illuminate\Support\Facades\Schema::getColumnListing($blqTabla);
+                    $blqColFecha = in_array('fecha_inicio', $blqCols) ? 'fecha_inicio' : 'id';
+                    $bloqueos = collect(\Illuminate\Support\Facades\DB::table($blqTabla)->orderBy($blqColFecha)->get());
+                    break;
+                }
+            }
+        }
+    }
+
+    // Mapa id → inmueble (sirve con modelos Eloquent y con filas de DB::table)
+    $mapaInmuebles = collect($inmuebles)->keyBy('id');
+
+    /* ── Rutas con route() (null si no existen: la acción se deshabilita sola) ── */
+    $blqRuta = function (array $cands, $param = null) {
+        foreach ($cands as $c) {
+            if (\Illuminate\Support\Facades\Route::has($c)) {
+                return $param !== null ? route($c, $param) : route($c);
+            }
+        }
+        return null;
+    };
+    $blqOcupadas  = $blqRuta(['rsv.reservas.fechas-ocupadas'], ':inmuebleId');
+    $blqStore     = $blqRuta(['rsv.bloqueos-calendario.store']);
+    $blqUpdate    = $blqRuta(['rsv.bloqueos-calendario.update'], ':bloqueoId');
+    $blqDestroy   = $blqRuta(['rsv.bloqueos-calendario.destroy'], ':bloqueoId');
+    $blqFragmento = $blqRuta(['rsv.admin.bloqueos.fragmento']);
+
+    /* ── Dataset JSON para el render del lado del cliente (patrón status.blade.php) ── */
+    $blqItems = collect($bloqueos)->values()->map(function ($blqB) use ($mapaInmuebles) {
+        $blqIni = \Illuminate\Support\Carbon::parse($blqB->fecha_inicio);
+        $blqFin = \Illuminate\Support\Carbon::parse($blqB->fecha_fin);
+        $blqInm = $blqB->inmueble ?? $mapaInmuebles->get($blqB->id_rsv_catalogo_inmueble);
+        return [
+            'id'          => $blqB->id,
+            'inmueble_id' => (string) $blqB->id_rsv_catalogo_inmueble,
+            'inmueble'    => (string) ($blqInm->name ?? $blqInm->nombre ?? ('Inmueble #' . $blqB->id_rsv_catalogo_inmueble)),
+            'inicio'      => $blqIni->format('Y-m-d'),
+            'fin'         => $blqFin->format('Y-m-d'),
+            'desde'       => $blqIni->format('d/m/Y'),
+            'hasta'       => $blqFin->format('d/m/Y'),
+            'dias'        => (int) $blqIni->diffInDays($blqFin) + 1,
+            'motivo'      => (string) $blqB->motivo,
+        ];
+    });
+
+    $jhFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
+    $blqJson = json_encode($blqItems->all(), $jhFlags); if (!is_string($blqJson)) { $blqJson = '[]'; }
 @endphp
 
-<div id="bloqueos-panel" data-url-fragmento="{{ route('rsv.admin.bloqueos.fragmento') }}">
+<div class="reservas-soft p-3 bg-white rounded-3 border" id="bloqueos-panel" style="border-color: #f1f5f9 !important;">
 
-    {{-- ─────────────────────────── TABLA ─────────────────────────── --}}
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
-            <div>
-                <h5 class="mb-0">Bloqueos del calendario</h5>
-                <small class="text-muted">Mantenimiento, overbooking u otros impedimentos de reserva.</small>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge rounded-pill text-bg-light border">{{ count($bloqueos) }} registro(s)</span>
-                <button type="button" class="btn btn-primary btn-sm" id="blqBtnNuevo">Nuevo bloqueo</button>
-            </div>
-        </div>
+<style>
+    /* ── Núcleo reservas-soft (idéntico al ejemplo status.blade.php) ── */
+    .reservas-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
+    .reservas-soft .table > :not(caption) > * > * { padding: 2px 7px; height: 20px; line-height: 1.1; vertical-align: middle; }
+    .reservas-soft .table thead th { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); background-color: var(--head); border-bottom: 1px solid var(--grid) !important; }
+    .reservas-soft .table tbody td { font-size: 8px; color: var(--ink); border-bottom: 1px solid var(--grid); border-top: 0; white-space: nowrap; }
+    .reservas-soft .table tbody tr:hover > * { background-color: #fafcfe; --bs-table-accent-bg: transparent; }
+    .reservas-soft .strong { color: var(--ink-2); font-weight: 600; }
+    .reservas-soft .btn-mini { border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3); font-family: inherit; font-size: 8.5px; font-weight: 500; padding: 1px 8px; border-radius: 3px; cursor: pointer; }
+    .reservas-soft .btn-mini:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
+    .reservas-soft .btn-green { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 10px; border-radius: 3px; }
+    .reservas-soft .xls-search { font-size: 9px; color: var(--ink-2); background: #fff; border: 1px solid var(--grid-2); border-radius: 3px; padding: 2px 8px; box-shadow: none !important; outline: 0; min-width: 200px; }
+    .reservas-soft .xls-search:focus { border-color: #c8d6cd; }
+    .reservas-soft .count-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 600; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 8px; padding: 1px 8px; }
+    .reservas-soft .count-badge b { color: var(--accent); }
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Inmueble</th>
-                            <th>Desde</th>
-                            <th>Hasta</th>
-                            <th>Días</th>
-                            <th>Motivo</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($bloqueos as $bloqueo)
-                            @php
-                                $inicio = \Illuminate\Support\Carbon::parse($bloqueo->fecha_inicio);
-                                $fin    = \Illuminate\Support\Carbon::parse($bloqueo->fecha_fin);
-                            @endphp
-                            <tr>
-                                <td class="text-muted">{{ $bloqueo->id }}</td>
-                                <td class="fw-semibold">{{ $bloqueo->inmueble?->name ?? $bloqueo->inmueble?->nombre ?? '—' }}</td>
-                                <td>{{ $inicio->format('d/m/Y') }}</td>
-                                <td>{{ $fin->format('d/m/Y') }}</td>
-                                <td><span class="badge text-bg-secondary">{{ (int) $inicio->diffInDays($fin) + 1 }}</span></td>
-                                <td title="{{ $bloqueo->motivo }}">{{ \Illuminate\Support\Str::limit($bloqueo->motivo, 60) }}</td>
-                                <td class="text-end text-nowrap">
-                                    <button type="button" class="btn btn-sm btn-outline-primary blq-btn-editar"
-                                            data-id="{{ $bloqueo->id }}"
-                                            data-inmueble="{{ $bloqueo->inmueble_id }}"
-                                            data-inicio="{{ $inicio->format('Y-m-d') }}"
-                                            data-fin="{{ $fin->format('Y-m-d') }}"
-                                            data-motivo="{{ $bloqueo->motivo }}">Editar</button>
-                                    <button type="button" class="btn btn-sm btn-outline-danger blq-btn-eliminar"
-                                            data-id="{{ $bloqueo->id }}">Eliminar</button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
-                                    No hay bloqueos registrados todavía.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+    /* ── Extras blq- (etiquetas, calendario, avisos) con la misma paleta ── */
+    .reservas-soft .blq-etiqueta { display: block; font-size: 7.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin-bottom: 3px; }
+    .reservas-soft .blq-obligatorio { color: #c98a85; }
+    .reservas-soft .blq-ayuda { font-size: 7.5px; color: var(--ink-4); margin-top: 3px; }
+    .reservas-soft .blq-fila { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 768px) { .reservas-soft .blq-fila { grid-template-columns: 1fr 1fr; } }
+    .reservas-soft .blq-calendario { border: 1px solid var(--grid-2); border-radius: 5px; padding: 6px; background: #fff; }
+    .reservas-soft .blq-calendario .flatpickr-calendar { margin: 0 auto; box-shadow: none; font-family: inherit; }
+    .reservas-soft .blq-calendario .flatpickr-day.selected,
+    .reservas-soft .blq-calendario .flatpickr-day.selected:hover { background: var(--accent); border-color: var(--accent); }
+    .reservas-soft .blq-calendario .flatpickr-day.inRange { background: var(--accent-bg); border-color: var(--accent-bg); box-shadow: none; }
+    .reservas-soft .flatpickr-day.blq-ocp-reserva { background: #fdf5f4 !important; border-color: #f0dcd8 !important; color: #b36b64 !important; }
+    .reservas-soft .flatpickr-day.blq-ocp-bloqueo { background: #fbf8ee !important; border-color: #eee5cd !important; color: #8f7a45 !important; }
+    .reservas-soft .blq-rango-texto { font-size: 8.5px; color: var(--ink-3); min-height: 12px; margin-bottom: 4px; }
+    .reservas-soft .blq-leyenda { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 8px; color: var(--ink-3); margin-top: 6px; }
+    .reservas-soft .blq-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; border: 1px solid rgba(0,0,0,.08); vertical-align: middle; margin-right: 4px; }
+    .reservas-soft .blq-dot-reserva { background: #fdf5f4; border-color: #f0dcd8; }
+    .reservas-soft .blq-dot-bloqueo { background: #fbf8ee; border-color: #eee5cd; }
+    .reservas-soft .blq-spin { display: inline-block; width: 10px; height: 10px; border: 2px solid var(--accent-bd); border-top-color: var(--accent); border-radius: 50%; animation: blq-girar .7s linear infinite; vertical-align: -2px; margin-right: 4px; }
+    @keyframes blq-girar { to { transform: rotate(360deg); } }
+    .reservas-soft .blq-banner-errores { background: #fdf5f4; border: 1px solid #f0dcd8; color: #b36b64; font-size: 8.5px; padding: 6px 9px; border-radius: 3px; margin-bottom: 8px; }
+    .reservas-soft .blq-banner-errores ul { margin: 3px 0 0; padding-left: 14px; }
+    .reservas-soft .blq-aviso-solape { background: #fbf8ee; border: 1px solid #eee5cd; color: #8f7a45; font-size: 8px; padding: 5px 8px; border-radius: 3px; margin-top: 8px; }
+    .reservas-soft .blq-invalid { border-color: #e7b9b4 !important; box-shadow: 0 0 0 3px rgba(201,138,133,.10); }
+
+    /* Toast (vive en body, fuera del panel) */
+    .blq-toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 5000; min-width: 240px; max-width: 320px; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: 500; color: #fff; background: #3d7a5c; box-shadow: 0 10px 30px rgba(0,0,0,.18); transition: opacity .3s ease, transform .3s ease; }
+    .blq-toast.blq-error { background: #c98a85; }
+    .blq-toast-out { opacity: 0; transform: translateY(.4rem); }
+</style>
+
+    {{-- ─────────────────────────── CABECERA + CONTROLES ─────────────────────────── --}}
+    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 8px;">
+        <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
+            <i class="bi bi-calendar-x me-1" style="font-size: 8px; color: #5d8a70;"></i> Bloqueos de Calendario
+        </h6>
+        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <span class="count-badge"><b id="blqCount">{{ $blqItems->count() }}</b> bloqueos</span>
+            <input type="text" id="blqSearch" class="xls-search" placeholder="Buscar bloqueo…" autocomplete="off" style="width: 170px;">
+            @if($blqStore)
+                <button type="button" class="btn-green" id="blqBtnNuevo">
+                    <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nuevo Bloqueo
+                </button>
+            @endif
         </div>
     </div>
 
-    {{-- ─────────────────────────── MODAL ─────────────────────────── --}}
+    {{-- ─────────────────────────── TABLA ─────────────────────────── --}}
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0" style="min-width: 640px;">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Inmueble</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th class="text-center">Días</th>
+                    <th>Motivo</th>
+                    <th class="text-center" style="width: 96px;">·</th>
+                </tr>
+            </thead>
+            <tbody id="blqTbody">
+                <tr><td colspan="7" class="text-center py-3" style="font-size: 8.5px; color: #b3bcc7;">Cargando…</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    {{-- ─────────────────────────── MODAL FORM (Bootstrap, estilo reservas-soft) ─────────────────────────── --}}
     <div class="modal fade" id="modalBloqueo" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 760px;">
+            <div class="modal-content reservas-soft" style="border: 1px solid #e9eef4; border-radius: 5px; font-size: 9.5px;">
                 <form id="formBloqueo" novalidate>
                     @csrf
-
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="blqModalTitulo">Nuevo bloqueo</h5>
-                        <button type="button" class="btn btn-sm btn-light border-0"
-                                data-bs-dismiss="modal" data-dismiss="modal"
-                                aria-label="Cerrar" style="font-size:1.25rem;line-height:1;">&times;</button>
+                    <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 9px 14px;">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 9px;"></button>
+                        <h6 class="modal-title mb-0 fw-bold" id="blqModalTitulo" style="font-size: 0.95rem;">Nuevo Bloqueo</h6>
                     </div>
+                    <div class="modal-body p-3">
+                        <div id="blqBannerErrores" class="blq-banner-errores" style="display:none;"></div>
 
-                    <div class="modal-body">
-                        {{-- Banner de errores de validación (422 del Form Request) --}}
-                        <div id="blqBannerErrores" class="alert alert-danger d-none"></div>
-
-                        <div class="row g-3">
+                        <div class="blq-fila">
                             {{-- Columna izquierda: datos --}}
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label" for="blqInmueble">Inmueble <span class="text-danger">*</span></label>
-                                    <select id="blqInmueble" name="inmueble_id" class="form-select">
-                                        <option value="">— Selecciona un inmueble —</option>
-                                        @foreach($inmuebles as $inmueble)
-                                            <option value="{{ $inmueble->id }}">
-                                                {{ $inmueble->name ?? $inmueble->nombre ?? 'Inmueble #'.$inmueble->id }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <div class="invalid-feedback">Selecciona un inmueble válido.</div>
-                                </div>
+                            <div>
+                                <label class="blq-etiqueta" for="blqInmueble">Inmueble <span class="blq-obligatorio">*</span></label>
+                                <select id="blqInmueble" name="id_rsv_catalogo_inmueble" class="form-select form-select-sm">
+                                    <option value="">— Selecciona un inmueble —</option>
+                                    @foreach($inmuebles as $inmueble)
+                                        <option value="{{ $inmueble->id }}">{{ $inmueble->name ?? $inmueble->nombre ?? 'Inmueble #'.$inmueble->id }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="blq-ayuda">Si ya hay un inmueble filtrado arriba, se precarga automáticamente.</div>
 
-                                <div class="mb-3">
-                                    <label class="form-label" for="blqMotivo">Motivo <span class="text-danger">*</span></label>
-                                    <textarea id="blqMotivo" name="motivo" rows="4" maxlength="500"
-                                              class="form-control"
-                                              placeholder="Ej.: Mantenimiento de aire acondicionado, overbooking, reforma…"></textarea>
-                                    <div class="form-text">Entre 5 y 500 caracteres.</div>
-                                    <div class="invalid-feedback">El motivo debe tener entre 5 y 500 caracteres.</div>
-                                </div>
+                                <label class="blq-etiqueta" for="blqMotivo" style="margin-top: 14px;">Motivo <span class="blq-obligatorio">*</span></label>
+                                <textarea id="blqMotivo" name="motivo" rows="5" maxlength="500" class="form-control form-control-sm"
+                                          placeholder="Ej.: Mantenimiento de aire acondicionado, overbooking, reforma…"></textarea>
+                                <div class="blq-ayuda">Entre 5 y 500 caracteres.</div>
 
-                                {{-- Aviso no bloqueante por solape (overbooking intencional) --}}
-                                <div id="blqAvisoSolape" class="alert alert-warning py-2 small d-none">
+                                <div id="blqAvisoSolape" class="blq-aviso-solape" style="display:none;">
                                     El rango seleccionado se solapa con fechas ya ocupadas.
                                     Puedes continuar (por ejemplo, para un overbooking), pero revisa que sea intencional.
                                 </div>
                             </div>
 
                             {{-- Columna derecha: calendario --}}
-                            <div class="col-md-6">
-                                <label class="form-label">Fechas del bloqueo <span class="text-danger">*</span></label>
-                                <div id="blqRangoTexto" class="blq-rango-texto small text-muted mb-2">Sin fechas seleccionadas</div>
+                            <div>
+                                <label class="blq-etiqueta">Fechas del bloqueo <span class="blq-obligatorio">*</span></label>
+                                <div id="blqRangoTexto" class="blq-rango-texto">Sin fechas seleccionadas</div>
 
-                                {{-- Campos reales que recibe el backend --}}
                                 <input type="hidden" name="fecha_inicio" id="blqFechaInicio">
                                 <input type="hidden" name="fecha_fin" id="blqFechaFin">
-
-                                {{-- Ancla oculta de Flatpickr + contenedor del mini-calendario --}}
                                 <input type="text" id="blqAnclaCal" class="d-none">
-                                <div id="blqCalendario"></div>
 
-                                <div id="blqCargando" class="d-none small text-muted mt-1">
-                                    <span class="spinner-border spinner-border-sm me-1"></span> Cargando ocupación…
+                                <div id="blqCalendario" class="blq-calendario"></div>
+
+                                <div id="blqCargando" class="blq-ayuda" style="display:none;">
+                                    <span class="blq-spin"></span>Cargando ocupación…
                                 </div>
-                                <div id="blqInfoOcupacion" class="small text-muted mt-1"></div>
+                                <div id="blqInfoOcupacion" class="blq-ayuda"></div>
 
                                 <div class="blq-leyenda">
                                     <span><i class="blq-dot blq-dot-reserva"></i> Reserva</span>
                                     <span><i class="blq-dot blq-dot-bloqueo"></i> Otro bloqueo</span>
                                 </div>
-                                <div class="invalid-feedback" id="blqFeedbackFechas">Selecciona la fecha de inicio y fin en el calendario.</div>
                             </div>
                         </div>
                     </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary"
-                                data-bs-dismiss="modal" data-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="blqBtnGuardar">Crear bloqueo</button>
+                    <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 9px 14px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-sm btn-dark py-1 px-2" id="blqBtnGuardar" style="font-size: 11px;"><i class="bi bi-check-lg"></i> Crear bloqueo</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div>
 
-{{-- Estilos locales de la parcial --}}
-<style>
-    #bloqueos-panel .blq-cal .flatpickr-calendar { margin: 0 auto; box-shadow: none; border: 1px solid #e9ecef; border-radius: .5rem; }
-    #bloqueos-panel .flatpickr-day.blq-ocp-reserva { background: #f8d7da !important; border-color: #f1aeb5 !important; color: #58151c !important; }
-    #bloqueos-panel .flatpickr-day.blq-ocp-bloqueo { background: #fff3cd !important; border-color: #ffe69c !important; color: #664d03 !important; }
-    .blq-leyenda { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; font-size: .8rem; color: #6c757d; margin-top: .5rem; }
-    .blq-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: .35rem; vertical-align: middle; }
-    .blq-dot-reserva { background: #f8d7da; border: 1px solid #f1aeb5; }
-    .blq-dot-bloqueo { background: #fff3cd; border: 1px solid #ffe69c; }
-    .blq-rango-texto { min-height: 1.25rem; }
-    .blq-toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 3000; min-width: 260px;
-                 box-shadow: 0 .5rem 1rem rgba(0,0,0,.15); transition: opacity .3s ease, transform .3s ease; }
-    .blq-toast-out { opacity: 0; transform: translateY(.5rem); }
-</style>
+    {{-- ─────────────────────────── MODAL ELIMINAR ─────────────────────────── --}}
+    <div class="modal fade" id="blqModalDel" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content reservas-soft" style="border: 1px solid #e9eef4; border-radius: 5px; font-size: 9.5px;">
+                <div class="modal-body p-3 text-center">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 1.2rem; color: #c98a85;"></i>
+                    <h6 class="fw-bold mt-2 mb-1" style="font-size: 0.9rem;">Eliminar bloqueo</h6>
+                    <p class="mb-0" style="font-size: 8.5px; color: #94a3b8;">
+                        Se eliminará <b id="blqDelName" style="color: #334155;">—</b>.<br>
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center" style="border-top: 1px solid #f1f5f9; padding: 9px 14px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 11px;" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="blqDelGo" class="btn btn-sm py-1 px-2" style="font-size: 11px; background: #fdf5f4; color: #c98a85; border: 1px solid #f0dcd8;"><i class="bi bi-trash3"></i> Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
-(function () {
-    'use strict';
+    <script type="application/json" id="blqDataset">{!! $blqJson !!}</script>
 
-    // Evita doble binding de eventos cuando el fragmento se re-inyecta vía AJAX.
-    if (window.__blqPanelInit) return;
-    window.__blqPanelInit = true;
+    <script>
+    (function () {
+        'use strict';
 
-    /* ── URLs generadas con route() (jamás hardcodeadas) ─────────────────── */
-    var URLS = {
-        ocupadas:  '{{ route('rsv.reservas.fechas-ocupadas', ':inmuebleId') }}',
-        store:     '{{ route('rsv.bloqueos-calendario.store') }}',
-        update:    '{{ route('rsv.bloqueos-calendario.update', ':bloqueoId') }}',
-        destroy:   '{{ route('rsv.bloqueos-calendario.destroy', ':bloqueoId') }}',
-        fragmento: '{{ route('rsv.admin.bloqueos.fragmento') }}'
-    };
+        // Evita doble binding de eventos cuando el fragmento se re-inyecta vía AJAX.
+        if (window.__blqPanelInit) return;
+        window.__blqPanelInit = true;
 
-    var modo = 'crear';        // 'crear' | 'editar'
-    var idEditando = null;
-    var ocupadas = [];         // [{inicio:'Y-m-d', fin:'Y-m-d', tipo}] del inmueble seleccionado
-    var fpCalendario = null;   // instancia Flatpickr viva
+        var CSRF = '{{ csrf_token() }}';
+        var URLS = {
+            ocupadas:  '{{ $blqOcupadas ?? "" }}',
+            store:     '{{ $blqStore ?? "" }}',
+            update:    '{{ $blqUpdate ?? "" }}',
+            destroy:   '{{ $blqDestroy ?? "" }}',
+            fragmento: '{{ $blqFragmento ?? "" }}'
+        };
+        var EDITABLE = !!(URLS.store || URLS.update);
 
-    function $(sel) { return document.querySelector(sel); }
+        var modo = 'crear';            // 'crear' | 'editar'
+        var idEditando = null;
+        var pendienteEliminar = null;  // registro esperando confirmación en el modal
+        var ocupadas = [];             // [{inicio:'Y-m-d', fin:'Y-m-d', tipo}] del inmueble seleccionado
+        var q = '';                    // texto de búsqueda de la tabla
+        var fpCalendario = null;       // instancia Flatpickr viva
 
-    function csrf() {
-        var meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta && meta.content) return meta.content.trim();
-        var hidden = document.querySelector('#formBloqueo [name="_token"]');
-        return hidden ? hidden.value : '';
-    }
+        function $(sel) { return document.querySelector(sel); }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-    /* ── Fechas ──────────────────────────────────────────────────────────── */
-    function aYmd(d) {
-        return d.getFullYear() + '-' +
-            String(d.getMonth() + 1).padStart(2, '0') + '-' +
-            String(d.getDate()).padStart(2, '0');
-    }
-    function formatoCorto(ymd) {
-        var p = String(ymd).split('-');
-        return p[2] + '/' + p[1] + '/' + p[0];
-    }
-    function textoRango(ini, fin) {
-        return ini === fin ? formatoCorto(ini) : formatoCorto(ini) + ' → ' + formatoCorto(fin);
-    }
-    function enRango(ymd, r) { return ymd >= r.inicio && ymd <= r.fin; }
-
-    /* ── Carga perezosa de Flatpickr (por si el layout no lo trae) ───────── */
-    function cargarCss(href) {
-        var link = document.createElement('link');
-        link.id = 'blq-fp-css';
-        link.rel = 'stylesheet';
-        link.href = href;
-        document.head.appendChild(link);
-    }
-    function cargarScript(src, id) {
-        return new Promise(function (resolve, reject) {
-            var s = document.createElement('script');
-            s.id = id;
-            s.src = src;
-            s.onload = resolve;
-            s.onerror = function () { reject(new Error('No se pudo cargar ' + src)); };
-            document.body.appendChild(s);
-        });
-    }
-    async function asegurarFlatpickr() {
-        if (window.flatpickr) return;
-        if (!document.getElementById('blq-fp-css')) {
-            cargarCss('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+        function csrf() {
+            if (CSRF) return CSRF;
+            var meta = document.querySelector('meta[name="csrf-token"]');
+            if (meta && meta.content) return meta.content.trim();
+            var hidden = document.querySelector('#formBloqueo [name="_token"]');
+            return hidden ? hidden.value : '';
         }
-        if (!document.getElementById('blq-fp-js')) {
-            await cargarScript('https://cdn.jsdelivr.net/npm/flatpickr', 'blq-fp-js');
-        }
-        if (!document.getElementById('blq-fp-l10n')) {
-            await cargarScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js', 'blq-fp-l10n');
-        }
-        if (window.flatpickr && window.flatpickr.l10ns && window.flatpickr.l10ns.es) {
-            flatpickr.localize(flatpickr.l10ns.es);
-        }
-    }
 
-    /* ── Modal (compatible Bootstrap 5 y 4) ──────────────────────────────── */
-    function abrirModal(el) {
-        if (window.bootstrap && window.bootstrap.Modal) {
-            window.bootstrap.Modal.getOrCreateInstance(el).show();
-        } else if (window.jQuery) {
-            window.jQuery(el).modal('show');
-        } else {
-            el.style.display = 'block';
-            el.classList.add('show');
+        /* ── Dataset: se relee en cada render (tras refrescar el fragmento llega data fresca) ── */
+        function leerDataset() {
+            try { return JSON.parse((document.getElementById('blqDataset') || {}).textContent || '[]') || []; }
+            catch (e) { return []; }
         }
-    }
-    function cerrarModal(el) {
-        if (window.bootstrap && window.bootstrap.Modal) {
-            window.bootstrap.Modal.getOrCreateInstance(el).hide();
-        } else if (window.jQuery) {
-            window.jQuery(el).modal('hide');
-        } else {
-            el.style.display = 'none';
-            el.classList.remove('show');
+
+        /* ── Fechas ──────────────────────────────────────────────────────────── */
+        function aYmd(d) {
+            return d.getFullYear() + '-' +
+                String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                String(d.getDate()).padStart(2, '0');
         }
-    }
+        function formatoCorto(ymd) {
+            var p = String(ymd).split('-');
+            return p[2] + '/' + p[1] + '/' + p[0];
+        }
+        function textoRango(ini, fin) {
+            return ini === fin ? formatoCorto(ini) : formatoCorto(ini) + ' → ' + formatoCorto(fin);
+        }
+        function enRango(ymd, r) { return ymd >= r.inicio && ymd <= r.fin; }
 
-    /* ── Mini-calendario ─────────────────────────────────────────────────── */
-    function asegurarCalendario() {
-        var cont = $('#blqCalendario');
-        if (!cont || !window.flatpickr) return;
-        if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) return;
-        if (fpCalendario) { try { fpCalendario.destroy(); } catch (e) {} fpCalendario = null; }
-        cont.innerHTML = ''; // limpia posible fallback previo
+        /* ── Carga perezosa de Flatpickr (por si el layout no lo trae) ───────── */
+        function cargarCss(href) {
+            var link = document.createElement('link');
+            link.id = 'blq-fp-css';
+            link.rel = 'stylesheet';
+            link.href = href;
+            document.head.appendChild(link);
+        }
+        function cargarScript(src, id) {
+            return new Promise(function (resolve, reject) {
+                var s = document.createElement('script');
+                s.id = id;
+                s.src = src;
+                s.onload = resolve;
+                s.onerror = function () { reject(new Error('No se pudo cargar ' + src)); };
+                document.body.appendChild(s);
+            });
+        }
+        async function asegurarFlatpickr() {
+            if (window.flatpickr) return;
+            if (!document.getElementById('blq-fp-css')) {
+                cargarCss('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+            }
+            if (!document.getElementById('blq-fp-js')) {
+                await cargarScript('https://cdn.jsdelivr.net/npm/flatpickr', 'blq-fp-js');
+            }
+            if (!document.getElementById('blq-fp-l10n')) {
+                await cargarScript('https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js', 'blq-fp-l10n');
+            }
+            if (window.flatpickr && window.flatpickr.l10ns && window.flatpickr.l10ns.es) {
+                flatpickr.localize(flatpickr.l10ns.es);
+            }
+        }
 
-        fpCalendario = flatpickr('#blqAnclaCal', {
-            mode: 'range',
-            inline: true,
-            appendTo: cont,
-            dateFormat: 'Y-m-d',
-            minDate: 'today',
-            showMonths: 1,
-            onChange: function (fechas) {
-                $('#blqFechaInicio').value = fechas[0] ? aYmd(fechas[0]) : '';
-                $('#blqFechaFin').value    = fechas[1] ? aYmd(fechas[1]) : '';
-                $('#blqRangoTexto').textContent = fechas[0]
-                    ? textoRango(aYmd(fechas[0]), aYmd(fechas[1] || fechas[0]))
+        /* ── Modales Bootstrap (mismo patrón que status.blade.php) ───────────── */
+        function modalInst(id) {
+            try { return bootstrap.Modal.getOrCreateInstance(document.getElementById(id)); }
+            catch (e) { return null; }
+        }
+
+        /* ── Mini-calendario ─────────────────────────────────────────────────── */
+        function asegurarCalendario() {
+            var cont = $('#blqCalendario');
+            if (!cont || !window.flatpickr) return;
+            if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) return;
+            if (fpCalendario) { try { fpCalendario.destroy(); } catch (e) {} fpCalendario = null; }
+            cont.innerHTML = ''; // limpia posible fallback previo
+
+            fpCalendario = flatpickr('#blqAnclaCal', {
+                mode: 'range',
+                inline: true,
+                appendTo: cont,
+                dateFormat: 'Y-m-d',
+                minDate: 'today',
+                showMonths: 1,
+                onChange: function (fechas) {
+                    $('#blqFechaInicio').value = fechas[0] ? aYmd(fechas[0]) : '';
+
+                    // Si no hay segunda fecha, copiamos la primera
+                    $('#blqFechaFin').value    = fechas[1] ? aYmd(fechas[1]) : (fechas[0] ? aYmd(fechas[0]) : '');
+
+                    $('#blqRangoTexto').textContent = fechas[0]
+                        ? textoRango(aYmd(fechas[0]), aYmd(fechas[1] || fechas[0]))
+                        : 'Sin fechas seleccionadas';
+                    revisarSolape();
+                },
+                onDayCreate: function (a, b, c, dayElem) {
+                    var ymd = aYmd(dayElem.dateObj);
+                    var r = null;
+                    for (var i = 0; i < ocupadas.length; i++) {
+                        if (enRango(ymd, ocupadas[i])) { r = ocupadas[i]; break; }
+                    }
+                    if (!r) return;
+                    var esBloqueo = String(r.tipo || '').toLowerCase().indexOf('bloque') !== -1;
+                    dayElem.classList.add(esBloqueo ? 'blq-ocp-bloqueo' : 'blq-ocp-reserva');
+                }
+            });
+        }
+
+        // Fallback: si Flatpickr no pudo cargarse, dos inputs de fecha nativos.
+        function calendarioFallback() {
+            var cont = $('#blqCalendario');
+            if (!cont || document.getElementById('blqFallbackInicio')) return;
+            cont.innerHTML =
+                '<div class="blq-aviso-solape" style="margin:0 0 6px;">No se pudo cargar el calendario visual. Selecciona las fechas manualmente:</div>' +
+                '<input type="date" class="form-control form-control-sm mb-1" id="blqFallbackInicio">' +
+                '<input type="date" class="form-control form-control-sm" id="blqFallbackFin">';
+            function sincro() {
+                $('#blqFechaInicio').value = $('#blqFallbackInicio').value || '';
+                $('#blqFechaFin').value    = $('#blqFallbackFin').value || $('#blqFallbackInicio').value || '';
+                $('#blqRangoTexto').textContent = ($('#blqFechaInicio').value && $('#blqFechaFin').value)
+                    ? textoRango($('#blqFechaInicio').value, $('#blqFechaFin').value)
                     : 'Sin fechas seleccionadas';
                 revisarSolape();
-            },
-            onDayCreate: function (a, b, c, dayElem) {
-                var ymd = aYmd(dayElem.dateObj);
-                var r = null;
-                for (var i = 0; i < ocupadas.length; i++) {
-                    if (enRango(ymd, ocupadas[i])) { r = ocupadas[i]; break; }
-                }
-                if (!r) return;
-                var esBloqueo = String(r.tipo || '').toLowerCase().indexOf('bloque') !== -1;
-                dayElem.classList.add(esBloqueo ? 'blq-ocp-bloqueo' : 'blq-ocp-reserva');
             }
-        });
-    }
-
-    // Fallback: si Flatpickr no pudo cargarse, dos inputs de fecha nativos.
-    function calendarioFallback() {
-        var cont = $('#blqCalendario');
-        if (!cont || document.getElementById('blqFallbackInicio')) return;
-        cont.innerHTML =
-            '<div class="alert alert-warning small py-2 mb-2">No se pudo cargar el calendario visual. Selecciona las fechas manualmente:</div>' +
-            '<div class="d-flex gap-2">' +
-            '<input type="date" class="form-control" id="blqFallbackInicio">' +
-            '<input type="date" class="form-control" id="blqFallbackFin">' +
-            '</div>';
-        function sincro() {
-            $('#blqFechaInicio').value = $('#blqFallbackInicio').value || '';
-            $('#blqFechaFin').value    = $('#blqFallbackFin').value || '';
-            $('#blqRangoTexto').textContent = ($('#blqFechaInicio').value && $('#blqFechaFin').value)
-                ? textoRango($('#blqFechaInicio').value, $('#blqFechaFin').value)
-                : 'Sin fechas seleccionadas';
-            revisarSolape();
+            cont.querySelector('#blqFallbackInicio').addEventListener('change', sincro);
+            cont.querySelector('#blqFallbackFin').addEventListener('change', sincro);
         }
-        cont.querySelector('#blqFallbackInicio').addEventListener('change', sincro);
-        cont.querySelector('#blqFallbackFin').addEventListener('change', sincro);
-    }
 
-    async function abrirCalendarioListo() {
-        if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) return;
-        try { await asegurarFlatpickr(); }
-        catch (e) { console.warn('Flatpickr no disponible:', e); }
-        asegurarCalendario();
-        if (!fpCalendario) calendarioFallback();
-    }
+        async function abrirCalendarioListo() {
+            if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) return;
+            try { await asegurarFlatpickr(); }
+            catch (e) { console.warn('Flatpickr no disponible:', e); }
+            asegurarCalendario();
+            if (!fpCalendario) calendarioFallback();
+        }
 
-    function repintarCalendario() {
-        if (fpCalendario) { try { fpCalendario.redraw(); } catch (e) {} }
-    }
+        function repintarCalendario() {
+            if (fpCalendario) { try { fpCalendario.redraw(); } catch (e) {} }
+        }
 
-    /* ── Ocupación del inmueble (RUTA CORRECTA: rsv.reservas.fechas-ocupadas) ── */
-    async function cargarOcupadas(inmuebleId) {
-        var info = $('#blqInfoOcupacion');
-        var spinner = $('#blqCargando');
-        ocupadas = [];
-        repintarCalendario();
-        if (info) info.textContent = '';
-        if (!inmuebleId) return;
-
-        if (spinner) spinner.classList.remove('d-none');
-        try {
-            var url = URLS.ocupadas.replace(':inmuebleId', encodeURIComponent(inmuebleId));
-            var res = await fetch(url, {
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            var data = await res.json().catch(function () { return {}; });
-            if (!res.ok || data.ok === false) {
-                throw new Error(data.message || 'No se pudo consultar la ocupación del inmueble.');
+        /* ── Filtro superior: reutiliza el inmueble ya elegido en la página ──── */
+        function inmuebleDesdeFiltroSuperior() {
+            var selects = document.querySelectorAll('select');
+            for (var i = 0; i < selects.length; i++) {
+                var s = selects[i];
+                if (s.closest('#bloqueos-panel')) continue;             // los nuestros no cuentan
+                if (s.closest('.modal')) continue;                      // ni modales ajenos
+                if (s.offsetParent === null) continue;                  // solo visibles
+                var clave = ((s.id || '') + ' ' + (s.name || '') + ' ' + (s.className || '')).toLowerCase();
+                if (clave.indexOf('inmueble') === -1) continue;
+                if (!s.value) continue;
+                return s.value;
             }
-            ocupadas = (data.ocupadas || []).map(function (o) {
-                return {
-                    inicio: String(o.inicio).slice(0, 10),
-                    fin:    String(o.fin).slice(0, 10),
-                    tipo:   o.tipo || ''
-                };
-            });
-            var nRes = ocupadas.filter(function (o) { return o.tipo.toLowerCase().indexOf('bloque') === -1; }).length;
-            var nBlq = ocupadas.length - nRes;
-            var nombre = (data.inmueble && (data.inmueble.name || data.inmueble.nombre)) || 'Inmueble';
-            info.textContent = nombre + ': ' + ocupadas.length + ' rango(s) ocupado(s) · ' +
-                               nRes + ' por reservas · ' + nBlq + ' por bloqueos';
-        } catch (e) {
-            info.textContent = 'Aviso: ' + e.message;
-        } finally {
-            if (spinner) spinner.classList.add('d-none');
-            repintarCalendario();
-            revisarSolape();
+            return '';
         }
-    }
-
-    /* ── Solape (aviso no bloqueante) ────────────────────────────────────── */
-    function revisarSolape() {
-        var aviso = $('#blqAvisoSolape');
-        if (!aviso) return;
-        var ini = $('#blqFechaInicio').value;
-        var fin = $('#blqFechaFin').value;
-        if (!ini || !fin || !ocupadas.length) { aviso.classList.add('d-none'); return; }
-        var choca = ocupadas.some(function (o) { return ini <= o.fin && fin >= o.inicio; });
-        aviso.classList.toggle('d-none', !choca);
-    }
-
-    /* ── Errores de validación (422 del Form Request) ────────────────────── */
-    var INPUT_POR_CAMPO = { inmueble_id: '#blqInmueble', motivo: '#blqMotivo' };
-
-    function limpiarErrores() {
-        var banner = $('#blqBannerErrores');
-        if (banner) { banner.classList.add('d-none'); banner.innerHTML = ''; }
-        ['#blqInmueble', '#blqMotivo'].forEach(function (sel) {
-            var el = $(sel);
-            if (el) el.classList.remove('is-invalid');
-        });
-    }
-    function pintarErrores(data) {
-        limpiarErrores();
-        var banner = $('#blqBannerErrores');
-        var errores = (data && data.errors) ? data.errors : {};
-        var lista = [];
-        if (Array.isArray(errores)) {
-            lista = errores.map(String);
-        } else {
-            Object.keys(errores).forEach(function (campo) {
-                var arr = Array.isArray(errores[campo]) ? errores[campo] : [errores[campo]];
-                arr.forEach(function (m) { lista.push(String(m)); });
-                var input = $(INPUT_POR_CAMPO[campo] || '');
-                if (input) input.classList.add('is-invalid');
-            });
-        }
-        if (!lista.length && data && data.message) lista.push(String(data.message));
-        if (!lista.length) lista.push('Revisa los datos del formulario.');
-        banner.innerHTML = '<strong>No se pudo guardar:</strong><ul class="mb-0 mt-1">' +
-            lista.map(function (m) { return '<li>' + m.replace(/</g, '&lt;') + '</li>'; }).join('') +
-            '</ul>';
-        banner.classList.remove('d-none');
-    }
-
-    /* ── Toast ───────────────────────────────────────────────────────────── */
-    function mostrarToast(mensaje, tipo) {
-        var t = document.createElement('div');
-        t.className = 'alert alert-' + (tipo || 'success') + ' blq-toast';
-        t.textContent = mensaje;
-        document.body.appendChild(t);
-        setTimeout(function () { t.classList.add('blq-toast-out'); }, 3200);
-        setTimeout(function () { t.remove(); }, 3600);
-    }
-
-    /* ── Refresco AJAX del panel (mismo patrón que reservas-fragmento) ───── */
-    async function refrescarPanel() {
-        var actual = $('#bloqueos-panel');
-        if (!actual) { location.reload(); return; }
-        var res = await fetch(URLS.fragmento, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
-        });
-        if (!res.ok) throw new Error('Fragmento no disponible');
-        var html = await res.text();
-        var contenedor = document.createElement('div');
-        contenedor.innerHTML = html;
-        var nuevo = contenedor.querySelector('#bloqueos-panel');
-        if (!nuevo) throw new Error('Fragmento inválido');
-        actual.replaceWith(nuevo);
-    }
-
-    function cerrarYRefrescar() {
-        var modalEl = $('#modalBloqueo');
-        function alOcultar() {
-            refrescarPanel().catch(function () { location.reload(); });
-        }
-        if (window.bootstrap && window.bootstrap.Modal) {
-            modalEl.addEventListener('hidden.bs.modal', alOcultar, { once: true });
-            window.bootstrap.Modal.getOrCreateInstance(modalEl).hide();
-        } else if (window.jQuery) {
-            window.jQuery(modalEl).one('hidden.bs.modal', alOcultar).modal('hide');
-        } else {
-            cerrarModal(modalEl);
-            alOcultar();
-        }
-    }
-
-    /* ── Limpieza del formulario ─────────────────────────────────────────── */
-    function limpiarFormulario() {
-        var form = $('#formBloqueo');
-        if (form) form.reset();
-        $('#blqFechaInicio').value = '';
-        $('#blqFechaFin').value = '';
-        $('#blqRangoTexto').textContent = 'Sin fechas seleccionadas';
-        $('#blqInmueble').value = '';
-        ocupadas = [];
-        $('#blqInfoOcupacion').textContent = '';
-        $('#blqAvisoSolape').classList.add('d-none');
-        limpiarErrores();
-        if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) {
-            fpCalendario.clear();
-            try { fpCalendario.set('minDate', 'today'); } catch (e) {}
-            repintarCalendario();
-        }
-    }
-
-    /* ── Eventos delegados en document (sobreviven al refresco del fragmento) ── */
-
-    document.addEventListener('click', async function (e) {
-        var btnNuevo    = e.target.closest('#blqBtnNuevo');
-        var btnEditar   = e.target.closest('.blq-btn-editar');
-        var btnEliminar = e.target.closest('.blq-btn-eliminar');
-
-        if (btnNuevo) {
-            modo = 'crear';
-            idEditando = null;
-            $('#blqModalTitulo').textContent = 'Nuevo bloqueo';
-            $('#blqBtnGuardar').textContent = 'Crear bloqueo';
-            limpiarFormulario();
-            await abrirCalendarioListo();      // el calendario SIEMPRE se dibuja al abrir
-            abrirModal($('#modalBloqueo'));
+        function asegurarOpcionInmueble(valor) {
             var sel = $('#blqInmueble');
-            if (sel) sel.focus();
-            return;
-        }
-
-        if (btnEditar) {
-            modo = 'editar';
-            idEditando = btnEditar.dataset.id;
-            $('#blqModalTitulo').textContent = 'Editar bloqueo #' + idEditando;
-            $('#blqBtnGuardar').textContent = 'Guardar cambios';
-            limpiarFormulario();
-            await abrirCalendarioListo();
-            abrirModal($('#modalBloqueo'));
-
-            $('#blqInmueble').value = btnEditar.dataset.inmueble || '';
-            $('#blqMotivo').value = btnEditar.dataset.motivo || '';
-            var inicio = btnEditar.dataset.inicio || '';
-            var fin = btnEditar.dataset.fin || '';
-            $('#blqFechaInicio').value = inicio;
-            $('#blqFechaFin').value = fin;
-
-            if (inicio && fin) {
-                if (fpCalendario) {
-                    try { fpCalendario.set('minDate', null); } catch (err) {} // permite editar bloqueos ya iniciados
-                    fpCalendario.setDate([inicio, fin], false);
-                } else {
-                    var fi = document.getElementById('blqFallbackInicio');
-                    var ff = document.getElementById('blqFallbackFin');
-                    if (fi) fi.value = inicio;
-                    if (ff) ff.value = fin;
-                }
-                $('#blqRangoTexto').textContent = textoRango(inicio, fin);
+            if (!sel || !valor) return;
+            if (!sel.querySelector('option[value="' + valor + '"]')) {
+                var opt = document.createElement('option');
+                opt.value = valor;
+                opt.textContent = 'Inmueble #' + valor;
+                sel.appendChild(opt);
             }
-            if ($('#blqInmueble').value) cargarOcupadas($('#blqInmueble').value);
-            return;
         }
 
-        if (btnEliminar) {
-            if (!window.confirm('¿Eliminar este bloqueo? Esta acción no se puede deshacer.')) return;
-            btnEliminar.disabled = true;
+        /* ── Ocupación del inmueble (rsv.reservas.fechas-ocupadas) ───────────── */
+        async function cargarOcupadas(inmuebleId) {
+            var info = $('#blqInfoOcupacion');
+            var spinner = $('#blqCargando');
+            ocupadas = [];
+            repintarCalendario();
+            if (info) info.textContent = '';
+            if (!inmuebleId) return;
+
+            if (spinner) spinner.style.display = 'block';
             try {
-                var url = URLS.destroy.replace(':bloqueoId', encodeURIComponent(btnEliminar.dataset.id));
+                var url = URLS.ocupadas.replace(':inmuebleId', encodeURIComponent(inmuebleId));
                 var res = await fetch(url, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrf(),
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 var data = await res.json().catch(function () { return {}; });
                 if (!res.ok || data.ok === false) {
-                    mostrarToast(data.message || 'No se pudo eliminar el bloqueo.', 'danger');
+                    throw new Error(data.message || 'No se pudo consultar la ocupación del inmueble.');
+                }
+                ocupadas = (data.ocupadas || []).map(function (o) {
+                    return {
+                        inicio: String(o.inicio).slice(0, 10),
+                        fin:    String(o.fin).slice(0, 10),
+                        tipo:   o.tipo || ''
+                    };
+                });
+                var nRes = ocupadas.filter(function (o) { return o.tipo.toLowerCase().indexOf('bloque') === -1; }).length;
+                var nBlq = ocupadas.length - nRes;
+                var nombre = (data.inmueble && (data.inmueble.name || data.inmueble.nombre)) || 'Inmueble';
+                info.textContent = nombre + ': ' + ocupadas.length + ' rango(s) ocupado(s) · ' +
+                                   nRes + ' por reservas · ' + nBlq + ' por bloqueos';
+            } catch (e) {
+                info.textContent = 'Aviso: ' + e.message;
+            } finally {
+                if (spinner) spinner.style.display = 'none';
+                repintarCalendario();
+                revisarSolape();
+            }
+        }
+
+        /* ── Solape (aviso no bloqueante) ────────────────────────────────────── */
+        function revisarSolape() {
+            var aviso = $('#blqAvisoSolape');
+            if (!aviso) return;
+            var ini = $('#blqFechaInicio').value;
+            var fin = $('#blqFechaFin').value;
+            if (!ini || !fin || !ocupadas.length) { aviso.style.display = 'none'; return; }
+            var choca = ocupadas.some(function (o) { return ini <= o.fin && fin >= o.inicio; });
+            aviso.style.display = choca ? 'block' : 'none';
+        }
+
+        /* ── Errores de validación (422 del Form Request) ────────────────────── */
+        var INPUT_POR_CAMPO = {
+            id_rsv_catalogo_inmueble: '#blqInmueble',
+            motivo: '#blqMotivo',
+            fecha_inicio: '#blqCalendario',
+            fecha_fin: '#blqCalendario'
+        };
+
+        function limpiarErrores() {
+            var banner = $('#blqBannerErrores');
+            if (banner) { banner.style.display = 'none'; banner.innerHTML = ''; }
+            ['#blqInmueble', '#blqMotivo', '#blqCalendario'].forEach(function (sel) {
+                var el = $(sel);
+                if (el) el.classList.remove('blq-invalid');
+            });
+        }
+        function pintarErrores(data) {
+            limpiarErrores();
+            var banner = $('#blqBannerErrores');
+            if (!banner) return;
+            var errores = (data && data.errors) ? data.errors : {};
+            var lista = [];
+            if (Array.isArray(errores)) {
+                lista = errores.map(String);
+            } else {
+                Object.keys(errores).forEach(function (campo) {
+                    var arr = Array.isArray(errores[campo]) ? errores[campo] : [errores[campo]];
+                    arr.forEach(function (m) { lista.push(String(m)); });
+
+                    var selector = INPUT_POR_CAMPO[campo];
+                    if (selector) {
+                        var input = $(selector);
+                        if (input) input.classList.add('blq-invalid');
+                    }
+                });
+            }
+            if (!lista.length && data && data.message) lista.push(String(data.message));
+            if (!lista.length) lista.push('Revisa los datos del formulario.');
+            banner.innerHTML = '<strong>No se pudo guardar:</strong><ul>' +
+                lista.map(function (m) { return '<li>' + m.replace(/</g, '&lt;') + '</li>'; }).join('') +
+                '</ul>';
+            banner.style.display = 'block';
+        }
+
+        /* ── Toast ───────────────────────────────────────────────────────────── */
+        function mostrarToast(mensaje, tipo) {
+            var t = document.createElement('div');
+            t.className = 'blq-toast' + (tipo === 'danger' ? ' blq-error' : '');
+            t.textContent = mensaje;
+            document.body.appendChild(t);
+            setTimeout(function () { t.classList.add('blq-toast-out'); }, 3200);
+            setTimeout(function () { t.remove(); }, 3600);
+        }
+
+        /* ── Refresco AJAX del panel ─────────────────────────────────────────── */
+        async function refrescarPanel() {
+            var actual = $('#bloqueos-panel');
+            if (!actual || !URLS.fragmento) { location.reload(); return; }
+            var res = await fetch(URLS.fragmento, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
+            });
+            if (!res.ok) throw new Error('Fragmento no disponible');
+            var html = await res.text();
+            var contenedor = document.createElement('div');
+            contenedor.innerHTML = html;
+            var nuevo = contenedor.querySelector('#bloqueos-panel');
+            if (!nuevo) throw new Error('Fragmento inválido');
+            actual.replaceWith(nuevo);
+            render(); // repinta la tabla con el dataset fresco del fragmento
+        }
+
+        function exitoYRefrescar(mensaje) {
+            mostrarToast(mensaje);
+            // Actualiza el calendario global de la página si existe
+            if (window.rsvCalendar) { try { window.rsvCalendar.refetchEvents(); } catch (e) {} }
+            setTimeout(function () {
+                refrescarPanel().catch(function () { location.reload(); });
+            }, 200);
+        }
+
+        /* ── Tabla: render del lado del cliente (patrón status.blade.php) ────── */
+        function render() {
+            var tbody = document.getElementById('blqTbody');
+            if (!tbody) return;
+            var DS = leerDataset();
+            var total = document.getElementById('blqCount');
+            if (total) total.textContent = DS.length;
+
+            var t = q.toLowerCase().trim();
+            var res = DS.filter(function (r) {
+                if (!t) return true;
+                var paja = (r.inmueble + ' ' + r.motivo + ' ' + r.desde + ' ' + r.hasta + ' #' + r.id).toLowerCase();
+                return paja.indexOf(t) !== -1;
+            });
+
+            var h = '';
+            if (!res.length) {
+                h = '<tr><td colspan="7" class="text-center py-3" style="font-size:8.5px;color:#b3bcc7;">'
+                  + (DS.length ? '<i class="bi bi-funnel me-1"></i> Sin resultados.' : '<i class="bi bi-calendar-x me-1"></i> Sin bloqueos registrados todavía.')
+                  + '</td></tr>';
+            } else {
+                res.forEach(function (r) {
+                    var mot = String(r.motivo || '');
+                    var corto = mot.length > 60 ? mot.slice(0, 60) + '…' : mot;
+                    h += '<tr>'
+                       + '<td style="color:var(--ink-4);font-size:7.5px;">' + esc(r.id) + '</td>'
+                       + '<td class="strong">' + esc(r.inmueble) + '</td>'
+                       + '<td>' + esc(r.desde) + '</td>'
+                       + '<td>' + esc(r.hasta) + '</td>'
+                       + '<td class="text-center"><span class="count-badge"><b>' + esc(r.dias) + '</b> d</span></td>'
+                       + '<td title="' + esc(mot) + '" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;">' + esc(corto) + '</td>'
+                       + '<td class="text-center" style="white-space:nowrap;">'
+                       + (EDITABLE ? '<button type="button" class="btn-mini blq-edit" data-id="' + esc(r.id) + '">Editar</button> ' : '')
+                       + (URLS.destroy ? '<button type="button" class="btn-mini blq-del" data-id="' + esc(r.id) + '" style="color:#c98a85;">Del</button>' : '')
+                       + '</td>'
+                       + '</tr>';
+                });
+            }
+            tbody.innerHTML = h;
+        }
+
+        /* ── Limpieza del formulario ─────────────────────────────────────────── */
+        function limpiarFormulario() {
+            var form = $('#formBloqueo');
+            if (form) form.reset();
+            $('#blqFechaInicio').value = '';
+            $('#blqFechaFin').value = '';
+            $('#blqRangoTexto').textContent = 'Sin fechas seleccionadas';
+            $('#blqInmueble').value = '';
+            ocupadas = [];
+            var info = $('#blqInfoOcupacion'); if (info) info.textContent = '';
+            var aviso = $('#blqAvisoSolape'); if (aviso) aviso.style.display = 'none';
+            limpiarErrores();
+            if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) {
+                fpCalendario.clear();
+                try { fpCalendario.set('minDate', 'today'); } catch (e) {}
+                repintarCalendario();
+            }
+        }
+
+        /* ── Abrir formulario (crear con r = null · editar con r = registro) ─── */
+        async function abrirFormulario(r) {
+            limpiarFormulario();
+            var titulo = $('#blqModalTitulo');
+            var btn = $('#blqBtnGuardar');
+            var sel = $('#blqInmueble');
+
+            if (r) {
+                modo = 'editar';
+                idEditando = r.id;
+                if (titulo) titulo.textContent = 'Editar Bloqueo #' + r.id;
+                if (btn) btn.innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
+                asegurarOpcionInmueble(r.inmueble_id);
+                if (sel) sel.value = String(r.inmueble_id);
+                var mot = $('#blqMotivo'); if (mot) mot.value = r.motivo || '';
+            } else {
+                modo = 'crear';
+                idEditando = null;
+                if (titulo) titulo.textContent = 'Nuevo Bloqueo';
+                if (btn) btn.innerHTML = '<i class="bi bi-check-lg"></i> Crear bloqueo';
+
+                // Precarga desde el filtro superior (si existe y tiene valor)
+                var pre = inmuebleDesdeFiltroSuperior();
+                if (pre && sel) { asegurarOpcionInmueble(pre); sel.value = pre; }
+            }
+
+            var m = modalInst('modalBloqueo');
+            if (m) m.show();
+
+            await abrirCalendarioListo();   // el calendario SIEMPRE se dibuja al abrir
+
+            if (r && r.inicio && r.fin) {
+                $('#blqFechaInicio').value = r.inicio;
+                $('#blqFechaFin').value = r.fin;
+                $('#blqRangoTexto').textContent = textoRango(r.inicio, r.fin);
+                if (fpCalendario) {
+                    try { fpCalendario.set('minDate', null); } catch (err) {} // permite editar bloqueos ya iniciados
+                    try { fpCalendario.setDate([r.inicio, r.fin], false); } catch (err) {}
+                } else {
+                    var fi = document.getElementById('blqFallbackInicio');
+                    var ff = document.getElementById('blqFallbackFin');
+                    if (fi) fi.value = r.inicio;
+                    if (ff) ff.value = r.fin;
+                }
+            } else if (fpCalendario) {
+                try { fpCalendario.set('minDate', 'today'); } catch (err) {}
+            }
+
+            if (sel && sel.value) {
+                await cargarOcupadas(sel.value);
+            } else if (!r && sel) {
+                sel.focus();
+            }
+        }
+
+        /* ── Envío genérico (patrón status.blade.php · method spoofing _method) ─ */
+        function enviar(url, method, fd) {
+            if (!url) { alert('Ruta no disponible para esta acción.'); return Promise.resolve(false); }
+            fd.append('_token', csrf());
+            if (method !== 'POST') fd.append('_method', method);
+            return fetch(url, {
+                method: 'POST', // spoofing vía _method
+                body: fd,
+                headers: { 'X-CSRF-TOKEN': csrf(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            })
+                .then(function (r) { return r.json().catch(function () { return { ok: r.ok, success: r.ok }; }); })
+                .then(function (j) {
+                    if (j && j.errors) { pintarErrores(j); return false; }
+                    if (j && (j.ok === false || j.success === false)) {
+                        alert(j.message || 'No se pudo completar la operación.');
+                        return false;
+                    }
+                    return true;
+                })
+                .catch(function () { alert('Error de conexión.'); return false; });
+        }
+
+        /* ── Init: eventos delegados en document (sobreviven al refresco AJAX) ── */
+        function init() {
+            render();
+
+            document.addEventListener('click', function (e) {
+                var t = e.target;
+                if (!t || !t.closest) return;
+
+                // Nuevo bloqueo
+                if (t.closest('#blqBtnNuevo')) { abrirFormulario(null); return; }
+
+                // Editar (fila de la tabla)
+                var bE = t.closest('.blq-edit');
+                if (bE && EDITABLE) {
+                    var r = leerDataset().find(function (x) { return String(x.id) === bE.getAttribute('data-id'); });
+                    if (r) abrirFormulario(r);
                     return;
                 }
-                mostrarToast(data.message || 'Bloqueo eliminado correctamente.', 'success');
-                await refrescarPanel();
-            } catch (err) {
-                mostrarToast('Error de red al eliminar el bloqueo.', 'danger');
-            } finally {
-                btnEliminar.disabled = false;
-            }
-            return;
-        }
-    });
 
-    document.addEventListener('change', function (e) {
-        if (e.target && e.target.id === 'blqInmueble') {
-            cargarOcupadas(e.target.value);   // ← aquí ocurre la llamada CORRECTA a fechas-ocupadas
-        }
-    });
+                // Eliminar: abre modal de confirmación (patrón status.blade.php)
+                var bD = t.closest('.blq-del');
+                if (bD && URLS.destroy) {
+                    var r2 = leerDataset().find(function (x) { return String(x.id) === bD.getAttribute('data-id'); });
+                    if (!r2) return;
+                    pendienteEliminar = r2;
+                    var nom = document.getElementById('blqDelName');
+                    if (nom) nom.textContent = r2.inmueble + ' · ' + r2.desde + ' → ' + r2.hasta;
+                    var mDel = modalInst('blqModalDel');
+                    if (mDel) mDel.show();
+                    return;
+                }
 
-    document.addEventListener('submit', async function (e) {
-        if (!e.target || e.target.id !== 'formBloqueo') return;
-        e.preventDefault();
-        limpiarErrores();
-
-        var form = e.target;
-        var fd = new FormData(form);
-        if (modo === 'editar') fd.append('_method', 'PUT');
-
-        // Validación mínima en cliente (el Form Request valida igual en el backend)
-        if (!fd.get('inmueble_id')) {
-            pintarErrores({ errors: { inmueble_id: ['Selecciona un inmueble.'] } });
-            return;
-        }
-        if (!fd.get('fecha_inicio') || !fd.get('fecha_fin')) {
-            pintarErrores({ errors: { fecha_inicio: ['Selecciona la fecha de inicio y fin en el calendario.'] } });
-            return;
-        }
-
-        var url = (modo === 'crear')
-            ? URLS.store
-            : URLS.update.replace(':bloqueoId', encodeURIComponent(idEditando));
-
-        var btn = $('#blqBtnGuardar');
-        var textoOriginal = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = 'Guardando…';
-
-        try {
-            var res = await fetch(url, {
-                method: 'POST', // spoofing con _method para PUT
-                headers: {
-                    'X-CSRF-TOKEN': csrf(),
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: fd
+                // Confirmación de eliminación
+                var bGo = t.closest('#blqDelGo');
+                if (bGo && pendienteEliminar) {
+                    var objetivo = pendienteEliminar;
+                    pendienteEliminar = null;
+                    bGo.disabled = true;
+                    enviar(URLS.destroy.replace(':bloqueoId', encodeURIComponent(objetivo.id)), 'DELETE', new FormData())
+                        .then(function (ok) {
+                            bGo.disabled = false;
+                            var mDel2 = modalInst('blqModalDel');
+                            if (mDel2) mDel2.hide();
+                            if (ok) exitoYRefrescar('Bloqueo eliminado correctamente.');
+                        });
+                    return;
+                }
             });
-            var data = await res.json().catch(function () { return {}; });
-            if (!res.ok || data.ok === false) {
-                pintarErrores(data);
-                return;
-            }
-            mostrarToast(data.message || 'Bloqueo guardado correctamente.', 'success');
-            cerrarYRefrescar();
-        } catch (err) {
-            pintarErrores({ message: 'Error de red al guardar el bloqueo.' });
-        } finally {
-            btn.disabled = false;
-            btn.textContent = textoOriginal;
+
+            document.addEventListener('input', function (e) {
+                if (e.target && e.target.id === 'blqSearch') { q = e.target.value; render(); }
+            });
+
+            document.addEventListener('change', function (e) {
+                if (e.target && e.target.id === 'blqInmueble') {
+                    cargarOcupadas(e.target.value); // consulta ocupación al cambiar inmueble
+                }
+            });
+
+            document.addEventListener('submit', function (e) {
+                if (!e.target || e.target.id !== 'formBloqueo') return;
+                e.preventDefault();
+                limpiarErrores();
+
+                var fd = new FormData(e.target);
+                var esEditar = (modo === 'editar' && idEditando);
+
+                // Validación mínima en cliente (el Form Request valida igual en el backend)
+                if (!fd.get('id_rsv_catalogo_inmueble')) {
+                    pintarErrores({ errors: { id_rsv_catalogo_inmueble: ['Selecciona un inmueble.'] } });
+                    return;
+                }
+                if (!fd.get('fecha_inicio') || !fd.get('fecha_fin')) {
+                    pintarErrores({ errors: { fecha_inicio: ['Selecciona la fecha de inicio y fin en el calendario.'] } });
+                    return;
+                }
+
+                var url = esEditar
+                    ? URLS.update.replace(':bloqueoId', encodeURIComponent(idEditando))
+                    : URLS.store;
+
+                var btn = $('#blqBtnGuardar');
+                var textoOriginal = btn ? btn.innerHTML : '';
+                if (btn) { btn.disabled = true; btn.innerHTML = '<span class="blq-spin" style="border-color:#5a5a5a;border-top-color:#fff;"></span>Guardando…'; }
+
+                enviar(url, esEditar ? 'PUT' : 'POST', fd).then(function (ok) {
+                    if (btn) { btn.disabled = false; btn.innerHTML = textoOriginal; }
+                    if (!ok) return;
+                    var m = modalInst('modalBloqueo');
+                    if (m) m.hide();
+                    exitoYRefrescar(esEditar ? 'Bloqueo actualizado correctamente.' : 'Bloqueo guardado correctamente.');
+                });
+            });
         }
-    });
-})();
-</script>
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</div>
+
+

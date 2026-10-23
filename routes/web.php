@@ -747,12 +747,30 @@ Route::middleware(['auth'])
              ->name('admin.transacciones.fragmento');
         Route::get('finanzas-fragmento', [AdminDashboardController::class, 'finanzasFragmento'])
              ->name('admin.finanzas.fragmento');
+        Route::get('bloqueos-fragmento', [AdminDashboardController::class, 'bloqueosFragmento'])
+            ->name('admin.bloqueos.fragmento');
+        // URL: GET /rsv/calendario-fragmento   Nombre: rsv.admin.calendario.fragmento
+        Route::get('calendario-fragmento', [AdminDashboardController::class, 'calendarioFragmento'])
+             ->name('admin.calendario.fragmento');
+
+
         // Fragmento HTML con la gestión de bloqueos del calendario
         // (refresco AJAX in-place, mismo patrón que reservas-fragmento).
         // Sirve la parcial resources/views/rsv/admin/partials/calendario/bloqueos.blade.php
         // URL:  GET  /rsv/bloqueos-fragmento   Nombre: rsv.admin.bloqueos.fragmento
         Route::get('bloqueos-fragmento', [AdminDashboardController::class, 'bloqueosFragmento'])
              ->name('admin.bloqueos.fragmento');
+        Route::get('inicio-fragmento', [AdminDashboardController::class, 'inicioFragmento'])
+             ->name('admin.inicio.fragmento');
+        // Fragmento HTML con el tab de reservas
+        // URL:  GET  /rsv/reservas-fragmento   Nombre: admin.reservas.fragmento
+        Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
+             ->name('admin.reservas.fragmento');
+
+        // Fragmento HTML con el catálogo o detalle de Inmuebles
+        // URL:  GET  /rsv/inmuebles-fragmento   Nombre: admin.inmuebles.fragmento
+        Route::get('inmuebles-fragmento', [AdminDashboardController::class, 'inmueblesFragmento'])
+             ->name('admin.inmuebles.fragmento');
 
         /* ====================================================================
            1 · CATÁLOGO DE INMUEBLES Y CONFIGURACIONES

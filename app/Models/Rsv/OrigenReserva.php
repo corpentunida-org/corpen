@@ -3,10 +3,13 @@
 namespace App\Models\Rsv;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrigenReserva extends Model
 {
+    use SoftDeletes; // Aplicando eliminación lógica
+
     protected $table = 'rsv_origen_reservas';
 
     protected $fillable = [

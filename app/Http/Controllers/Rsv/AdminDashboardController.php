@@ -14,6 +14,7 @@ use Throwable;
 use App\Models\Rsv\CatalogoInmueble;
 use App\Models\Rsv\TransaccionFinanciera;
 use App\Models\Rsv\TarifaTemporada;
+use App\Models\Rsv\BloqueoCalendario;
 
 // Modelos PARTE_2: "Gestión y Auditoría"
 use App\Models\Rsv\Reserva;
@@ -317,32 +318,74 @@ class AdminDashboardController extends Controller
 
     /**
      * ════════════════════════════════════════════════════════════════
-     * NUEVO: Devuelve SOLO el fragmento HTML del parcial de reservas.
-     * Lo usa el JS de reservas.blade.php para hacer swaps AJAX in-place
-     * (buscar, seleccionar reserva, refrescar tras una acción) SIN
-     * recargar la página completa.
+     * 🆕 v29 · Devuelve SOLO el fragmento HTML del tab de Reservas
+     * (tab-reservas.blade.php) para refrescarlo vía AJAX sin recargar
+     * todo el dashboard.
+     *
+     * CORREGIDO respecto a la versión anterior:
+     *  · Log detallado: mensaje + archivo + línea + causa previa
+     *    (antes solo $e->getMessage(), sin file/line).
+     *  · El body del HTTP 500 lleva el MENSAJE REAL del error
+     *    (antes devolvía solo la palabra "error" → imposible diagnosticar
+     *    desde el panel 🐛 Debug de la vista v26.1).
+     *  · Misma lógica de datos: filtros inmueble_id / page_reservas.
      * ════════════════════════════════════════════════════════════════
      */
     public function reservasFragmento(Request $request)
     {
-        $inmuebleId = $request->query('inmueble_id');
-        $inmueble   = null;
+        try {
+            $inmuebleId = $request->query('inmueble_id', 'todos');
+            $pagina     = max(1, (int) $request->query('page_reservas', 1));
 
-        if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
-            $inmueble = CatalogoInmueble::find($inmuebleId);
+            $inmueble = null;
+            $query    = Reserva::with(['user', 'status', 'inmueble:id,name']);
+
+            if ($inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $query->where('id_rsv_catalogo_inmueble', $inmuebleId);
+                $inmueble = CatalogoInmueble::find($inmuebleId);
+            }
+
+            $reservas = $query->orderBy('created_at', 'desc')
+                            ->paginate(10, ['*'], 'page_reservas', $pagina)
+                            ->appends($request->query());
+
+            return response()
+                ->view('rsv.admin.partials.tab-reservas', [
+                    'reservas'   => $reservas,
+                    'inmueble'   => $inmueble,
+                    'inmuebleId' => $inmuebleId,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+
+        } catch (\Throwable $e) {
+            // 1) Log COMPLETO (mensaje + archivo + línea + causa previa)
+            Log::error('reservasFragmento: ' . $e->getMessage(), [
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+                'prev'  => $e->getPrevious() ? $e->getPrevious()->getMessage() : null,
+                'trace' => substr($e->getTraceAsString(), 0, 1200),
+            ]);
+
+            // 2) Body con el mensaje REAL → el JS v26.1 de la vista lo
+            //    extrae (extraerMensajeError500) y lo pinta en el panel
+            //    🐛 Debug. Mientras tanto su fallback local muestra la
+            //    reserva creada SIN recargar el dashboard.
+            $msg = 'reservasFragmento ERROR: ' . $e->getMessage()
+                . ' @ ' . basename($e->getFile()) . ':' . $e->getLine();
+
+            if ($e->getPrevious()) {
+                $msg .= ' | causa: ' . $e->getPrevious()->getMessage();
+            }
+
+            return response(substr($msg, 0, 500), 500)
+                ->header('Content-Type', 'text/plain; charset=UTF-8')
+                ->header('Cache-Control', 'no-store, max-age=0');
         }
-
-        return response()
-            ->view('rsv.admin.partials.reservas.reservas', [
-                'inmueble'   => $inmueble,
-                'inmuebleId' => $inmuebleId,
-            ])
-            ->header('Cache-Control', 'no-store, max-age=0');
     }
 
     /**
      * ════════════════════════════════════════════════════════════════
-     * NUEVO: Busca usuarios por cédula (nid), nombre o email.
+     * Busca usuarios por cédula (nid), nombre o email.
      * Lo usa el autocomplete del modal de Endoso (reservas.blade.php).
      * Versión blindada: verifica columnas antes de usarlas y NUNCA
      * devuelve 500 (cualquier fallo interno responde success:false).
@@ -489,6 +532,183 @@ class AdminDashboardController extends Controller
             // 500 → el JS detecta !r.ok y cae a recarga completa como plan B
             return response('error', 500)
                 ->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve SOLO el fragmento HTML de la gestión de bloqueos del
+     * calendario para refrescar esa sección por AJAX sin recargar el
+     * dashboard (mismo patrón que finanzasFragmento / reservasFragmento).
+     * Lo usa el JS de bloqueos.blade.php para actualizar #bloqueos-panel.
+     * Respeta el filtro global de inmueble_id si viene en la petición.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function bloqueosFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+
+            // 1. Obtener listado de inmuebles para el select del modal
+            $inmuebles = CatalogoInmueble::orderBy('name')->get(['id', 'name']);
+
+            // 2. Consulta de bloqueos con su inmueble asociado
+            $query = BloqueoCalendario::with('inmueble:id,name');
+
+            // 3. Aplicar filtro si no es 'todos'
+            if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $query->where('id_rsv_catalogo_inmueble', $inmuebleId);
+            }
+
+            $bloqueos = $query->orderBy('fecha_inicio', 'desc')->get();
+
+            // 4. Retornar la vista parcial del calendario de bloqueos
+            return response()
+                ->view('rsv.admin.partials.calendario.bloqueos', [
+                    'bloqueos'   => $bloqueos,
+                    'inmuebles'  => $inmuebles,
+                    'inmuebleId' => $inmuebleId,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('bloqueosFragmento: ' . $e->getMessage());
+
+            // 500 -> El JS de bloqueos.blade.php detecta !res.ok y recarga como plan B
+            return response('error', 500)
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve SOLO el fragmento HTML del tab de calendario completo
+     * (tab-calendario.blade.php) para refrescar esa sección por AJAX,
+     * sin recargar el dashboard.
+     * Respeta el filtro global de inmueble_id y suministra el catálogo.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function calendarioFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+
+            // Catálogo ligero para alimentar el <select> superior del calendario
+            $listaInmuebles = CatalogoInmueble::select('id', 'name')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            $inmueble = null;
+            if ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $inmueble = CatalogoInmueble::find($inmuebleId);
+            }
+
+            return response()
+                ->view('rsv.admin.partials.tab-calendario', [
+                    'listaInmuebles' => $listaInmuebles,
+                    'inmueble'       => $inmueble,
+                    'inmuebleId'     => $inmuebleId,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('calendarioFragmento: ' . $e->getMessage());
+
+            return response('error', 500)
+                ->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * Devuelve SOLO el fragmento HTML del tab de Inicio / Resumen global
+     * para refrescarlo vía AJAX al hacer clic en la pestaña.
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function inicioFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id', 'todos');
+
+            // Cargar datos ligeros/KPIs según el filtro de inmueble
+            $inmueble = null;
+            if ($inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
+                $inmueble = CatalogoInmueble::with(['latestTarifa', 'multimedia'])->find($inmuebleId);
+            }
+
+            return response()
+                ->view('rsv.admin.partials.tab-inicio', [
+                    'inmueble'   => $inmueble,
+                    'inmuebleId' => $inmuebleId,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (\Throwable $e) {
+            Log::error('inicioFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * NUEVO: Devuelve SOLO el fragmento HTML del tab de Inmuebles 
+     * para refrescarlo vía AJAX al hacer clic en la pestaña o tras
+     * crear/editar/eliminar un inmueble (sin recargar todo el dashboard).
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function inmueblesFragmento(Request $request)
+    {
+        try {
+            $inmuebleId = $request->query('inmueble_id', 'todos');
+            $pagina     = max(1, (int) $request->query('page_inmuebles', 1));
+
+            $inmueblesGrid = null;
+            $inmueble      = null;
+
+            if ($inmuebleId === 'todos') {
+                // Vista global: Listado de todos los inmuebles
+                $inmueblesGrid = CatalogoInmueble::with([
+                        'multimedia' => function($q) {
+                            $q->orderBy('es_portada', 'desc')
+                              ->orderBy('orden', 'asc');
+                        },
+                        'latestTarifa',
+                        'tipoInmueble',
+                    ])
+                    ->withCount(['reservas', 'bloqueosCalendario'])
+                    ->orderBy('name', 'asc')
+                    ->paginate(12, ['*'], 'page_inmuebles', $pagina)
+                    ->appends($request->query());
+            } else {
+                // Vista específica: Detalle de un solo inmueble
+                if (is_numeric($inmuebleId)) {
+                    $inmueble = CatalogoInmueble::with([
+                            'multimedia' => function($q) {
+                                $q->orderBy('es_portada', 'desc')
+                                  ->orderBy('orden', 'asc');
+                            },
+                            'tarifasTemporadas' => function($q) {
+                                $q->orderBy('fecha_inicio', 'asc');
+                            },
+                            'latestTarifa',
+                            'bloqueosCalendario',
+                            'tipoInmueble',
+                        ])
+                        ->withCount(['reservas', 'bloqueosCalendario'])
+                        ->findOrFail($inmuebleId);
+                }
+            }
+
+            // Asegúrate de que el nombre de la vista parcial sea el correcto
+            // (ej. 'rsv.admin.partials.tab-inmuebles' o 'rsv.admin.partials.inmuebles-tab')
+            return response()
+                ->view('rsv.admin.partials.tab-inmuebles', [
+                    'inmueblesGrid' => $inmueblesGrid,
+                    'inmueble'      => $inmueble,
+                    'inmuebleId'    => $inmuebleId,
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
+
+        } catch (\Throwable $e) {
+            Log::error('inmueblesFragmento: ' . $e->getMessage());
+            
+            // Retorna 500 para que el JS frontend haga el fallback de recarga completa
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
         }
     }
 }

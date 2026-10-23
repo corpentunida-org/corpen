@@ -1,4 +1,33 @@
-{{-- tab-reservas.blade.php · v25 --}}
+{{-- tab-reservas.blade.php · v26.1 --}}
+{{-- NOVEDADES v26.1:
+   · Diagnóstico: si GET /rsv/reservas-fragmento responde error (p.ej.
+     HTTP 500), ahora se extrae el MENSAJE REAL de la excepción desde el
+     body de la respuesta y se muestra en el panel 🐛 Debug
+     (antes: 'HTTP 500' ciego + reload completo).
+   · FALLBACK LOCAL: la tabla se pinta en cliente desde #rvDataset, así
+     que si el fragmento falla la reserva recién creada (respuesta del
+     store-ajax) se inyecta en el dataset (DS) + render() + refetch del
+     calendario → el tab muestra la reserva SIN recargar el dashboard.
+   · El reload completo queda como ÚLTIMO recurso (cuando no hay datos
+     locales, p.ej. refrescos que no vienen de una creación).
+--}}
+{{-- NOVEDADES v26:
+   · CREAR RESERVA YA NO RECARGA EL DASHBOARD: antes, tras guardar, se
+     hacía window.location.reload() (demora + se veía actualizar toda
+     dashboard.blade.php). Ahora se re-pide SOLO este partial por AJAX
+     (ruta admin.reservas.fragmento → GET /rsv/reservas-fragmento, ya
+     expuesta por el backend) y se reemplaza #rvTabWrap en caliente.
+   · Script re-ejecutable: init extraído a rvTabInit() y arrancado por
+     readyState (DOMContentLoaded la 1ra vez; inmediato tras el swap).
+   · Panel 🐛 Debug sobrevive al refresco: logs restaurados y estado
+     abierto/cerrado conservado; dbgLog resuelve el body en vivo.
+   · Handler de 'Detalle' a nivel document registrado UNA sola vez y
+     conectado vía window.rsvTabApi al closure vigente (DS fresco).
+   · Tras crear: window.rsvCalendar.refetchEvents() si existe (calendario
+     grande del dashboard) + toast de confirmación.
+   · Fallback: si el fragmento falla (HTTP != 200, sin #rvTabWrap o ruta
+     no registrada) se recarga la página completa como antes.
+--}}
 {{-- NOVEDADES v24:
    · Titular: autocomplete real (input + dropdown flotante, sin lista visible).
      Chip con el titular seleccionado + botón X para borrar.
@@ -8,6 +37,20 @@
    · Comentario: chips de respuestas rápidas con frases comunes
      (incluye el nombre del usuario logueado).
 --}}
+
+@php
+    /* 🆕 v26 · Resuelto TEMPRANO: este partial imprime data-fragmento en
+       #rvTabWrap antes de llegar al @php principal (que vive dentro de
+       #rvRoot, tras el <style>). Si la ruta no existe queda null y el
+       refresco cae al fallback de recarga completa. */
+    $rvFragmentoUrl = null;
+    foreach (['admin.reservas.fragmento', 'rsv.admin.reservas.fragmento'] as $rvFragRoute) {
+        try {
+            if (\Illuminate\Support\Facades\Route::has($rvFragRoute)) { $rvFragmentoUrl = route($rvFragRoute); break; }
+        } catch (\Throwable $e) { /* siguiente candidato */ }
+    }
+@endphp
+<div id="rvTabWrap" data-fragmento="{{ $rvFragmentoUrl }}">
 
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="rvRoot"
      data-modo="{{ ($modoGlobal ?? true) ? 'global' : 'single' }}"
@@ -899,6 +942,11 @@
         $phpDebugLogs[] = ['err', 'Ruta rsv.reservas.fechas-ocupadas NO registrada: ' . $e->getMessage()];
     }
 
+    // 🆕 v26 · Log del refresco AJAX (la URL ya se resolvió en el @php
+    // temprano del inicio del partial, ANTES de imprimir data-fragmento).
+    $phpDebugLogs[] = !empty($rvFragmentoUrl)
+        ? ['ok', 'Refresco AJAX: fragmento → ' . $rvFragmentoUrl]
+        : ['warn', 'Refresco AJAX: ruta de fragmento NO registrada (admin.reservas.fragmento) → al crear reserva se recargará la página completa'];
     // 🆕 v24 · Usuario logueado (para chip de respuesta rápida "Reserva creada por usuario X")
     $authUserName = auth()->check() ? (auth()->user()->name ?? 'admin') : 'admin';
 
@@ -1304,7 +1352,7 @@
 
 
 {{-- Botón flotante de Debug --}}
-<button type="button" id="rvDebugToggle" title="Mostrar/ocultar panel de debug">🐛</button>
+<button type="button" id="rvDebugToggle" title="Mostrar/ocultar panel de debug">...</button>
 
 {{-- Panel de Debug --}}
 <div id="rvDebugPanel">
@@ -1319,8 +1367,70 @@
 </div>
 
 
+{{-- 🆕 v25.2 · MODAL DETALLE DE RESERVA (botón "Detalle" de la tabla) --}}
+<style>
+    #modalDetalleReserva .modal-content { border-radius: 6px; border: 1px solid #e9eef4; }
+    #modalDetalleReserva .modal-header {
+        padding: 6px 10px; border-bottom: 1px solid #e9eef4; background: #fafbfd;
+    }
+    #modalDetalleReserva .modal-title { font-size: 9.5px; font-weight: 700; color: #475569; }
+    #modalDetalleReserva .modal-body { padding: 10px; }
+    #modalDetalleReserva .modal-footer {
+        padding: 6px 10px; border-top: 1px solid #e9eef4; background: #fafbfd;
+    }
+    #modalDetalleReserva .dt-row {
+        display: flex; align-items: flex-start; gap: 6px;
+        padding: 4px 0; border-bottom: 1px solid #f8fafc;
+    }
+    #modalDetalleReserva .dt-row:last-child { border-bottom: 0; }
+    #modalDetalleReserva .dt-row i {
+        font-size: 9px; color: #94a3b8; width: 12px; text-align: center;
+        margin-top: 1px; flex-shrink: 0;
+    }
+    #modalDetalleReserva .dt-l {
+        color: #94a3b8; font-weight: 700; min-width: 62px; flex-shrink: 0;
+        font-size: 7.5px; text-transform: uppercase; letter-spacing: .04em; margin-top: 1px;
+    }
+    #modalDetalleReserva .dt-v {
+        color: #1e293b; font-weight: 500; word-break: break-word; flex: 1;
+        font-size: 9px; line-height: 1.4;
+    }
+    #modalDetalleReserva .dt-v small {
+        display: block; color: #b3bcc7; font-size: 7.5px; font-weight: 400;
+    }
+    #modalDetalleReserva .dt-badge {
+        display: inline-block; padding: 0 6px; border-radius: 8px;
+        font-size: 7.5px; font-weight: 700; border: 1px solid; line-height: 13px;
+        letter-spacing: .03em;
+    }
+    #modalDetalleReserva .btn-cerrar {
+        font-size: 8.5px; font-family: inherit; cursor: pointer;
+        border: 1px solid #e9eef4; background: #fff; color: #64748b;
+        padding: 2px 10px; border-radius: 3px;
+    }
+    #modalDetalleReserva .btn-cerrar:hover { color: #475569; border-color: #d7dee6; background: #fafcfe; }
+</style>
+
+<div class="modal fade" id="modalDetalleReserva" tabindex="-1" aria-hidden="true" aria-labelledby="modalDetalleReservaLbl">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 340px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title" id="modalDetalleReservaLbl">
+                    <i class="bi bi-card-text me-1" style="font-size: 9px; color: #5d8a70;"></i> Detalle de Reserva
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 9px;"></button>
+            </div>
+            <div class="modal-body" id="dtBody"><!-- se llena por JS --></div>
+            <div class="modal-footer justify-content-end">
+                <button type="button" class="btn-cerrar" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    function rvTabInit() {
 
         /* ═══ PANEL DE DEBUG ═══ */
         var dbgPanel  = document.getElementById('rvDebugPanel');
@@ -1342,14 +1452,17 @@
             }
         }
         function dbgLog(level, msg) {
-            if (!dbgBody) return;
+            /* 🆕 v26 · lookup vivo del body del panel: tras un refresco AJAX el
+               panel viejo se reemplaza; los logs siguen entrando al nuevo. */
+            var bEl = document.getElementById('rvDebugBody');
+            if (!bEl) return;
             var t = new Date();
             var time = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
             var div = document.createElement('div');
             div.className = 'dbg-log ' + (level || 'info');
             div.innerHTML = '<span class="dbg-time">['+time+']</span> ' + String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-            dbgBody.appendChild(div);
-            dbgBody.scrollTop = dbgBody.scrollHeight;
+            bEl.appendChild(div);
+            bEl.scrollTop = bEl.scrollHeight;
         }
         if (dbgToggle) dbgToggle.addEventListener('click', function(){ dbgTogglePanel(true); });
         if (dbgClose) dbgClose.addEventListener('click', function(){ dbgTogglePanel(false); });
@@ -1516,7 +1629,7 @@
                 h += ' <span class="badge bg-danger" style="font-size: 6.5px; padding: 1px 4px; vertical-align: middle; margin-left: 2px;">NO VIGENTE</span>';
             }
             h += '</td>';
-            h += '<td class="text-center"><button type="button" class="btn-mini">Detalle</button></td>';
+            h += '<td class="text-center"><button type="button" class="btn-mini rv-detail" data-cod="' + esc(r.codigo) + '" title="Ver detalle de la reserva">Detalle</button></td>';
             h += '</tr>';
             return h;
         }
@@ -1660,7 +1773,7 @@
                 var a = document.createElement('a');
                 a.href = url; a.download = 'Reservas_' + ctx.replace(/[^a-z0-9]+/gi, '_') + '_' + fArchivo + '.xls';
                 a.style.display = 'none'; a.click();
-                setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+                // setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
             } catch (e) {
                 var blob2 = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
                 var url2 = URL.createObjectURL(blob2);
@@ -2891,7 +3004,12 @@
                     if (r.ok && j.ok) {
                         dbgLog('ok', '✅ Reserva creada! ID=' + (j.reserva && j.reserva.id));
                         if (bsModal) { bsModal.hide(); }
-                        setTimeout(function () { window.location.reload(); }, 200);
+                        /* 🆕 v26 · Refresca SOLO el partial tab-reservas vía AJAX
+                           (el dashboard queda intacto, sin reload completo).
+                           🆕 v26.1 · Pasa la reserva creada + el payload: si
+                           el fragmento falla, el fallback LOCAL inyecta la
+                           reserva en la tabla sin recargar el dashboard. */
+                        setTimeout(function () { refrescarSoloTab(j.reserva || null, payload); }, 400);
                         return;
                     }
                     var msg = j.message || (j.errors ? Object.values(j.errors).map(function (a) { return Array.isArray(a) ? a.join(' · ') : a; }).join(' · ') : 'Error al crear la reserva.');
@@ -2924,6 +3042,277 @@
             });
         }
 
-        render();
+/* ═══════════════════════════════════════════════════════════════
+   🆕 v26 · REFRESCO SOLO DEL PARTIAL (sin recargar el dashboard)
+   Al crear una reserva ya NO se hace window.location.reload(): se
+   vuelve a pedir SOLO el fragmento del tab (ruta admin.reservas.
+   fragmento → GET /rsv/reservas-fragmento) y se reemplaza #rvTabWrap
+   en caliente. El script del partial es re-ejecutable (rvTabInit +
+   readyState), así que el tab queda vivo con dataset/KPIs/agenda
+   frescos, conservando el panel de debug (logs restaurados).
+   Fallback: reload completo si el fragmento falla.
+   ═══════════════════════════════════════════════════════════════ */
+var rvToastTimer = null;
+function toastRv(msg) {
+    var t = document.getElementById('rvToast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'rvToast';
+        t.style.cssText = 'position:fixed;bottom:56px;right:14px;z-index:10001;background:#0f172a;color:#86efac;border:1px solid #1e293b;border-radius:6px;padding:6px 12px;font-family:inherit;font-size:10px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.35);opacity:0;transition:opacity .25s;';
+        document.body.appendChild(t);
+    }
+    t.textContent = '✅ ' + msg;
+    requestAnimationFrame(function () { t.style.opacity = '1'; });
+    clearTimeout(rvToastTimer);
+    rvToastTimer = setTimeout(function () { t.style.opacity = '0'; }, 3200);
+}
+
+function refrescarSoloTab(nueva, payload) {
+    var wrap = document.getElementById('rvTabWrap');
+    if (!wrap) { window.location.reload(); return; }
+    var fragUrl = wrap.getAttribute('data-fragmento') || '';
+    if (!fragUrl) {
+        dbgLog('warn', 'Ruta de fragmento (admin.reservas.fragmento) no disponible → fallback local');
+        fallbackPostFragmento('ruta de fragmento no registrada', nueva, payload);
+        return;
+    }
+    var url = fragUrl + (window.location.search || '');
+    dbgLog('info', '<b>Refresco AJAX del tab</b> → ' + url);
+    var oldLogs = '', panelOpen = false;
+    try {
+        var op = document.getElementById('rvDebugPanel');
+        var ob = document.getElementById('rvDebugBody');
+        panelOpen = !!(op && op.classList.contains('open'));
+        if (ob) { oldLogs = ob.innerHTML; }
+    } catch (e) {}
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        .then(function (resp) {
+            if (!resp.ok) {
+                /* 🆕 v26.1 · Lee el body del error y extrae el mensaje REAL
+                   del backend (causa exacta del 500) para el panel 🐛 Debug. */
+                return resp.text().then(function (bodyTxt) {
+                    var er = new Error('HTTP ' + resp.status);
+                    er.__body = bodyTxt || '';
+                    throw er;
+                });
+            }
+            return resp.text();
+        })
+        .then(function (html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+            var fresh = doc.getElementById('rvTabWrap');
+            if (!fresh) { throw new Error('#rvTabWrap no vino en la respuesta'); }
+            var mainJs = '';
+            fresh.querySelectorAll('script').forEach(function (s) {
+                if (!mainJs && !s.getAttribute('type') && (s.textContent || '').indexOf('rvTabInit') !== -1) { mainJs = s.textContent; }
+            });
+            var target = document.getElementById('rvTabWrap') || wrap;
+            target.replaceWith(fresh);
+            if (mainJs) {
+                var sc = document.createElement('script');
+                sc.textContent = mainJs;
+                document.body.appendChild(sc);
+                sc.remove();
+            }
+            try { limpiarOverlaysHuerfanos(); } catch (e) {}
+            try { if (window.rsvCalendar && typeof window.rsvCalendar.refetchEvents === 'function') { window.rsvCalendar.refetchEvents(); } } catch (e) {}
+            try {
+                var nb = document.getElementById('rvDebugBody');
+                if (nb && oldLogs) { nb.innerHTML = oldLogs + nb.innerHTML; nb.scrollTop = nb.scrollHeight; }
+                var np = document.getElementById('rvDebugPanel');
+                if (np && panelOpen) { np.classList.add('open'); }
+            } catch (e) {}
+            dbgLog('ok', '✅ tab-reservas actualizado por AJAX · dashboard intacto (sin reload)');
+            toastRv('Reserva creada · tab actualizado');
+        })
+        .catch(function (err) {
+            var detalle = extraerMensajeError500(err && err.__body ? err.__body : '', err);
+            fallbackPostFragmento(detalle, nueva, payload);
+        });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🆕 v26.1 · EXTRAE EL MENSAJE REAL DEL ERROR DEL BACKEND
+   Antes un fallo del fragmento mostraba solo "HTTP 500" y recargaba
+   la página sin decir POR QUÉ. Ahora se intenta leer del body:
+     1) JSON de error de Laravel (exception / message / file).
+     2) <title> de la página de error (Ignition pone el mensaje).
+     3) Líneas con "...Exception / ...Error" del texto plano.
+   El resultado va al panel 🐛 Debug → causa exacta visible (p.ej.
+   'View [rsv.admin.partials.tab-reservas] not found') sin abrir logs.
+   ═══════════════════════════════════════════════════════════════ */
+function extraerMensajeError500(bodyTxt, err) {
+    var base = (err && err.message) ? String(err.message) : 'Error desconocido';
+    if (!bodyTxt) { return base; }
+    try {
+        var j = JSON.parse(bodyTxt);
+        if (j && (j.message || j.exception)) {
+            var nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
+            return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
+        }
+    } catch (e) { /* body no era JSON */ }
+    var t = String(bodyTxt)
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ');
+    var mt = t.match(/<title>([\s\S]*?)<\/title>/i);
+    if (mt) {
+        var tit = mt[1].replace(/\s+/g, ' ').trim();
+        if (tit && !/server error/i.test(tit)) { return (base + ' · backend: ' + tit).substring(0, 400); }
+        base = base + ' · backend: ' + (tit || 'server error');
+    }
+    var plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+    var mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
+    if (mExc) { return (base + ' · ' + mExc[0].trim()).substring(0, 400); }
+    return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   🆕 v26.1 · FALLBACK LOCAL CUANDO EL FRAGMENTO FALLA (HTTP 500 etc.)
+   La tabla se pinta 100% en cliente desde #rvDataset, así que si el
+   endpoint del fragmento responde error PERO tenemos los datos de la
+   reserva recién creada (respuesta del store-ajax), la inyectamos en
+   el dataset (DS) + render() de la tabla + refetch del calendario:
+   el usuario ve la reserva NUEVA sin recargar el dashboard.
+   El reload completo queda como ÚLTIMO recurso (sin datos locales).
+   ═══════════════════════════════════════════════════════════════ */
+function fallbackPostFragmento(detalle, nueva, payload) {
+    dbgLog('err', '<b>Refresco AJAX FAIL</b>: ' + esc(detalle));
+    if (nueva && (nueva.codigo || nueva.id)) {
+        var fila = {
+            codigo: String(nueva.codigo || ('ID-' + (nueva.id != null ? nueva.id : ''))),
+            uname:  String(nueva.titular || 'Sin asignar'),
+            umail:  '',
+            unid:   '',
+            inm:    String(nueva.inmueble || 'N/D'),
+            st:     (payload && payload.id_rsv_statuses != null && payload.id_rsv_statuses !== '') ? payload.id_rsv_statuses : null,
+            stn:    String(nueva.estado || 'Pendiente'),
+            fi:     String(nueva.fecha_ini || ''),
+            ff:     String(nueva.fecha_fin || ''),
+            monto:  parseFloat(nueva.monto) || 0,
+            com:    String((payload && payload.comentario_reserva) || '')
+        };
+        var ya = DS.filter(function (x) { return String(x.codigo) === fila.codigo; });
+        if (ya.length === 0) { DS.unshift(fila); }
+        /* Limpia filtros para que la reserva nueva sea visible de una vez */
+        statusF = ''; q = ''; fDesde = ''; fHasta = ''; page = 1;
+        try {
+            var si = document.getElementById('inputSearchReservas'); if (si) { si.value = ''; }
+            var di = document.getElementById('rvDesde'); if (di) { di.value = ''; }
+            var dh = document.getElementById('rvHasta'); if (dh) { dh.value = ''; }
+            document.querySelectorAll('.reservas-soft .fchip').forEach(function (c) { c.classList.remove('active'); });
+            var todas = document.querySelector('.reservas-soft .fchip[data-status=""]');
+            if (todas) { todas.classList.add('active'); }
+        } catch (e) {}
+        try { render(); } catch (e2) { dbgLog('err', 'render() local: ' + esc(String(e2 && e2.message ? e2.message : e2))); }
+        try { if (window.rsvCalendar && typeof window.rsvCalendar.refetchEvents === 'function') { window.rsvCalendar.refetchEvents(); } } catch (e3) {}
+        dbgLog('warn', '🆕 v26.1 · fallback LOCAL: reserva <b>' + esc(fila.codigo) + '</b> visible en la tabla SIN recargar el dashboard (KPIs/Agenda se pondrán al día en el próximo refresco).');
+        dbgLog('warn', '↳ Corregir en el backend la ruta del fragmento · causa: ' + esc(detalle));
+        toastRv('Reserva creada · tabla actualizada (fallback local)');
+        return;
+    }
+    dbgLog('warn', 'Sin datos locales para el refresco → reload completo');
+    window.location.reload();
+}
+/* ═══════════════════════════════════════════════════════════════
+   🆕 v25.2 · FIX BOTÓN "DETALLE" DE LA TABLA
+   El botón se renderizaba sin clase gancho, sin data-cod y sin
+   handler de clic (por eso no hacía nada). Ahora:
+     · filaHTML() lo emite con class="rv-detail" + data-cod.
+     · Este handler delegado abre #modalDetalleReserva con los
+       datos de la reserva tomados del dataset (DS).
+   ═══════════════════════════════════════════════════════════════ */
+var dtModalEl = document.getElementById('modalDetalleReserva');
+var dtModal   = (dtModalEl && window.bootstrap) ? bootstrap.Modal.getOrCreateInstance(dtModalEl) : null;
+
+function abrirDetalleReserva(cod) {
+    var r = DS.find(function (x) { return String(x.codigo) === String(cod); });
+    if (!r) {
+        dbgLog('warn', 'Detalle: no se encontró la reserva <b>#' + esc(cod) + '</b> en el dataset (' + DS.length + ' cargadas)');
+        return;
+    }
+    var noches = null;
+    if (r.fi && r.ff) {
+        var di = midnight(r.fi), df = midnight(r.ff);
+        if (di && df) { noches = Math.abs(dayDiff(di, df)); }
+    }
+    var colorMap = { 'text-success': '#5d8a70', 'text-warning': '#b08a3e', 'text-danger': '#c08484', 'text-secondary': '#94a3b8' };
+    var stColor  = colorMap[statusDot(r.stn)] || '#94a3b8';
+    var dtRow = function (icon, label, value) {
+        return '<div class="dt-row"><i class="bi ' + icon + '"></i><span class="dt-l">' + label + '</span><span class="dt-v">' + value + '</span></div>';
+    };
+    var body = ''
+        + dtRow('bi-hash', 'Código', '<b style="color:#3d7a5c;">#' + esc(r.codigo) + '</b>')
+        + dtRow('bi-person', 'Titular', esc(r.uname) + (r.umail ? '<small>' + esc(r.umail) + (r.unid ? ' · C.C. ' + esc(r.unid) : '') + '</small>' : ''))
+        + dtRow('bi-house-door', 'Inmueble', esc(r.inm))
+        + dtRow('bi-box-arrow-in-right', 'Check-in', (r.fi ? fmtDMY(r.fi) : '—'))
+        + dtRow('bi-box-arrow-right', 'Check-out', (r.ff ? fmtDMY(r.ff) : '—'))
+        + dtRow('bi-moon', 'Noches', (noches !== null && !isNaN(noches)) ? String(noches) : '—')
+        + dtRow('bi-cash', 'Monto', '<b>' + money(r.monto) + '</b>')
+        + dtRow('bi-flag', 'Estado', '<span class="dt-badge" style="color:' + stColor + ';background:' + stColor + '14;border-color:' + stColor + '55;">' + esc(String(r.stn || '').toUpperCase()) + '</span>')
+        + (r.com ? dtRow('bi-chat-left-text', 'Comentario', esc(r.com)) : '');
+    var dtBody = document.getElementById('dtBody');
+    if (dtBody) { dtBody.innerHTML = body; }
+    dbgLog('ok', '<b>Detalle</b> reserva encontrada · abriendo modal…');
+    if (dtModal) {
+        dtModal.show();
+    } else if (dtModalEl && window.bootstrap) {
+        dtModal = bootstrap.Modal.getOrCreateInstance(dtModalEl);
+        dtModal.show();
+    } else {
+        dbgLog('err', 'Bootstrap Modal no disponible para #modalDetalleReserva');
+    }
+}
+
+/* 🆕 v26 · API pública del closure: el handler de click a nivel document
+   SOBREVIVE a los refrescos AJAX (se registra UNA sola vez), así que
+   debe llamar siempre a las funciones del closure VIGENTE (DS fresco),
+   no a las del closure viejo que quedó huérfano tras el swap. */
+window.rsvTabApi = { abrirDetalleReserva: abrirDetalleReserva, dbgLog: dbgLog };
+
+if (!window.__rvDetailClickBound) {
+    window.__rvDetailClickBound = true;
+    document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) return;
+        var b = e.target.closest('.rv-detail');
+        var legacy = false;
+        if (!b) {
+            /* 🆕 v25.3 · Fallback: también acepta el markup ANTIGUO del botón
+               (btn-mini sin clase gancho). Si este camino se ejecuta, la
+               tabla en pantalla sigue siendo de una versión anterior. */
+            var bb = e.target.closest('button.btn-mini');
+            if (bb && (bb.textContent || '').replace(/^\s+|\s+$/g, '') === 'Detalle') { b = bb; legacy = true; }
+        }
+        if (!b) return;
+        e.preventDefault();
+        var cod = b.getAttribute('data-cod');
+        if (!cod && legacy) {
+            var row = b.closest('tr');
+            var cd  = row ? row.querySelector('td.strong') : null;
+            cod = cd ? (cd.textContent || '').replace(/[^A-Za-z0-9_\-]/g, '') : '';
+        }
+        var api = window.rsvTabApi || {};
+        if (api.dbgLog) { api.dbgLog('debug', '<b>Detalle</b> clic' + (legacy ? ' (markup antiguo)' : '') + ' → cod=' + (cod || '?')); }
+        if (api.abrirDetalleReserva) { api.abrirDetalleReserva(cod); }
     });
+}
+
+        render();
+
+        /* 🆕 v25.3 · Marcador de verificación en el panel 🐛 Debug.
+           Esta línea debe aparecer al cargar la página. Si NO aparece,
+           la vista desplegada NO es la versión con el fix del botón
+           Detalle (reemplazar el archivo y recargar con Ctrl+F5). */
+        dbgLog('ok', '🆕 v25.3 activo · ' + document.querySelectorAll('.rv-detail').length + ' botón(es) Detalle enlazado(s) en la tabla');
+        dbgLog('ok', '🆕 v26.1 activo · refresco parcial por AJAX + fallback local si el fragmento falla');
+    }
+
+    /* 🆕 v26 · Bootstrap re-ejecutable: la primera carga pasa por
+       DOMContentLoaded; tras un refresco AJAX el script se re-ejecuta
+       con el DOM ya listo y arranca de inmediato. */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', rvTabInit);
+    } else {
+        rvTabInit();
+    }
 </script>
+</div>
