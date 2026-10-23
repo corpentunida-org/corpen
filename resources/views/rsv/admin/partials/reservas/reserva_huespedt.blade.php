@@ -371,14 +371,18 @@
             });
         }
 
-        /* CRUD via fetch (los controladores devuelven JSON) */
+        /* ACTUALIZACIÓN PARA FORMREQUESTS: Maneja correctamente los errores 422 en AJAX */
         function enviar(url, method, fd, ok) {
             fd.append('_token', CSRF);
             if (method !== 'POST') fd.append('_method', method);
             fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                .then(function (r) { return r.json().catch(function () { return { success: r.ok }; }); })
+                .then(function (r) { return r.json().then(function(data){ data._status = r.status; return data; }).catch(function(){ return { success: r.ok, _status: r.status }; }); })
                 .then(function (j) {
-                    if (j.success === false) { alert(j.message || 'No se pudo completar la operación.'); return; }
+                    if (j.success === false || j._status === 422) {
+                        var msg = j.message || 'No se pudo completar la operación.';
+                        if (j.errors) { msg = Object.values(j.errors).map(function(e){ return e.join('\n'); }).join('\n'); }
+                        alert('Atención:\n' + msg); return;
+                    }
                     location.reload();
                 })
                 .catch(function () { alert('Error de conexión.'); });

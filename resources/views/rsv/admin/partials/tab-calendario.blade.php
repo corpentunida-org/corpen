@@ -477,21 +477,34 @@
             }
         });
 
+        // 1. EXPORTAR EL CALENDARIO GLOBALMENTE PARA PODER REFRESCARLO DESDE OTRAS VISTAS
+        window.rsvCalendar = calendar;
+
         calendar.render();
 
-        filtro.addEventListener('change', () => calendar.refetchEvents());
+        if (filtro) {
+            filtro.addEventListener('change', () => calendar.refetchEvents());
+        }
 
-        /* ═══ FIX 2 · updateSize para AMBOS modos ═══
-           El calendario se inicializa con su tab oculto (ancho 0).
-           Antes solo escuchaba el tab individual (#calendario); en global
-           el tab es #global-calendario y nunca se re-dimensionaba → blanco.
-           Ahora: CUALQUIER tab cuyo pane contenga el calendario lo redibuja. */
+        /* ═══ FIX DEFINITIVO · updateSize & refetchEvents ═══
+           Al entrar en la pestaña Padre (Calendario) o Hijo (Inicio), 
+           forzamos a FullCalendar a calcular su tamaño Y volver a traer los datos. */
         document.addEventListener('shown.bs.tab', (e) => {
-            const sel = e.target?.getAttribute?.('data-bs-target');
-            if (!sel) return;
-            const pane = document.querySelector(sel);
-            if (pane && pane.contains(calEl)) {
-                setTimeout(() => calendar.updateSize(), 60);
+            const target = e.target?.getAttribute?.('data-bs-target') || e.target?.getAttribute?.('href');
+            if (!target) return;
+
+            const targetsCalendario = [
+                '#global-calendario', 
+                '#calendario', 
+                '#cal-sub-inicio', 
+                '#single-cal-sub-inicio'
+            ];
+
+            if (targetsCalendario.includes(target)) {
+                setTimeout(() => {
+                    calendar.updateSize();    // Evita que se vea blanco
+                    calendar.refetchEvents(); // TRAE LOS DATOS NUEVOS DE BLOQUEOS/RESERVAS
+                }, 200); // 200ms da tiempo a que la animación de Bootstrap termine
             }
         });
 

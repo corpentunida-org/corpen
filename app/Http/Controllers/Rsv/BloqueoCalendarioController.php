@@ -129,10 +129,9 @@ class BloqueoCalendarioController extends Controller
                 'data' => $bloqueo->load('inmueble:id,name')
             ], 201);
         } catch (\Throwable $e) {
-            Log::error('Error al crear bloqueo de calendario: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al crear el bloqueo del calendario.',
+                'message' => 'ERROR REAL: ' . $e->getMessage() . ' | Línea: ' . $e->getLine(),
             ], 500);
         }
     }
@@ -295,8 +294,8 @@ class BloqueoCalendarioController extends Controller
             if ($statusIdsBloqueantes->isNotEmpty()) {
                 Reserva::with(['user:id,name,nid,email', 'status:id,name'])
                     ->where('id_rsv_catalogo_inmueble', $inmueble)
-                    ->whereIn('id_rsv_status', $statusIdsBloqueantes)
-                    ->get(['id', 'id_rsv_catalogo_inmueble', 'fecha_inicio', 'fecha_fin', 'codigo_reserva', 'id_rsv_status'])
+                    ->whereIn('id_rsv_statuses', $statusIdsBloqueantes)
+                    ->get(['id', 'id_rsv_catalogo_inmueble', 'fecha_inicio', 'fecha_fin', 'codigo_reserva', 'id_rsv_statuses'])
                     ->each(function ($r) use (&$ocupadas) {
                         $ocupadas[] = [
                             'tipo'    => 'reserva',
@@ -374,7 +373,7 @@ class BloqueoCalendarioController extends Controller
         }
 
         return Reserva::where('id_rsv_catalogo_inmueble', $inmuebleId)
-            ->whereIn('id_rsv_status', $statusIdsBloqueantes)
+            ->whereIn('id_rsv_statuses', $statusIdsBloqueantes)
             ->where(function ($q) use ($inicio, $fin) {
                 $q->whereBetween('fecha_inicio', [$inicio, $fin])
                   ->orWhereBetween('fecha_fin', [$inicio, $fin])

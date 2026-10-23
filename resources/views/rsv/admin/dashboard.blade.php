@@ -706,16 +706,13 @@
     </div>
 
     {{-- ======================================================================= --}}
-    {{-- SCRIPT: GESTOR DE MEMORIA DE PESTAÑAS (Local Storage)                   --}}
-    {{-- Recuerda en qué Padre e Hijo te quedaste tras hacer un Submit/Recarga   --}}
+    {{-- SCRIPT: GESTOR DE MEMORIA DE PESTAÑAS + REFRESCADOR AJAX DE FRAGMENTOS   --}}
     {{-- ======================================================================= --}}
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
             // 1. Determinar el contexto actual para guardar variables separadas
-            // Así si el usuario navega a un inmueble, no se abre la pestaña que dejó en el panel global.
             const inmuebleId = '{{ $inmuebleId ?? "todos" }}';
-            const contextKey = 'rsv_panel_context_' + inmuebleId;
             const parentKey  = 'rsv_panel_parent_' + inmuebleId;
             const childKey   = 'rsv_panel_child_' + inmuebleId;
 
@@ -735,22 +732,45 @@
                 });
             });
 
-            // 4. RESTAURACIÓN AUTOMÁTICA AL CARGAR LA PÁGINA
+            // 4. ESCUCHADOR GLOBAL DE CAMBIO DE PESTAÑAS (REDIBUJO DE MÓDULOS OCULTOS)
+                /* ═══ FIX DEFINITIVO · updateSize & refetchEvents en Pestañas Padre e Hijo ═══
+            Bootstrap tarda 150ms en completar la animación .fade. 
+            Usamos 200ms para asegurar que el contenedor #calRoot tenga dimensiones reales. */
+            document.addEventListener('shown.bs.tab', (e) => {
+                const sel = e.target?.getAttribute?.('data-bs-target');
+                if (!sel) return;
+
+                const pane = document.querySelector(sel);
+                if (!pane) return;
+
+                // Detecta si la pestaña que se acaba de activar es la PADRE o la HIJO del calendario
+                const esTabCalendario = pane.contains(calEl) || 
+                                        sel === '#global-calendario' || 
+                                        sel === '#calendario' ||
+                                        sel === '#cal-sub-inicio' || 
+                                        sel === '#single-cal-sub-inicio';
+
+                if (esTabCalendario) {
+                    setTimeout(() => {
+                        calendar.updateSize();    // Re-calcula el ancho y alto visible
+                        calendar.refetchEvents(); // Fuerza la re-consulta de reservas y bloqueos
+                    }, 200);
+                }
+            });
+
+            // 5. RESTAURACIÓN AUTOMÁTICA AL CARGAR LA PÁGINA
             const savedParent = localStorage.getItem(parentKey);
             const savedChild  = localStorage.getItem(childKey);
 
             if (savedParent) {
-                // Buscamos el botón de la pestaña padre guardada
                 const parentBtn = document.querySelector(`.tab-memory-parent .nav-link[data-bs-target="${savedParent}"]`);
                 if (parentBtn) {
-                    // Instanciamos el tab de Bootstrap y lo mostramos
                     const bsParentTab = new bootstrap.Tab(parentBtn);
                     bsParentTab.show();
                 }
             }
 
             if (savedChild) {
-                // Buscamos el botón de la subpestaña hijo guardada
                 const childBtn = document.querySelector(`.tab-memory-child .nav-link[data-bs-target="${savedChild}"]`);
                 if (childBtn) {
                     const bsChildTab = new bootstrap.Tab(childBtn);
