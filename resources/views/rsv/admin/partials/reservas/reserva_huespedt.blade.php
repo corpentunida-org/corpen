@@ -1,5 +1,13 @@
-{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.2 · recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
+{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.3 · prefill reserva por ID + recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
 {{--
+  NOVEDADES v2.3 (fix del campo Reserva al editar):
+  · El dataset ahora incluye 'rid' => id_rsv_reservas (antes solo llevaba 'cod', el código de texto).
+  · El modal de edición pre-selecciona la reserva POR ID (r.rid); si la reserva del huésped no
+    está en la lista del select (limit 500 / filtro por inmueble), la opción se inyecta al vuelo.
+    Antes se buscaba la opción por texto ('#' + cod) y fallaba cuando cod='—' o la reserva no
+    estaba en la lista: el select quedaba vacío y el required obligaba a re-elegir.
+  · Complementa el fix del backend: el controlador update() ahora sí persiste id_rsv_reservas.
+
   NOVEDADES v2.2 (sobre v2.1, cuyo dataset fresco ya funcionó: "Dataset: 8" en el panel):
   · v2.1 SE CONSERVA: tras POST/PUT/DELETE ok -> reloadRhFragment() trae el fragmento
     (AdminDashboardController::reservaHuespedesFragmento, Cache-Control no-store) con
@@ -175,6 +183,7 @@
         $rhItems = collect($rawCollection)->map(function ($h) {
             return [
                 'id'   => $h->id ?? null,
+                'rid'  => $h->id_rsv_reservas ?? null, // v2.3: ID de la reserva para pre-seleccionar el select del modal
                 'nom'  => (string) ($h->nombre ?? ''),
                 'ape'  => (string) ($h->apellidos ?? ''),
                 'tdoc' => (string) ($h->tipo_documento ?? ''),
@@ -553,7 +562,7 @@ const DebugPanel = (function() {
 
 
         /* v2.0 · Trazas de arranque en el panel de debug */
-        DebugPanel.log('ok', 'v2.2 activo · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
+        DebugPanel.log('ok', 'v2.3 activo · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
         DebugPanel.log('info', 'init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'));
         DebugPanel.log((STORE || UPDATE_URL) ? 'ok' : 'warn', 'Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'));
         DebugPanel.log(DS.length ? 'ok' : 'warn', 'Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length);
@@ -740,10 +749,18 @@ const DebugPanel = (function() {
 
                 document.getElementById('rhModalTitle').textContent = 'Editar Huésped';
                 document.getElementById('rhId').value = r.id;
-                document.getElementById('rhReserva').value = '';
+                /* v2.3 · Pre-selección de la reserva POR ID (r.rid del dataset). Antes se
+                   buscaba la opción por texto ('#' + r.cod) y fallaba cuando cod='—' o la
+                   reserva no estaba en la lista del select (limit 500 / filtro por inmueble):
+                   el select quedaba vacío y el required obligaba a re-elegir. */
+                sel.value = '';
                 
-                var opt = Array.from(sel.options).find(function (o) { return o.textContent === '#' + r.cod; });
-                if (opt) sel.value = opt.value;
+                var rid = (r.rid !== undefined && r.rid !== null && r.rid !== '') ? String(r.rid) : '';
+                if (rid) {
+                    var opt = sel.querySelector('option[value="' + rid + '"]');
+                    if (!opt) { opt = new Option('#' + (r.cod || rid), rid, false, true); sel.add(opt); }
+                    sel.value = rid;
+                }
 
                 document.getElementById('rhNombre').value = r.nom || '';
                 document.getElementById('rhApellidos').value = r.ape || '';

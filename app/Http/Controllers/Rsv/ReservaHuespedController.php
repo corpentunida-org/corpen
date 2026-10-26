@@ -95,6 +95,11 @@ class ReservaHuespedController extends Controller
 
     public function update(UpdateReservaHuespedRequest $request, string $id): JsonResponse
     {
+        // ===== TEMPORAL: diagnóstico (quitar cuando funcione) =====
+        Log::info('RH-UPDATE raw', ['id' => $id, 'payload' => $request->all()]);
+        Log::info('RH-UPDATE validated', ['validated' => $request->validated()]);
+        // ===========================================================
+
         try {
             $huesped = ReservaHuesped::find($id);
             if (!$huesped) return response()->json(['success' => false], 404);
@@ -102,22 +107,45 @@ class ReservaHuespedController extends Controller
             $validated = $request->validated();
             $datosActualizar = [];
 
+            // Procesar el cambio de reserva
+            if (!empty($validated['id_rsv_reservas'])) {
+                $datosActualizar['id_rsv_reservas'] = (int) $validated['id_rsv_reservas'];
+            }
+
             if (array_key_exists('nombre', $validated) || array_key_exists('nombres', $validated)) {
                 $datosActualizar['nombre'] = $validated['nombre'] ?? $validated['nombres'] ?? null;
             }
             if (array_key_exists('apellidos', $validated)) $datosActualizar['apellidos'] = $validated['apellidos'];
             if (array_key_exists('tipo_documento', $validated)) $datosActualizar['tipo_documento'] = $validated['tipo_documento'];
             if (array_key_exists('numero_documento', $validated)) $datosActualizar['numero_documento'] = $validated['numero_documento'];
-            
+
             if ($request->has('es_titular') || $request->has('es_principal')) {
                 $datosActualizar['es_titular'] = $request->boolean('es_titular', $request->boolean('es_principal'));
             }
 
+            // ===== TEMPORAL: qué se va a escribir realmente =====
+            Log::info('RH-UPDATE datosActualizar', ['id' => $id, 'datos' => $datosActualizar]);
+            // =====================================================
+
+            if (empty($datosActualizar)) {
+                return response()->json(['success' => false, 'message' => 'Nada que actualizar.'], 422);
+            }
+
             DB::transaction(fn() => $huesped->update($datosActualizar));
 
-            return response()->json(['success' => true, 'data' => $huesped->fresh()], 200);
+            // Devolver con relaciones para que el JS pinte el código de reserva fresco
+            return response()->json([
+                'success' => true,
+                'data'    => $huesped->fresh([
+                    'reserva:id,codigo_reserva,id_rsv_catalogo_inmueble',
+                    'reserva.inmueble:id,name',
+                    'registrador:id,name',
+                ]),
+            ], 200);
         } catch (Throwable $e) {
-            Log::error('Error Update ReservaHuesped: ' . $e->getMessage());
+            Log::error('Error Update ReservaHuesped: ' . $e->getMessage(), [
+                'en' => $e->getFile() . '@' . $e->getLine(),
+            ]);
             return response()->json(['success' => false], 500);
         }
     }
