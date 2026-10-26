@@ -13,8 +13,8 @@ class UpdateOrigenReservaRequest extends FormRequest
         $id = $this->route('origen_reserva') ?? $this->route('id');
 
         return [
-            'name'   => 'sometimes|required|string|max:255|unique:rsv_origen_reservas,name,' . $id,
-            'active' => 'sometimes|boolean',
+            // Cambiado de 'name' a 'nombre'
+            'nombre' => 'sometimes|required|string|max:255|unique:rsv_origen_reservas,nombre,' . $id,
         ];
     }
 }

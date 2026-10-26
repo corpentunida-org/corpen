@@ -1,7 +1,7 @@
 {{-- partials/reservas/status.blade.php · v5 · CRUD 100% Bootstrap/Blade + fila TOTAL --}}
-{{-- · Alertas de sesión/validación visibles · old() en forms                          --}}
-{{-- · Conteos contextuales (global vs inmueble) · guard de eliminar global           --}}
-{{-- · tfoot: Sin estado asignado + TOTAL · búsqueda progresiva con ids únicos        --}}
+{{-- · Alertas de sesión/validación visibles · old() en forms                      --}}
+{{-- · Conteos contextuales (global vs inmueble) · guard de eliminar global          --}}
+{{-- · tfoot: Sin estado asignado + TOTAL · búsqueda progresiva con ids únicos       --}}
 
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="stRoot"
      style="border-color: #f1f5f9 !important;">
@@ -74,18 +74,22 @@
         $stCtxName = (is_object($stInm) ? ($stInm->name ?? null) : null) ?? ('Inmueble #' . $stInmId);
     }
 
-    // Detección defensiva de rutas
+    // Detección defensiva de rutas (buscando nombres con y sin prefijo rsv.)
     $stRuta = function (array $cands, $param = null) {
         foreach ($cands as $c) {
             if (\Illuminate\Support\Facades\Route::has($c)) {
                 return $param !== null ? route($c, $param) : route($c);
             }
+            // Intento con prefijo 'rsv.' por si acaso
+            if (\Illuminate\Support\Facades\Route::has('rsv.' . $c)) {
+                return $param !== null ? route('rsv.' . $c, $param) : route('rsv.' . $c);
+            }
         }
         return null;
     };
-    $stStore    = $stRuta(['rsv.statuses.store', 'rsv.status.store']);
-    $stUpdate   = $stRuta(['rsv.statuses.update', 'rsv.status.update'], 'ID');
-    $stDestroy  = $stRuta(['rsv.statuses.destroy', 'rsv.status.destroy'], 'ID');
+    $stStore    = $stRuta(['rsv.statuses.store', 'statuses.store', 'rsv.status.store']);
+    $stUpdate   = $stRuta(['rsv.statuses.update', 'statuses.update', 'rsv.status.update'], 'ID');
+    $stDestroy  = $stRuta(['rsv.statuses.destroy', 'statuses.destroy', 'rsv.status.destroy'], 'ID');
 
     $stItems = collect(); $stTotalesGlobales = collect();
     try {
@@ -136,9 +140,10 @@
         }
     } catch (\Throwable $e) { $stTotalReservas = $stSumaCnt; }
 
-    // Reservas sin ningún estado asignado (diferencia)
+    // Reservas sin ningún estado asignado (diferencia corregida)
     $stSinEstado = max(0, $stTotalReservas - $stSumaCnt);
 @endphp
+
 
     <!-- ═══ ALERTAS · success / error / validación (fix fallos silenciosos) ═══ -->
     @if (session('success'))
@@ -265,7 +270,7 @@
 </div>
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODAL · CREAR (form clásico POST · sin JS)                      --}}
+{{-- MODAL · CREAR (AJAX)                                             --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 @if($stStore)
 <div class="modal fade reservas-soft-modal" id="stModalCreate" tabindex="-1" aria-hidden="true">
@@ -275,16 +280,16 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 9px;"></button>
                 <h6 class="modal-title mb-0 fw-bold" style="font-size: 0.95rem;">Nuevo Estado</h6>
             </div>
-            <form action="{{ $stStore }}" method="POST">
+            <form id="stFormCreate" action="{{ $stStore }}" method="POST">
                 @csrf
                 <div class="modal-body p-3">
                     <div class="mb-2">
                         <label class="form-label">Nombre <span style="color:#c98a85;">*</span></label>
-                        <input type="text" class="form-control form-control-sm" name="name" maxlength="100" required placeholder="Confirmada, Cancelada…" value="{{ old('name') }}">
+                        <input type="text" class="form-control form-control-sm" name="name" maxlength="100" required placeholder="Confirmada, Cancelada…">
                     </div>
                     <div class="mb-0">
                         <label class="form-label">Color (dot en tablas y calendario)</label>
-                        <input type="color" class="form-control form-control-color form-control-sm w-100" name="color_hex" value="{{ old('color_hex', '#a3cfb6') }}">
+                        <input type="color" class="form-control form-control-color form-control-sm w-100" name="color_hex" value="#a3cfb6">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -298,7 +303,7 @@
 @endif
 
 {{-- ═══════════════════════════════════════════════════════════════ --}}
-{{-- MODALES POR ESTADO · EDITAR (precargados) y ELIMINAR (guard)     --}}
+{{-- MODALES POR ESTADO · EDITAR Y ELIMINAR (AJAX)                    --}}
 {{-- ═══════════════════════════════════════════════════════════════ --}}
 @foreach(($stItems ?? collect()) as $s)
 
@@ -310,17 +315,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size: 9px;"></button>
                     <h6 class="modal-title mb-0 fw-bold" style="font-size: 0.95rem;">Editar: {{ $s['name'] }}</h6>
                 </div>
-                <form action="{{ str_replace('ID', $s['id'], $stUpdate) }}" method="POST">
+                <form class="st-form-edit" action="{{ str_replace('ID', $s['id'], $stUpdate) }}" method="POST">
                     @csrf
                     @method('PUT')
                     <div class="modal-body p-3">
                         <div class="mb-2">
                             <label class="form-label">Nombre <span style="color:#c98a85;">*</span></label>
-                            <input type="text" class="form-control form-control-sm" name="name" maxlength="100" required value="{{ old('name', $s['name']) }}">
+                            <input type="text" class="form-control form-control-sm" name="name" maxlength="100" required value="{{ $s['name'] }}">
                         </div>
                         <div class="mb-0">
                             <label class="form-label">Color</label>
-                            <input type="color" class="form-control form-control-color form-control-sm w-100" name="color_hex" value="{{ old('color_hex', $s['color']) }}">
+                            <input type="color" class="form-control form-control-color form-control-sm w-100" name="color_hex" value="{{ $s['color'] }}">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -345,7 +350,6 @@
                     </p>
 
                     @if($s['cntTotal'] > 0)
-                        {{-- GUARD EN BLADE: bloqueado por tener reservas globales --}}
                         <div class="st-warn mb-2">
                             <i class="bi bi-lock-fill me-1"></i>
                             Bloqueado: tiene <b>{{ $s['cntTotal'] }}</b> reserva(s) asociada(s) en el sistema.
@@ -355,9 +359,7 @@
                             <i class="bi bi-trash3"></i> Eliminar
                         </button>
                     @else
-                        {{-- Sin reservas → form DELETE habilitado --}}
-                        <form action="{{ str_replace('ID', $s['id'], $stDestroy) }}" method="POST"
-                              onsubmit="return confirm('¿Confirmas eliminar el estado “{{ $s['name'] }}”?');">
+                        <form class="st-form-del" action="{{ str_replace('ID', $s['id'], $stDestroy) }}" method="POST">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-sm py-1 px-2 w-100"
@@ -377,26 +379,110 @@
 
 @endforeach
 
-{{-- Búsqueda progresiva · ids únicos (stFiltrar) sin colisiones --}}
+{{-- SCRIPT AJAX, MODALES Y BÚSQUEDA PROGRESIVA DINÁMICA --}}
 <script>
 (function () {
-    function stFiltrarInit() {
-        try {
-            var stInp = document.getElementById('stSearch');
-            var stTbody = document.getElementById('stTbody');
-            if (!stInp || !stTbody) return;
+    const ST_FRAG_URL = '{{ route("rsv.admin.reservas.status.fragmento") }}';
+    const CSRF_TOKEN = '{{ csrf_token() }}';
 
-            var stRows = Array.prototype.slice.call(stTbody.querySelectorAll('tr[data-st-name]'));
+    // Función para recargar SOLO este micro-fragmento vía AJAX
+    window.reloadStFragment = function() {
+        fetch(ST_FRAG_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.text())
+            .then(html => {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const newContent = temp.querySelector('#stRoot');
+                if (newContent) {
+                    document.getElementById('stRoot').replaceWith(newContent);
+                }
+            })
+            .catch(err => console.error('Error recargando fragmento de estados:', err));
+    };
 
-            stInp.addEventListener('input', function () {
-                var stVal = this.value.toLowerCase().trim();
-                stRows.forEach(function (tr) {
-                    var show = !stVal || (tr.getAttribute('data-st-name') || '').indexOf(stVal) !== -1;
-                    tr.style.display = show ? '' : 'none';
-                });
+    // Interceptar clics en los botones de envío de cualquier formulario del módulo de estados
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('button[type="submit"], input[type="submit"]');
+        if (!btn) return;
+
+        const form = btn.closest('form');
+        if (!form) return;
+
+        const isModuleForm = form.id === 'stFormCreate' || 
+                             form.classList.contains('st-form-edit') || 
+                             form.classList.contains('st-form-del') || 
+                             form.closest('#stRoot') !== null;
+
+        if (!isModuleForm) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const url = form.action;
+        const formData = new FormData(form);
+
+        if (btn.name) {
+            formData.append(btn.name, btn.value);
+        }
+
+        fetch(url, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            let data = {};
+            try { data = await res.json(); } catch(e){}
+            return { status: res.status, ok: res.ok, body: data };
+        })
+        .then(res => {
+            if (!res.ok) {
+                let msg = 'Ocurrió un error al procesar la solicitud.';
+                if (res.body.errors) {
+                    msg = Object.values(res.body.errors).flat().join('\n');
+                } else if (res.body.message) {
+                    msg = res.body.message;
+                }
+                alert(msg);
+                return;
+            }
+
+            document.querySelectorAll('.modal.show').forEach(m => {
+                const bsModal = bootstrap.Modal.getInstance(m);
+                if (bsModal) bsModal.hide();
             });
-        } catch (e) {}
-    }
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', stFiltrarInit); } else { stFiltrarInit(); }
+
+            document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+
+            window.reloadStFragment();
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión con el servidor.');
+        });
+    }, true);
+
+    // BÚSQUEDA PROGRESIVA DINÁMICA (Delegación global de eventos 'input')
+    document.addEventListener('input', function (e) {
+        if (e.target && e.target.id === 'stSearch') {
+            var stVal = e.target.value.toLowerCase().trim();
+            var stTbody = document.getElementById('stTbody');
+            if (!stTbody) return;
+
+            var stRows = stTbody.querySelectorAll('tr[data-st-name]');
+            stRows.forEach(function (tr) {
+                var nameAttr = tr.getAttribute('data-st-name') || '';
+                var show = !stVal || nameAttr.indexOf(stVal) !== -1;
+                tr.style.display = show ? '' : 'none';
+            });
+        }
+    });
 })();
 </script>

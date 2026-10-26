@@ -21,4 +21,13 @@ class StoreReservaHuespedRequest extends FormRequest
             'es_titular'       => 'nullable|boolean',
         ];
     }
+
+    protected function prepareForValidation()
+    {
+        // Normalizar nombres y titular de forma segura ante cualquier variante
+        $this->merge([
+            'nombre'     => $this->input('nombre') ?? $this->input('nombres'),
+            'es_titular' => $this->boolean('es_titular') || $this->boolean('es_principal'),
+        ]);
+    }
 }

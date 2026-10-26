@@ -20,75 +20,84 @@ class OrigenReservaController extends Controller
     {
         try {
             $query = OrigenReserva::query();
+            
+            // CORREGIDO: Usando 'nombre' en lugar de 'name'
             if ($request->has('search') && !empty($request->search)) {
-                $query->where('name', 'like', "%{$request->search}%");
+                $query->where('nombre', 'like', "%{$request->search}%");
             }
-            if ($request->has('active')) {
-                $query->where('active', filter_var($request->active, FILTER_VALIDATE_BOOLEAN));
-            }
-            $origenes = $query->orderBy('name', 'asc')->paginate($request->get('per_page', 15));
+
+            $origenes = $query->orderBy('nombre', 'asc')->paginate($request->get('per_page', 15));
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'data' => $origenes], 200);
             }
+            
             return view('rsv.origen-reservas.index', compact('origenes'));
+            
         } catch (Throwable $e) {
             Log::error('Error Index Origen: ' . $e->getMessage());
             return $request->wantsJson() || $request->ajax() 
-                ? response()->json(['success' => false], 500) 
+                ? response()->json(['success' => false, 'message' => $e->getMessage()], 500) 
                 : back()->with('error', 'Error al obtener orígenes.');
         }
     }
 
     public function store(StoreOrigenReservaRequest $request): JsonResponse
     {
-        DB::beginTransaction();
         try {
-            $origen = DB::transaction(fn() => OrigenReserva::create($request->validated()));
+            $origen = DB::transaction(function () use ($request) {
+                return OrigenReserva::create($request->validated());
+            });
+
             return response()->json(['success' => true, 'data' => $origen], 201);
+            
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error Store Origen: ' . $e->getMessage());
-            return response()->json(['success' => false], 500);
+            return response()->json(['success' => false, 'message' => 'Error al guardar el origen.'], 500);
         }
     }
 
     public function show(string $id): JsonResponse
     {
         $origen = OrigenReserva::find($id);
-        if (!$origen) return response()->json(['success' => false], 404);
+        if (!$origen) return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
+        
         return response()->json(['success' => true, 'data' => $origen], 200);
     }
 
     public function update(UpdateOrigenReservaRequest $request, string $id): JsonResponse
     {
-        DB::beginTransaction();
         try {
             $origen = OrigenReserva::find($id);
-            if (!$origen) return response()->json(['success' => false], 404);
+            if (!$origen) return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
 
-            DB::transaction(fn() => $origen->update($request->validated()));
+            DB::transaction(function () use ($origen, $request) {
+                $origen->update($request->validated());
+            });
+
             return response()->json(['success' => true, 'data' => $origen], 200);
+            
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error Update Origen: ' . $e->getMessage());
-            return response()->json(['success' => false], 500);
+            return response()->json(['success' => false, 'message' => 'Error al actualizar el origen.'], 500);
         }
     }
 
     public function destroy(string $id): JsonResponse
     {
-        DB::beginTransaction();
         try {
             $origen = OrigenReserva::find($id);
-            if (!$origen) return response()->json(['success' => false], 404);
+            if (!$origen) return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
 
-            DB::transaction(fn() => $origen->delete()); // Eliminación lógica
+            DB::transaction(function () use ($origen) {
+                $origen->delete(); // Soft Delete
+            });
+
             return response()->json(['success' => true], 200);
+            
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error Destroy Origen: ' . $e->getMessage());
-            return response()->json(['success' => false], 500);
+            return response()->json(['success' => false, 'message' => 'Error al eliminar el origen.'], 500);
         }
     }
 }
