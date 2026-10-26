@@ -37,22 +37,6 @@ class StatusController extends Controller
         }
     }
 
-    public function store(StoreStatusRequest $request): JsonResponse|RedirectResponse
-    {
-        $esWeb = !($request->wantsJson() || $request->ajax());
-        DB::beginTransaction();
-        try {
-            $status = DB::transaction(fn() => Status::create($request->validated()));
-            return $esWeb
-                ? back()->with('success', 'Estado creado exitosamente.')
-                : response()->json(['success' => true, 'data' => $status], 201);
-        } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error Store Status: ' . $e->getMessage());
-            return $esWeb ? back()->with('error', 'Error.')->withInput() : response()->json(['success' => false], 500);
-        }
-    }
-
     public function show(string $rsvStatus): JsonResponse
     {
         $status = Status::find($rsvStatus);
@@ -60,53 +44,70 @@ class StatusController extends Controller
         return response()->json(['success' => true, 'data' => $status], 200);
     }
 
+    public function store(StoreStatusRequest $request): JsonResponse|RedirectResponse
+    {
+        $isAjax = $request->ajax() || $request->wantsJson() || $request->expectsJson();
+        try {
+            $status = DB::transaction(fn() => Status::create($request->validated()));
+            
+            return $isAjax 
+                ? response()->json(['success' => true, 'data' => $status], 201)
+                : back()->with('success', 'Estado creado exitosamente.');
+        } catch (Throwable $e) {
+            Log::error('Error Store Status: ' . $e->getMessage());
+            return $isAjax 
+                ? response()->json(['success' => false, 'message' => $e->getMessage()], 500)
+                : back()->with('error', 'Error al guardar.')->withInput();
+        }
+    }
+
     public function update(UpdateStatusRequest $request, string $rsvStatus): JsonResponse|RedirectResponse
     {
-        $esWeb = !($request->wantsJson() || $request->ajax());
-        DB::beginTransaction();
+        $isAjax = $request->ajax() || $request->wantsJson() || $request->expectsJson();
         try {
             $status = Status::find($rsvStatus);
             if (!$status) {
-                return $esWeb ? back()->with('error', 'No existe.') : response()->json(['success' => false], 404);
+                return $isAjax ? response()->json(['success' => false, 'message' => 'No existe'], 404) : back()->with('error', 'No existe.');
             }
 
             DB::transaction(fn() => $status->update($request->validated()));
 
-            return $esWeb
-                ? back()->with('success', 'Actualizado exitosamente.')
-                : response()->json(['success' => true, 'data' => $status], 200);
+            return $isAjax 
+                ? response()->json(['success' => true, 'data' => $status], 200)
+                : back()->with('success', 'Actualizado exitosamente.');
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error Update Status: ' . $e->getMessage());
-            return $esWeb ? back()->with('error', 'Error.')->withInput() : response()->json(['success' => false], 500);
+            return $isAjax 
+                ? response()->json(['success' => false, 'message' => $e->getMessage()], 500)
+                : back()->with('error', 'Error al actualizar.')->withInput();
         }
     }
 
     public function destroy(Request $request, string $rsvStatus): JsonResponse|RedirectResponse
     {
-        $esWeb = !($request->wantsJson() || $request->ajax());
-        DB::beginTransaction();
+        $isAjax = $request->ajax() || $request->wantsJson() || $request->expectsJson();
         try {
             $status = Status::find($rsvStatus);
             if (!$status) {
-                return $esWeb ? back()->with('error', 'No existe.') : response()->json(['success' => false], 404);
+                return $isAjax ? response()->json(['success' => false, 'message' => 'No existe'], 404) : back()->with('error', 'No existe.');
             }
 
             if ($status->reservas()->exists()) {
-                return $esWeb
-                    ? back()->with('error', "No se puede eliminar, tiene reservas.")
-                    : response()->json(['success' => false, 'message' => 'Tiene reservas asociadas.'], 422);
+                return $isAjax 
+                    ? response()->json(['success' => false, 'message' => 'Tiene reservas asociadas.'], 422)
+                    : back()->with('error', "No se puede eliminar, tiene reservas asociadas.");
             }
 
-            DB::transaction(fn() => $status->delete()); // Eliminación lógica
+            DB::transaction(fn() => $status->delete());
 
-            return $esWeb
-                ? back()->with('success', 'Eliminado lógicamente.')
-                : response()->json(['success' => true], 200);
+            return $isAjax 
+                ? response()->json(['success' => true], 200)
+                : back()->with('success', 'Eliminado lógicamente.');
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error Destroy Status: ' . $e->getMessage());
-            return $esWeb ? back()->with('error', 'Error.') : response()->json(['success' => false], 500);
+            return $isAjax 
+                ? response()->json(['success' => false, 'message' => $e->getMessage()], 500)
+                : back()->with('error', 'Error al eliminar.');
         }
     }
 }

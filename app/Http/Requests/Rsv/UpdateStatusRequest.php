@@ -13,8 +13,8 @@ class UpdateStatusRequest extends FormRequest
 
     public function rules(): array
     {
-        // El nombre del parámetro viene de tu web.php: parameters(['statuses' => 'rsvStatus'])
-        $statusId = $this->route('rsvStatus');
+        // Captura el parámetro de ruta de tu resource 'statuses' => 'rsvStatus'
+        $statusId = $this->route('rsvStatus')?->id ?? $this->route('rsvStatus');
 
         return [
             'name'      => 'required|string|max:255|unique:rsv_statuses,name,' . $statusId,

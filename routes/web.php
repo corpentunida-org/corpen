@@ -691,264 +691,182 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
 //Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
 Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinSoportePago'])->name('reservas.cancelar.auto');
 
-// ==========================================
-//   MÓDULO DE RESERVAS RSV
-// ==========================================
+
+// =========================================================================
+// INICIO MÓDULO DE RESERVAS (RSV)
+// =========================================================================
 Route::middleware(['auth'])
     ->prefix('rsv')
     ->name('rsv.')
     ->group(function () {
 
-        /* ====================================================================
-           0 · VISTAS PRINCIPALES (PANEL ÚNICO / DASHBOARDS)
-           ====================================================================
-           Endpoints que devuelven vistas HTML (o fragmentos Blade para
-           actualizaciones AJAX de los paneles). No son CRUD estricto.
-           ==================================================================== */
-
-        // Dashboard principal del admin.
-        // Llena TODAS las pestañas del panel (reservas, inmuebles, etc.)
-        // en una sola consulta coordinada por el AdminDashboardController.
-        // URL:  GET  /rsv/admin             Nombre: rsv.admin.dashboard
-        Route::get('/admin', [AdminDashboardController::class, 'index'])
-              ->name('admin.dashboard');
-
-        // Fragmento HTML con la tabla de reservas (para refrescar vía AJAX).
-        // Devuelve vista parcial que se inyecta en el DOM existente.
-        // URL:  GET  /rsv/reservas-fragmento   Nombre: rsv.admin.reservas.fragmento
-        Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
-             ->name('admin.reservas.fragmento');
-
-        // Buscador live de usuarios (para autocompletar el select de titulares).
-        // Devuelve JSON con [{id, name, email, nid}, ...]
-        // URL:  GET  /rsv/usuarios-buscar?q=...  Nombre: rsv.admin.usuarios.buscar
-        Route::get('usuarios-buscar', [AdminDashboardController::class, 'buscarUsuarios'])
-             ->name('admin.usuarios.buscar');
-
-        // Portal del CLIENTE (con KPIs dinámicos: reservas, balance, soporte).
-        // Reemplaza el antiguo Route::view · mismo URL y mismo nombre de ruta,
-        // por lo que nada más en el sistema deja de funcionar.
-        // URL:  GET  /rsv/cliente              Nombre: rsv.cliente.portal
-        Route::get('/cliente', [ClientePortalController::class, 'index'])
-              ->name('cliente.portal');
-
-        // Fragmentos AJAX del portal cliente (buscador, mis-reservas, chat,
-        // pagos, historial…). Cada parcial se refresca in-place sin recargar.
-        // Whitelist de tab en ClientePortalController::FRAGMENTOS.
-        // URL:  GET  /rsv/cliente-fragmento?tab=...   Nombre: rsv.cliente.fragmento
-        Route::get('cliente-fragmento', [ClientePortalController::class, 'fragmento'])
-             ->name('cliente.fragmento');
-        // Fragmento HTML con la tabla de pasarelas (refresco AJAX in-place,
-        // sin recargar el dashboard). Mismo patrón que reservas-fragmento.
-        // URL:  GET  /rsv/pasarelas-fragmento   Nombre: rsv.admin.pasarelas.fragmento
-        Route::get('pasarelas-fragmento', [AdminDashboardController::class, 'pasarelasFragmento'])
-             ->name('admin.pasarelas.fragmento');
-        Route::get('transacciones-fragmento', [AdminDashboardController::class, 'transaccionesFragmento'])
-             ->name('admin.transacciones.fragmento');
-        Route::get('finanzas-fragmento', [AdminDashboardController::class, 'finanzasFragmento'])
-             ->name('admin.finanzas.fragmento');
-        Route::get('bloqueos-fragmento', [AdminDashboardController::class, 'bloqueosFragmento'])
-            ->name('admin.bloqueos.fragmento');
-        // URL: GET /rsv/calendario-fragmento   Nombre: rsv.admin.calendario.fragmento
-        Route::get('calendario-fragmento', [AdminDashboardController::class, 'calendarioFragmento'])
-             ->name('admin.calendario.fragmento');
+        // =====================================================================
+        // INICIO 1. DASHBOARDS Y PORTALES PRINCIPALES
+        // =====================================================================
+        // Panel de control general para administradores
+        Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        
+        // Panel de autogestión para clientes
+        Route::get('/cliente', [ClientePortalController::class, 'index'])->name('cliente.portal');
+        // =====================================================================
+        // FIN 1. DASHBOARDS Y PORTALES PRINCIPALES
+        // =====================================================================
 
 
-        // Fragmento HTML con la gestión de bloqueos del calendario
-        // (refresco AJAX in-place, mismo patrón que reservas-fragmento).
-        // Sirve la parcial resources/views/rsv/admin/partials/calendario/bloqueos.blade.php
-        // URL:  GET  /rsv/bloqueos-fragmento   Nombre: rsv.admin.bloqueos.fragmento
-        Route::get('bloqueos-fragmento', [AdminDashboardController::class, 'bloqueosFragmento'])
-             ->name('admin.bloqueos.fragmento');
+        // =====================================================================
+        // INICIO 2. PETICIONES AJAX Y FRAGMENTOS (Sin recarga de página)
+        // =====================================================================
+        
+        // --- Portal Cliente ---
+        Route::get('cliente-fragmento', [ClientePortalController::class, 'fragmento'])->name('cliente.fragmento');
+        
+        // --- Dashboard Administrativo ---
+        // Carga parcial de vistas Blade (sin recargar la página) agrupadas por pestaña
+        // y sus respectivos micro-fragmentos (submódulos Nivel 3).
+
+        // --- INICIO 0. TAB INICIO / RESUMEN GENERAL ---
         Route::get('inicio-fragmento', [AdminDashboardController::class, 'inicioFragmento'])
-             ->name('admin.inicio.fragmento');
-        // Fragmento HTML con el tab de reservas
-        // URL:  GET  /rsv/reservas-fragmento   Nombre: admin.reservas.fragmento
-        Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
-             ->name('admin.reservas.fragmento');
+            ->name('admin.inicio.fragmento');
+        // --- FIN 0. TAB INICIO ---
 
-        // Fragmento HTML con el catálogo o detalle de Inmuebles
-        // URL:  GET  /rsv/inmuebles-fragmento   Nombre: admin.inmuebles.fragmento
+        // --- INICIO 1. TAB INMUEBLES (SECCIÓN 1/5) ---
+        // Contenedor principal de la pestaña (partials/tab-inmuebles.blade.php) - NIVEL 2
         Route::get('inmuebles-fragmento', [AdminDashboardController::class, 'inmueblesFragmento'])
-             ->name('admin.inmuebles.fragmento');
+            ->name('admin.inmuebles.fragmento');
+            
+        // Micro-fragmentos (Nivel 3)
+        Route::get('inmuebles-catalogo-fragmento', [AdminDashboardController::class, 'inmueblesCatalogoFragmento'])
+            ->name('admin.inmuebles.catalogo.fragmento'); // partials/inmuebles/catalogo.blade.php
 
-        /* ====================================================================
-           1 · CATÁLOGO DE INMUEBLES Y CONFIGURACIONES
-           ====================================================================
-           Inventario físico + tipologías + multimedia + temporadas de tarifa
-           + bloqueos manuales del calendario.
-           ==================================================================== */
+        Route::get('inmuebles-tarifa-fragmento', [AdminDashboardController::class, 'inmueblesTarifaFragmento'])
+            ->name('admin.inmuebles.tarifa.fragmento'); // partials/inmuebles/tarifa.blade.php
 
-        // Cambiar el flag `active` de un inmueble (alta/baja sin borrar).
-        // URL:  PATCH /rsv/inmuebles/{id}/cambiar-estado   Nombre: rsv.inmuebles.cambiar_estado
-        Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])
-              ->name('inmuebles.cambiar_estado');
+        Route::get('inmuebles-galeria-fragmento', [AdminDashboardController::class, 'inmueblesGaleriaFragmento'])
+            ->name('admin.inmuebles.galeria.fragmento'); // partials/inmuebles/galeria.blade.php
 
-        // CRUD de inmuebles.
-        // URL:  /rsv/inmuebles                Nombre: rsv.inmuebles.{index|create|store|show|edit|update|destroy}
-        // Parameter binding: {rsvCatalogoInmueble} en vez de {inmueble} (para no chocar con el modelo).
-        Route::resource('inmuebles', CatalogoInmuebleController::class)
-              ->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
+        Route::get('inmuebles-tipo-fragmento', [AdminDashboardController::class, 'inmueblesTipoFragmento'])
+            ->name('admin.inmuebles.tipo.fragmento'); // partials/inmuebles/tipo.blade.php
+        // --- FIN 1. TAB INMUEBLES ---
 
-        // CRUD de tipos de inmueble (Apartamento, Casa, Habitación…).
-        // URL:  /rsv/tipos-inmuebles          Nombre: rsv.tipos-inmuebles.*
-        Route::resource('tipos-inmuebles', TipoInmuebleController::class)
-              ->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);
+        // --- INICIO 2. TAB RESERVAS (SECCIÓN 2/5) ---
+        // Contenedor principal de la pestaña (partials/tab-reservas.blade.php) - NIVEL 2
+        Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
+            ->name('admin.reservas.fragmento');
+            
+        // Micro-fragmentos (Nivel 3)
+        Route::get('reservas-lista-fragmento', [AdminDashboardController::class, 'reservasListaFragmento'])
+            ->name('admin.reservas.lista.fragmento'); // partials/reservas/reservas.blade.php
 
-        // CRUD de multimedia (fotos/videos) de cada inmueble.
-        // URL:  /rsv/inmueble-multimedia      Nombre: rsv.inmueble-multimedia.*
-        Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)
-              ->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
+        Route::get('reservas-historial-fragmento', [AdminDashboardController::class, 'historialEstadoFragmento'])
+            ->name('admin.reservas.historial.fragmento'); // partials/reservas/historial_estado.blade.php
 
-        // CRUD de tarifas por temporada (alta/baja/media temporada).
-        // URL:  /rsv/tarifas-temporadas       Nombre: rsv.tarifas-temporadas.*
-        Route::resource('tarifas-temporadas', TarifaTemporadaController::class)
-              ->parameters(['tarifas-temporadas' => 'rsvTarifa']);
+        Route::get('reservas-origen-fragmento', [AdminDashboardController::class, 'origenReservaFragmento'])
+            ->name('admin.reservas.origen.fragmento'); // partials/reservas/origen_reserva.blade.php
 
-        // CRUD de bloqueos manuales del calendario (mantenimiento, overbooking…).
-        // URL:  /rsv/bloqueos-calendario      Nombre: rsv.bloqueos-calendario.*
-        Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)
-              ->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
+        Route::get('reservas-huespedes-fragmento', [AdminDashboardController::class, 'reservaHuespedesFragmento'])
+            ->name('admin.reservas.huespedes.fragmento'); // partials/reservas/reserva_huespedt.blade.php
 
+        Route::get('reservas-status-fragmento', [AdminDashboardController::class, 'statusFragmento'])
+            ->name('admin.reservas.status.fragmento'); // partials/reservas/status.blade.php
 
-        /* ====================================================================
-           2 · NÚCLEO TRANSACCIONAL (RESERVAS)
-           ====================================================================
-           El corazón del módulo: reservas, huéspedes, itinerarios e
-           historiales (estados y endosos). Las reservas son la entidad
-           central y todas las demás dependen de ella.
-           ==================================================================== */
+        // Búsqueda auxiliar predictiva para el tab de reservas (usuarios/titulares)
+        Route::get('usuarios-buscar', [AdminDashboardController::class, 'buscarUsuarios'])
+            ->name('admin.usuarios.buscar');
+        // --- FIN 2. TAB RESERVAS ---
 
-        /* ─── RUTAS CUSTOM DE RESERVAS (antes del resource) ──────────────
-           IMPORTANTE: cualquier ruta con path fijo (store-ajax,
-           fechas-ocupadas, cambiar-estado, comprobante-pdf) debe ir
-           ANTES del Route::resource('reservas', ...) para evitar que
-           el parámetro {rsvReserva} capture el sub-path estático.
-           ─────────────────────────────────────────────────────────────── */
+        // --- INICIO 3. TAB CALENDARIO (SECCIÓN 3/5) ---
+        // Contenedor principal de la pestaña (partials/tab-calendario.blade.php) - NIVEL 2
+        Route::get('calendario-fragmento', [AdminDashboardController::class, 'calendarioFragmento'])
+            ->name('admin.calendario.fragmento');
 
-        // Consultar fechas ocupadas de un inmueble (reservas + bloqueos).
-        // Lo usa el mini-calendario del modal Nueva Reserva para pintar
-        // los días como disponibles/ocupados en tiempo real.
-        // URL:  GET  /rsv/reservas/fechas-ocupadas/{inmueble}
-        // Nombre: rsv.reservas.fechas-ocupadas
-        // Respuesta: { ok:true, inmueble:{id,name}, ocupadas:[{inicio,fin,tipo}] }
-        Route::get('reservas/fechas-ocupadas/{inmueble}', [ReservaController::class, 'fechasOcupadasAjax'])
-              ->name('reservas.fechas-ocupadas');
+        // Micro-fragmentos (Nivel 3)
+        Route::get('bloqueos-fragmento', [AdminDashboardController::class, 'bloqueosFragmento'])
+            ->name('admin.bloqueos.fragmento'); // partials/calendario/bloqueos.blade.php
+        // --- FIN 3. TAB CALENDARIO ---
 
-        // Crear reserva desde el modal (AJAX, no recarga página).
-        // Flujo:
-        //   1. Valida campos (inmueble, titular, fechas, monto ≥ 200.000).
-        //   2. Fuerza estado inicial = "Pendiente" (no lo pide al usuario).
-        //   3. Genera código único RSV-YYYYMMDD-NNNN.
-        //   4. Crea Reserva + HistorialEstado (transición null → Pendiente).
-        //   5. Devuelve JSON {ok, message, reserva:{...}} para que el
-        //      front recargue la tabla.
-        // URL:  POST /rsv/reservas/store-ajax    Nombre: rsv.reservas.store-ajax
-        Route::post('reservas/store-ajax', [ReservaController::class, 'storeAjax'])
-              ->name('reservas.store-ajax');
+        // --- INICIO 4. TAB FINANZAS (SECCIÓN 4/5) ---
+        // Contenedor principal de la pestaña (partials/tab-finanzas.blade.php) - NIVEL 2
+        Route::get('finanzas-fragmento', [AdminDashboardController::class, 'finanzasFragmento'])
+            ->name('admin.finanzas.fragmento');
 
-        // Cambiar el estado de una reserva existente (Confirmar / Cancelar / etc.).
-        // Crea un HistorialEstado registrando la transición.
-        // URL:  PATCH /rsv/reservas/{id}/cambiar-estado   Nombre: rsv.reservas.cambiar_estado
-        Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])
-              ->name('reservas.cambiar_estado');
+        // Micro-fragmentos (Nivel 3)
+        Route::get('transacciones-fragmento', [AdminDashboardController::class, 'transaccionesFragmento'])
+            ->name('admin.transacciones.fragmento'); // partials/finanzas/transacciones.blade.php
 
-        // Descargar PDF comprobante de una reserva (para enviar al cliente).
-        // URL:  GET  /rsv/reservas/{id}/comprobante-pdf   Nombre: rsv.reservas.pdf
-        Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])
-              ->name('reservas.pdf');
+        Route::get('pasarelas-fragmento', [AdminDashboardController::class, 'pasarelasFragmento'])
+            ->name('admin.pasarelas.fragmento'); // partials/finanzas/pasarela.blade.php
+        // --- FIN 4. TAB FINANZAS ---
 
-        // CRUD estándar de reservas.
-        // URL:  /rsv/reservas                Nombre: rsv.reservas.{index|create|store|show|edit|update|destroy}
-        // Parameter binding: {rsvReserva} en vez de {reserva}.
-        Route::resource('reservas', ReservaController::class)
-              ->parameters(['reservas' => 'rsvReserva']);
+        // --- INICIO 5. TAB AUDITORÍA (SECCIÓN 5/5) ---
+        // Contenedor principal de la pestaña (partials/auditoria-tab.blade.php) - NIVEL 2
+        Route::get('auditoria-fragmento', [AdminDashboardController::class, 'auditoriaFragmento'])
+            ->name('admin.auditoria.fragmento');
 
-        // Huéspedes asociados a cada reserva (titular + acompañantes).
-        // URL:  /rsv/reserva-huespedes       Nombre: rsv.reserva-huespedes.*
-        Route::resource('reserva-huespedes', ReservaHuespedController::class)
-              ->parameters(['reserva-huespedes' => 'rsvHuesped']);
-
-        // Eventos de itinerario asociados a la reserva (check-in, tour, etc.).
-        // URL:  /rsv/itinerarios             Nombre: rsv.itinerarios.*
-        Route::resource('itinerarios', ItinerarioEventoController::class)
-              ->parameters(['itinerarios' => 'rsvItinerario']);
-
-        // Historial de endosos (cambio de titularidad de la reserva).
-        // URL:  /rsv/historial-endosos       Nombre: rsv.historial-endosos.*
-        Route::resource('historial-endosos', HistorialEndosoController::class)
-              ->parameters(['historial-endosos' => 'rsvEndoso']);
-
-        // Historial de estados de cada reserva (auditoría de transiciones).
-        // URL:  /rsv/historial-estados       Nombre: rsv.historial-estados.*
-        Route::resource('historial-estados', HistorialEstadoController::class)
-              ->parameters(['historial-estados' => 'rsvEstadoLog']);
+        // Micro-fragmentos (Nivel 3)
+        Route::get('auditoria-informes-fragmento', [AdminDashboardController::class, 'auditoriaInformesFragmento'])
+            ->name('admin.auditoria.informes.fragmento'); // partials/auditorias/informes.blade.php
+        // --- FIN 5. TAB AUDITORÍA ---
+        
+        // =====================================================================
+        // FIN 2. PETICIONES AJAX Y FRAGMENTOS
+        // =====================================================================
 
 
-        /* ====================================================================
-           3 · FINANZAS Y PAGOS
-           ====================================================================
-           Transacciones financieras (pagos, reembolsos) + configuración de
-           pasarelas (Stripe, PayPal, Wompi, etc.).
-           ==================================================================== */
-
-        // Transacciones financieras por reserva.
-        // URL:  /rsv/transacciones           Nombre: rsv.transacciones.*
-        Route::resource('transacciones', TransaccionFinancieraController::class)
-              ->parameters(['transacciones' => 'rsvTransaccion']);
-
-        // Catálogo de pasarelas de pago activas.
-        // URL:  /rsv/pasarelas               Nombre: rsv.pasarelas.*
-        Route::resource('pasarelas', PasarelaController::class)
-              ->parameters(['pasarelas' => 'rsvPasarela']);
+        // =====================================================================
+        // INICIO 3. RUTAS ESPECÍFICAS DE ACCIÓN (Previas a los Resources)
+        // =====================================================================
+        // Acciones de Inmuebles
+        Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
+        
+        // Acciones de Reservas
+        Route::get('reservas/fechas-ocupadas/{inmueble}', [ReservaController::class, 'fechasOcupadasAjax'])->name('reservas.fechas-ocupadas');
+        Route::post('reservas/store-ajax', [ReservaController::class, 'storeAjax'])->name('reservas.store-ajax');
+        Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
+        Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
+        // =====================================================================
+        // FIN 3. RUTAS ESPECÍFICAS DE ACCIÓN
+        // =====================================================================
 
 
-        /* ====================================================================
-           4 · COMUNICACIÓN Y REPUTACIÓN
-           ====================================================================
-           Mensajería entre titular ↔ sistema + reviews de clientes.
-           ==================================================================== */
+        // =====================================================================
+        // INICIO 4. RUTAS CRUD (Resources) ORGANIZADAS POR DOMINIO
+        // =====================================================================
+        
+        // --- A. Catálogo y Configuración de Inmuebles ---
+        Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
+        Route::resource('tipos-inmuebles', TipoInmuebleController::class)->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);
+        Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
+        Route::resource('tarifas-temporadas', TarifaTemporadaController::class)->parameters(['tarifas-temporadas' => 'rsvTarifa']);
+        Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
 
-        // Mensajes asociados a reservas (preguntas, notificaciones, etc.).
-        // URL:  /rsv/mensajes                Nombre: rsv.mensajes.*
-        Route::resource('mensajes', MensajeController::class)
-              ->parameters(['mensajes' => 'rsvMensaje']);
+        // --- B. Núcleo Transaccional (Reservas) ---
+        Route::resource('reservas', ReservaController::class)->parameters(['reservas' => 'rsvReserva']);
+        Route::resource('reserva-huespedes', ReservaHuespedController::class)->parameters(['reserva-huespedes' => 'rsvHuesped']);
+        Route::resource('itinerarios', ItinerarioEventoController::class)->parameters(['itinerarios' => 'rsvItinerario']);
+        Route::resource('historial-endosos', HistorialEndosoController::class)->parameters(['historial-endosos' => 'rsvEndoso']);
+        Route::resource('historial-estados', HistorialEstadoController::class)->parameters(['historial-estados' => 'rsvEstadoLog']);
 
-        // Reseñas/calificaciones de los clientes sobre el servicio.
-        // URL:  /rsv/reviews                 Nombre: rsv.reviews.*
-        Route::resource('reviews', ReviewController::class)
-              ->parameters(['reviews' => 'rsvReview']);
+        // --- C. Finanzas y Pasarelas de Pago ---
+        Route::resource('transacciones', TransaccionFinancieraController::class)->parameters(['transacciones' => 'rsvTransaccion']);
+        Route::resource('pasarelas', PasarelaController::class)->parameters(['pasarelas' => 'rsvPasarela']);
 
+        // --- D. Comunicación y Reputación ---
+        Route::resource('mensajes', MensajeController::class)->parameters(['mensajes' => 'rsvMensaje']);
+        Route::resource('reviews', ReviewController::class)->parameters(['reviews' => 'rsvReview']);
 
-        /* ====================================================================
-           5 · PARÁMETROS, CATÁLOGOS AUXILIARES Y AUDITORÍA
-           ====================================================================
-           Tablas paramétricas que sostienen el resto del módulo:
-           estados, orígenes, tipos de receptor y logs de auditoría.
-           ==================================================================== */
+        // --- E. Parámetros Base y Auditoría ---
+        Route::resource('statuses', StatusController::class)->parameters(['statuses' => 'rsvStatus']);
+        Route::resource('origen-reservas', OrigenReservaController::class)->parameters(['origen-reservas' => 'rsvOrigen']);
+        Route::resource('tipo-receptor', TipoReceptorController::class)->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
+        Route::resource('audit-logs', AuditLogController::class)->parameters(['audit-logs' => 'rsvAuditLog']);
+        // =====================================================================
+        // FIN 4. RUTAS CRUD (Resources) ORGANIZADAS POR DOMINIO
+        // =====================================================================
 
-        // Catálogo de estados de reserva (Pendiente, Confirmada, Cancelada…).
-        // URL:  /rsv/statuses                Nombre: rsv.statuses.*
-        Route::resource('statuses', StatusController::class)
-              ->parameters(['statuses' => 'rsvStatus']);
-
-        // Catálogo de orígenes de la reserva (Web, Booking, Airbnb, WhatsApp…).
-        // URL:  /rsv/origen-reservas         Nombre: rsv.origen-reservas.*
-        Route::resource('origen-reservas', OrigenReservaController::class)
-              ->parameters(['origen-reservas' => 'rsvOrigen']);
-
-        // Catálogo de tipos de receptor (para el sistema de reviews).
-        // URL:  /rsv/tipo-receptor           Nombre: rsv.tipo-receptor.*
-        Route::resource('tipo-receptor', TipoReceptorController::class)
-              ->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
-
-        // Logs de auditoría globales del módulo RSV (cambios sensibles).
-        // URL:  /rsv/audit-logs              Nombre: rsv.audit-logs.*
-        Route::resource('audit-logs', AuditLogController::class)
-              ->parameters(['audit-logs' => 'rsvAuditLog']);
     });
-
-// FIN MÓDULO RESERVAS
+// =========================================================================
+// FIN MÓDULO DE RESERVAS (RSV)
+// =========================================================================
 
 
 //TERCEROS

@@ -1,7 +1,20 @@
-{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes --}}
-{{-- Fuente de verdad: modelo ReservaHuesped (nombre · apellidos · tipo_documento --}}
-{{-- · numero_documento · es_titular). Búsqueda instantánea · export · CRUD fetch. --}}
-
+{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.2 · recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
+{{--
+  NOVEDADES v2.2 (sobre v2.1, cuyo dataset fresco ya funcionó: "Dataset: 8" en el panel):
+  · v2.1 SE CONSERVA: tras POST/PUT/DELETE ok -> reloadRhFragment() trae el fragmento
+    (AdminDashboardController::reservaHuespedesFragmento, Cache-Control no-store) con
+    fetch cache:'no-store' + cache-buster _t, reemplaza #rhRoot Y los tags de datos
+    #rhDataset/#rhReservasJson (viven FUERA de #rhRoot) y relanza initReservaHuespedes().
+  · NUEVO anti-duplicados: si la página termina con varias copias del partial (include
+    del dashboard + contenido reinyectado por AJAX en el panel), getElementById solo
+    actualizaba la PRIMERA copia del DOM y la tabla VISIBLE quedaba congelada. Ahora se
+    reemplaza la copia visible (offsetParent != null) y las demás se eliminan. El panel
+    reporta cuántas copias había -> si dice "había duplicados", esa era la causa.
+  · NUEVO pulso visual: la tarjeta destella ~0.9s al refrescarse -> confirmación a
+    simple vista de que la recarga automática se aplicó (sin F5).
+  · NUEVO try/catch alrededor del init post-recarga: si algo falla, el panel lo muestra
+    en claro en lugar de quedarse mudo.
+--}}
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="rhRoot"
      data-modo="{{ ($rhGlobal ?? true) ? 'global' : 'single' }}"
      data-ctx="{{ ($rhGlobal ?? true) ? 'Global' : ((is_object($rhInm ?? null) ? ($rhInm->name ?? 'Inmueble') : ('Inmueble #'.($rhInmId ?? '')))) }}"
@@ -9,6 +22,8 @@
 
 <style>
     .reservas-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
+    @keyframes rhPulseFade { 0% { background-color: #e3f2e8; } 100% { background-color: transparent; } }
+    .reservas-soft.rh-pulse { animation: rhPulseFade .9s ease-out 1; }
     .reservas-soft .table > :not(caption) > * > * { padding: 2px 7px; height: 20px; line-height: 1.1; vertical-align: middle; }
     .reservas-soft .table thead th { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); background-color: var(--head); border-bottom: 1px solid var(--grid) !important; white-space: nowrap; }
     .reservas-soft .table tbody td { font-size: 8px; color: var(--ink); border-bottom: 1px solid var(--grid); border-top: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -34,12 +49,61 @@
     .reservas-soft .chip-tit.si { color: #3d7a5c; background: #e3f1e9; border-color: #d5e7dc; }
     .reservas-soft .chip-tit.no { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
     .reservas-soft .rv-pagination { border-top: 1px solid var(--grid); margin-top: 8px; padding-top: 7px; }
+
+    /* ─── PANEL DE DEBUG FLOTANTE ─── */
+    #rhDebugPanel {
+        position: fixed; bottom: 10px; right: 10px; z-index: 9999;
+        width: 380px; max-width: calc(100vw - 20px); max-height: 60vh;
+        background: #0f172a; color: #e2e8f0;
+        border: 1px solid #1e293b; border-radius: 6px;
+        font-family: 'Courier New', monospace; font-size: 11px;
+        display: none; flex-direction: column;
+        box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    #rhDebugPanel.open { display: flex; }
+    #rhDebugPanel .dbg-header {
+        background: #1e293b; padding: 6px 10px; border-radius: 6px 6px 0 0;
+        display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer;
+    }
+    #rhDebugPanel .dbg-header b { font-size: 12px; color: #f1f5f9; }
+    #rhDebugPanel .dbg-controls { display: flex; gap: 4px; }
+    #rhDebugPanel .dbg-btn {
+        background: #334155; color: #f1f5f9; border: 0;
+        font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
+        font-family: inherit;
+    }
+    #rhDebugPanel .dbg-btn:hover { background: #475569; }
+    #rhDebugPanel .dbg-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
+    #rhDebugPanel .dbg-body::-webkit-scrollbar { width: 6px; }
+    #rhDebugPanel .dbg-body::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    #rhDebugPanel .dbg-log {
+        padding: 4px 0; border-bottom: 1px solid #1e293b; line-height: 1.4;
+        word-wrap: break-word; white-space: pre-wrap;
+    }
+    #rhDebugPanel .dbg-log:last-child { border-bottom: 0; }
+    #rhDebugPanel .dbg-log .dbg-time { color: #64748b; font-size: 10px; }
+    #rhDebugPanel .dbg-log.info  { color: #93c5fd; }
+    #rhDebugPanel .dbg-log.ok    { color: #86efac; }
+    #rhDebugPanel .dbg-log.warn  { color: #fcd34d; }
+    #rhDebugPanel .dbg-log.err   { color: #fca5a5; }
+    #rhDebugPanel .dbg-log.debug { color: #c4b5fd; }
+
+    /* Botón Toggle Debug */
+    #rhDebugToggle {
+        position: fixed; bottom: 10px; right: 10px; z-index: 10000;
+        background: #1e293b; color: #f1f5f9; border: 0;
+        border-radius: 50%; width: 40px; height: 40px;
+        cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.3);
+        display: flex; align-items: center; justify-content: center;
+    }
+    #rhDebugToggle:hover { background: #334155; }
 </style>
 
 @php
     // 0 · Defaults
-    $rhInm = null; $rhInmId = null; $rhGlobal = true;
-    $rhItems = collect(); $rhReservasOpt = collect();
+    $rhInm = null; $rhInmId = $inmuebleId ?? null; $rhGlobal = true;
+    $rhItems = collect(); $rhReservasOptMapped = collect();
     $rhJson = '[]'; $rhReservasJson = '[]'; $rhTotalCtx = 0;
     $rhStoreUrl = null; $rhUpdateUrlBase = null; $rhDestroyUrlBase = null;
 
@@ -54,66 +118,91 @@
     }
     $rhGlobal = empty($rhInmId);
 
-    // 2 · Rutas (detección defensiva por varios nombres)
+    // 2 · SEGURIDAD AUTOMÁTICA: Si el controlador no mandó $huespedes, los consultamos aquí mismo
+    if (!isset($huespedes) || empty($huespedes)) {
+        try {
+            $qHuespedes = \App\Models\Rsv\ReservaHuesped::query()
+                ->with(['reserva:id,codigo_reserva,id_rsv_catalogo_inmueble', 'reserva.inmueble:id,name', 'registrador:id,name']);
+            
+            if (!$rhGlobal && is_numeric($rhInmId)) {
+                $qHuespedes->whereHas('reserva', function ($qq) use ($rhInmId) {
+                    $qq->where('id_rsv_catalogo_inmueble', $rhInmId);
+                });
+            }
+            $huespedes = $qHuespedes->orderBy('created_at', 'desc')->get();
+        } catch (\Throwable $e) {
+            $huespedes = collect();
+        }
+    }
+
+    // 2b · Cargar reservas para el select si no vienen dadas
+    if (!isset($rhReservasOpt) || empty($rhReservasOpt)) {
+        try {
+            $rq = \App\Models\Rsv\Reserva::query()->select('id', 'codigo_reserva');
+            if (!$rhGlobal && is_numeric($rhInmId)) { 
+                $rq->where('id_rsv_catalogo_inmueble', $rhInmId); 
+            }
+            $rhReservasOpt = $rq->orderBy('created_at', 'desc')->limit(500)->get();
+        } catch (\Throwable $e) {
+            $rhReservasOpt = collect();
+        }
+    }
+
+    // 3 · Rutas (detección defensiva por varios nombres)
     $rhRuta = function (array $cands, $param = null) {
         foreach ($cands as $c) {
             if (\Illuminate\Support\Facades\Route::has($c)) {
                 return $param !== null ? route($c, $param) : route($c);
             }
+            if (\Illuminate\Support\Facades\Route::has('rsv.' . $c)) {
+                return $param !== null ? route('rsv.' . $c, $param) : route('rsv.' . $c);
+            }
+            if (\Illuminate\Support\Facades\Route::has('admin.' . $c)) {
+                return $param !== null ? route('admin.' . $c, $param) : route('admin.' . $c);
+            }
         }
         return null;
     };
-    $rhStoreUrl        = $rhRuta(['rsv.reserva-huespedes.store', 'rsv.reservahuespedes.store', 'rsv.huespedes.store']);
-    $rhUpdateUrlBase   = $rhRuta(['rsv.reserva-huespedes.update', 'rsv.reservahuespedes.update', 'rsv.huespedes.update'], 'ID');
-    $rhDestroyUrlBase  = $rhRuta(['rsv.reserva-huespedes.destroy', 'rsv.reservahuespedes.destroy', 'rsv.huespedes.destroy'], 'ID');
+    $rhStoreUrl       = $rhRuta(['rsv.reserva-huespedes.store', 'reserva-huespedes.store', 'rsv.reservahuespedes.store', 'huespedes.store']);
+    $rhUpdateUrlBase  = $rhRuta(['rsv.reserva-huespedes.update', 'reserva-huespedes.update', 'rsv.reservahuespedes.update', 'huespedes.update'], 'ID');
+    $rhDestroyUrlBase = $rhRuta(['rsv.reserva-huespedes.destroy', 'reserva-huespedes.destroy', 'rsv.reservahuespedes.destroy', 'huespedes.destroy'], 'ID');
 
-    // 3 · Dataset de huéspedes (contexto vía relación reserva)
+    // 4 · Mapeo seguro del dataset de huéspedes
     try {
-        if (class_exists(\App\Models\Rsv\ReservaHuesped::class)) {
-            $q = \App\Models\Rsv\ReservaHuesped::query()
-                ->with(['reserva:id,codigo_reserva,id_rsv_catalogo_inmueble', 'reserva.inmueble:id,name', 'registrador:id,name']);
+        $rawCollection = $huespedes ?? collect();
+        $rhTotalCtx = count($rawCollection);
 
-            if (!$rhGlobal && $rhInmId) {
-                $q->whereHas('reserva', function ($qq) use ($rhInmId) {
-                    $qq->where('id_rsv_catalogo_inmueble', $rhInmId);
-                });
-            }
-
-            $rhTotalCtx = (clone $q)->count();
-
-            $rhItems = $q->orderBy('created_at', 'desc')->limit(2000)->get()->map(function ($h) {
-                return [
-                    'id'   => $h->id,
-                    'nom'  => (string) ($h->nombre ?? ''),
-                    'ape'  => (string) ($h->apellidos ?? ''),
-                    'tdoc' => (string) ($h->tipo_documento ?? ''),
-                    'ndoc' => (string) ($h->numero_documento ?? ''),
-                    'tit'  => $h->es_titular ? 1 : 0,
-                    'cod'  => (string) (optional($h->reserva)->codigo_reserva ?? '—'),
-                    'inm'  => (string) (optional(optional($h->reserva)->inmueble)->name ?? 'N/D'),
-                    'reg'  => (string) (optional($h->registrador)->name ?? '—'),
-                    'fec'  => $h->created_at ? $h->created_at->format('d/m/y') : '—',
-                ];
-            })->values();
-        }
+        $rhItems = collect($rawCollection)->map(function ($h) {
+            return [
+                'id'   => $h->id ?? null,
+                'nom'  => (string) ($h->nombre ?? ''),
+                'ape'  => (string) ($h->apellidos ?? ''),
+                'tdoc' => (string) ($h->tipo_documento ?? ''),
+                'ndoc' => (string) ($h->numero_documento ?? ''),
+                'tit'  => ($h->es_titular ?? false) ? 1 : 0,
+                'cod'  => (string) (optional($h->reserva)->codigo_reserva ?? '—'),
+                'inm'  => (string) (optional(optional($h->reserva)->inmueble)->name ?? 'N/D'),
+                'reg'  => (string) (optional($h->registrador)->name ?? '—'),
+                'fec'  => isset($h->created_at) && $h->created_at ? $h->created_at->format('d/m/y') : '—',
+            ];
+        })->values();
     } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::warning('rh dataset: '.$e->getMessage());
+        \Illuminate\Support\Facades\Log::warning('rh dataset view: '.$e->getMessage());
+        $rhItems = collect();
     }
 
-    // 3b · Reservas para el select del modal (contexto)
+    // 4b · Reservas para el select del modal
     try {
-        if (class_exists(\App\Models\Rsv\Reserva::class)) {
-            $rq = \App\Models\Rsv\Reserva::query()->select('id', 'codigo_reserva');
-            if (!$rhGlobal && $rhInmId) { $rq->where('id_rsv_catalogo_inmueble', $rhInmId); }
-            $rhReservasOpt = $rq->orderBy('created_at', 'desc')->limit(500)->get()
-                ->map(fn ($r) => ['id' => $r->id, 'cod' => $r->codigo_reserva])->values();
-        }
-    } catch (\Throwable $e) { $rhReservasOpt = collect(); }
+        $rhReservasOptMapped = collect($rhReservasOpt ?? [])->map(fn ($r) => [
+            'id' => is_array($r) ? ($r['id'] ?? null) : ($r->id ?? null),
+            'cod' => is_array($r) ? ($r['cod'] ?? $r['codigo_reserva'] ?? '') : ($r->codigo_reserva ?? '')
+        ])->values();
+    } catch (\Throwable $e) { $rhReservasOptMapped = collect(); }
 
-    // 4 · Serialización raw segura
+    // 5 · Serialización raw segura
     $jhFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
     $rhJson = json_encode($rhItems->all(), $jhFlags); if (!is_string($rhJson)) { $rhJson = '[]'; }
-    $rhReservasJson = json_encode($rhReservasOpt->all(), $jhFlags); if (!is_string($rhReservasJson)) { $rhReservasJson = '[]'; }
+    $rhReservasJson = json_encode($rhReservasOptMapped->all(), $jhFlags); if (!is_string($rhReservasJson)) { $rhReservasJson = '[]'; }
 @endphp
 
     <!-- HEADER -->
@@ -132,7 +221,7 @@
             </button>
             @if($rhStoreUrl)
                 <button type="button" class="btn-green d-inline-flex align-items-center gap-1"
-                        data-bs-toggle="modal" data-bs-target="#rhModalForm">
+                        id="rhBtnNuevo" data-bs-toggle="modal" data-bs-target="#rhModalForm">
                     <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nuevo Huésped
                 </button>
             @endif
@@ -264,11 +353,186 @@
     </div>
 </div>
 
-<script type="application/json" id="rhDataset">{!! $rhJson !!}</script>
-<script type="application/json" id="rhReservasJson">{!! $rhReservasJson !!}</script>
+{{-- MODAL ERROR --}}
+<div class="modal fade" id="rhModalError" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border: 1px solid #f0dcd8; border-radius: 5px; font-size: 9.5px; background-color: #fdf5f4;">
+            <div class="modal-body p-3 text-center">
+                <i class="bi bi-exclamation-triangle" style="font-size: 1.5rem; color: #c98a85;"></i>
+                <h6 class="fw-bold mt-2 mb-2" style="font-size: 0.9rem; color: #b05c5c;">No se pudo completar</h6>
+                <div id="rhErrorMsg" class="text-start" style="font-size: 8.5px; color: #a96863; white-space: pre-wrap; background: #fff; border: 1px solid #f7e6e3; border-radius: 4px; padding: 6px;"></div>
+            </div>
+            <div class="modal-footer justify-content-center" style="border-top: 1px solid #f7e6e3; padding: 9px 14px;">
+                <button type="button" class="btn btn-sm py-1 px-3" style="font-size: 11px; background: #fff; color: #c98a85; border: 1px solid #f0dcd8;" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL DE DEBUG FLOTANTE (HTML) -->
+<button type="button" id="rhDebugToggle" title="Mostrar/ocultar panel de errores">🐛</button>
+<div id="rhDebugPanel">
+    <div class="dbg-header" id="rhDebugHeader">
+        <b>🐛 Panel de Errores (Huéspedes)</b>
+        <div class="dbg-controls">
+            <button type="button" class="dbg-btn" id="rhDebugClear">Limpiar</button>
+            <button type="button" class="dbg-btn" id="rhDebugClose">✕</button>
+        </div>
+    </div>
+    <div class="dbg-body" id="rhDebugBody"></div>
+</div>
+
+<script type="application/json" id="rhDataset">{!! ($rhJson ?? '[]') !!}</script>
+<script type="application/json" id="rhReservasJson">{!! ($rhReservasJson ?? '[]') !!}</script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+// Componente de Panel de Debug y Extractor Laravel 500
+const DebugPanel = (function() {
+    let dbgOpen = false;
+    const dbgPanel  = document.getElementById('rhDebugPanel');
+    const dbgBody   = document.getElementById('rhDebugBody');
+    const dbgToggle = document.getElementById('rhDebugToggle');
+    const dbgClose  = document.getElementById('rhDebugClose');
+    const dbgClear  = document.getElementById('rhDebugClear');
+    const dbgHeader = document.getElementById('rhDebugHeader');
+
+    function togglePanel(forceState) {
+        dbgOpen = (typeof forceState === 'boolean') ? forceState : !dbgOpen;
+        if (dbgOpen) {
+            dbgPanel.classList.add('open');
+            dbgToggle.style.display = 'none';
+        } else {
+            dbgPanel.classList.remove('open');
+            dbgToggle.style.display = 'flex';
+        }
+    }
+
+    function log(level, msg) {
+        if (!dbgBody) return;
+        const t = new Date();
+        const time = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
+        const div = document.createElement('div');
+        div.className = 'dbg-log ' + (level || 'info');
+        div.innerHTML = '<span class="dbg-time">['+time+']</span> ' + String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+        dbgBody.appendChild(div);
+        dbgBody.scrollTop = dbgBody.scrollHeight;
+    }
+
+    if (dbgToggle) dbgToggle.addEventListener('click', () => togglePanel(true));
+    if (dbgClose) dbgClose.addEventListener('click', () => togglePanel(false));
+    if (dbgClear) dbgClear.addEventListener('click', () => { if (dbgBody) dbgBody.innerHTML = ''; });
+    if (dbgHeader) dbgHeader.addEventListener('click', (e) => {
+        if (e.target === dbgHeader) togglePanel(false);
+    });
+
+    /* v2.0 · Convivencia: si el tab de Reservas (v26.2) también tiene su
+       panel de debug (IDs rv*), este panel y su botón bajan a bottom:54px
+       para no quedar uno encima del otro (ambos viven en bottom:10px). */
+    try {
+        if (document.getElementById('rvDebugToggle')) {
+            if (dbgPanel)  dbgPanel.style.bottom  = '54px';
+            if (dbgToggle) dbgToggle.style.bottom = '54px';
+        }
+    } catch (e) {}
+
+    function extraerErrorLaravel(bodyTxt, err) {
+        let base = (err && err.message) ? String(err.message) : 'Error desconocido';
+        if (!bodyTxt) return base;
+        
+        try {
+            const j = JSON.parse(bodyTxt);
+            if (j && (j.message || j.exception)) {
+                const nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
+                return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
+            }
+        } catch (e) { /* No era JSON */ }
+        
+        const t = String(bodyTxt).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
+        const mt = t.match(/<title>([\s\S]*?)<\/title>/i);
+        if (mt) {
+            const tit = mt[1].replace(/\s+/g, ' ').trim();
+            if (tit && !/server error/i.test(tit)) return (base + ' · backend: ' + tit).substring(0, 400);
+            base = base + ' · backend: ' + (tit || 'server error');
+        }
+        
+        const plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+        const mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
+        if (mExc) return (base + ' · ' + mExc[0].trim()).substring(0, 400);
+        
+        return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
+    }
+
+    return {
+        log: log,
+        extraerErrorLaravel: extraerErrorLaravel,
+        open: () => togglePanel(true)
+    };
+})();
+
+(function () {
+    const RH_FRAG_URL = '{!! route("rsv.admin.reservas.huespedes.fragmento", ["inmueble_id" => $rhInmId ?? "todos"]) !!}';
+
+    window.reloadRhFragment = function() {
+        var url = RH_FRAG_URL + (RH_FRAG_URL.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, cache: 'no-store' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.text();
+            })
+            .then(function (html) {
+                var temp = document.createElement('div');
+                temp.innerHTML = html;
+                var newRoot = temp.querySelector('#rhRoot');
+                if (!newRoot) {
+                    DebugPanel.log('err', 'Recarga de fragmento: la respuesta no contiene #rhRoot (¿error del servidor?)');
+                    return;
+                }
+
+                /* v2.2 · Anti-duplicados: si la página tiene varias copias del partial
+                   (include del dashboard + contenido reinyectado por AJAX), getElementById
+                   solo ve la PRIMERA y la tabla visible queda congelada. Se reemplaza la
+                   copia VISIBLE (offsetParent != null) y las demás se eliminan. */
+                var roots = Array.prototype.slice.call(document.querySelectorAll('#rhRoot'));
+                var visibles = roots.filter(function (r) { return r.offsetParent !== null; });
+                var target = visibles[0] || roots[0] || null;
+                roots.forEach(function (r) { if (r !== target) { r.remove(); } });
+                if (target) { target.replaceWith(newRoot); }
+                else { document.body.appendChild(newRoot); }
+                DebugPanel.log('info', 'Copias #rhRoot en la página: ' + roots.length
+                    + (roots.length > 1 ? ' · ¡HABÍA DUPLICADOS! (eliminados)' : ''));
+
+                /* v2.2 · Los tags de datos viven FUERA de #rhRoot: se eliminan TODAS las
+                   copias viejas y se insertan las frescas; si sobreviviera una vieja,
+                   init leería data rancia. */
+                ['rhDataset', 'rhReservasJson'].forEach(function (id) {
+                    document.querySelectorAll('#' + id).forEach(function (st) { st.remove(); });
+                    var fresh = temp.querySelector('#' + id);
+                    if (fresh) { document.body.appendChild(fresh); }
+                    else { DebugPanel.log('warn', 'El fragmento no trajo #' + id); }
+                });
+
+                try { window.initReservaHuespedes(); }
+                catch (e) { DebugPanel.log('err', 'Post-recarga: init falló: ' + e.message); }
+
+                /* v2.2 · Pulso visual: destello de ~0.9s que confirma a simple vista
+                   que la tabla se acaba de refrescar (sin F5). */
+                try {
+                    newRoot.classList.remove('rh-pulse');
+                    void newRoot.offsetWidth;
+                    newRoot.classList.add('rh-pulse');
+                } catch (e) {}
+
+                DebugPanel.log('ok', 'Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.2)');
+            })
+            .catch(function (err) {
+                DebugPanel.log('err', 'Error recargando fragmento: ' + err.message);
+            });
+    };
+
+    window.initReservaHuespedes = function() {
+        var root = document.getElementById('rhRoot');
+        if (!root) return;
+
         var CSRF = '{{ csrf_token() }}';
         var STORE = '{{ $rhStoreUrl ?? "" }}';
         var UPDATE_URL = '{{ $rhUpdateUrlBase ?? "" }}';
@@ -276,10 +540,23 @@
         var EDITABLE = !!(STORE || UPDATE_URL);
 
         var DS = [];
-        try { DS = JSON.parse((document.getElementById('rhDataset') || {}).textContent || '[]'); } catch (e) { DS = []; }
-        var RESERVAS = [];
-        try { RESERVAS = JSON.parse((document.getElementById('rhReservasJson') || {}).textContent || '[]'); } catch (e) { RESERVAS = []; }
+        try { 
+            var dsEl = document.getElementById('rhDataset');
+            if (dsEl) DS = JSON.parse(dsEl.textContent || '[]'); 
+        } catch (e) {}
 
+        var RESERVAS = [];
+        try { 
+            var resEl = document.getElementById('rhReservasJson');
+            if (resEl) RESERVAS = JSON.parse(resEl.textContent || '[]'); 
+        } catch (e) {}
+
+
+        /* v2.0 · Trazas de arranque en el panel de debug */
+        DebugPanel.log('ok', 'v2.2 activo · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
+        DebugPanel.log('info', 'init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'));
+        DebugPanel.log((STORE || UPDATE_URL) ? 'ok' : 'warn', 'Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'));
+        DebugPanel.log(DS.length ? 'ok' : 'warn', 'Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length);
         var PAGE_SIZE = 15, page = 1, q = '', titF = '';
         var tbody = document.getElementById('rhTbody');
         var badge = document.getElementById('rhBadge');
@@ -306,7 +583,7 @@
             var h = '';
             if (!res.length) {
                 h = '<tr><td colspan="8" class="text-center py-3" style="font-size:8.5px;color:#b3bcc7;">'
-                  + (DS.length ? '<i class="bi bi-funnel me-1"></i> Sin resultados con los filtros.' : '<i class="bi bi-people me-1"></i> Sin huéspedes registrados aún.')
+                  + (DS.length ? 'Sin resultados con los filtros.' : 'Sin huéspedes registrados aún.')
                   + '</td></tr>';
             } else {
                 slice.forEach(function (r, i) {
@@ -331,36 +608,20 @@
                     ? 'Mostrando <b>' + res.length + '</b> de ' + DS.length
                     : '<b>' + DS.length + '</b> ' + (DS.length == 1 ? 'huésped' : 'huéspedes');
             }
-            var info = document.getElementById('rhPgInfo');
-            var lbl = document.getElementById('rhPgLbl');
-            var bp = document.getElementById('rhPrev');
-            var bn = document.getElementById('rhNext');
-            if (info) info.innerHTML = '<i class="bi bi-layers" style="font-size:7.5px;color:#b3bcc7;"></i> ' + (res.length ? (ini+1)+'–'+Math.min(ini+PAGE_SIZE,res.length)+' de <b>'+res.length+'</b>' : '—');
-            if (lbl) lbl.textContent = 'Página ' + page + ' de ' + pages;
-            if (bp) bp.disabled = page <= 1;
-            if (bn) bn.disabled = page >= pages;
         }
 
-        /* Búsqueda instantánea */
         var search = document.getElementById('rhSearch');
-        if (search) search.addEventListener('input', function () { q = this.value; page = 1; render(); });
+        if (search) search.oninput = function () { q = this.value; page = 1; render(); };
 
-        /* Chips */
-        document.querySelectorAll('#rhRoot .fchip[data-tit]').forEach(function (c) {
-            c.addEventListener('click', function () {
-                document.querySelectorAll('#rhRoot .fchip[data-tit]').forEach(function (x) { x.classList.remove('active'); });
+        root.querySelectorAll('.fchip[data-tit]').forEach(function (c) {
+            c.onclick = function () {
+                root.querySelectorAll('.fchip[data-tit]').forEach(function (x) { x.classList.remove('active'); });
                 c.classList.add('active');
                 titF = c.getAttribute('data-tit') || '';
                 page = 1; render();
-            });
+            };
         });
 
-        /* Paginación */
-        var bp = document.getElementById('rhPrev'), bn = document.getElementById('rhNext');
-        if (bp) bp.addEventListener('click', function () { if (page > 1) { page--; render(); } });
-        if (bn) bn.addEventListener('click', function () { page++; render(); });
-
-        /* Llenar select de reservas */
         var sel = document.getElementById('rhReserva');
         if (sel) {
             sel.innerHTML = '<option value="">-- Seleccione la reserva --</option>';
@@ -371,108 +632,179 @@
             });
         }
 
-        /* ACTUALIZACIÓN PARA FORMREQUESTS: Maneja correctamente los errores 422 en AJAX */
-        function enviar(url, method, fd, ok) {
+        function mostrarErrorRH(msg) {
+            DebugPanel.log('err', msg);
+            DebugPanel.open();
+
+            var modalEl = document.getElementById('rhModalError');
+            var msgEl = document.getElementById('rhErrorMsg');
+            
+            if (modalEl && msgEl) {
+                msgEl.textContent = msg;
+                modalEl.style.zIndex = "1060";
+                try {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        var inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        inst.show();
+                    } else if (typeof window.$ !== 'undefined') {
+                        $(modalEl).modal('show');
+                    } else {
+                        alert("No se pudo completar:\n\n" + msg);
+                    }
+                } catch(e) {
+                    alert("No se pudo completar:\n\n" + msg);
+                }
+            } else {
+                alert("No se pudo completar:\n\n" + msg);
+            }
+        }
+
+        function enviar(url, method, fd) {
             fd.append('_token', CSRF);
             if (method !== 'POST') fd.append('_method', method);
-            fetch(url, { method: 'POST', body: fd, headers: { 'X-CSRF-TOKEN': CSRF, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
-                .then(function (r) { return r.json().then(function(data){ data._status = r.status; return data; }).catch(function(){ return { success: r.ok, _status: r.status }; }); })
-                .then(function (j) {
-                    if (j.success === false || j._status === 422) {
-                        var msg = j.message || 'No se pudo completar la operación.';
-                        if (j.errors) { msg = Object.values(j.errors).map(function(e){ return e.join('\n'); }).join('\n'); }
-                        alert('Atención:\n' + msg); return;
-                    }
-                    location.reload();
-                })
-                .catch(function () { alert('Error de conexión.'); });
+            
+            DebugPanel.log('info', 'Enviando petición [' + method + '] a: ' + url);
+
+            fetch(url, { 
+                method: 'POST', 
+                body: fd, 
+                headers: { 
+                    'X-CSRF-TOKEN': CSRF, 
+                    'X-Requested-With': 'XMLHttpRequest', 
+                    'Accept': 'application/json' 
+                } 
+            })
+            .then(async function (r) { 
+                if (!r.ok) {
+                    const bodyTxt = await r.text();
+                    const er = new Error('HTTP ' + r.status);
+                    er.__body = bodyTxt;
+                    throw er;
+                }
+                return r.json();
+            })
+            .then(function (j) {
+                DebugPanel.log('ok', 'Operación exitosa.');
+
+                document.querySelectorAll('.modal.show').forEach(m => {
+                    try {
+                        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                            const bsModal = bootstrap.Modal.getInstance(m);
+                            if (bsModal) bsModal.hide();
+                        } else if (typeof window.$ !== 'undefined') {
+                            $(m).modal('hide');
+                        }
+                    } catch(e) {}
+                });
+                
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+
+                window.reloadRhFragment();
+            })
+            .catch(function (err) { 
+                const detalle = DebugPanel.extraerErrorLaravel(err.__body || '', err);
+                mostrarErrorRH(detalle);
+            });
         }
 
         var modalForm = document.getElementById('rhModalForm');
         var modalDel  = document.getElementById('rhModalDel');
         var mForm, mDel;
-        try { mForm = bootstrap.Modal.getOrCreateInstance(modalForm); mDel = bootstrap.Modal.getOrCreateInstance(modalDel); } catch (e) {}
+        try { 
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                mForm = bootstrap.Modal.getOrCreateInstance(modalForm); 
+                mDel = bootstrap.Modal.getOrCreateInstance(modalDel); 
+            }
+        } catch (e) {}
 
-        document.addEventListener('click', function (e) {
+        var btnNuevo = document.getElementById('rhBtnNuevo');
+        if (btnNuevo) {
+            btnNuevo.onclick = function() {
+                document.getElementById('rhModalTitle').textContent = 'Nuevo Huésped';
+                document.getElementById('rhId').value = '';
+                var form = document.getElementById('rhForm');
+                if (form) form.reset();
+            };
+        }
+
+        root.onclick = function (e) {
             var btnE = e.target.closest('.rh-edit');
             var btnD = e.target.closest('.rh-del');
+
             if (btnE && EDITABLE) {
                 var r = DS.find(function (x) { return String(x.id) === btnE.getAttribute('data-id'); });
                 if (!r) return;
+
                 document.getElementById('rhModalTitle').textContent = 'Editar Huésped';
                 document.getElementById('rhId').value = r.id;
                 document.getElementById('rhReserva').value = '';
+                
                 var opt = Array.from(sel.options).find(function (o) { return o.textContent === '#' + r.cod; });
                 if (opt) sel.value = opt.value;
-                document.getElementById('rhNombre').value = r.nom;
-                document.getElementById('rhApellidos').value = r.ape;
-                document.getElementById('rhTdoc').value = r.tdoc;
-                document.getElementById('rhNdoc').value = r.ndoc;
+
+                document.getElementById('rhNombre').value = r.nom || '';
+                document.getElementById('rhApellidos').value = r.ape || '';
+                document.getElementById('rhTdoc').value = r.tdoc || '';
+                document.getElementById('rhNdoc').value = r.ndoc || '';
                 document.getElementById('rhTit').checked = !!r.tit;
+
                 if (mForm) mForm.show();
+                else if (typeof window.$ !== 'undefined') $(modalForm).modal('show');
             }
+
             if (btnD && DESTROY_URL) {
                 var r2 = DS.find(function (x) { return String(x.id) === btnD.getAttribute('data-id'); });
                 if (!r2) return;
+
                 document.getElementById('rhDelNombre').textContent = r2.nom + ' ' + r2.ape;
                 document.getElementById('rhDelCod').textContent = r2.cod;
+
                 var go = document.getElementById('rhDelGo');
                 go.onclick = function () {
                     var url = DESTROY_URL.replace('ID', r2.id);
-                    enviar(url, 'DELETE', new FormData(), true);
-                    if (mDel) mDel.hide();
+                    enviar(url, 'DELETE', new FormData());
                 };
+                
                 if (mDel) mDel.show();
+                else if (typeof window.$ !== 'undefined') $(modalDel).modal('show');
             }
-        });
+        };
 
-        document.getElementById('rhForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            var fd = new FormData(this);
-            var id = document.getElementById('rhId').value;
-            var url, method;
-            if (id && UPDATE_URL) { url = UPDATE_URL.replace('ID', id); method = 'PUT'; }
-            else if (STORE) { url = STORE; method = 'POST'; }
-            else { alert('Ruta de guardado no configurada.'); return; }
-            enviar(url, method, fd, true);
-            if (mForm) mForm.hide();
-        });
+        var rhForm = document.getElementById('rhForm');
+        if (rhForm) {
+            rhForm.onsubmit = function (e) {
+                e.preventDefault();
+                var fd = new FormData(this);
+                
+                var chkTit = document.getElementById('rhTit');
+                if (chkTit) fd.set('es_titular', chkTit.checked ? '1' : '0');
 
-        /* EXPORTAR (sin spinner eterno · anchor fuera del DOM) */
-        function limpiarOverlays() {
-            try {
-                if (!document.querySelector('.modal.show')) {
-                    document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
+                var id = document.getElementById('rhId').value;
+                var url, method;
+
+                if (id && UPDATE_URL) { 
+                    url = UPDATE_URL.replace('ID', id); 
+                    method = 'PUT'; 
+                } else if (STORE) { 
+                    url = STORE; 
+                    method = 'POST'; 
+                } else { 
+                    mostrarErrorRH('Ruta de guardado no configurada.'); 
+                    return; 
                 }
-            } catch (e) {}
+
+                enviar(url, method, fd);
+            };
         }
-        document.getElementById('rhExport').addEventListener('click', function (e) {
-            e.stopPropagation();
-            var res = filtrar();
-            if (!res.length) { alert('Sin huéspedes para exportar con los filtros actuales.'); return; }
-            var rows = '';
-            res.forEach(function (r, i) {
-                rows += '<tr><td>' + (i+1) + '</td><td>' + esc(r.nom) + '</td><td>' + esc(r.ape) + '</td><td>' + esc(r.tdoc) + '</td><td>' + esc(r.ndoc) + '</td><td>#' + esc(r.cod) + '</td><td>' + esc(r.inm) + '</td><td>' + (r.tit ? 'SÍ' : 'NO') + '</td><td>' + esc(r.reg) + '</td><td>' + esc(r.fec) + '</td></tr>';
-            });
-            var html = '<html><head><meta charset="UTF-8"><style>table{border-collapse:collapse;font-family:Calibri;font-size:11px}td,th{border:1px solid #d0d7de;padding:4px 8px}th{background:#f0f7f2;color:#2e5c43}</style></head><body><table>'
-                + '<tr><td colspan="10" style="font-weight:bold;font-size:14px;">REPORTE DE HUÉSPEDES</td></tr>'
-                + '<tr><td colspan="10" style="color:#666;font-size:10px;">' + new Date().toLocaleString() + ' · ' + res.length + ' registro(s)</td></tr>'
-                + '<tr><th>#</th><th>Nombre</th><th>Apellidos</th><th>Tipo Doc.</th><th>Número</th><th>Reserva</th><th>Inmueble</th><th>Titular</th><th>Registró</th><th>Fecha</th></tr>'
-                + rows + '</table></body></html>';
-            try {
-                var blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-                var url = URL.createObjectURL(blob);
-                var a = document.createElement('a');
-                a.href = url; a.download = 'Huespedes_' + Date.now() + '.xls'; a.style.display = 'none';
-                a.click();
-                setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-            } catch (err) {}
-            setTimeout(limpiarOverlays, 300);
-            setTimeout(limpiarOverlays, 1200);
-        });
 
         render();
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        window.initReservaHuespedes();
     });
+})();
 </script>

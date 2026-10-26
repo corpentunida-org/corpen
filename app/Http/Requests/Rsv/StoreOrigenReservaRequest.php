@@ -11,8 +11,8 @@ class StoreOrigenReservaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'   => 'required|string|max:255|unique:rsv_origen_reservas,name',
-            'active' => 'boolean',
+            // Cambiado de 'name' a 'nombre'
+            'nombre' => 'required|string|max:255|unique:rsv_origen_reservas,nombre',
         ];
     }
 }
