@@ -1,4 +1,9 @@
-{{-- partials/reservas/reservas.blade.php · v27 · SHOW de UNA reserva --}}
+{{-- partials/reservas/reservas.blade.php · v32-DBG · SHOW de UNA reserva (base v27 intacta) --}}
+{{-- v32-DBG · NOVEDADES (limpieza visual) · 1) UN SOLO panel de errores: el bloque TOAST + Panel 🐛 ahora se renderiza ANTES de #rsvShowRoot, así el script lo encuentra al ejecutarse y NO crea el respaldo dinámico que duplicaba el panel; el builder además retira nodos duplicados. --}}
+{{--   2) Se retiró el bloque visible de diagnóstico del servidor (<details>) y el chip rojo DEBUG del header: el volcado completo vive ahora SOLO dentro del Panel de Errores (líneas SRV · al arrancar). El colector $rsvDbg sigue intacto vía @json (SRVDBG). --}}
+{{-- v31 · fix recarga en Gestión: script DENTRO del root (re-nace con listeners tras cada swap) + polling/submit re-registrables + enlaces "Gestión" externos abiertos por AJAX. --}}
+{{-- v30 · debug LOCAL (NO global) estilo Panel de Huéspedes — botón 🐛 abajo-derecha · SIN interceptor global de fetch ni oyentes globales de errores --}}
+{{--   · TODO es ADITIVO: no se eliminó ni se modificó ninguna lógica funcional de la v27 --}}
 {{-- Diseño minimalista v5 (.reservas-soft) · TIEMPO REAL: cero recargas + AUTO-SYNC --}}
 {{-- Motor de sincronización automática (polling 15s) con guardas inteligentes --}}
 {{-- SEGURA: SIN borrados · Interceptador DELEGADO: ningún submit nativo --}}
@@ -6,19 +11,64 @@
 {{-- Huéspedes: modales ID ÚNICO + edición genérica · Endoso: cédula -> auto --}}
 
 @php
-    /* URLs de apoyo (si las rutas existen) */
-    $fragUrl = \Illuminate\Support\Facades\Route::has('rsv.admin.reservas.fragmento')
-        ? route('rsv.admin.reservas.fragmento') : null;
+    /* URLs de apoyo corrigiendo la ruta al fragmento específico del listado (Nivel 3) */
+    $fragUrl = \Illuminate\Support\Facades\Route::has('rsv.admin.reservas.lista.fragmento')
+        ? route('rsv.admin.reservas.lista.fragmento')
+        : (\Illuminate\Support\Facades\Route::has('rsv.admin.reservas.fragmento')
+            ? route('rsv.admin.reservas.fragmento') 
+            : null);
+
     $usersUrl = \Illuminate\Support\Facades\Route::has('rsv.admin.usuarios.buscar')
         ? route('rsv.admin.usuarios.buscar') : null;
 
-    /* Contexto temprano: NECESARIO antes del div raiz */
+    /* Contexto temprano */
     $xlsInm   = $inmueble ?? null;
     $xlsInmId = is_object($xlsInm) ? ($xlsInm->id ?? null) : null;
     if (!$xlsInmId && !empty($inmuebleId) && is_numeric($inmuebleId)) { $xlsInmId = $inmuebleId; }
     if (!$xlsInmId && is_numeric(request('inmueble_id')))             { $xlsInmId = request('inmueble_id'); }
     $modoGlobal = empty($xlsInmId);
 @endphp
+
+<!-- TOAST (fuera del root: sobrevive a los swaps) -->
+<div id="rsvToast" class="rsv-toast"></div>
+
+<!-- ═══ v32-DBG · PANEL DE ERRORES LOCAL (estilo Huéspedes · NO global · sobrevive a los swaps AJAX) ═══ -->
+<style>
+    #rsvShowDebugPanel { position: fixed; bottom: 10px; right: 10px; z-index: 9999; width: 380px; max-width: calc(100vw - 20px); max-height: 60vh; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 11px; display: none; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+    #rsvShowDebugPanel.open { display: flex; }
+    #rsvShowDebugPanel .dbg-header { background: #1e293b; padding: 6px 10px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    #rsvShowDebugPanel .dbg-header b { font-size: 12px; color: #f1f5f9; }
+    #rsvShowDebugPanel .dbg-controls { display: flex; gap: 4px; }
+    #rsvShowDebugPanel .dbg-btn { background: #334155; color: #f1f5f9; border: 0; font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-family: inherit; }
+    #rsvShowDebugPanel .dbg-btn:hover { background: #475569; }
+    #rsvShowDebugPanel .dbg-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
+    #rsvShowDebugPanel .dbg-body::-webkit-scrollbar { width: 6px; }
+    #rsvShowDebugPanel .dbg-body::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    #rsvShowDebugPanel .dbg-log { padding: 4px 0; border-bottom: 1px solid #1e293b; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
+    #rsvShowDebugPanel .dbg-log:last-child { border-bottom: 0; }
+    #rsvShowDebugPanel .dbg-log .dbg-time { color: #64748b; font-size: 10px; }
+    #rsvShowDebugPanel .dbg-log.info  { color: #93c5fd; }
+    #rsvShowDebugPanel .dbg-log.ok    { color: #86efac; }
+    #rsvShowDebugPanel .dbg-log.warn  { color: #fcd34d; }
+    #rsvShowDebugPanel .dbg-log.err   { color: #fca5a5; }
+    #rsvShowDebugPanel .dbg-log.net   { color: #7dd3fc; }
+    #rsvShowDebugPanel .dbg-log.debug { color: #c4b5fd; }
+    #rsvShowDebugToggle { position: fixed; bottom: 10px; right: 10px; z-index: 10000; background: #1e293b; color: #f1f5f9; border: 0; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; }
+    #rsvShowDebugToggle:hover { background: #334155; }
+</style>
+
+<button type="button" id="rsvShowDebugToggle" title="Mostrar/ocultar panel de errores (Reservas)">...</button>
+<div id="rsvShowDebugPanel">
+    <div class="dbg-header" id="rsvShowDebugHeader">
+        <b>🐛 Panel de Errores (Reservas)</b>
+        <div class="dbg-controls">
+            <button type="button" class="dbg-btn" id="rsvShowDebugCopy" title="Copiar todo el log para pegarlo en el chat">Copiar</button>
+            <button type="button" class="dbg-btn" id="rsvShowDebugClear">Limpiar</button>
+            <button type="button" class="dbg-btn" id="rsvShowDebugClose">✕</button>
+        </div>
+    </div>
+    <div class="dbg-body" id="rsvShowDebugBody"></div>
+</div>
 
 <div class="reservas-soft rsvshow p-3 bg-white rounded-3 border" id="rsvShowRoot"
      data-frag="{{ $fragUrl }}"
@@ -147,12 +197,43 @@
     .reservas-soft-modal .modal-header { border-bottom:1px solid #f1f5f9; padding:9px 14px; }
     .reservas-soft-modal .modal-footer { border-top:1px solid #f1f5f9; padding:9px 14px; }
     .reservas-soft-modal .form-control, .reservas-soft-modal .form-select { font-size:9.5px; }
+
+    /* ═══ ANIMACIONES DE CARGA (ESPONTANEIDAD) ═══ */
+    .rsvshow.is-loading { opacity: 0.6; pointer-events: none; filter: grayscale(20%); transition: all 0.2s ease; }
+    @keyframes rsvSpin { to { transform: rotate(360deg); } }
+    .rsv-spin { animation: rsvSpin 0.8s linear infinite !important; display:inline-block; }
 </style>
 
 @php
     /* Contexto completo */
     $hoy = now()->startOfDay();
     $currentUserId = \Illuminate\Support\Facades\Auth::id();
+
+    /* ═══ v32-DBG: colector de diagnóstico (aditivo · no altera la lógica) ═══ */
+    $rsvDbg = [
+        'marca'         => 'v32-DBG',
+        'tiempo'        => now()->format('Y-m-d H:i:s'),
+        'url'           => request()->fullUrl(),
+        'peticion'      => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
+        'modeloReserva' => false,
+        'modeloStatus'  => false,
+        'modoGlobal'    => null,
+        'inmId'         => null,
+        'q'             => null,
+        'selId'         => null,
+        'reservaSel'    => null,
+        'fueraContexto' => false,
+        'candidatas'    => 0,
+        'statuses'      => 0,
+        'rutas'         => [],
+        'fragmento'     => null,
+        'usersUrl'      => null,
+        'errores'       => [],
+    ];
+    /* v32-DBG: captura excepciones que antes se tragaban en silencio */
+    $rsvDbgErr = function ($zona, \Throwable $e) use (&$rsvDbg) {
+        $rsvDbg['errores'][] = '[' . $zona . '] ' . $e->getMessage() . ' (' . basename($e->getFile()) . ':' . $e->getLine() . ')';
+    };
 
     /* Helpers visuales */
     $stDot = function ($name) {
@@ -178,6 +259,7 @@
     $candidatas = collect();
     $reservaSel = null;
     $fueraDeContexto = false;
+    $rsvDbg['modoGlobal'] = $modoGlobal; $rsvDbg['inmId'] = $xlsInmId; $rsvDbg['q'] = $q; $rsvDbg['selId'] = $selId;
 
     try {
         if (class_exists(\App\Models\Rsv\Reserva::class)) {
@@ -192,7 +274,7 @@
                 }
                 if ($reservaSel) {
                     foreach (['transacciones.pasarela', 'mensajes.remitente', 'reviews.autor', 'historialEndosos.usuarioAnterior', 'historialEndosos.usuarioNuevo'] as $rel) {
-                        try { $reservaSel->load($rel); } catch (\Throwable $e) { /* rel inexistente: ignorar */ }
+                        try { $reservaSel->load($rel); } catch (\Throwable $e) { $rsvDbgErr('relación ' . $rel, $e); }
                     }
                 }
             }
@@ -212,7 +294,8 @@
                     return $bq->orderBy('created_at', 'desc')->limit(8)->get();
                 };
                 try { $candidatas = $buildCandidatas(true); } catch (\Throwable $eNid) {
-                    try { $candidatas = $buildCandidatas(false); } catch (\Throwable $e2) { $candidatas = collect(); }
+                    $rsvDbgErr('búsqueda (con nid)', $eNid);
+                    try { $candidatas = $buildCandidatas(false); } catch (\Throwable $e2) { $rsvDbgErr('búsqueda (sin nid)', $e2); $candidatas = collect(); }
                 }
             } elseif (!$reservaSel) {
                 $lq = \App\Models\Rsv\Reserva::with(['user', 'inmueble', 'status']);
@@ -221,17 +304,26 @@
             }
         }
     } catch (\Throwable $e) {
+        $rsvDbgErr('consultas principales', $e);
         \Illuminate\Support\Facades\Log::warning('reservas.show: ' . $e->getMessage());
     }
+
+    /* v32-DBG: resumen post-consulta (aditivo) */
+    $rsvDbg['modeloReserva'] = class_exists(\App\Models\Rsv\Reserva::class);
+    $rsvDbg['reservaSel']    = $reservaSel ? ('#' . $reservaSel->id . ' · ' . (string) $reservaSel->codigo_reserva) : null;
+    $rsvDbg['fueraContexto'] = $fueraDeContexto;
+    $rsvDbg['candidatas']    = $candidatas->count();
 
     /* Estados */
     $statuses = collect();
     try {
         if (class_exists(\App\Models\Rsv\Status::class)) {
+            $rsvDbg['modeloStatus'] = true;
             $statuses = \App\Models\Rsv\Status::query()->orderBy('id')->get();
         }
-    } catch (\Throwable $e) { $statuses = collect(); }
+    } catch (\Throwable $e) { $rsvDbgErr('statuses', $e); $statuses = collect(); }
     $steps = $statuses->values();
+    $rsvDbg['statuses'] = $steps->count();
 
     $curKey = ($reservaSel && $steps->isNotEmpty())
         ? $steps->search(fn ($s) => (string) $s->id === (string) $reservaSel->id_rsv_statuses)
@@ -247,7 +339,7 @@
     $historial = collect();
     if ($reservaSel) {
         try { $historial = $reservaSel->historialEstados()->orderBy('created_at', 'desc')->limit(6)->get(); }
-        catch (\Throwable $e) { $historial = collect(); }
+        catch (\Throwable $e) { $rsvDbgErr('historialEstados', $e); $historial = collect(); }
     }
 
     /* Rutas existentes */
@@ -262,10 +354,23 @@
     $rutaReviewStore   = \Illuminate\Support\Facades\Route::has('rsv.reviews.store')            ? 'rsv.reviews.store'            : null;
     $rutaChatStore     = \Illuminate\Support\Facades\Route::has('rsv.mensajes.store')           ? 'rsv.mensajes.store'           : null;
 
+    /* v32-DBG: registro de rutas resueltas (aditivo) */
+    $rsvDbg['rutas'] = [
+        'estado'        => $rutaEstado       ?: 'NO EXISTE (ni cambiar_estado ni cambiar-estado)',
+        'pdf'           => $rutaPdf          ?: 'NO EXISTE',
+        'huesped.store' => $rutaHuespedStore ?: 'NO EXISTE',
+        'pago.store'    => $rutaPagoStore    ?: 'NO EXISTE',
+        'endoso.store'  => $rutaEndosoStore  ?: 'NO EXISTE',
+        'review.store'  => $rutaReviewStore  ?: 'NO EXISTE',
+        'chat.store'    => $rutaChatStore    ?: 'NO EXISTE',
+    ];
+    $rsvDbg['fragmento'] = $fragUrl ?: 'NO RESUELTA (faltan rsv.admin.reservas.lista.fragmento y rsv.admin.reservas.fragmento)';
+    $rsvDbg['usersUrl']  = $usersUrl ?: 'NO RESUELTA (falta rsv.admin.usuarios.buscar)';
+
     $pasarelas = collect();
     try {
         if (class_exists(\App\Models\Rsv\Pasarela::class)) { $pasarelas = \App\Models\Rsv\Pasarela::all(); }
-    } catch (\Throwable $e) { $pasarelas = collect(); }
+    } catch (\Throwable $e) { $rsvDbgErr('pasarelas', $e); $pasarelas = collect(); }
 @endphp
 
 <!-- ALERTAS DE SESION -->
@@ -280,12 +385,16 @@
     </div>
 @endif
 
+{{-- v32-DBG: el bloque visible de diagnóstico del servidor se RETIRÓ de la vista por pedido del usuario.
+     El diagnóstico completo ahora vive SOLO dentro del Panel de Errores (botón 🐛 abajo a la derecha):
+     el colector PHP $rsvDbg sigue calculando todo y viaja al panel como JSON en la variable SRVDBG. --}}
+
 <!-- HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap:8px;">
     <h6 class="fw-bold mb-0" style="font-size:9.5px; color:#334155;">
         <i class="bi bi-calendar2-check me-1" style="font-size:8px; color:#5d8a70;"></i>
         {{ $modoGlobal ? 'Gestión de Reserva' : 'Reserva del Inmueble' }}
-        <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">v27</span>
+        <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">v32-DBG</span>
     </h6>
     <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
         <span class="rsv-live" id="rsvLiveBadge" title="Sincronización automática activa: los cambios aparecen solos, sin recargar">
@@ -968,7 +1077,7 @@
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title mb-0 fw-bold" style="font-size:0.95rem;">Calificar Cliente / Reserva</h6>
+                    <h6 class="modal-title mb-0 fw-bold" style="font-size:0.95rem;">Evaluación que realiza el encargado del hotel al asociado y a la reserva.</h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="font-size:9px;"></button>
                 </div>
                 <form action="{{ route($rutaReviewStore) }}" method="POST" class="rsv-ajax-form">
@@ -1007,11 +1116,6 @@
     @endif
 @endif
 
-</div>
-
-<!-- TOAST (fuera del root: sobrevive a los swaps) -->
-<div id="rsvToast" class="rsv-toast"></div>
-
 <script>
 (function () {
     var root = document.getElementById('rsvShowRoot');
@@ -1021,6 +1125,174 @@
     var USERS = root.getAttribute('data-users') || '';
     var INM   = root.getAttribute('data-inm')   || '';
     var POLL  = parseInt(root.getAttribute('data-poll') || '15000', 10);
+
+    /* ═══════════════ v32-DBG · DEBUG LOCAL (NO global) · estilo Panel de Huéspedes ═══════════════
+       · SRVDBG    : diagnóstico calculado en el SERVIDOR (Blade) y enviado en JSON
+       · DebugPanel: panel LOCAL con botón 🐛 abajo-derecha — registra SOLO operaciones de ESTA vista
+       · SIN interceptor global de fetch y SIN oyentes globales de errores (eso capturaba módulos
+         ajenos de la página, p.ej. el calendario: limpiarRuedita / calEl)
+       · extraerErrorLaravel: extrae la excepción real de una respuesta 500 (JSON o HTML)          */
+    var SRVDBG = @json($rsvDbg);
+
+    var DebugPanel = (function () {
+        if (window.RsvShowDebug && window.RsvShowDebug.alive && window.RsvShowDebug.alive()) {
+            window.RsvShowDebug.log('script re-ejecutado tras swap AJAX (el panel LOCAL continúa)', 'info');
+            return window.RsvShowDebug;
+        }
+        /* v32: anti-duplicados — si por cualquier motivo quedara más de un nodo con estos ids
+           (p.ej. un respaldo dinámico de una ejecución anterior o HTML repetido), se conservan
+           los primeros y se retiran los extras → SIEMPRE un solo panel y un solo botón 🐛 */
+        ['rsvShowDebugPanel', 'rsvShowDebugToggle', 'rsvShowDebugHeader',
+         'rsvShowDebugBody', 'rsvShowDebugCopy', 'rsvShowDebugClear', 'rsvShowDebugClose'
+        ].forEach(function (idv) {
+            var los = document.querySelectorAll('[id="' + idv + '"]');
+            for (var i = 1; i < los.length; i++) {
+                if (los[i] && los[i].parentNode) { los[i].parentNode.removeChild(los[i]); }
+            }
+        });
+        var dbgOpen = false;
+        var dbgPanel  = document.getElementById('rsvShowDebugPanel');
+        var dbgBody   = document.getElementById('rsvShowDebugBody');
+        var dbgToggle = document.getElementById('rsvShowDebugToggle');
+        var dbgHeader = document.getElementById('rsvShowDebugHeader');
+        var dbgClose  = document.getElementById('rsvShowDebugClose');
+        var dbgClear  = document.getElementById('rsvShowDebugClear');
+        var dbgCopy   = document.getElementById('rsvShowDebugCopy');
+
+        /* Respaldo: si el HTML del panel no vino en la página, se crea igual (mismos ids) */
+        if (!dbgPanel || !dbgBody || !dbgToggle) {
+            dbgPanel = document.createElement('div');
+            dbgPanel.id = 'rsvShowDebugPanel';
+            dbgPanel.innerHTML = '<div class="dbg-header" id="rsvShowDebugHeader"><b>🐛 Panel de Errores (Reservas)</b>'
+                + '<div class="dbg-controls">'
+                + '<button type="button" class="dbg-btn" id="rsvShowDebugCopy">Copiar</button>'
+                + '<button type="button" class="dbg-btn" id="rsvShowDebugClear">Limpiar</button>'
+                + '<button type="button" class="dbg-btn" id="rsvShowDebugClose">✕</button>'
+                + '</div></div><div class="dbg-body" id="rsvShowDebugBody"></div>';
+            document.body.appendChild(dbgPanel);
+            dbgBody   = dbgPanel.querySelector('#rsvShowDebugBody');
+            dbgHeader = dbgPanel.querySelector('#rsvShowDebugHeader');
+            dbgClose  = dbgPanel.querySelector('#rsvShowDebugClose');
+            dbgClear  = dbgPanel.querySelector('#rsvShowDebugClear');
+            dbgCopy   = dbgPanel.querySelector('#rsvShowDebugCopy');
+            dbgToggle = document.createElement('button');
+            dbgToggle.type = 'button';
+            dbgToggle.id = 'rsvShowDebugToggle';
+            dbgToggle.title = 'Mostrar/ocultar panel de errores (Reservas)';
+            dbgToggle.textContent = '🐛';
+            document.body.appendChild(dbgToggle);
+        }
+
+        function togglePanel(forceState) {
+            dbgOpen = (typeof forceState === 'boolean') ? forceState : !dbgOpen;
+            if (dbgOpen) {
+                dbgPanel.classList.add('open');
+                dbgToggle.style.display = 'none';
+            } else {
+                dbgPanel.classList.remove('open');
+                dbgToggle.style.display = 'flex';
+            }
+        }
+
+        /* Log LOCAL · firma (texto, nivel) para no tocar las 30+ llamadas existentes.
+           Niveles: info · ok · warn · err · net · debug · (vacío = color por defecto) */
+        function log(txt, col) {
+            if (!dbgBody) { return; }
+            var t = new Date();
+            var time = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2);
+            var div = document.createElement('div');
+            div.className = 'dbg-log ' + (col || 'info');
+            var sp = document.createElement('span');
+            sp.className = 'dbg-time';
+            sp.textContent = '[' + time + '] ';
+            div.appendChild(sp);
+            div.appendChild(document.createTextNode(String(txt)));
+            dbgBody.appendChild(div);
+            dbgBody.scrollTop = dbgBody.scrollHeight;
+            while (dbgBody.children.length > 250) { dbgBody.removeChild(dbgBody.firstChild); }
+        }
+        function obj(etq, o) { try { log(etq + ' ' + JSON.stringify(o), 'info'); } catch (e) { log(etq + ' [no serializable]', 'info'); } }
+        function vivo() { return !!(dbgBody && document.body.contains(dbgBody)); }
+        function copiar() {
+            var lin = [];
+            if (dbgBody) { for (var i = 0; i < dbgBody.children.length; i++) { lin.push(dbgBody.children[i].textContent); } }
+            lin.unshift('=== DEBUG reservas v32-DBG (LOCAL) · ' + new Date().toISOString() + ' ===');
+            if (navigator.clipboard) { navigator.clipboard.writeText(lin.join('\n')).then(function () { log('log copiado (' + (lin.length - 1) + ' líneas)', 'ok'); }); }
+        }
+
+        if (dbgToggle) { dbgToggle.addEventListener('click', function () { togglePanel(true); }); }
+        if (dbgClose)  { dbgClose.addEventListener('click', function (e) { e.stopPropagation(); togglePanel(false); }); }
+        if (dbgClear)  { dbgClear.addEventListener('click', function (e) { e.stopPropagation(); if (dbgBody) { dbgBody.innerHTML = ''; } }); }
+        if (dbgCopy)   { dbgCopy.addEventListener('click', function (e) { e.stopPropagation(); copiar(); }); }
+        if (dbgHeader) { dbgHeader.addEventListener('click', function (e) { if (e.target === dbgHeader) { togglePanel(false); } }); }
+
+        /* Convivencia: si la página también muestra el panel de Huéspedes (#rhDebugToggle)
+           o el del tab de Reservas (#rvDebugToggle), este se apila para no taparlos */
+        try {
+            var otros = 0;
+            if (document.getElementById('rhDebugToggle')) { otros++; }
+            if (document.getElementById('rvDebugToggle')) { otros++; }
+            if (otros) {
+                var nb = (10 + otros * 44) + 'px';
+                dbgPanel.style.bottom = nb;
+                dbgToggle.style.bottom = nb;
+            }
+        } catch (e) {}
+
+        /* Extractor de errores Laravel 500 (JSON o HTML) — igual al de Huéspedes */
+        function extraerErrorLaravel(bodyTxt, err) {
+            var base = (err && err.message) ? String(err.message) : 'Error desconocido';
+            if (!bodyTxt) { return base; }
+            try {
+                var j = JSON.parse(bodyTxt);
+                if (j && (j.message || j.exception)) {
+                    var nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
+                    return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
+                }
+            } catch (e) { /* No era JSON */ }
+            var t = String(bodyTxt).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
+            var mt = t.match(/<title>([\s\S]*?)<\/title>/i);
+            if (mt) {
+                var tit = mt[1].replace(/\s+/g, ' ').trim();
+                if (tit && !/server error/i.test(tit)) { return (base + ' · backend: ' + tit).substring(0, 400); }
+                base = base + ' · backend: ' + (tit || 'server error');
+            }
+            var plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+            var mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
+            if (mExc) { return (base + ' · ' + mExc[0].trim()).substring(0, 400); }
+            return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
+        }
+
+        return { log: log, obj: obj, extraerErrorLaravel: extraerErrorLaravel, open: function () { togglePanel(true); }, close: function () { togglePanel(false); }, alive: vivo };
+    })();
+    var DBG = DebugPanel;   /* las llamadas DBG.log(...) existentes siguen funcionando (solo esta vista) */
+    window.RsvShowDebug = DebugPanel;
+
+    /* v32-DBG · NOTA: el interceptor global de fetch y los oyentes window.onerror /
+       unhandledrejection de la v29 se ELIMINARON a propósito: eran "globales" y
+       registraban errores de OTROS módulos de la página (calendario, soportes, etc.).
+       Este panel solo reporta lo que hace esta vista, como el Panel de Huéspedes. */
+
+    /* v32-DBG: arranque — contexto LOCAL (el volcado completo del servidor ahora vive SOLO aquí) */
+    DBG.log('v32-DBG activo · panel LOCAL (solo esta vista · NO captura errores ajenos)', 'ok');
+    DBG.log('init · modo=' + (SRVDBG && SRVDBG.modoGlobal ? 'global' : 'inmueble') + ' · candidatas=' + (SRVDBG ? SRVDBG.candidatas : '?') + ' · statuses=' + (SRVDBG ? SRVDBG.statuses : '?') + (SRVDBG && SRVDBG.reservaSel ? ' · reservaSel=' + SRVDBG.reservaSel : ''), 'info');
+    DBG.log('SRV · peticion=' + (SRVDBG && SRVDBG.peticion ? SRVDBG.peticion : '?') + ' · url=' + (SRVDBG && SRVDBG.url ? SRVDBG.url : '?'), 'debug');
+    DBG.log('Rutas · FRAG=' + (FRAG || 'NO') + ' · USERS=' + (USERS || 'NO') + ' · estado=' + (SRVDBG && SRVDBG.rutas ? SRVDBG.rutas.estado : '?') + ' · auto-sync=' + POLL + 'ms', (FRAG ? 'ok' : 'warn'));
+    if (!FRAG) {
+        DBG.log('⚠ FRAG vacío: el buscador y los clics recargarán la página COMPLETA (navegación nativa).', 'err');
+    }
+    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+        for (var _di = 0; _di < SRVDBG.errores.length; _di++) { DBG.log('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err'); }
+    }
+    if (SRVDBG && SRVDBG.modeloReserva === false) {
+        DBG.log('⚠ El modelo App\\Models\\Rsv\\Reserva NO existe con ese namespace → el listado SIEMPRE estará vacío.', 'err');
+    }
+    if (SRVDBG && SRVDBG.modeloStatus === false) {
+        DBG.log('⚠ El modelo App\\Models\\Rsv\\Status NO existe con ese namespace → el flujo de estados estará vacío.', 'warn');
+    }
+    if (SRVDBG && SRVDBG.candidatas === 0 && SRVDBG.errores && !SRVDBG.errores.length) {
+        DBG.log('ℹ Listado vacío SIN excepciones de servidor → no hay registros en la tabla (o el filtro de inmueble no coincide).', 'warn');
+    }
 
     /* ── Toast ── */
     var toastEl = document.getElementById('rsvToast');
@@ -1082,10 +1354,11 @@
 
         var qs = rsvParams(q, rid);
         var newUrl = window.location.pathname + (qs ? '?' + qs : '');
+        DBG.log('rsvRecargar → q="' + q + '" · rid="' + rid + '" · frag=' + (FRAG || 'VACÍO'), 'info');
 
         // 🟢 FIX: Si no hay ruta de fragmento, navegamos de forma nativa a la URL completa.
-        // Esto previene que un click se quede ignorado (window.location.reload() no llevaba los parámetros).
         if (!FRAG) {
+            DBG.log('⚠ SIN data-frag → navegación NATIVA (recarga completa de página): ' + newUrl, 'warn');
             window.location.href = newUrl;
             return;
         }
@@ -1094,16 +1367,42 @@
 
         if (rsvAbort) { try { rsvAbort.abort(); } catch (e) {} }
         rsvAbort = new AbortController();
+        var t0 = Date.now();
+
+        // 🟢 EFECTO VISUAL INSTANTÁNEO: Difumina el contenedor y bloquea clics
+        if (!opts.silencioso) {
+            root.classList.add('is-loading');
+        }
 
         return fetch(FRAG + (qs ? '?' + qs : ''), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             signal: rsvAbort.signal
         })
-        .then(function (r) { return r.text(); })
+        .then(function (r) { 
+            if (!r.ok) {
+                return r.text().then(function (bt) {
+                    DBG.log('✖ Fragmento HTTP ' + r.status + ' · ' + DebugPanel.extraerErrorLaravel(bt, new Error('HTTP ' + r.status)), 'err');
+                    if (!opts.silencioso) { DebugPanel.open(); }
+                    throw new Error('HTTP ' + r.status + ': Error en el servidor');
+                });
+            }
+            return r.text(); 
+        })
         .then(function (html) {
             var doc = new DOMParser().parseFromString(html, 'text/html');
             var nr = doc.getElementById('rsvShowRoot');
-            if (!nr) { rsvToast('Respuesta inesperada del servidor.', true); return; }
+            if (!nr) {
+                var _dbgHtml = String(html || '');
+                var _dbgSnip = _dbgHtml.replace(/\s+/g, ' ').trim().slice(0, 240);
+                DBG.log('✖ CAUSA DEL AVISO "Respuesta inesperada": el HTML recibido NO contiene #rsvShowRoot.', 'err');
+                DBG.log('HTML recibido (' + _dbgHtml.length + ' bytes): ' + _dbgSnip, 'err');
+                DBG.log(/login|autentic|iniciar sesi/i.test(_dbgHtml) ? 'Pista: parece un redirect a LOGIN → la ruta del fragmento exige sesión/permisos.' : (/exception|whoops|error/i.test(_dbgHtml) ? 'Pista: parece una página de ERROR → revisa storage/logs/laravel.log.' : 'Pista: la ruta del fragmento devolvió otra cosa (¿vista parcial distinta sin #rsvShowRoot?).'), 'warn');
+            }
+            if (!nr) { 
+                rsvToast('Respuesta inesperada del servidor (no se encontró #rsvShowRoot).', true);
+                DebugPanel.open(); 
+                return; 
+            }
 
             if (!opts.silencioso) { rsvCerrarModales(); }
 
@@ -1112,10 +1411,17 @@
             rsvRunScripts(imported);
 
             rsvMarcaSync();
+            DBG.log('Fragmento recargado · ' + html.length + ' bytes · ' + (Date.now() - t0) + 'ms' + (opts.silencioso ? ' · auto-sync' : ''), 'ok');
         })
         .catch(function (err) {
-            if (err && err.name === 'AbortError') { return; }
-            if (!opts.silencioso) { rsvToast('No se pudo actualizar la vista.', true); }
+            if (err && err.name === 'AbortError') { DBG.log('rsvRecargar abortada (se lanzó una petición más reciente)', 'debug'); return; }
+            DBG.log('✖ rsvRecargar falló: ' + (err && err.message ? err.message : err), 'err');
+            if (!opts.silencioso) { 
+                // 🟢 Restaurar UI si la petición falla
+                root.classList.remove('is-loading'); 
+                rsvToast(err.message || 'No se pudo actualizar la vista.', true);
+                DebugPanel.open(); 
+            }
         });
     }
 
@@ -1153,13 +1459,16 @@
 
     function rsvSincronizar() {
         if (!FRAG) { return; }
-        if (document.hidden) { return; }
-        if (rsvUsuarioOcupado()) { return; }
+        if (document.hidden) { DBG.log('auto-sync omitido: pestaña oculta', 'debug'); return; }
+        if (rsvUsuarioOcupado()) { DBG.log('auto-sync omitido: usuario ocupado (modal abierto o campo activo)', 'debug'); return; }
+        DBG.log('auto-sync tick (recarga silenciosa del fragmento)', 'debug');
         rsvRecargar({}, { silencioso: true });
     }
 
     function rsvProgramarPoll() {
-        clearInterval(pollTimer);
+        /* v31: el timer vive en window → al re-ejecutarse el script tras cada swap AJAX
+           se mata el intervalo del closure anterior (antes quedaban N timers = N fetches) */
+        if (window.__rsvPollTimer) { try { clearInterval(window.__rsvPollTimer); } catch (e) {} }
         pollTimer = setInterval(function () {
             if (rsvErroresSeguidos >= 3) {
                 rsvSetBadge('reconectando…', true);
@@ -1167,11 +1476,40 @@
             }
             rsvSincronizar();
         }, pollDelay);
+        window.__rsvPollTimer = pollTimer;
     }
 
-    document.addEventListener('visibilitychange', function () {
+    /* v31: oyente re-registrable → se retira el handler anterior para no acumular
+       listeners en document cuando el script se re-ejecuta tras un swap */
+    if (window.__rsvVisHandler) { document.removeEventListener('visibilitychange', window.__rsvVisHandler); }
+    window.__rsvVisHandler = function () {
         if (!document.hidden) { rsvSincronizar(); }
-    });
+    };
+    document.addEventListener('visibilitychange', window.__rsvVisHandler);
+
+    /* ══ v31 · ENLACES "Gestión" EXTERNOS ═══════════════════════════════════════
+       Los botones/enlaces "Gestión" que viven FUERA de esta vista (dashboard,
+       calendario, filas de otros partials) apuntan a /rsv/admin?reserva_id=…
+       y provocaban RECARGA COMPLETA. Si el destino es ESTA misma página y trae
+       reserva_id, lo abrimos por AJAX (swap del fragmento) sin recargar. ══ */
+    if (window.__rsvLinkHandler) { document.removeEventListener('click', window.__rsvLinkHandler, true); }
+    window.__rsvLinkHandler = function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) { return; }
+        var a = (e.target && e.target.closest) ? e.target.closest('a[href]') : null;
+        if (!a || a.target === '_blank' || a.hasAttribute('download')) { return; }
+        if (a.closest('#rsvShowRoot')) { return; } /* dentro del root ya los maneja su propio listener */
+        var href = a.getAttribute('href') || '';
+        if (!href || href.charAt(0) === '#') { return; }
+        var u;
+        try { u = new URL(a.href, window.location.href); } catch (e0) { return; }
+        if (u.pathname !== window.location.pathname) { return; } /* otra página → navegación normal */
+        if (!u.searchParams.has('reserva_id')) { return; }       /* solo abrir/gestionar una reserva */
+        e.preventDefault();
+        var _etq = String(a.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+        DBG.log('clic en enlace externo "' + (_etq || '(sin texto)') + '" → abrir gestión por AJAX (sin recargar la página)', 'info');
+        rsvRecargar({ reserva_id: u.searchParams.get('reserva_id') || '', reserva_q: u.searchParams.get('reserva_q') || '' });
+    };
+    document.addEventListener('click', window.__rsvLinkHandler, true);
 
     if (FRAG) { rsvProgramarPoll(); }
     else { rsvSetBadge('sin auto-sync', true); }
@@ -1196,10 +1534,21 @@
             return;
         }
 
-        /* Seleccionar candidata */
+        /* 🟢 Seleccionar candidata (ESPONTANEIDAD) */
         if ((btn = e.target.closest('.rsv-pick'))) {
             e.preventDefault();
-            rsvRecargar({ reserva_id: btn.getAttribute('data-res-id') });
+            DBG.log('clic en candidata → reserva_id=' + btn.getAttribute('data-res-id') + ' (cargando detalle por AJAX)', 'info');
+            
+            // Reemplazar ícono por spinner inmediatamente en el elemento clickeado
+            var icon = btn.querySelector('.bi-chevron-right');
+            if (icon) {
+                icon.className = 'bi bi-arrow-repeat rsv-spin';
+                icon.style.color = 'var(--accent)';
+            }
+            
+            // 👉 AQUÍ ESTÁ LA MAGIA: { silencioso: true } evita que la vista se difumine, 
+            // haciendo el cambio de inmediato en cuanto llega la respuesta del servidor.
+            rsvRecargar({ reserva_id: btn.getAttribute('data-res-id') }, { silencioso: true });
             return;
         }
 
@@ -1270,8 +1619,11 @@
 
     /* ═══════════════════════════════════════════════════════════
        INTERCEPTADOR DELEGADO (document, capture)
+       v31: re-registrable — sin esto, cada swap AJAX acumularía otro
+       oyente de submit en document → PAGOS/ESTADOS DUPLICADOS.
     ═══════════════════════════════════════════════════════════ */
-    document.addEventListener('submit', function (e) {
+    if (window.__rsvSubmitHandler) { document.removeEventListener('submit', window.__rsvSubmitHandler, true); }
+    window.__rsvSubmitHandler = function (e) {
         var form = e.target.closest ? e.target.closest('form.rsv-ajax-form') : null;
         if (!form || !form.isConnected) { return; }
 
@@ -1279,6 +1631,7 @@
         e.stopImmediatePropagation();
 
         var action = form.getAttribute('action');
+        DBG.log('submit interceptado → form="' + (form.id || 'sin-id') + '" · action=' + (action || '(VACÍO: no hay ruta)'), 'info');
 
         if (form.getAttribute('data-rsv-edit') === 'huesped') {
             var hid = document.getElementById('rsvEditHuespedId');
@@ -1321,6 +1674,7 @@
             return res.json().then(function (data) { return { status: res.status, data: data }; });
         })
         .then(function (response) {
+            DBG.log('submit ← HTTP ' + response.status + ' · success=' + (response.data && response.data.success ? 'sí' : 'no') + (response.data && response.data.message ? ' · ' + response.data.message : ''), (response.status === 200 || response.status === 201 || (response.data && response.data.success)) ? 'net' : 'err');
             if (response.status === 200 || response.status === 201 || (response.data && response.data.success)) {
                 rsvToast(response.data.message || 'Operación realizada con éxito.', false);
                 rsvRecargar();
@@ -1331,19 +1685,23 @@
                     rsvToast('Corrige: ' + msgs, true);
                 } else {
                     rsvToast(response.data.message || 'Error en la solicitud.', true);
+                    DebugPanel.open();
                     if (response.data.error) { console.error(response.data.error); }
                 }
             }
         })
         .catch(function (err) {
+            DBG.log('✖ submit falló (red/excepción): ' + (err && err.message ? err.message : err), 'err');
             if (btn) { btn.disabled = false; btn.innerHTML = original; }
             rsvToast('Fallo de conexión con el servidor.', true);
+            DebugPanel.open();
             console.error(err);
         })
         .finally(function () {
             rsvEnVuelo = false;
         });
-    }, true);
+    };
+    document.addEventListener('submit', window.__rsvSubmitHandler, true);
 
     /* ═══════════════════════════════════════════════════════════
        ENDOSO: cédula (nid) -> nombre + ID automáticos
@@ -1475,3 +1833,5 @@
     }
 })();
 </script>
+</div>
+

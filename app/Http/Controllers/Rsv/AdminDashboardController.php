@@ -461,28 +461,24 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/reservas/reservas.blade.php */
+    /**
+     * [NIVEL 3] - Devuelve el fragmento de la vista de detalle/lista de reservas
+     * partials/reservas/reservas.blade.php
+     */
     public function reservasListaFragmento(Request $request)
     {
         try {
-            $inmuebleId = $request->query('inmueble_id', 'todos');
-            $pagina     = max(1, (int) $request->query('page_reservas', 1));
-            
-            $query = Reserva::with(['user', 'status', 'inmueble:id,name']);
-            if ($inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
-                $query->where('id_rsv_catalogo_inmueble', $inmuebleId);
-            }
+            $inmuebleId = $request->get('inmueble_id');
+            $inmueble = $inmuebleId ? CatalogoInmueble::find($inmuebleId) : null;
 
-            $reservas = $query->orderBy('created_at', 'desc')
-                            ->paginate(10, ['*'], 'page_reservas', $pagina)
-                            ->appends($request->query());
-
+            // Ajusta la ruta de la vista según la estructura de carpetas de tu proyecto
             return response()
-                ->view('rsv.admin.partials.reservas.reservas', compact('reservas', 'inmuebleId'))
+                ->view('rsv.admin.partials.reservas.reservas', compact('inmueble', 'inmuebleId'))
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (\Throwable $e) {
-            Log::error('reservasListaFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            Log::error('reservasListaFragmento Error: ' . $e->getMessage());
+            return response('Error 500 al cargar el fragmento: ' . $e->getMessage(), 500)
+                ->header('Cache-Control', 'no-store, max-age=0');
         }
     }
 

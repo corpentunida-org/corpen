@@ -1,5 +1,12 @@
-{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.3 · prefill reserva por ID + recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
+{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.4 · botón Actualizar (icono) + prefill reserva por ID + recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
 {{--
+  NOVEDADES v2.4 (icono de actualización):
+  · Nuevo botón "Actualizar" en el header (icono bi-arrow-clockwise): recarga el fragmento
+    por AJAX vía window.reloadRhFragment() sin F5. Mientras carga, el icono gira (rh-spin)
+    y el botón se deshabilita ~1.2s para evitar clics repetidos; el pulso visual verde
+    confirma el refresco. Funciona en modo global y single, sin depender de rutas del CRUD.
+  · Todo lo demás de v2.3 se conserva intacto (prefill reserva por ID + anti-duplicados).
+
   NOVEDADES v2.3 (fix del campo Reserva al editar):
   · El dataset ahora incluye 'rid' => id_rsv_reservas (antes solo llevaba 'cod', el código de texto).
   · El modal de edición pre-selecciona la reserva POR ID (r.rid); si la reserva del huésped no
@@ -57,6 +64,10 @@
     .reservas-soft .chip-tit.si { color: #3d7a5c; background: #e3f1e9; border-color: #d5e7dc; }
     .reservas-soft .chip-tit.no { color: #9aa5b1; background: #fafbfd; border-color: #eef2f6; }
     .reservas-soft .rv-pagination { border-top: 1px solid var(--grid); margin-top: 8px; padding-top: 7px; }
+
+    /* v2.4 · Icono de actualización: giro del bi-arrow-clockwise mientras recarga */
+    @keyframes rhSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .reservas-soft .rh-spin { animation: rhSpin .8s linear infinite; }
 
     /* ─── PANEL DE DEBUG FLOTANTE ─── */
     #rhDebugPanel {
@@ -225,6 +236,9 @@
                 <i class="bi bi-list-ol" style="font-size: 7.5px; color: #b3bcc7;"></i>
                 <span id="rhBadge"><b>{{ $rhTotalCtx }}</b> huéspedes</span>
             </span>
+            <button type="button" id="rhRefresh" class="btn-mini d-inline-flex align-items-center gap-1" title="Recargar huéspedes por AJAX (sin F5)">
+                <i class="bi bi-arrow-clockwise" style="font-size: 8px;"></i> Actualizar
+            </button>
             <button type="button" id="rhExport" class="btn-mini d-inline-flex align-items-center gap-1" title="Excel de TODO lo filtrado">
                 <i class="bi bi-download" style="font-size: 8px;"></i> Exportar
             </button>
@@ -379,7 +393,7 @@
 </div>
 
 <!-- PANEL DE DEBUG FLOTANTE (HTML) -->
-<button type="button" id="rhDebugToggle" title="Mostrar/ocultar panel de errores">🐛</button>
+<button type="button" id="rhDebugToggle" title="Mostrar/ocultar panel de errores">...</button>
 <div id="rhDebugPanel">
     <div class="dbg-header" id="rhDebugHeader">
         <b>🐛 Panel de Errores (Huéspedes)</b>
@@ -531,7 +545,7 @@ const DebugPanel = (function() {
                     newRoot.classList.add('rh-pulse');
                 } catch (e) {}
 
-                DebugPanel.log('ok', 'Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.2)');
+                DebugPanel.log('ok', 'Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.4)');
             })
             .catch(function (err) {
                 DebugPanel.log('err', 'Error recargando fragmento: ' + err.message);
@@ -562,7 +576,7 @@ const DebugPanel = (function() {
 
 
         /* v2.0 · Trazas de arranque en el panel de debug */
-        DebugPanel.log('ok', 'v2.3 activo · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
+        DebugPanel.log('ok', 'v2.4 activo · botón Actualizar · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
         DebugPanel.log('info', 'init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'));
         DebugPanel.log((STORE || UPDATE_URL) ? 'ok' : 'warn', 'Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'));
         DebugPanel.log(DS.length ? 'ok' : 'warn', 'Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length);
@@ -736,6 +750,29 @@ const DebugPanel = (function() {
                 document.getElementById('rhId').value = '';
                 var form = document.getElementById('rhForm');
                 if (form) form.reset();
+            };
+        }
+
+        /* v2.4 · Botón Actualizar: recarga el fragmento por AJAX (sin F5).
+           Deshabilita el botón y hace girar el icono mientras llega la respuesta;
+           el timeout cubre también el caso de error para re-habilitar siempre. */
+        var btnRefresh = document.getElementById('rhRefresh');
+        if (btnRefresh) {
+            btnRefresh.onclick = function () {
+                var ico = btnRefresh.querySelector('i.bi');
+                try {
+                    btnRefresh.disabled = true;
+                    if (ico) ico.classList.add('rh-spin');
+                } catch (e) {}
+                DebugPanel.log('info', 'Actualización manual solicitada · recargando fragmento…');
+                try { window.reloadRhFragment(); }
+                catch (e) { DebugPanel.log('err', 'Actualizar falló: ' + e.message); }
+                setTimeout(function () {
+                    try {
+                        btnRefresh.disabled = false;
+                        if (ico) ico.classList.remove('rh-spin');
+                    } catch (e) {}
+                }, 1200);
             };
         }
 
