@@ -1,4 +1,13 @@
-{{-- partials/reservas/reservas.blade.php · v32-DBG · SHOW de UNA reserva (base v27 intacta) --}}
+{{-- partials/reservas/reservas.blade.php · v33-DBG · SHOW de UNA reserva (base v27 intacta) --}}
+{{-- v33-DBG · NOVEDAD (SOLO debug · cero cambios funcionales): el Panel de Errores se rediseña al
+     diseño TIP-v1.3 aprobado (canónico BLQ-v1-2): pestaña terminal "DBG" de 16px fija SIEMPRE en la
+     esquina inferior-derecha (right:0 · bottom:0 · radius 3px solo sup-izq) con LED de estado
+     (verde = ok · rojo pulsante + conteo = errores) y panel cajón de 380px alineado al mismo borde.
+     La regla exacta de distancias vive como "SPEC DE DISTANCIAS" dentro del CSS y el panel esquiva
+     a los toggles hermanos de las otras vistas midiendo píxeles reales (getBoundingClientRect ·
+     bottom = max(20, vecino + 4)). Mismos ids rsvShowDebug* (la serie completa de hermanos los usa
+     para apilarse) + clases propias rvs-dbg-* (sin colisiones entre parciales). El respaldo
+     re-crea DENTRO de #rsvShowRoot: cero document.body. --}}
 {{-- v32-DBG · NOVEDADES (limpieza visual) · 1) UN SOLO panel de errores: el bloque TOAST + Panel 🐛 ahora se renderiza ANTES de #rsvShowRoot, así el script lo encuentra al ejecutarse y NO crea el respaldo dinámico que duplicaba el panel; el builder además retira nodos duplicados. --}}
 {{--   2) Se retiró el bloque visible de diagnóstico del servidor (<details>) y el chip rojo DEBUG del header: el volcado completo vive ahora SOLO dentro del Panel de Errores (líneas SRV · al arrancar). El colector $rsvDbg sigue intacto vía @json (SRVDBG). --}}
 {{-- v31 · fix recarga en Gestión: script DENTRO del root (re-nace con listeners tras cada swap) + polling/submit re-registrables + enlaces "Gestión" externos abiertos por AJAX. --}}
@@ -25,49 +34,61 @@
     $xlsInm   = $inmueble ?? null;
     $xlsInmId = is_object($xlsInm) ? ($xlsInm->id ?? null) : null;
     if (!$xlsInmId && !empty($inmuebleId) && is_numeric($inmuebleId)) { $xlsInmId = $inmuebleId; }
-    if (!$xlsInmId && is_numeric(request('inmueble_id')))             { $xlsInmId = request('inmueble_id'); }
+    if (!$xlsInmId && is_numeric(request('inmueble_id')))             { $xlsInmId = $inmuebleId; }
     $modoGlobal = empty($xlsInmId);
 @endphp
 
 <!-- TOAST (fuera del root: sobrevive a los swaps) -->
 <div id="rsvToast" class="rsv-toast"></div>
 
-<!-- ═══ v32-DBG · PANEL DE ERRORES LOCAL (estilo Huéspedes · NO global · sobrevive a los swaps AJAX) ═══ -->
+<!-- ═══ v33-DBG · DEBUG LOCAL (diseño TIP-v1.3 aprobado · canónico BLQ-v1-2 · NO global · sobrevive a los swaps AJAX) ═══ -->
 <style>
-    #rsvShowDebugPanel { position: fixed; bottom: 10px; right: 10px; z-index: 9999; width: 380px; max-width: calc(100vw - 20px); max-height: 60vh; background: #0f172a; color: #e2e8f0; border: 1px solid #1e293b; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 11px; display: none; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-    #rsvShowDebugPanel.open { display: flex; }
-    #rsvShowDebugPanel .dbg-header { background: #1e293b; padding: 6px 10px; border-radius: 6px 6px 0 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-    #rsvShowDebugPanel .dbg-header b { font-size: 12px; color: #f1f5f9; }
-    #rsvShowDebugPanel .dbg-controls { display: flex; gap: 4px; }
-    #rsvShowDebugPanel .dbg-btn { background: #334155; color: #f1f5f9; border: 0; font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-family: inherit; }
-    #rsvShowDebugPanel .dbg-btn:hover { background: #475569; }
-    #rsvShowDebugPanel .dbg-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
-    #rsvShowDebugPanel .dbg-body::-webkit-scrollbar { width: 6px; }
-    #rsvShowDebugPanel .dbg-body::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-    #rsvShowDebugPanel .dbg-log { padding: 4px 0; border-bottom: 1px solid #1e293b; line-height: 1.4; word-wrap: break-word; white-space: pre-wrap; }
-    #rsvShowDebugPanel .dbg-log:last-child { border-bottom: 0; }
-    #rsvShowDebugPanel .dbg-log .dbg-time { color: #64748b; font-size: 10px; }
-    #rsvShowDebugPanel .dbg-log.info  { color: #93c5fd; }
-    #rsvShowDebugPanel .dbg-log.ok    { color: #86efac; }
-    #rsvShowDebugPanel .dbg-log.warn  { color: #fcd34d; }
-    #rsvShowDebugPanel .dbg-log.err   { color: #fca5a5; }
-    #rsvShowDebugPanel .dbg-log.net   { color: #7dd3fc; }
-    #rsvShowDebugPanel .dbg-log.debug { color: #c4b5fd; }
-    #rsvShowDebugToggle { position: fixed; bottom: 10px; right: 10px; z-index: 10000; background: #1e293b; color: #f1f5f9; border: 0; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.3); display: flex; align-items: center; justify-content: center; }
-    #rsvShowDebugToggle:hover { background: #334155; }
+    /* ═════════ SPEC DE DISTANCIAS · v33-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
+       UNICIDAD  · toggle y panel son HERMANOS de #rsvShowRoot (el refresco
+                   AJAX interno solo intercambia el root: los nodos sobreviven)
+                   y el builder deja UN solo toggle/panel por página. El
+                   respaldo re-crea DENTRO de #rsvShowRoot. */
+    #rsvShowDebugToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #rsvShowDebugToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .rvs-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .rvs-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: rvsDbgBlink 1s steps(2,start) infinite; }
+    @keyframes rvsDbgBlink { 50% { opacity: .35; } }
+    .rvs-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #rsvShowDebugPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .rvs-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .rvs-dbg-controls { display: flex; gap: 4px; }
+    .rvs-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .rvs-dbg-btn:hover { background: #475569; }
+    #rsvShowDebugBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    .rvs-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .rvs-dbg-time { color: #64748b; margin-right: 4px; }
+    .rvs-dbg-info { color: #93c5fd; } .rvs-dbg-ok { color: #86efac; }
+    .rvs-dbg-warn { color: #fde68a; } .rvs-dbg-err { color: #fca5a5; }
+    .rvs-dbg-net { color: #c4b5fd; } .rvs-dbg-debug { color: #94a3b8; }
 </style>
 
-<button type="button" id="rsvShowDebugToggle" title="Mostrar/ocultar panel de errores (Reservas)">...</button>
-<div id="rsvShowDebugPanel">
-    <div class="dbg-header" id="rsvShowDebugHeader">
-        <b>🐛 Panel de Errores (Reservas)</b>
-        <div class="dbg-controls">
-            <button type="button" class="dbg-btn" id="rsvShowDebugCopy" title="Copiar todo el log para pegarlo en el chat">Copiar</button>
-            <button type="button" class="dbg-btn" id="rsvShowDebugClear">Limpiar</button>
-            <button type="button" class="dbg-btn" id="rsvShowDebugClose">✕</button>
-        </div>
+{{-- v33-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3 · hermanos de #rsvShowRoot: viven y mueren con la vista, NO viajan en el refresco AJAX interno) --}}
+<div id="rsvShowDebugToggle" title="Debug Gestión de Reservas (v33-DBG)"><span class="rvs-dbg-led" id="rsvShowDebugLed"></span>DBG<span class="rvs-dbg-badge" id="rsvShowDebugBadge">0</span></div>
+<div id="rsvShowDebugPanel" role="dialog" aria-label="Panel de debug de la Gestión de Reservas">
+    <div class="rvs-dbg-header" id="rsvShowDebugHeader">
+        <span>DEBUG · Gestión de Reserva · v33-DBG</span>
+        <span class="rvs-dbg-controls">
+            <button type="button" class="rvs-dbg-btn" id="rsvShowDebugCopy" title="Copiar todo el log para pegarlo en el chat">Copiar</button>
+            <button type="button" class="rvs-dbg-btn" id="rsvShowDebugClear">Limpiar</button>
+            <button type="button" class="rvs-dbg-btn" id="rsvShowDebugClose">✕</button>
+        </span>
     </div>
-    <div class="dbg-body" id="rsvShowDebugBody"></div>
+    <div id="rsvShowDebugBody"></div>
 </div>
 
 <div class="reservas-soft rsvshow p-3 bg-white rounded-3 border" id="rsvShowRoot"
@@ -211,7 +232,7 @@
 
     /* ═══ v32-DBG: colector de diagnóstico (aditivo · no altera la lógica) ═══ */
     $rsvDbg = [
-        'marca'         => 'v32-DBG',
+        'marca'         => 'v33-DBG',
         'tiempo'        => now()->format('Y-m-d H:i:s'),
         'url'           => request()->fullUrl(),
         'peticion'      => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
@@ -386,15 +407,17 @@
 @endif
 
 {{-- v32-DBG: el bloque visible de diagnóstico del servidor se RETIRÓ de la vista por pedido del usuario.
-     El diagnóstico completo ahora vive SOLO dentro del Panel de Errores (botón 🐛 abajo a la derecha):
-     el colector PHP $rsvDbg sigue calculando todo y viaja al panel como JSON en la variable SRVDBG. --}}
+     v33-DBG: el diagnóstico completo vive SOLO dentro del panel del debug (pestaña DBG abajo-derecha,
+     diseño TIP-v1.3): el colector PHP $rsvDbg sigue calculando todo y viaja al panel como JSON en la
+     variable SRVDBG. --}}
 
 <!-- HEADER -->
 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap:8px;">
     <h6 class="fw-bold mb-0" style="font-size:9.5px; color:#334155;">
         <i class="bi bi-calendar2-check me-1" style="font-size:8px; color:#5d8a70;"></i>
         {{ $modoGlobal ? 'Gestión de Reserva' : 'Reserva del Inmueble' }}
-        <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">v32-DBG</span>
+        <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">v27</span>
+        <span class="badge rounded-pill ms-1" id="rsvShowChipVer" style="font-size:6.5px; background:rgba(2,6,23,.94); color:#38bdf8; border:1px solid #1e293b; vertical-align:middle; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing:.08em;">v33-DBG</span>
     </h6>
     <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
         <span class="rsv-live" id="rsvLiveBadge" title="Sincronización automática activa: los cambios aparecen solos, sin recargar">
@@ -1126,155 +1149,204 @@
     var INM   = root.getAttribute('data-inm')   || '';
     var POLL  = parseInt(root.getAttribute('data-poll') || '15000', 10);
 
-    /* ═══════════════ v32-DBG · DEBUG LOCAL (NO global) · estilo Panel de Huéspedes ═══════════════
+    /* ═══════════════ v33-DBG · DEBUG LOCAL (NO global) · diseño TIP-v1.3 aprobado (canónico BLQ-v1-2) ═══════════════
        · SRVDBG    : diagnóstico calculado en el SERVIDOR (Blade) y enviado en JSON
-       · DebugPanel: panel LOCAL con botón 🐛 abajo-derecha — registra SOLO operaciones de ESTA vista
+       · DBG       : panel LOCAL estilo terminal — pestaña "DBG" de 16px fija SIEMPRE en la esquina
+                     inferior-derecha (right:0 · bottom:0) con LED de estado (verde = ok · rojo
+                     pulsante + conteo = errores) y panel cajón de 380px al mismo borde.
+                     Registra SOLO operaciones de ESTA vista.
        · SIN interceptor global de fetch y SIN oyentes globales de errores (eso capturaba módulos
          ajenos de la página, p.ej. el calendario: limpiarRuedita / calEl)
        · extraerErrorLaravel: extrae la excepción real de una respuesta 500 (JSON o HTML)          */
     var SRVDBG = @json($rsvDbg);
 
-    var DebugPanel = (function () {
-        if (window.RsvShowDebug && window.RsvShowDebug.alive && window.RsvShowDebug.alive()) {
-            window.RsvShowDebug.log('script re-ejecutado tras swap AJAX (el panel LOCAL continúa)', 'info');
-            return window.RsvShowDebug;
-        }
-        /* v32: anti-duplicados — si por cualquier motivo quedara más de un nodo con estos ids
-           (p.ej. un respaldo dinámico de una ejecución anterior o HTML repetido), se conservan
-           los primeros y se retiran los extras → SIEMPRE un solo panel y un solo botón 🐛 */
-        ['rsvShowDebugPanel', 'rsvShowDebugToggle', 'rsvShowDebugHeader',
-         'rsvShowDebugBody', 'rsvShowDebugCopy', 'rsvShowDebugClear', 'rsvShowDebugClose'
-        ].forEach(function (idv) {
-            var los = document.querySelectorAll('[id="' + idv + '"]');
-            for (var i = 1; i < los.length; i++) {
-                if (los[i] && los[i].parentNode) { los[i].parentNode.removeChild(los[i]); }
-            }
-        });
-        var dbgOpen = false;
-        var dbgPanel  = document.getElementById('rsvShowDebugPanel');
-        var dbgBody   = document.getElementById('rsvShowDebugBody');
-        var dbgToggle = document.getElementById('rsvShowDebugToggle');
-        var dbgHeader = document.getElementById('rsvShowDebugHeader');
-        var dbgClose  = document.getElementById('rsvShowDebugClose');
-        var dbgClear  = document.getElementById('rsvShowDebugClear');
-        var dbgCopy   = document.getElementById('rsvShowDebugCopy');
-
-        /* Respaldo: si el HTML del panel no vino en la página, se crea igual (mismos ids) */
-        if (!dbgPanel || !dbgBody || !dbgToggle) {
-            dbgPanel = document.createElement('div');
-            dbgPanel.id = 'rsvShowDebugPanel';
-            dbgPanel.innerHTML = '<div class="dbg-header" id="rsvShowDebugHeader"><b>🐛 Panel de Errores (Reservas)</b>'
-                + '<div class="dbg-controls">'
-                + '<button type="button" class="dbg-btn" id="rsvShowDebugCopy">Copiar</button>'
-                + '<button type="button" class="dbg-btn" id="rsvShowDebugClear">Limpiar</button>'
-                + '<button type="button" class="dbg-btn" id="rsvShowDebugClose">✕</button>'
-                + '</div></div><div class="dbg-body" id="rsvShowDebugBody"></div>';
-            document.body.appendChild(dbgPanel);
-            dbgBody   = dbgPanel.querySelector('#rsvShowDebugBody');
-            dbgHeader = dbgPanel.querySelector('#rsvShowDebugHeader');
-            dbgClose  = dbgPanel.querySelector('#rsvShowDebugClose');
-            dbgClear  = dbgPanel.querySelector('#rsvShowDebugClear');
-            dbgCopy   = dbgPanel.querySelector('#rsvShowDebugCopy');
-            dbgToggle = document.createElement('button');
-            dbgToggle.type = 'button';
-            dbgToggle.id = 'rsvShowDebugToggle';
-            dbgToggle.title = 'Mostrar/ocultar panel de errores (Reservas)';
-            dbgToggle.textContent = '🐛';
-            document.body.appendChild(dbgToggle);
-        }
-
-        function togglePanel(forceState) {
-            dbgOpen = (typeof forceState === 'boolean') ? forceState : !dbgOpen;
-            if (dbgOpen) {
-                dbgPanel.classList.add('open');
-                dbgToggle.style.display = 'none';
-            } else {
-                dbgPanel.classList.remove('open');
-                dbgToggle.style.display = 'flex';
-            }
-        }
-
-        /* Log LOCAL · firma (texto, nivel) para no tocar las 30+ llamadas existentes.
-           Niveles: info · ok · warn · err · net · debug · (vacío = color por defecto) */
-        function log(txt, col) {
-            if (!dbgBody) { return; }
-            var t = new Date();
-            var time = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ':' + ('0' + t.getSeconds()).slice(-2);
-            var div = document.createElement('div');
-            div.className = 'dbg-log ' + (col || 'info');
-            var sp = document.createElement('span');
-            sp.className = 'dbg-time';
-            sp.textContent = '[' + time + '] ';
-            div.appendChild(sp);
-            div.appendChild(document.createTextNode(String(txt)));
-            dbgBody.appendChild(div);
-            dbgBody.scrollTop = dbgBody.scrollHeight;
-            while (dbgBody.children.length > 250) { dbgBody.removeChild(dbgBody.firstChild); }
-        }
-        function obj(etq, o) { try { log(etq + ' ' + JSON.stringify(o), 'info'); } catch (e) { log(etq + ' [no serializable]', 'info'); } }
-        function vivo() { return !!(dbgBody && document.body.contains(dbgBody)); }
-        function copiar() {
-            var lin = [];
-            if (dbgBody) { for (var i = 0; i < dbgBody.children.length; i++) { lin.push(dbgBody.children[i].textContent); } }
-            lin.unshift('=== DEBUG reservas v32-DBG (LOCAL) · ' + new Date().toISOString() + ' ===');
-            if (navigator.clipboard) { navigator.clipboard.writeText(lin.join('\n')).then(function () { log('log copiado (' + (lin.length - 1) + ' líneas)', 'ok'); }); }
-        }
-
-        if (dbgToggle) { dbgToggle.addEventListener('click', function () { togglePanel(true); }); }
-        if (dbgClose)  { dbgClose.addEventListener('click', function (e) { e.stopPropagation(); togglePanel(false); }); }
-        if (dbgClear)  { dbgClear.addEventListener('click', function (e) { e.stopPropagation(); if (dbgBody) { dbgBody.innerHTML = ''; } }); }
-        if (dbgCopy)   { dbgCopy.addEventListener('click', function (e) { e.stopPropagation(); copiar(); }); }
-        if (dbgHeader) { dbgHeader.addEventListener('click', function (e) { if (e.target === dbgHeader) { togglePanel(false); } }); }
-
-        /* Convivencia: si la página también muestra el panel de Huéspedes (#rhDebugToggle)
-           o el del tab de Reservas (#rvDebugToggle), este se apila para no taparlos */
-        try {
-            var otros = 0;
-            if (document.getElementById('rhDebugToggle')) { otros++; }
-            if (document.getElementById('rvDebugToggle')) { otros++; }
-            if (otros) {
-                var nb = (10 + otros * 44) + 'px';
-                dbgPanel.style.bottom = nb;
-                dbgToggle.style.bottom = nb;
-            }
-        } catch (e) {}
-
-        /* Extractor de errores Laravel 500 (JSON o HTML) — igual al de Huéspedes */
-        function extraerErrorLaravel(bodyTxt, err) {
-            var base = (err && err.message) ? String(err.message) : 'Error desconocido';
-            if (!bodyTxt) { return base; }
-            try {
-                var j = JSON.parse(bodyTxt);
-                if (j && (j.message || j.exception)) {
-                    var nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
-                    return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
+    var DBG = (window.RsvShowDebug && window.RsvShowDebug.alive && window.RsvShowDebug.alive())
+        ? window.RsvShowDebug
+        : (function () {
+            var MAX = 250, numErr = 0;
+            function $(id) { return document.getElementById(id); }
+            /* v33-DBG: anti-duplicados — si por cualquier motivo quedara más de un nodo con estos
+               ids (p.ej. HTML repetido o una copia previa del parcial), se conservan los primeros
+               y se retiran los extras → SIEMPRE una sola pestaña y un solo panel por página */
+            function unicarDbg() {
+                var idsDbg = ['rsvShowDebugPanel', 'rsvShowDebugToggle', 'rsvShowDebugHeader',
+                              'rsvShowDebugBody', 'rsvShowDebugCopy', 'rsvShowDebugClear', 'rsvShowDebugClose'];
+                for (var i = 0; i < idsDbg.length; i++) {
+                    var los = document.querySelectorAll('[id="' + idsDbg[i] + '"]');
+                    for (var k = 1; k < los.length; k++) {
+                        if (los[k] && los[k].remove) { los[k].remove(); }
+                    }
                 }
-            } catch (e) { /* No era JSON */ }
-            var t = String(bodyTxt).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
-            var mt = t.match(/<title>([\s\S]*?)<\/title>/i);
-            if (mt) {
-                var tit = mt[1].replace(/\s+/g, ' ').trim();
-                if (tit && !/server error/i.test(tit)) { return (base + ' · backend: ' + tit).substring(0, 400); }
-                base = base + ' · backend: ' + (tit || 'server error');
             }
-            var plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
-            var mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
-            if (mExc) { return (base + ' · ' + mExc[0].trim()).substring(0, 400); }
-            return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
-        }
+            function asegurarNodos() {
+                /* Respaldo: si un swap externo borrara los nodos (normalmente viven como hermanos
+                   de #rsvShowRoot), se re-crean DENTRO del root. Cero document.body. */
+                unicarDbg();
+                var rootDbg = document.getElementById('rsvShowRoot');
+                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                if (!$('rsvShowDebugToggle')) {
+                    var t = document.createElement('div');
+                    t.id = 'rsvShowDebugToggle';
+                    t.title = 'Debug Gestión de Reservas (v33-DBG)';
+                    t.innerHTML = '<span class="rvs-dbg-led" id="rsvShowDebugLed"></span>DBG<span class="rvs-dbg-badge" id="rsvShowDebugBadge">0</span>';
+                    rootDbg.insertBefore(t, rootDbg.firstChild);
+                }
+                if (!$('rsvShowDebugPanel')) {
+                    var p = document.createElement('div');
+                    p.id = 'rsvShowDebugPanel';
+                    p.innerHTML = '<div class="rvs-dbg-header" id="rsvShowDebugHeader">' +
+                        '<span>DEBUG · Gestión de Reserva · v33-DBG</span>' +
+                        '<span class="rvs-dbg-controls">' +
+                        '<button type="button" class="rvs-dbg-btn" id="rsvShowDebugCopy" title="Copiar todo el log para pegarlo en el chat">Copiar</button>' +
+                        '<button type="button" class="rvs-dbg-btn" id="rsvShowDebugClear">Limpiar</button>' +
+                        '<button type="button" class="rvs-dbg-btn" id="rsvShowDebugClose">✕</button>' +
+                        '</span></div><div id="rsvShowDebugBody"></div>';
+                    rootDbg.appendChild(p);
+                }
+                apilar();
+            }
+            /* v33-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se apila: con 16px de alto
+               cabe bajo cualquier otro toggle sin tocarlo). Solo el PANEL esquiva a los vecinos
+               de las otras vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+            function apilar() {
+                var ids = ['stDbgToggle', 'rhDbgToggle', 'rvDebugToggle', 'trxDbgToggle', 'finDbgToggle', 'calDbgToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle', 'heDbgToggle', 'orDbgToggle']; // serie completa de hermanos
+                var ocupado = 0;
+                for (var i = 0; i < ids.length; i++) {
+                    var el = $(ids[i]);
+                    if (!el) { continue; }
+                    var r = el.getBoundingClientRect();
+                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                }
+                var t = $('rsvShowDebugToggle'), p = $('rsvShowDebugPanel');
+                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+            }
+            function hora() {
+                var d = new Date();
+                function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+            }
+            var api = {
+                log: function (txt, nivel) {
+                    var b = $('rsvShowDebugBody'); if (!b) { return; }
+                    var lv = nivel || 'info';
+                    var ln = document.createElement('div');
+                    ln.className = 'rvs-dbg-line';
+                    var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                        return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                    });
+                    ln.innerHTML = '<span class="rvs-dbg-time">[' + hora() + ']</span>' +
+                        '<span class="rvs-dbg-' + lv + '">' + seguro + '</span>';
+                    b.appendChild(ln);
+                    while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                    b.scrollTop = b.scrollHeight;
+                    if (lv === 'err') {
+                        numErr++;
+                        var bd = $('rsvShowDebugBadge');
+                        if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                        var led = $('rsvShowDebugLed');
+                        if (led) { led.classList.add('err'); }
+                    }
+                },
+                obj: function (etq, o) { try { api.log(etq + ' ' + JSON.stringify(o), 'info'); } catch (e) { api.log(etq + ' [no serializable]', 'info'); } },
+                open: function () {
+                    var p = $('rsvShowDebugPanel'); if (!p) { return; }
+                    p.style.display = 'flex';
+                    apilar();
+                    var bd = $('rsvShowDebugBadge');
+                    if (bd) { bd.style.display = 'none'; }
+                    var led = $('rsvShowDebugLed');
+                    if (led) { led.classList.remove('err'); }
+                    numErr = 0;
+                },
+                close: function () { var p = $('rsvShowDebugPanel'); if (p) { p.style.display = 'none'; } },
+                togglePanel: function () {
+                    var p = $('rsvShowDebugPanel');
+                    if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                },
+                clear: function () { var b = $('rsvShowDebugBody'); if (b) { b.innerHTML = ''; } },
+                copy: function () {
+                    var b = $('rsvShowDebugBody'); if (!b) { return; }
+                    var txt = '=== DEBUG reservas (show) v33-DBG · TIP-v1.3 · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                },
+                ensure: function () { asegurarNodos(); },
+                alive: function () { return !!$('rsvShowDebugToggle'); },
+                /* Extractor de errores Laravel 500 (JSON o HTML) — igual al de Huéspedes */
+                extraerErrorLaravel: function (bodyTxt, err) {
+                    var base = (err && err.message) ? String(err.message) : 'Error desconocido';
+                    if (!bodyTxt) { return base; }
+                    try {
+                        var j = JSON.parse(bodyTxt);
+                        if (j && (j.message || j.exception)) {
+                            var nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
+                            return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
+                        }
+                    } catch (e) { /* No era JSON */ }
+                    var t = String(bodyTxt).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
+                    var mt = t.match(/<title>([\s\S]*?)<\/title>/i);
+                    if (mt) {
+                        var tit = mt[1].replace(/\s+/g, ' ').trim();
+                        if (tit && !/server error/i.test(tit)) { return (base + ' · backend: ' + tit).substring(0, 400); }
+                        base = base + ' · backend: ' + (tit || 'server error');
+                    }
+                    var plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
+                    var mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
+                    if (mExc) { return (base + ' · ' + mExc[0].trim()).substring(0, 400); }
+                    return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
+                }
+            };
+            window.RsvShowDebug = api;
+            return api;
+        })();
+    if (DBG.__rsvShowReady) { DBG.log('script re-ejecutado tras swap AJAX (el panel LOCAL continúa)', 'info'); }
+    DBG.__rsvShowReady = true;
+    var DebugPanel = DBG;   /* compat: las llamadas DebugPanel.open() / extraerErrorLaravel() existentes siguen funcionando */
+    if (!DBG) { return; }
+    DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
 
-        return { log: log, obj: obj, extraerErrorLaravel: extraerErrorLaravel, open: function () { togglePanel(true); }, close: function () { togglePanel(false); }, alive: vivo };
-    })();
-    var DBG = DebugPanel;   /* las llamadas DBG.log(...) existentes siguen funcionando (solo esta vista) */
-    window.RsvShowDebug = DebugPanel;
+    /* Botones del panel por DELEGACIÓN en document (re-registrables: el script re-nace con cada
+       swap AJAX y este patrón remove+add evita acumular oyentes) */
+    if (window.__rsvShowDbgDocHandler) { document.removeEventListener('click', window.__rsvShowDbgDocHandler); }
+    window.__rsvShowDbgDocHandler = function (e) {
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        if (t.closest('#rsvShowDebugToggle')) { DBG.togglePanel(); return; }
+        if (t.closest('#rsvShowDebugClose')) { e.stopPropagation(); DBG.close(); return; }
+        if (t.closest('#rsvShowDebugClear')) { e.stopPropagation(); DBG.clear(); return; }
+        if (t.closest('#rsvShowDebugCopy')) { e.stopPropagation(); DBG.copy(); return; }
+    };
+    document.addEventListener('click', window.__rsvShowDbgDocHandler);
+    if (window.__rsvShowDbgDblHandler) { document.removeEventListener('dblclick', window.__rsvShowDbgDblHandler); }
+    window.__rsvShowDbgDblHandler = function (e) {
+        if (e.target && e.target.closest && e.target.closest('#rsvShowDebugHeader')) { DBG.close(); }
+    };
+    document.addEventListener('dblclick', window.__rsvShowDbgDblHandler);
 
-    /* v32-DBG · NOTA: el interceptor global de fetch y los oyentes window.onerror /
+    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los toggles ocultos 0×0
+       no cuentan hasta que la pestaña es visible) */
+    if (window.__rsvShowDbgTabHandler) { document.removeEventListener('shown.bs.tab', window.__rsvShowDbgTabHandler); }
+    window.__rsvShowDbgTabHandler = function () {
+        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+    };
+    document.addEventListener('shown.bs.tab', window.__rsvShowDbgTabHandler);
+
+    /* v33-DBG · NOTA: el interceptor global de fetch y los oyentes window.onerror /
        unhandledrejection de la v29 se ELIMINARON a propósito: eran "globales" y
        registraban errores de OTROS módulos de la página (calendario, soportes, etc.).
        Este panel solo reporta lo que hace esta vista, como el Panel de Huéspedes. */
 
-    /* v32-DBG: arranque — contexto LOCAL (el volcado completo del servidor ahora vive SOLO aquí) */
-    DBG.log('v32-DBG activo · panel LOCAL (solo esta vista · NO captura errores ajenos)', 'ok');
+    /* v33-DBG: arranque — contexto LOCAL (el volcado completo del servidor ahora vive SOLO aquí) */
+    DBG.log('v33-DBG activo · tab DBG terminal (diseño TIP-v1.3) fija en la esquina (0,0) · LED de estado · solo esta vista (NO captura errores ajenos)', 'ok');
     DBG.log('init · modo=' + (SRVDBG && SRVDBG.modoGlobal ? 'global' : 'inmueble') + ' · candidatas=' + (SRVDBG ? SRVDBG.candidatas : '?') + ' · statuses=' + (SRVDBG ? SRVDBG.statuses : '?') + (SRVDBG && SRVDBG.reservaSel ? ' · reservaSel=' + SRVDBG.reservaSel : ''), 'info');
     DBG.log('SRV · peticion=' + (SRVDBG && SRVDBG.peticion ? SRVDBG.peticion : '?') + ' · url=' + (SRVDBG && SRVDBG.url ? SRVDBG.url : '?'), 'debug');
     DBG.log('Rutas · FRAG=' + (FRAG || 'NO') + ' · USERS=' + (USERS || 'NO') + ' · estado=' + (SRVDBG && SRVDBG.rutas ? SRVDBG.rutas.estado : '?') + ' · auto-sync=' + POLL + 'ms', (FRAG ? 'ok' : 'warn'));
@@ -1834,4 +1906,3 @@
 })();
 </script>
 </div>
-

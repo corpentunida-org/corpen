@@ -1,6 +1,35 @@
-{{-- resources/views/rsv/admin/partials/finanzas/transacciones.blade.php · diseño reservas-soft v2 --}}
-{{-- · CRUD AJAX sin recargar: refresca SOLO #sheet-transacciones (todas las copias) --}}
-{{-- · Anulación lógica: estado_pago = Anulado (nunca borra, igual que el controlador) --}}
+{{-- ============================================================================
+     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v1-DBG
+     Parcial: resources/views/rsv/admin/partials/finanzas/transacciones.blade.php
+
+     · DISEÑO UNIFICADO: estética "reservas-soft" (variables CSS, tabla
+       compacta, btn-mini/btn-green, count-badge, xls-search y modales
+       Bootstrap modal-sm idénticos al resto de pestañas del admin).
+     · CRUD AJAX sin recargar: alta / edición / anulación lógica por fetch
+       (estado_pago = Anulado, nunca borra · igual que el controlador);
+       tras guardar refresca SOLO #sheet-transacciones (todas las copias).
+     · MULTI-COPIA: la hoja puede aparecer más de una vez en la página;
+       los id de modales se "unican" por copia (-c2, -c3…) y el refresco
+       AJAX reemplaza todas las copias con el fragmento fresco.
+     · RUTAS RESILIENTES: resueltas con route() y candidatos por si el
+       nombre del resource cambia; si no hay ruta, la acción se oculta.
+     · PANEL DE DEBUG (CAMBIO TRX-v1 · diseño TIP-v1.3 aprobado): pestaña
+       terminal "DBG" de 16px fija SIEMPRE en la esquina inferior-derecha
+       (right:0 · bottom:0, radius 3px solo superior-izquierdo) con LED de
+       estado (verde = ok · rojo pulsante + conteo = errores) y panel cajón
+       de 380px alineado al mismo borde. La regla exacta de distancias está
+       documentada como "SPEC DE DISTANCIAS" dentro del CSS, y el panel
+       esquiva a los toggles hermanos de las otras vistas midiendo píxeles
+       reales (getBoundingClientRect · bottom = max(20, vecino + 4)).
+       Exclusivo de esta vista: el toggle y el panel nacen y mueren con el
+       parcial (hermanos de #sheet-transacciones, fuera del contenedor que
+       intercambia el refresco AJAX, así que sobreviven a crear/editar/
+       anular) y el panel deduplica copias: un solo debug por vista.
+       Telemetría que reporta: totales del servidor, página y desglose de
+       estados, envíos AJAX (crear/editar/anular) con método real (PUT/
+       DELETE por spoofing), errores 422 campo a campo, refresco del
+       fragmento con tiempos, copias detectadas y apertura de detalle.
+     ============================================================================ --}}
 @php
     $listadoTransacciones = $transacciones ?? ($inmueble->transacciones ?? collect());
 
@@ -21,7 +50,53 @@
 
     $trxEstados = ['Pendiente', 'Aprobado', 'Rechazado', 'Anulado'];
     $trxTotal = method_exists($listadoTransacciones, 'total') ? $listadoTransacciones->total() : $listadoTransacciones->count();
+
+    /* ── Colector del panel de debug (TRX-v1-DBG) · via al panel vía la directiva json de Blade ── */
+    $trxFragmento = \Illuminate\Support\Facades\Route::has('rsv.admin.transacciones.fragmento')
+        ? route('rsv.admin.transacciones.fragmento') : null;
+
+    $trxDbgSoporte = 0;
+    $trxDbgEstados = [];
+    foreach ($listadoTransacciones as $trxDbgItem) {
+        if (!empty($trxDbgItem->soporte_pago) && !empty($trxDbgItem->url_soporte_pago) && $trxDbgItem->url_soporte_pago !== '#') { $trxDbgSoporte++; }
+        $trxDbgClave = strtolower((string) ($trxDbgItem->estado_pago ?? 'pendiente'));
+        $trxDbgEstados[$trxDbgClave] = ($trxDbgEstados[$trxDbgClave] ?? 0) + 1;
+    }
+
+    $trxDbg = [
+        'version'       => 'TRX-v1-DBG',
+        'vista'         => 'partials/finanzas/transacciones.blade.php',
+        'render'        => now()->format('H:i:s'),
+        'transacciones' => $trxTotal,
+        'en_pagina'     => $listadoTransacciones->count(),
+        'pagina'        => method_exists($listadoTransacciones, 'currentPage') ? $listadoTransacciones->currentPage() : 1,
+        'por_pagina'    => method_exists($listadoTransacciones, 'perPage') ? $listadoTransacciones->perPage() : 'todo',
+        'pasarelas'     => $trxPasarelas->count(),
+        'con_soporte'   => $trxDbgSoporte,
+        'estados'       => $trxDbgEstados,
+        'editable'      => (bool) ($trxStore || $trxBase),
+        'rutas'         => [
+            'store'     => $trxStore     ?: 'NO definida',
+            'index'     => $trxBase      ?: 'NO definida',
+            'fragmento' => $trxFragmento ?: 'NO definida',
+        ],
+        'errores'       => [],
+    ];
 @endphp
+
+{{-- TRX-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano de la hoja: vive y muere con el parcial · NO viaja en el refresco AJAX interno) --}}
+<div id="trxDbgToggle" title="Debug Transacciones (TRX-v1-DBG)"><span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span></div>
+<div id="trxDbgPanel" role="dialog" aria-label="Panel de debug de Transacciones Financieras">
+    <div class="trx-dbg-header" id="trxDbgHeader">
+        <span>DEBUG · Finanzas · Transacciones · TRX-v1-DBG</span>
+        <span class="trx-dbg-controls">
+            <button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>
+            <button type="button" class="trx-dbg-btn" id="trxDbgClear">Limpiar</button>
+            <button type="button" class="trx-dbg-btn" id="trxDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="trxDbgBody"></div>
+</div>
 
 <div id="sheet-transacciones" class="sheet-pane">
 
@@ -52,6 +127,35 @@
 
             @keyframes destelloFila { 0%,100% { background-color: transparent; } 35% { background-color: rgba(61,122,92,.16); } }
             .reservas-soft tr.fila-nueva > td { animation: destelloFila 1.5s ease; }
+
+            /* ═════════ SPEC DE DISTANCIAS · TRX-v1-DBG (tab terminal TIP-v1.3) ═════════
+               TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                           inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                           cualquier otro toggle sin tocarlo)
+                         · altura fija 16px · padding lateral 8px
+                         · radius 3px solo sup-izq · borde 1px arriba/izq
+                         · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+               PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                           reales con getBoundingClientRect (los toggles ocultos 0×0
+                           no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                         · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde) */
+            #trxDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+            #trxDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+            .trx-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+            .trx-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: trxDbgBlink 1s steps(2,start) infinite; }
+            @keyframes trxDbgBlink { 50% { opacity: .35; } }
+            .trx-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+            #trxDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .trx-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+            .trx-dbg-controls { display: flex; gap: 4px; }
+            .trx-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+            .trx-dbg-btn:hover { background: #475569; }
+            #trxDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+            .trx-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+            .trx-dbg-time { color: #64748b; margin-right: 4px; }
+            .trx-dbg-info { color: #93c5fd; } .trx-dbg-ok { color: #86efac; }
+            .trx-dbg-warn { color: #fde68a; } .trx-dbg-err { color: #fca5a5; }
+            .trx-dbg-net { color: #c4b5fd; } .trx-dbg-debug { color: #94a3b8; }
         </style>
 
         {{-- ALERTAS --}}
@@ -424,6 +528,192 @@
     var URL_FRAGMENTO = '{{ Route::has("rsv.admin.transacciones.fragmento") ? route("rsv.admin.transacciones.fragmento") : "" }}';
     var PAGINA_ACTUAL = 1;
 
+    /* ═══ 0) PANEL DE DEBUG LOCAL TRX-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+       IIFE propia con $ por id: no interfiere con el resto del script.
+       Exclusiva de esta vista: los nodos son HTML del parcial (hermanos de
+       #sheet-transacciones, FUERA del contenedor que intercambia el refresco
+       AJAX, así que sobreviven a crear/editar/anular) y el respaldo solo
+       re-crea DENTRO de la primera hoja montada. Cero document.body.
+       Como la hoja puede renderizarse en varias copias, el panel también
+       DEDUPLICA nodos sobrantes: un solo debug por vista. */
+    var DBG = (window.TrxDbg && window.TrxDbg.alive && window.TrxDbg.alive())
+        ? window.TrxDbg
+        : (function () {
+            var MAX = 250, numErr = 0;
+            function $(id) { return document.getElementById(id); }
+            function asegurarNodos() {
+                /* Respaldo: si un swap externo borrara los nodos (normalmente
+                   viven como hermanos de #sheet-transacciones y sobreviven al
+                   refresco AJAX interno), se re-crean DENTRO de la primera
+                   hoja. Cero document.body (exclusividad total). */
+                var rootDbg = document.getElementById('sheet-transacciones');
+                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                /* Dedup multi-copia: la hoja puede existir varias veces en la
+                   página; el panel de debug debe ser ÚNICO (se conserva el 1º) */
+                var dups = document.querySelectorAll('#trxDbgToggle');
+                for (var d = 1; d < dups.length; d++) { if (dups[d].parentNode) { dups[d].parentNode.removeChild(dups[d]); } }
+                dups = document.querySelectorAll('#trxDbgPanel');
+                for (var d2 = 1; d2 < dups.length; d2++) { if (dups[d2].parentNode) { dups[d2].parentNode.removeChild(dups[d2]); } }
+                if (!$('trxDbgToggle')) {
+                    var t = document.createElement('div');
+                    t.id = 'trxDbgToggle';
+                    t.title = 'Debug Transacciones (TRX-v1-DBG)';
+                    t.innerHTML = '<span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>';
+                    rootDbg.insertBefore(t, rootDbg.firstChild);
+                }
+                if (!$('trxDbgPanel')) {
+                    var p = document.createElement('div');
+                    p.id = 'trxDbgPanel';
+                    p.innerHTML = '<div class="trx-dbg-header" id="trxDbgHeader">' +
+                        '<span>DEBUG · Finanzas · Transacciones · TRX-v1-DBG</span>' +
+                        '<span class="trx-dbg-controls">' +
+                        '<button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>' +
+                        '<button type="button" class="trx-dbg-btn" id="trxDbgClear">Limpiar</button>' +
+                        '<button type="button" class="trx-dbg-btn" id="trxDbgClose">✕</button>' +
+                        '</span></div><div id="trxDbgBody"></div>';
+                    rootDbg.appendChild(p);
+                }
+                apilar();
+            }
+            /* TRX-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+               apila: con 16px de alto cabe bajo cualquier otro toggle sin
+               tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+               vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+            function apilar() {
+                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'finDbgToggle']; // serie completa de hermanos
+                var ocupado = 0;
+                for (var i = 0; i < ids.length; i++) {
+                    var el = $(ids[i]);
+                    if (!el) { continue; }
+                    var r = el.getBoundingClientRect();
+                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                }
+                var t = $('trxDbgToggle'), p = $('trxDbgPanel');
+                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+            }
+            function hora() {
+                var d = new Date();
+                function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+            }
+            var api = {
+                log: function (txt, nivel) {
+                    var b = $('trxDbgBody'); if (!b) { return; }
+                    var lv = nivel || 'info';
+                    var ln = document.createElement('div');
+                    ln.className = 'trx-dbg-line';
+                    var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                        return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                    });
+                    ln.innerHTML = '<span class="trx-dbg-time">[' + hora() + ']</span>' +
+                        '<span class="trx-dbg-' + lv + '">' + seguro + '</span>';
+                    b.appendChild(ln);
+                    while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                    b.scrollTop = b.scrollHeight;
+                    if (lv === 'err') {
+                        numErr++;
+                        var bd = $('trxDbgBadge');
+                        if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                        var led = $('trxDbgLed');
+                        if (led) { led.classList.add('err'); }
+                    }
+                },
+                open: function () {
+                    var p = $('trxDbgPanel'); if (!p) { return; }
+                    p.style.display = 'flex';
+                    apilar();
+                    var bd = $('trxDbgBadge');
+                    if (bd) { bd.style.display = 'none'; }
+                    var led = $('trxDbgLed');
+                    if (led) { led.classList.remove('err'); }
+                    numErr = 0;
+                },
+                close: function () { var p = $('trxDbgPanel'); if (p) { p.style.display = 'none'; } },
+                togglePanel: function () {
+                    var p = $('trxDbgPanel');
+                    if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                },
+                clear: function () { var b = $('trxDbgBody'); if (b) { b.innerHTML = ''; } },
+                copy: function () {
+                    var b = $('trxDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG transacciones TRX-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                },
+                ensure: function () { asegurarNodos(); },
+                alive: function () { return !!$('trxDbgToggle'); }
+            };
+            window.TrxDbg = api;
+            return api;
+        })();
+    if (DBG) { DBG.ensure(); } // re-apila, deduplica y re-crea nodos si algún swap externo los reemplazó
+    var trxdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+    /* Botones del panel por DELEGACIÓN en document (el guard __jsTransaccionesListo
+       garantiza que se registran UNA sola vez; sobreviven a los swaps) */
+    if (window.__trxDbgDocHandler) { document.removeEventListener('click', window.__trxDbgDocHandler); }
+    window.__trxDbgDocHandler = function (e) {
+        if (!DBG) { return; }
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        if (t.closest('#trxDbgToggle')) { DBG.togglePanel(); return; }
+        if (t.closest('#trxDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+        if (t.closest('#trxDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+        if (t.closest('#trxDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+    };
+    document.addEventListener('click', window.__trxDbgDocHandler);
+    if (window.__trxDbgDblHandler) { document.removeEventListener('dblclick', window.__trxDbgDblHandler); }
+    window.__trxDbgDblHandler = function (e) {
+        if (e.target && e.target.closest && e.target.closest('#trxDbgHeader')) { DBG.close(); }
+    };
+    document.addEventListener('dblclick', window.__trxDbgDblHandler);
+
+    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+       toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+    document.addEventListener('shown.bs.tab', function () {
+        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+    });
+
+    /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+    var SRVDBG = @json($trxDbg);
+    if (DBG) {
+        trxdbg('TRX-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con el parcial)', 'ok');
+        trxdbg('init · total=' + (SRVDBG ? SRVDBG.transacciones : '?') + ' transacción(es) · en página=' + (SRVDBG ? SRVDBG.en_pagina : '?') +
+            ' · página=' + (SRVDBG ? SRVDBG.pagina : '?') + '/' + (SRVDBG ? SRVDBG.por_pagina : '?') +
+            ' · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : '?') + ' · editable=' + !!(SRVDBG && SRVDBG.editable), 'info');
+        if (SRVDBG && SRVDBG.estados) {
+            var _ek = Object.keys(SRVDBG.estados), _partes = [];
+            for (var _ei = 0; _ei < _ek.length; _ei++) { _partes.push(_ek[_ei] + '=' + SRVDBG.estados[_ek[_ei]]); }
+            if (_partes.length) { trxdbg('estados · ' + _partes.join(' · '), 'debug'); }
+        }
+        if (SRVDBG && typeof SRVDBG.con_soporte !== 'undefined') {
+            trxdbg('soporte · ' + SRVDBG.con_soporte + ' de ' + SRVDBG.en_pagina + ' en página con soporte adjunto', 'debug');
+        }
+        if (SRVDBG && SRVDBG.rutas) {
+            var _rk = Object.keys(SRVDBG.rutas);
+            for (var _ri = 0; _ri < _rk.length; _ri++) {
+                if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
+                    trxdbg('ruta no definida: rsv…' + _rk[_ri] + ' (la acción se deshabilita sola)', 'warn');
+                }
+            }
+            trxdbg('Rutas · store=' + SRVDBG.rutas.store + ' · index=' + SRVDBG.rutas.index + ' · fragmento=' + SRVDBG.rutas.fragmento, 'debug');
+        }
+        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+                trxdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            }
+        }
+    }
+
     function cerrarBruto(el) {
         el.classList.remove('show'); el.style.display = 'none'; el.setAttribute('aria-hidden', 'true'); el.removeAttribute('aria-modal');
         document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); }); document.body.classList.remove('modal-open');
@@ -439,7 +729,9 @@
         }
     }
     function unicarModales() {
-        document.querySelectorAll('#sheet-transacciones').forEach(function (hoja, idx) {
+        var hojas = document.querySelectorAll('#sheet-transacciones');
+        if (hojas.length > 1 && window.TrxDbg && window.TrxDbg.log) { window.TrxDbg.log('multi-copia · ' + hojas.length + ' hojas #sheet-transacciones · unificando ids de modales', 'warn'); }
+        hojas.forEach(function (hoja, idx) {
             if (idx === 0) return;
             hoja.querySelectorAll('.modal[id]').forEach(function (m) {
                 if (m.id.indexOf('-c' + (idx + 1)) !== -1) return;
@@ -450,6 +742,7 @@
     }
 
     function avisar(mensaje, tipo) {
+        trxdbg((tipo === 'danger' ? 'aviso · ' : 'resultado · ') + mensaje, tipo === 'danger' ? 'err' : 'ok');
         if (!window.bootstrap || !window.bootstrap.Toast) { window.alert(mensaje); return; }
         var div = document.createElement('div');
         div.className = 'toast align-items-center text-bg-' + (tipo === 'danger' ? 'danger' : 'success') + ' border-0 position-fixed m-3';
@@ -499,24 +792,31 @@
     }
     function refrescarTabla(idResaltar, pagina) {
         var url = urlFragmento(pagina);
-        if (!url) { window.location.reload(); return; }
+        if (!url) { trxdbg('refresco · sin fragmento → recarga nativa', 'warn'); window.location.reload(); return; }
+        var __t0 = Date.now();
+        trxdbg('refresco · fetch fragmento (página ' + (pagina || PAGINA_ACTUAL) + ')…', 'net');
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
             .then(function (r) { if (!r.ok) throw new Error('fragmento'); return r.text(); })
             .then(function (html) {
                 var temp = document.createElement('div'); temp.innerHTML = html;
                 var nuevo = temp.querySelector('#sheet-transacciones');
                 var copias = document.querySelectorAll('#sheet-transacciones');
-                if (!nuevo || copias.length === 0) { window.location.reload(); return; }
+                if (!nuevo || copias.length === 0) { trxdbg('refresco · fragmento sin hoja → recarga nativa', 'warn'); window.location.reload(); return; }
                 copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
                 unicarModales(); aplicarFiltro(); if (idResaltar) resaltarFila(idResaltar); limpiarResiduos();
+                if (DBG && DBG.ensure) { DBG.ensure(); }
+                trxdbg('fragmento refrescado en ' + (Date.now() - __t0) + 'ms · copias actualizadas=' + copias.length + (idResaltar ? ' · fila #' + idResaltar + ' resaltada' : ''), 'ok');
             })
-            .catch(function () { window.location.reload(); });
+            .catch(function () { trxdbg('refresco falló · fallback recarga nativa', 'err'); window.location.reload(); });
     }
     function enviarFormulario(form) {
         var btn = form.querySelector('button[type="submit"]'); var txt = btn ? btn.innerHTML : '';
         if (btn) { btn.disabled = true; btn.innerHTML = 'Procesando…'; }
         var tokIn = form.querySelector('input[name="_token"]'); var tokMt = document.querySelector('meta[name="csrf-token"]');
         var token = (tokIn && tokIn.value) || (tokMt && tokMt.content) || '';
+        var mIn = form.querySelector('input[name="_method"]');
+        var metodoReal = (mIn && mIn.value) ? String(mIn.value).toUpperCase() : 'POST';
+        trxdbg('AJAX · ' + metodoReal + ' ' + form.getAttribute('action') + (metodoReal !== 'POST' ? ' (spoofing _method)' : ''), 'net');
         fetch(form.getAttribute('action'), {
             method: 'POST',
             headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
@@ -528,12 +828,20 @@
                 var d = res.json.data || {};
                 var idFila = d.id || (d.data && d.data.id) || form.getAttribute('data-trx-id') || null;
                 ocultarModal(form.closest('.modal'));
+                trxdbg('AJAX OK · ' + metodoReal + ' · ' + (res.json.message || 'guardado'), 'ok');
+                trxdbg('refresco del fragmento programado (350ms)', 'debug');
                 avisar(res.json.message || 'Guardado correctamente', 'success');
                 setTimeout(function () { refrescarTabla(idFila); }, 350);
-            } else if (res.status === 422 && res.json && res.json.errors) { pintarErrores(form, res.json.errors); }
-            else { errorGeneral(form, (res.json && res.json.message) || 'No se pudo completar la operación.'); }
+            } else if (res.status === 422 && res.json && res.json.errors) {
+                trxdbg('AJAX 422 · validación falló · ' + Object.keys(res.json.errors).length + ' campo(s) con error', 'err');
+                pintarErrores(form, res.json.errors);
+            }
+            else {
+                trxdbg('AJAX falló · ' + ((res.json && res.json.message) || 'sin mensaje del servidor'), 'err');
+                errorGeneral(form, (res.json && res.json.message) || 'No se pudo completar la operación.');
+            }
         })
-        .catch(function () { errorGeneral(form, 'Error de conexión. Intenta de nuevo.'); })
+        .catch(function () { trxdbg('AJAX error de conexión', 'err'); errorGeneral(form, 'Error de conexión. Intenta de nuevo.'); })
         .finally(function () { if (btn) { btn.disabled = false; btn.innerHTML = txt; } });
     }
     function aplicarFiltro(inp) {
@@ -566,12 +874,15 @@
         try {
             var u = new URL(a.getAttribute('href'), window.location.origin);
             var pg = parseInt(u.searchParams.get('page_finanzas') || u.searchParams.get('page') || '1', 10);
-            PAGINA_ACTUAL = isNaN(pg) ? 1 : pg; refrescarTabla(null, PAGINA_ACTUAL);
-        } catch (err) { window.location.href = a.getAttribute('href'); }
+            PAGINA_ACTUAL = isNaN(pg) ? 1 : pg;
+            trxdbg('paginación → página ' + PAGINA_ACTUAL, 'net');
+            refrescarTabla(null, PAGINA_ACTUAL);
+        } catch (err) { trxdbg('paginación · URL inválida → navegación nativa', 'warn'); window.location.href = a.getAttribute('href'); }
     });
     document.addEventListener('show.bs.modal', function (e) {
         var m = e.target;
         if (!m || !m.closest || !m.closest('#sheet-transacciones')) return;
+        trxdbg('modal · ' + (m.id || 'sin id') + (m.id.indexOf('trxEditModal') === 0 ? ' · modo editar' : (m.id.indexOf('trxDelModal') === 0 ? ' · anulación' : (m.id === 'trxModalCreate' ? ' · modo crear' : ''))), 'info');
         m.querySelectorAll('.ps-err-general').forEach(function (g) { g.classList.add('d-none'); g.textContent = ''; });
         m.querySelectorAll('[data-error-for]').forEach(function (c) { c.textContent = ''; });
         m.querySelectorAll('.is-invalid').forEach(function (i) { i.classList.remove('is-invalid'); });
@@ -580,6 +891,7 @@
         var p = parseInt(new URLSearchParams(window.location.search).get('page_finanzas') || '1', 10);
         PAGINA_ACTUAL = isNaN(p) ? 1 : Math.max(1, p);
         unicarModales(); limpiarResiduos(); aplicarFiltro();
+        trxdbg('DOM listo · página=' + PAGINA_ACTUAL + ' · copias de la hoja=' + document.querySelectorAll('#sheet-transacciones').length + ' · búsqueda activa #trxSearch', 'debug');
     }
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', iniciar); } else { iniciar(); }
 })();
@@ -593,6 +905,7 @@
 
     function abrirDetalle(btn) {
         var d = btn.dataset;
+        if (window.TrxDbg && window.TrxDbg.log) { window.TrxDbg.log('detalle · transacción #' + (d.id || '—') + ' · ' + (d.referencia || 'N/A') + ' · $' + (d.monto || '0.00') + ' ' + (d.moneda || 'COP') + ' · ' + (d.estado || ''), 'info'); }
         function txt(id, val) { var el = document.getElementById(id); if (el) el.textContent = val || '—'; }
 
         txt('fdRef', d.referencia);

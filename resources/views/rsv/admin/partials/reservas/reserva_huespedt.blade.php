@@ -1,3 +1,40 @@
+{{-- ============================================================================
+     RSV · ADMIN · RESERVAS · HUÉSPEDES · RH-v1-DBG
+     Parcial: resources/views/rsv/admin/partials/reservas/reserva_huespedt.blade.php
+
+     · Base v2.4 (conservada ÍNTEGRA): CRUD 100% Bootstrap/Blade/AJAX de
+       Huéspedes de Reserva (alta · edición · baja), botón Actualizar con
+       icono que gira, prefill de reserva por ID en el modal de edición,
+       recarga AJAX del fragmento con anti-duplicados y pulso visual,
+       buscador instantáneo, chips Todos/Titulares/Acompañantes,
+       paginación cliente y exportación.
+     · PANEL DE DEBUG (RH-v1-DBG · diseño TIP-v1.3 aprobado · canónico
+       BLQ-v1-2 · clon de ST-v1-DBG/OR-v1-DBG): pestaña terminal "DBG" de
+       16px fija SIEMPRE en la esquina inferior-derecha (right:0 ·
+       bottom:0, radius 3px solo superior-izquierdo) con LED de estado
+       (verde = ok · rojo pulsante + conteo = errores) y panel cajón de
+       380px alineado al mismo borde. La regla exacta de distancias está
+       documentada como "SPEC DE DISTANCIAS" dentro del CSS, y el panel
+       esquiva a los toggles hermanos de las otras vistas midiendo
+       píxeles reales (getBoundingClientRect · bottom = max(20, vecino + 4)).
+       Exclusivo de este fragmento: el toggle y el panel son HERMANOS de
+       #rhRoot (el refresco AJAX interno solo intercambia el root y los
+       nodos DBG sobreviven con el CSS que viaja dentro de él) y
+       unicarDbg() deduplica dejando UN solo toggle/panel por página.
+       Nada se cuelga de document.body: el respaldo re-crea DENTRO de
+       #rhRoot.
+       Telemetría que reporta: modo (global/inmueble), huéspedes y
+       reservas del select cargados, permisos crear/editar/borrar, rutas
+       (store/update/destroy/fragmento), copias del root en la página
+       (anti-duplicados), submits AJAX (alta/edición/baja), rechazos HTTP
+       con mensaje (extractor de errores Laravel 500 conservado),
+       refresco del fragmento (manual e implícito), búsqueda, dataset
+       vacío y errores capturados por el servidor.
+     · NOTA: los comentarios nombran las directivas de Blade SIN arroba
+       (p.ej. "la directiva json de Blade"): Blade compila a nivel de
+       texto aunque estén dentro de comentarios y una arroba pelada rompe
+       la compilación (lección BLQ-v1-2).
+     ============================================================================ --}}
 {{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.4 · botón Actualizar (icono) + prefill reserva por ID + recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
 {{--
   NOVEDADES v2.4 (icono de actualización):
@@ -30,6 +67,20 @@
   · NUEVO try/catch alrededor del init post-recarga: si algo falla, el panel lo muestra
     en claro en lugar de quedarse mudo.
 --}}
+{{-- RH-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano del root: vive y muere con la vista · NO viaja en el refresco AJAX interno) --}}
+<div id="rhDbgToggle" title="Debug Huéspedes (RH-v1-DBG)"><span class="rh-dbg-led" id="rhDbgLed"></span>DBG<span class="rh-dbg-badge" id="rhDbgBadge">0</span></div>
+<div id="rhDbgPanel" role="dialog" aria-label="Panel de debug de Huéspedes de Reserva">
+    <div class="rh-dbg-header" id="rhDbgHeader">
+        <span>DEBUG · Huéspedes de Reserva · RH-v1-DBG</span>
+        <span class="rh-dbg-controls">
+            <button type="button" class="rh-dbg-btn" id="rhDbgCopy">Copiar</button>
+            <button type="button" class="rh-dbg-btn" id="rhDbgClear">Limpiar</button>
+            <button type="button" class="rh-dbg-btn" id="rhDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="rhDbgBody"></div>
+</div>
+
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="rhRoot"
      data-modo="{{ ($rhGlobal ?? true) ? 'global' : 'single' }}"
      data-ctx="{{ ($rhGlobal ?? true) ? 'Global' : ((is_object($rhInm ?? null) ? ($rhInm->name ?? 'Inmueble') : ('Inmueble #'.($rhInmId ?? '')))) }}"
@@ -69,58 +120,44 @@
     @keyframes rhSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .reservas-soft .rh-spin { animation: rhSpin .8s linear infinite; }
 
-    /* ─── PANEL DE DEBUG FLOTANTE ─── */
-    #rhDebugPanel {
-        position: fixed; bottom: 10px; right: 10px; z-index: 9999;
-        width: 380px; max-width: calc(100vw - 20px); max-height: 60vh;
-        background: #0f172a; color: #e2e8f0;
-        border: 1px solid #1e293b; border-radius: 6px;
-        font-family: 'Courier New', monospace; font-size: 11px;
-        display: none; flex-direction: column;
-        box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    }
-    #rhDebugPanel.open { display: flex; }
-    #rhDebugPanel .dbg-header {
-        background: #1e293b; padding: 6px 10px; border-radius: 6px 6px 0 0;
-        display: flex; justify-content: space-between; align-items: center;
-        cursor: pointer;
-    }
-    #rhDebugPanel .dbg-header b { font-size: 12px; color: #f1f5f9; }
-    #rhDebugPanel .dbg-controls { display: flex; gap: 4px; }
-    #rhDebugPanel .dbg-btn {
-        background: #334155; color: #f1f5f9; border: 0;
-        font-size: 10px; padding: 2px 8px; border-radius: 3px; cursor: pointer;
-        font-family: inherit;
-    }
-    #rhDebugPanel .dbg-btn:hover { background: #475569; }
-    #rhDebugPanel .dbg-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
-    #rhDebugPanel .dbg-body::-webkit-scrollbar { width: 6px; }
-    #rhDebugPanel .dbg-body::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-    #rhDebugPanel .dbg-log {
-        padding: 4px 0; border-bottom: 1px solid #1e293b; line-height: 1.4;
-        word-wrap: break-word; white-space: pre-wrap;
-    }
-    #rhDebugPanel .dbg-log:last-child { border-bottom: 0; }
-    #rhDebugPanel .dbg-log .dbg-time { color: #64748b; font-size: 10px; }
-    #rhDebugPanel .dbg-log.info  { color: #93c5fd; }
-    #rhDebugPanel .dbg-log.ok    { color: #86efac; }
-    #rhDebugPanel .dbg-log.warn  { color: #fcd34d; }
-    #rhDebugPanel .dbg-log.err   { color: #fca5a5; }
-    #rhDebugPanel .dbg-log.debug { color: #c4b5fd; }
 
-    /* Botón Toggle Debug */
-    #rhDebugToggle {
-        position: fixed; bottom: 10px; right: 10px; z-index: 10000;
-        background: #1e293b; color: #f1f5f9; border: 0;
-        border-radius: 50%; width: 40px; height: 40px;
-        cursor: pointer; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,.3);
-        display: flex; align-items: center; justify-content: center;
-    }
-    #rhDebugToggle:hover { background: #334155; }
+    /* ═════════ SPEC DE DISTANCIAS · RH-v1-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
+       UNICIDAD  · toggle y panel son HERMANOS de #rhRoot (el refresco AJAX
+                   interno solo intercambia el root: los nodos y el CSS
+                   sobreviven) y unicarDbg() deja UN solo toggle/panel por
+                   página. El respaldo re-crea DENTRO de #rhRoot. */
+    #rhDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #rhDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .rh-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .rh-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: rhDbgBlink 1s steps(2,start) infinite; }
+    @keyframes rhDbgBlink { 50% { opacity: .35; } }
+    .rh-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #rhDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .rh-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .rh-dbg-controls { display: flex; gap: 4px; }
+    .rh-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .rh-dbg-btn:hover { background: #475569; }
+    #rhDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    .rh-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .rh-dbg-time { color: #64748b; margin-right: 4px; }
+    .rh-dbg-info { color: #93c5fd; } .rh-dbg-ok { color: #86efac; }
+    .rh-dbg-warn { color: #fde68a; } .rh-dbg-err { color: #fca5a5; }
+    .rh-dbg-net { color: #c4b5fd; } .rh-dbg-debug { color: #94a3b8; }
 </style>
 
 @php
     // 0 · Defaults
+    $rhDbgErrores = []; // RH-v1-DBG · colector de errores del servidor para el panel
     $rhInm = null; $rhInmId = $inmuebleId ?? null; $rhGlobal = true;
     $rhItems = collect(); $rhReservasOptMapped = collect();
     $rhJson = '[]'; $rhReservasJson = '[]'; $rhTotalCtx = 0;
@@ -142,7 +179,7 @@
         try {
             $qHuespedes = \App\Models\Rsv\ReservaHuesped::query()
                 ->with(['reserva:id,codigo_reserva,id_rsv_catalogo_inmueble', 'reserva.inmueble:id,name', 'registrador:id,name']);
-            
+
             if (!$rhGlobal && is_numeric($rhInmId)) {
                 $qHuespedes->whereHas('reserva', function ($qq) use ($rhInmId) {
                     $qq->where('id_rsv_catalogo_inmueble', $rhInmId);
@@ -150,6 +187,7 @@
             }
             $huespedes = $qHuespedes->orderBy('created_at', 'desc')->get();
         } catch (\Throwable $e) {
+            $rhDbgErrores[] = 'dataset huéspedes: ' . $e->getMessage();
             $huespedes = collect();
         }
     }
@@ -163,6 +201,7 @@
             }
             $rhReservasOpt = $rq->orderBy('created_at', 'desc')->limit(500)->get();
         } catch (\Throwable $e) {
+            $rhDbgErrores[] = 'select reservas: ' . $e->getMessage();
             $rhReservasOpt = collect();
         }
     }
@@ -208,6 +247,7 @@
         })->values();
     } catch (\Throwable $e) {
         \Illuminate\Support\Facades\Log::warning('rh dataset view: '.$e->getMessage());
+        $rhDbgErrores[] = 'mapeo dataset: '.$e->getMessage();
         $rhItems = collect();
     }
 
@@ -217,12 +257,37 @@
             'id' => is_array($r) ? ($r['id'] ?? null) : ($r->id ?? null),
             'cod' => is_array($r) ? ($r['cod'] ?? $r['codigo_reserva'] ?? '') : ($r->codigo_reserva ?? '')
         ])->values();
-    } catch (\Throwable $e) { $rhReservasOptMapped = collect(); }
+    } catch (\Throwable $e) { $rhDbgErrores[] = 'reservas select: '.$e->getMessage(); $rhReservasOptMapped = collect(); }
 
     // 5 · Serialización raw segura
     $jhFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
     $rhJson = json_encode($rhItems->all(), $jhFlags); if (!is_string($rhJson)) { $rhJson = '[]'; }
     $rhReservasJson = json_encode($rhReservasOptMapped->all(), $jhFlags); if (!is_string($rhReservasJson)) { $rhReservasJson = '[]'; }
+    /* ═══ RH-v1-DBG · telemetría del fragmento · via al panel vía la directiva json de Blade ═══ */
+    $rhFragmentoDbg = \Illuminate\Support\Facades\Route::has('rsv.admin.reservas.huespedes.fragmento')
+        ? route('rsv.admin.reservas.huespedes.fragmento', ['inmueble_id' => $rhInmId ?? 'todos'])
+        : null;
+    $rhDbg = [
+        'version'   => 'RH-v1-DBG',
+        'vista'     => 'partials/reservas/reserva_huespedt.blade.php',
+        'render'    => now()->format('H:i:s'),
+        'modo'      => $rhGlobal ? 'global' : ('inmueble #' . $rhInmId),
+        'huespedes' => $rhTotalCtx,
+        'reservas'  => count($rhReservasOptMapped),
+        'puede'     => [
+            'crear'  => $rhStoreUrl       ? 'sí' : 'no',
+            'editar' => $rhUpdateUrlBase  ? 'sí' : 'no',
+            'borrar' => $rhDestroyUrlBase ? 'sí' : 'no',
+        ],
+        'rutas'     => [
+            'store'     => $rhStoreUrl       ?: 'NO definida',
+            'update'    => $rhUpdateUrlBase  ?: 'NO definida',
+            'destroy'   => $rhDestroyUrlBase ?: 'NO definida',
+            'fragmento' => $rhFragmentoDbg   ?: 'NO definida',
+        ],
+        'errores'   => $rhDbgErrores,
+    ];
+
 @endphp
 
     <!-- HEADER -->
@@ -230,6 +295,7 @@
         <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
             <i class="bi bi-people me-1" style="font-size: 8px; color: #5d8a70;"></i>
             {{ $rhGlobal ? 'Huéspedes del Sistema' : 'Huéspedes del Inmueble' }}
+            <span class="badge rounded-pill ms-1" id="rhChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">RH-v1-DBG</span>
         </h6>
         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
             <span class="count-badge">
@@ -392,76 +458,208 @@
     </div>
 </div>
 
-<!-- PANEL DE DEBUG FLOTANTE (HTML) -->
-<button type="button" id="rhDebugToggle" title="Mostrar/ocultar panel de errores">...</button>
-<div id="rhDebugPanel">
-    <div class="dbg-header" id="rhDebugHeader">
-        <b>🐛 Panel de Errores (Huéspedes)</b>
-        <div class="dbg-controls">
-            <button type="button" class="dbg-btn" id="rhDebugClear">Limpiar</button>
-            <button type="button" class="dbg-btn" id="rhDebugClose">✕</button>
-        </div>
-    </div>
-    <div class="dbg-body" id="rhDebugBody"></div>
-</div>
-
 <script type="application/json" id="rhDataset">{!! ($rhJson ?? '[]') !!}</script>
 <script type="application/json" id="rhReservasJson">{!! ($rhReservasJson ?? '[]') !!}</script>
 
 <script>
-// Componente de Panel de Debug y Extractor Laravel 500
-const DebugPanel = (function() {
-    let dbgOpen = false;
-    const dbgPanel  = document.getElementById('rhDebugPanel');
-    const dbgBody   = document.getElementById('rhDebugBody');
-    const dbgToggle = document.getElementById('rhDebugToggle');
-    const dbgClose  = document.getElementById('rhDebugClose');
-    const dbgClear  = document.getElementById('rhDebugClear');
-    const dbgHeader = document.getElementById('rhDebugHeader');
+(function () {
+    // Evita doble binding de eventos cuando el fragmento se re-inyecta vía AJAX.
+    if (window.__rhPanelInit) return;
+    window.__rhPanelInit = true;
 
-    function togglePanel(forceState) {
-        dbgOpen = (typeof forceState === 'boolean') ? forceState : !dbgOpen;
-        if (dbgOpen) {
-            dbgPanel.classList.add('open');
-            dbgToggle.style.display = 'none';
-        } else {
-            dbgPanel.classList.remove('open');
-            dbgToggle.style.display = 'flex';
-        }
+    const RH_FRAG_URL = '{!! route("rsv.admin.reservas.huespedes.fragmento", ["inmueble_id" => $rhInmId ?? "todos"]) !!}';
+
+    /* ═══ 0) PANEL DE DEBUG LOCAL RH-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+       IIFE propia con $ por id: no toca el resto del script.
+       Exclusiva de esta vista: los nodos son HTML del fragmento (hermanos
+       de #rhRoot, sobreviven al refresco AJAX interno que solo intercambia
+       el root) y el respaldo solo re-crea DENTRO de #rhRoot.
+       Nada se cuelga de document.body. */
+    var DBG = (window.RhDbg && window.RhDbg.alive && window.RhDbg.alive())
+        ? window.RhDbg
+        : (function () {
+            var MAX = 250, numErr = 0;
+            function $(id) { return document.getElementById(id); }
+            function asegurarNodos() {
+                /* Respaldo: si un swap externo borrara los nodos (normalmente
+                   viven como hermanos de #rhRoot), se re-crean DENTRO del root.
+                   Cero document.body (exclusividad total). */
+                var rootDbg = document.getElementById('rhRoot');
+                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                if (!$('rhDbgToggle')) {
+                    var t = document.createElement('div');
+                    t.id = 'rhDbgToggle';
+                    t.title = 'Debug Huéspedes (RH-v1-DBG)';
+                    t.innerHTML = '<span class="rh-dbg-led" id="rhDbgLed"></span>DBG<span class="rh-dbg-badge" id="rhDbgBadge">0</span>';
+                    rootDbg.insertBefore(t, rootDbg.firstChild);
+                }
+                if (!$('rhDbgPanel')) {
+                    var p = document.createElement('div');
+                    p.id = 'rhDbgPanel';
+                    p.innerHTML = '<div class="rh-dbg-header" id="rhDbgHeader">' +
+                        '<span>DEBUG · Huéspedes de Reserva · RH-v1-DBG</span>' +
+                        '<span class="rh-dbg-controls">' +
+                        '<button type="button" class="rh-dbg-btn" id="rhDbgCopy">Copiar</button>' +
+                        '<button type="button" class="rh-dbg-btn" id="rhDbgClear">Limpiar</button>' +
+                        '<button type="button" class="rh-dbg-btn" id="rhDbgClose">✕</button>' +
+                        '</span></div><div id="rhDbgBody"></div>';
+                    rootDbg.appendChild(p);
+                }
+                apilar();
+            }
+            /* RH-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+               apila: con 16px de alto cabe bajo cualquier otro toggle sin
+               tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+               vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+            function apilar() {
+                var ids = ['rsvShowDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle', 'stDbgToggle', 'orDbgToggle']; // serie completa de hermanos (todas menos esta)
+                var ocupado = 0;
+                for (var i = 0; i < ids.length; i++) {
+                    var el = $(ids[i]);
+                    if (!el) { continue; }
+                    var r = el.getBoundingClientRect();
+                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                }
+                var t = $('rhDbgToggle'), p = $('rhDbgPanel');
+                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+            }
+            function hora() {
+                var d = new Date();
+                function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+            }
+            var api = {
+                log: function (txt, nivel) {
+                    var b = $('rhDbgBody'); if (!b) { return; }
+                    var lv = nivel || 'info';
+                    var ln = document.createElement('div');
+                    ln.className = 'rh-dbg-line';
+                    var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                        return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                    });
+                    ln.innerHTML = '<span class="rh-dbg-time">[' + hora() + ']</span>' +
+                        '<span class="rh-dbg-' + lv + '">' + seguro + '</span>';
+                    b.appendChild(ln);
+                    while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                    b.scrollTop = b.scrollHeight;
+                    if (lv === 'err') {
+                        numErr++;
+                        var bd = $('rhDbgBadge');
+                        if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                        var led = $('rhDbgLed');
+                        if (led) { led.classList.add('err'); }
+                    }
+                },
+                open: function () {
+                    var p = $('rhDbgPanel'); if (!p) { return; }
+                    p.style.display = 'flex';
+                    apilar();
+                    var bd = $('rhDbgBadge');
+                    if (bd) { bd.style.display = 'none'; }
+                    var led = $('rhDbgLed');
+                    if (led) { led.classList.remove('err'); }
+                    numErr = 0;
+                },
+                close: function () { var p = $('rhDbgPanel'); if (p) { p.style.display = 'none'; } },
+                togglePanel: function () {
+                    var p = $('rhDbgPanel');
+                    if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                },
+                clear: function () { var b = $('rhDbgBody'); if (b) { b.innerHTML = ''; } },
+                copy: function () {
+                    var b = $('rhDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG huéspedes RH-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                },
+                ensure: function () { asegurarNodos(); },
+                alive: function () { return !!$('rhDbgToggle'); }
+            };
+            window.RhDbg = api;
+            return api;
+        })();
+    if (!DBG) { return; }
+    DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+    var rhdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+    function unicarDbg() {
+        /* RH-v1-DBG: el parcial puede renderizarse 2+ veces; el HTML de cada
+           copia trae sus propios nodos DBG → se conservan los del primero y
+           se eliminan los duplicados (un solo toggle/panel por página). */
+        var ts = document.querySelectorAll('#rhDbgToggle');
+        for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
+        var ps = document.querySelectorAll('#rhDbgPanel');
+        for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
     }
+    unicarDbg();
 
-    function log(level, msg) {
-        if (!dbgBody) return;
-        const t = new Date();
-        const time = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
-        const div = document.createElement('div');
-        div.className = 'dbg-log ' + (level || 'info');
-        div.innerHTML = '<span class="dbg-time">['+time+']</span> ' + String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        dbgBody.appendChild(div);
-        dbgBody.scrollTop = dbgBody.scrollHeight;
-    }
+    /* Botones del panel por DELEGACIÓN en document (el guard __rhPanelInit
+       garantiza que se registran UNA sola vez; sobreviven a los swaps) */
+    if (window.__rhDbgDocHandler) { document.removeEventListener('click', window.__rhDbgDocHandler); }
+    window.__rhDbgDocHandler = function (e) {
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        if (t.closest('#rhDbgToggle')) { DBG.togglePanel(); return; }
+        if (t.closest('#rhDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+        if (t.closest('#rhDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+        if (t.closest('#rhDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+    };
+    document.addEventListener('click', window.__rhDbgDocHandler);
+    if (window.__rhDbgDblHandler) { document.removeEventListener('dblclick', window.__rhDbgDblHandler); }
+    window.__rhDbgDblHandler = function (e) {
+        if (e.target && e.target.closest && e.target.closest('#rhDbgHeader')) { DBG.close(); }
+    };
+    document.addEventListener('dblclick', window.__rhDbgDblHandler);
 
-    if (dbgToggle) dbgToggle.addEventListener('click', () => togglePanel(true));
-    if (dbgClose) dbgClose.addEventListener('click', () => togglePanel(false));
-    if (dbgClear) dbgClear.addEventListener('click', () => { if (dbgBody) dbgBody.innerHTML = ''; });
-    if (dbgHeader) dbgHeader.addEventListener('click', (e) => {
-        if (e.target === dbgHeader) togglePanel(false);
+    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+       toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+    document.addEventListener('shown.bs.tab', function () {
+        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
     });
 
-    /* v2.0 · Convivencia: si el tab de Reservas (v26.2) también tiene su
-       panel de debug (IDs rv*), este panel y su botón bajan a bottom:54px
-       para no quedar uno encima del otro (ambos viven en bottom:10px). */
-    try {
-        if (document.getElementById('rvDebugToggle')) {
-            if (dbgPanel)  dbgPanel.style.bottom  = '54px';
-            if (dbgToggle) dbgToggle.style.bottom = '54px';
+    /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+    var SRVDBG = @json($rhDbg ?? null);
+    rhdbg('RH-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con la vista)', 'ok');
+    rhdbg('init · modo=' + (SRVDBG ? SRVDBG.modo : '?') +
+        ' · huéspedes=' + (SRVDBG ? SRVDBG.huespedes : '?') +
+        ' · reservas select=' + (SRVDBG ? SRVDBG.reservas : '?') +
+        ' · crear=' + (SRVDBG && SRVDBG.puede ? SRVDBG.puede.crear : '?') +
+        ' · editar=' + (SRVDBG && SRVDBG.puede ? SRVDBG.puede.editar : '?') +
+        ' · borrar=' + (SRVDBG && SRVDBG.puede ? SRVDBG.puede.borrar : '?'), 'info');
+    if (SRVDBG && SRVDBG.huespedes === 0) {
+        rhdbg('dataset vacío · sin huéspedes registrados todavía', 'warn');
+    }
+    if (SRVDBG && SRVDBG.rutas) {
+        var _rk = Object.keys(SRVDBG.rutas);
+        for (var _ri = 0; _ri < _rk.length; _ri++) {
+            if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
+                rhdbg('ruta no definida: huespedes…' + _rk[_ri] + ' (la acción se deshabilita sola)', 'warn');
+            }
         }
-    } catch (e) {}
+        rhdbg('Rutas · store=' + SRVDBG.rutas.store + ' · update=' + SRVDBG.rutas.update + ' · destroy=' + SRVDBG.rutas.destroy + ' · fragmento=' + SRVDBG.rutas.fragmento, 'debug');
+    }
+    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+        for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+            rhdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+        }
+    }
 
+    /* Extractor de errores Laravel 500 (conservado del panel anterior de
+       esta vista): convierte la respuesta HTML/JSON del servidor en texto
+       legible para el panel y el modal de error. */
     function extraerErrorLaravel(bodyTxt, err) {
         let base = (err && err.message) ? String(err.message) : 'Error desconocido';
         if (!bodyTxt) return base;
-        
+
         try {
             const j = JSON.parse(bodyTxt);
             if (j && (j.message || j.exception)) {
@@ -469,7 +667,7 @@ const DebugPanel = (function() {
                 return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
             }
         } catch (e) { /* No era JSON */ }
-        
+
         const t = String(bodyTxt).replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ');
         const mt = t.match(/<title>([\s\S]*?)<\/title>/i);
         if (mt) {
@@ -477,26 +675,18 @@ const DebugPanel = (function() {
             if (tit && !/server error/i.test(tit)) return (base + ' · backend: ' + tit).substring(0, 400);
             base = base + ' · backend: ' + (tit || 'server error');
         }
-        
+
         const plain = t.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/\s+/g, ' ');
         const mExc = plain.match(/[A-Za-z0-9_\\]+(?:Exception|Error)\b[\s:]*[^\n]{0,200}/);
         if (mExc) return (base + ' · ' + mExc[0].trim()).substring(0, 400);
-        
+
         return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
     }
 
-    return {
-        log: log,
-        extraerErrorLaravel: extraerErrorLaravel,
-        open: () => togglePanel(true)
-    };
-})();
-
-(function () {
-    const RH_FRAG_URL = '{!! route("rsv.admin.reservas.huespedes.fragmento", ["inmueble_id" => $rhInmId ?? "todos"]) !!}';
 
     window.reloadRhFragment = function() {
         var url = RH_FRAG_URL + (RH_FRAG_URL.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
+        rhdbg('refrescando fragmento · ' + url, 'net');
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, cache: 'no-store' })
             .then(function (res) {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -507,7 +697,7 @@ const DebugPanel = (function() {
                 temp.innerHTML = html;
                 var newRoot = temp.querySelector('#rhRoot');
                 if (!newRoot) {
-                    DebugPanel.log('err', 'Recarga de fragmento: la respuesta no contiene #rhRoot (¿error del servidor?)');
+                    rhdbg('Recarga de fragmento: la respuesta no contiene #rhRoot (¿error del servidor?)', 'err');
                     return;
                 }
 
@@ -521,8 +711,10 @@ const DebugPanel = (function() {
                 roots.forEach(function (r) { if (r !== target) { r.remove(); } });
                 if (target) { target.replaceWith(newRoot); }
                 else { document.body.appendChild(newRoot); }
-                DebugPanel.log('info', 'Copias #rhRoot en la página: ' + roots.length
-                    + (roots.length > 1 ? ' · ¡HABÍA DUPLICADOS! (eliminados)' : ''));
+                unicarDbg();
+                if (DBG && DBG.ensure) { DBG.ensure(); } // re-apila tras el swap
+                rhdbg('Copias #rhRoot en la página: ' + roots.length
+                    + (roots.length > 1 ? ' · ¡HABÍA DUPLICADOS! (eliminados)' : ''), 'info');
 
                 /* v2.2 · Los tags de datos viven FUERA de #rhRoot: se eliminan TODAS las
                    copias viejas y se insertan las frescas; si sobreviviera una vieja,
@@ -531,11 +723,11 @@ const DebugPanel = (function() {
                     document.querySelectorAll('#' + id).forEach(function (st) { st.remove(); });
                     var fresh = temp.querySelector('#' + id);
                     if (fresh) { document.body.appendChild(fresh); }
-                    else { DebugPanel.log('warn', 'El fragmento no trajo #' + id); }
+                    else { rhdbg('El fragmento no trajo #' + id, 'warn'); }
                 });
 
                 try { window.initReservaHuespedes(); }
-                catch (e) { DebugPanel.log('err', 'Post-recarga: init falló: ' + e.message); }
+                catch (e) { rhdbg('Post-recarga: init falló: ' + e.message, 'err'); }
 
                 /* v2.2 · Pulso visual: destello de ~0.9s que confirma a simple vista
                    que la tabla se acaba de refrescar (sin F5). */
@@ -545,10 +737,10 @@ const DebugPanel = (function() {
                     newRoot.classList.add('rh-pulse');
                 } catch (e) {}
 
-                DebugPanel.log('ok', 'Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.4)');
+                rhdbg('Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.4)', 'ok');
             })
             .catch(function (err) {
-                DebugPanel.log('err', 'Error recargando fragmento: ' + err.message);
+                rhdbg('Error recargando fragmento: ' + err.message, 'err');
             });
     };
 
@@ -576,10 +768,10 @@ const DebugPanel = (function() {
 
 
         /* v2.0 · Trazas de arranque en el panel de debug */
-        DebugPanel.log('ok', 'v2.4 activo · botón Actualizar · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5');
-        DebugPanel.log('info', 'init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'));
-        DebugPanel.log((STORE || UPDATE_URL) ? 'ok' : 'warn', 'Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'));
-        DebugPanel.log(DS.length ? 'ok' : 'warn', 'Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length);
+        rhdbg('RH-v1-DBG activo · v2.4 · botón Actualizar · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5', 'ok');
+        rhdbg('init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'), 'info');
+        rhdbg('Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'), (STORE || UPDATE_URL) ? 'ok' : 'warn');
+        rhdbg('Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length, DS.length ? 'ok' : 'warn');
         var PAGE_SIZE = 15, page = 1, q = '', titF = '';
         var tbody = document.getElementById('rhTbody');
         var badge = document.getElementById('rhBadge');
@@ -656,8 +848,8 @@ const DebugPanel = (function() {
         }
 
         function mostrarErrorRH(msg) {
-            DebugPanel.log('err', msg);
-            DebugPanel.open();
+            rhdbg(msg, 'err');
+            DBG.open();
 
             var modalEl = document.getElementById('rhModalError');
             var msgEl = document.getElementById('rhErrorMsg');
@@ -686,7 +878,7 @@ const DebugPanel = (function() {
             fd.append('_token', CSRF);
             if (method !== 'POST') fd.append('_method', method);
             
-            DebugPanel.log('info', 'Enviando petición [' + method + '] a: ' + url);
+            rhdbg('Enviando petición [' + method + '] a: ' + url, 'info');
 
             fetch(url, { 
                 method: 'POST', 
@@ -707,7 +899,7 @@ const DebugPanel = (function() {
                 return r.json();
             })
             .then(function (j) {
-                DebugPanel.log('ok', 'Operación exitosa.');
+                rhdbg('Operación exitosa.', 'ok');
 
                 document.querySelectorAll('.modal.show').forEach(m => {
                     try {
@@ -728,7 +920,7 @@ const DebugPanel = (function() {
                 window.reloadRhFragment();
             })
             .catch(function (err) { 
-                const detalle = DebugPanel.extraerErrorLaravel(err.__body || '', err);
+                const detalle = extraerErrorLaravel(err.__body || '', err);
                 mostrarErrorRH(detalle);
             });
         }
@@ -764,9 +956,9 @@ const DebugPanel = (function() {
                     btnRefresh.disabled = true;
                     if (ico) ico.classList.add('rh-spin');
                 } catch (e) {}
-                DebugPanel.log('info', 'Actualización manual solicitada · recargando fragmento…');
+                rhdbg('Actualización manual solicitada · recargando fragmento…', 'info');
                 try { window.reloadRhFragment(); }
-                catch (e) { DebugPanel.log('err', 'Actualizar falló: ' + e.message); }
+                catch (e) { rhdbg('Actualizar falló: ' + e.message, 'err'); }
                 setTimeout(function () {
                     try {
                         btnRefresh.disabled = false;

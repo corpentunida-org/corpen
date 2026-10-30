@@ -1,7 +1,57 @@
 {{-- resources/views/rsv/admin/partials/tab-calendario.blade.php --}}
-{{-- v2 · FIX GLOBAL: lista de inmuebles corregida ($listaInmuebles),        --}}
-{{-- updateSize() para AMBOS tabs (#global-calendario y #calendario),        --}}
-{{-- contexto preseleccionado en individual. Resto idéntico (estaba super).  --}}
+{{-- CAL-v3-DBG · CAMBIO CAL-v3-1 · Panel de debug con el estilo "terminal" aprobado (mismo de TIP-v1.3 / INM-v3): --}}
+{{--    TAB DBG textual de 16px de alto (monospace 8px + LED de estado verde/rojo pulsante + badge numérico),     --}}
+{{--    fundida SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0 · nunca se apila hacia arriba) y el    --}}
+{{--    panel abre como CAJÓN pegado al mismo borde (radius solo sup-izq, bordes solo arriba/izquierda). El       --}}
+{{--    apilado con los demás toggles de la página se mide en px REALES (getBoundingClientRect · ocultos 0×0      --}}
+{{--    descartados) y la regla exacta vive como "SPEC DE DISTANCIAS" dentro del CSS. El panel es LOCAL de esta   --}}
+{{--    vista: registra SOLO operaciones del calendario (fetches, filtro, tabs, export global, modales) y NO      --}}
+{{--    captura errores ajenos. El contexto del servidor viaja como JSON ($calDbg).                               --}}
+{{-- v2 · FIX GLOBAL: lista de inmuebles corregida ($listaInmuebles),                                            --}}
+{{-- updateSize() para AMBOS tabs (#global-calendario y #calendario),                                            --}}
+{{-- contexto preseleccionado en individual. Resto idéntico (estaba super).                                      --}}
+
+@php
+    // ── CAL-v3-DBG · colector de contexto del servidor (autónomo y solo lectura:
+    // re-deriva el mismo contexto que el bloque de #calRoot, sin tocar esa lógica) ──
+    $__calDbgInmId = null;
+    if (isset($inmueble) && $inmueble) {
+        $__calDbgInmId = is_object($inmueble) ? ($inmueble->id ?? null) : $inmueble;
+    } elseif (!empty($inmuebleId) && is_numeric($inmuebleId)) {
+        $__calDbgInmId = $inmuebleId;
+    } elseif (request('inmueble_id') && is_numeric(request('inmueble_id'))) {
+        $__calDbgInmId = request('inmueble_id');
+    }
+    $calDbg = [
+        'marca'      => 'CAL-v3-DBG',
+        'vista'      => 'rsv.admin.partials.tab-calendario',
+        'url'        => url()->full(),
+        'peticion'   => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
+        'global'     => empty($__calDbgInmId),
+        'inmuebleId' => $__calDbgInmId,
+        'inmuebles'  => (isset($listaInmuebles) && $listaInmuebles)
+            ? (method_exists($listaInmuebles, 'total') ? $listaInmuebles->total() : $listaInmuebles->count())
+            : (isset($inmuebles) && $inmuebles
+                ? (method_exists($inmuebles, 'total') ? $inmuebles->total() : $inmuebles->count())
+                : 0),
+        'rutas'      => ['/rsv/reservas', '/rsv/bloqueos-calendario'],
+        'errores'    => [],
+    ];
+@endphp
+
+{{-- CAL-v3-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps · NO global) --}}
+<div id="calDbgToggle" title="Debug Calendario (CAL-v3-DBG)"><span class="cal-dbg-led" id="calDbgLed"></span>DBG<span class="cal-dbg-badge" id="calDbgBadge">0</span></div>
+<div id="calDbgPanel" role="dialog" aria-label="Panel de debug de Calendario">
+    <div class="cal-dbg-header" id="calDbgHeader">
+        <span>DEBUG · Calendario · CAL-v3-DBG</span>
+        <span class="cal-dbg-controls">
+            <button type="button" class="cal-dbg-btn" id="calDbgCopy">Copiar</button>
+            <button type="button" class="cal-dbg-btn" id="calDbgClear">Limpiar</button>
+            <button type="button" class="cal-dbg-btn" id="calDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="calDbgBody"></div>
+</div>
 
 <div id="calRoot">
 
@@ -46,7 +96,7 @@
             <span class="cal-chip"><span class="ldot" style="background:#c98a85;"></span> Mantenimiento</span>
 
             {{-- Verificación de versión --}}
-            <span class="cal-chip" style="border-color:#d5e7dc; color:#3d7a5c; font-weight:600;">CAL2</span>
+            <span class="cal-chip" style="border-color:#d5e7dc; color:#3d7a5c; font-weight:600;">CAL3-DBG</span>
 
         </div>
 
@@ -266,12 +316,214 @@
 <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
 
 <script>
+    /* ═══════════════ CAL-v3-DBG · tab-calendario · PANEL DE DEBUG LOCAL ═══════════════
+       Estilo "terminal" aprobado (TIP-v1.3 / INM-v3): tab DBG textual de 16px con LED
+       de estado, fundida SIEMPRE en la esquina (right:0 · bottom:0); el panel abre como
+       CAJÓN pegado al mismo borde y esquiva a los vecinos midiendo px reales.
+       NO captura fetch ni errores de otros módulos: solo registra operaciones de ESTA
+       vista. El contexto del servidor llega por SRVDBG (JSON de $calDbg).              */
+    (function () {
+        var SRVDBG = @json($calDbg);
+
+        var DBG = (window.CalDbg && window.CalDbg.alive && window.CalDbg.alive())
+            ? window.CalDbg
+            : (function () {
+                var MAX = 250, numErr = 0;
+                function $(id) { return document.getElementById(id); }
+                function asegurarCSS() {
+                    if ($('calDbgStyle')) { return; }
+                    var st = document.createElement('style');
+                    st.id = 'calDbgStyle';
+                    st.textContent = [
+                        /* ═════════ SPEC DE DISTANCIAS · CAL-v3 (tab terminal · patrón TIP-v1.3) ════════
+                           TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la
+                                       esquina inferior-derecha (nunca sube: con
+                                       16px de alto cabe bajo cualquier otro toggle)
+                                     · altura fija 16px · padding lateral 8px
+                                     · radius 3px solo sup-izq · borde 1px arriba/izq
+                                     · monospace 8px · LED 5px (verde ok / rojo error)
+                           PANEL     · right:0px · bottom = max(20, vecino + 4px)
+                                       (20 = 16 de tab + 4 de aire mínimo)
+                                       · ancho 380px · radius 6px 0 0 0 (cajón pegado) */
+                        '#calDbgToggle{position:fixed;right:0;bottom:0;z-index:1090;height:16px;padding:0 8px;',
+                        'border-radius:3px 0 0 0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
+                        'background:rgba(2,6,23,.94);color:#64748b;',
+                        'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;',
+                        'font-size:8px;font-weight:700;letter-spacing:.18em;line-height:1;',
+                        'cursor:pointer;display:flex;align-items:center;gap:5px;',
+                        'user-select:none;-webkit-user-select:none;',
+                        'transition:color .15s ease,background .15s ease,box-shadow .15s ease;}',
+                        '#calDbgToggle:hover{color:#38bdf8;border-color:#334155;',
+                        'background:rgba(8,15,30,.97);box-shadow:0 0 12px rgba(56,189,248,.12);}',
+                        '.cal-dbg-led{width:5px;height:5px;border-radius:1px;flex-shrink:0;',
+                        'background:#10b981;box-shadow:0 0 5px rgba(16,185,129,.75);}',
+                        '.cal-dbg-led.err{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.85);',
+                        'animation:calDbgBlink 1s steps(2,start) infinite;}',
+                        '@keyframes calDbgBlink{50%{opacity:.35;}}',
+                        '.cal-dbg-badge{display:none;color:#f87171;font-size:8px;',
+                        'font-weight:700;line-height:1;letter-spacing:0;}',
+                        '#calDbgPanel{position:fixed;right:0;bottom:20px;z-index:1091;width:380px;',
+                        'max-width:calc(100vw - 16px);max-height:60vh;display:none;flex-direction:column;',
+                        'background:rgba(2,6,23,.97);color:#e2e8f0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
+                        'border-radius:6px 0 0 0;box-shadow:0 12px 32px rgba(0,0,0,.55);overflow:hidden;',
+                        'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}',
+                        '.cal-dbg-header{display:flex;justify-content:space-between;align-items:center;gap:6px;',
+                        'padding:5px 8px;background:#0b1220;border-bottom:1px solid #1e293b;',
+                        'font-size:9px;font-weight:700;letter-spacing:.1em;color:#38bdf8;cursor:pointer;}',
+                        '.cal-dbg-controls{display:flex;gap:4px;}',
+                        '.cal-dbg-btn{background:#334155;color:#e2e8f0;border:0;border-radius:4px;',
+                        'font-size:9px;padding:2px 7px;cursor:pointer;font-family:inherit;}',
+                        '.cal-dbg-btn:hover{background:#475569;}',
+                        '#calDbgBody{overflow-y:auto;padding:6px 8px;font-size:9.5px;line-height:1.55;}',
+                        '.cal-dbg-line{white-space:pre-wrap;word-break:break-word;padding:2px 0;',
+                        'border-bottom:1px dashed #1e293b;}',
+                        '.cal-dbg-time{color:#64748b;margin-right:4px;}',
+                        '.cal-dbg-info{color:#93c5fd;}.cal-dbg-ok{color:#86efac;}',
+                        '.cal-dbg-warn{color:#fde68a;}.cal-dbg-err{color:#fca5a5;}',
+                        '.cal-dbg-net{color:#c4b5fd;}.cal-dbg-debug{color:#94a3b8;}'
+                    ].join('\n');
+                    document.head.appendChild(st);
+                }
+                function asegurarNodos() {
+                    /* El toggle y el panel ya vienen como HTML de la vista (antes de
+                       #calRoot). Este respaldo solo los re-crea si un swap los borró. */
+                    if (!$('calDbgToggle')) {
+                        var t = document.createElement('div');
+                        t.id = 'calDbgToggle';
+                        t.title = 'Debug Calendario (CAL-v3-DBG)';
+                        t.innerHTML = '<span class="cal-dbg-led" id="calDbgLed"></span>DBG<span class="cal-dbg-badge" id="calDbgBadge">0</span>';
+                        document.body.appendChild(t);
+                    }
+                    if (!$('calDbgPanel')) {
+                        var p = document.createElement('div');
+                        p.id = 'calDbgPanel';
+                        p.innerHTML = '<div class="cal-dbg-header" id="calDbgHeader">' +
+                            '<span>DEBUG · Calendario · CAL-v3-DBG</span>' +
+                            '<span class="cal-dbg-controls">' +
+                            '<button type="button" class="cal-dbg-btn" id="calDbgCopy">Copiar</button>' +
+                            '<button type="button" class="cal-dbg-btn" id="calDbgClear">Limpiar</button>' +
+                            '<button type="button" class="cal-dbg-btn" id="calDbgClose">✕</button>' +
+                            '</span></div><div id="calDbgBody"></div>';
+                        document.body.appendChild(p);
+                    }
+                    apilar();
+                }
+                /* CAL-v3: la TAB se queda SIEMPRE abajo (bottom:0, nunca se apila:
+                   con 16px de alto cabe bajo cualquier otro toggle sin tocarlo).
+                   Solo el PANEL esquiva a los vecinos: bottom = max(20, vecino + 4). */
+                function apilar() {
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle']; /* serie completa */
+                    var ocupado = 0;
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = $(ids[i]);
+                        if (!el) { continue; }
+                        var r = el.getBoundingClientRect();
+                        if (!r.width && !r.height) { continue; } /* display:none no ocupa sitio */
+                        var desdeAbajo = window.innerHeight - r.top; /* cuánto sube ese vecino desde el fondo */
+                        if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                    }
+                    var t = $('calDbgToggle'), p = $('calDbgPanel');
+                    if (t) { t.style.bottom = '0px'; } /* SI O SI pegada abajo */
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } /* 16 tab + 4 aire */
+                }
+                function hora() {
+                    var d = new Date();
+                    function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                    return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+                }
+                var api = {
+                    log: function (txt, nivel) {
+                        var b = $('calDbgBody'); if (!b) { return; }
+                        var lv = nivel || 'info';
+                        var ln = document.createElement('div');
+                        ln.className = 'cal-dbg-line';
+                        var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                            return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                        });
+                        ln.innerHTML = '<span class="cal-dbg-time">[' + hora() + ']</span>' +
+                            '<span class="cal-dbg-' + lv + '">' + seguro + '</span>';
+                        b.appendChild(ln);
+                        while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                        b.scrollTop = b.scrollHeight;
+                        if (lv === 'err') {
+                            numErr++;
+                            var bd = $('calDbgBadge');
+                            if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                            var led = $('calDbgLed');
+                            if (led) { led.classList.add('err'); }
+                        }
+                    },
+                    open: function () {
+                        var p = $('calDbgPanel'); if (!p) { return; }
+                        p.style.display = 'flex';
+                        apilar();
+                        var bd = $('calDbgBadge');
+                        if (bd) { bd.style.display = 'none'; }
+                        var led = $('calDbgLed');
+                        if (led) { led.classList.remove('err'); }
+                        numErr = 0;
+                    },
+                    close: function () { var p = $('calDbgPanel'); if (p) { p.style.display = 'none'; } },
+                    togglePanel: function () {
+                        var p = $('calDbgPanel');
+                        if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                    },
+                    clear: function () { var b = $('calDbgBody'); if (b) { b.innerHTML = ''; } },
+                    alive: function () { return !!$('calDbgToggle'); }
+                };
+                asegurarCSS();
+                asegurarNodos();
+                $('calDbgToggle').addEventListener('click', api.togglePanel);
+                $('calDbgClose').addEventListener('click', function (e2) { e2.stopPropagation(); api.close(); });
+                $('calDbgClear').addEventListener('click', function (e2) { e2.stopPropagation(); api.clear(); });
+                $('calDbgCopy').addEventListener('click', function (e2) {
+                    e2.stopPropagation();
+                    var b = $('calDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG tab-calendario CAL-v3-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                });
+                $('calDbgHeader').addEventListener('dblclick', api.close);
+                window.CalDbg = api;
+                return api;
+            })();
+        if (!DBG) { return; }
+
+        /* ═══ BOOT · contexto del servidor (como el Panel de Inmuebles) ═══ */
+        DBG.log('CAL-v3-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · panel LOCAL (solo tab-calendario · NO captura errores ajenos)', 'ok');
+        DBG.log('init · modo=' + (SRVDBG && SRVDBG.global ? 'GLOBAL (todos los inmuebles)' : 'INDIVIDUAL (contexto preseleccionado)') +
+            (SRVDBG && SRVDBG.inmuebleId ? ' · inmuebleCtx=' + SRVDBG.inmuebleId : '') +
+            ' · inmuebles=' + (SRVDBG ? SRVDBG.inmuebles : '?'), 'info');
+        DBG.log('SRV · peticion=' + (SRVDBG && SRVDBG.peticion ? SRVDBG.peticion : '?') +
+            ' · url=' + (SRVDBG && SRVDBG.url ? SRVDBG.url : '?'), 'debug');
+        DBG.log('Rutas fetch · ' + ((SRVDBG && SRVDBG.rutas) ? SRVDBG.rutas.join(' · ') : '?'), 'debug');
+        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+                DBG.log('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            }
+        }
+    })();
+</script>
+
+<script>
     document.addEventListener('DOMContentLoaded', () => {
         const calEl  = document.getElementById('calendario-global'),
               filtro = document.getElementById('filtro_inmueble_cal'),
               loader = document.getElementById('calendar-loader');
 
-        if (!calEl || typeof FullCalendar === 'undefined') return;
+        /* CAL-v3-DBG · guards con aviso en el panel (antes eran silenciosos) */
+        if (!calEl) { if (window.CalDbg) { window.CalDbg.log('abort · no existe #calendario-global en el DOM', 'err'); } return; }
+        if (typeof FullCalendar === 'undefined') { if (window.CalDbg) { window.CalDbg.log('abort · FullCalendar NO está cargado (CDN caído o bloqueado)', 'err'); } return; }
+
+        const DBG = window.CalDbg;
+        DBG.log('FullCalendar ' + (FullCalendar.version || 'global') + ' cargado · refs: cal=' + (calEl ? 'ok' : 'no') +
+            ' · filtro=' + (filtro ? 'ok' : 'no') + ' · loader=' + (loader ? 'ok' : 'no'), 'debug');
 
         /* Paleta pastel por inmueble (saturación rebajada) */
         const getInmuebleStyle = (inmuebleName) => {
@@ -339,6 +591,11 @@
                 const fIni = info.startStr.split('T')[0], fFin = info.endStr.split('T')[0];
                 /* El select ya nace preseleccionado en individual → el contexto viaja solo */
                 const qInm = (filtro && filtro.value) ? `&id_rsv_catalogo_inmueble=${filtro.value}` : '';
+
+                /* CAL-v3-DBG · telemetría de fetch */
+                const __t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+                DBG.log('fetch · rango ' + fIni + ' → ' + fFin + (qInm ? ' · filtro=' + filtro.value : ' · sin filtro') + ' …', 'debug');
+
                 loader.classList.remove('d-none');
 
                 try {
@@ -422,10 +679,15 @@
                         })
                     ];
 
+                    /* CAL-v3-DBG · resultado del fetch */
+                    const __ms = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - __t0);
+                    DBG.log('eventos · reservas=' + arrRes.length + ' · bloqueos=' + arrBlq.length + ' · montados=' + evts.length + ' · ' + __ms + 'ms', 'ok');
+
                     loader.classList.add('d-none');
                     success(evts);
                 } catch (e) {
                     console.error("Error cargando eventos:", e);
+                    DBG.log('fetch falló · ' + (e && e.message ? e.message : e), 'err');
                     loader.classList.add('d-none'); fail(e);
                 }
             },
@@ -445,6 +707,9 @@
 
             eventClick: ({ event }) => {
                 const { t, icn, cod, est, usr, dtl, inm, realStart, realEnd } = event.extendedProps;
+
+                /* CAL-v3-DBG · apertura del modal */
+                DBG.log('modal · ' + (t === 'blq' ? 'mantenimiento' : 'reserva') + ' · ' + (cod || dtl || event.id), 'info');
 
                 Swal.fire({
                     title: t === 'blq' ? 'Mantenimiento' : 'Reserva',
@@ -480,10 +745,17 @@
         // 1. EXPORTAR EL CALENDARIO GLOBALMENTE PARA PODER REFRESCARLO DESDE OTRAS VISTAS
         window.rsvCalendar = calendar;
 
+        /* CAL-v3-DBG · export visible en el panel */
+        DBG.log('window.rsvCalendar exportado · refresco externo disponible desde otras vistas', 'ok');
+
         calendar.render();
 
         if (filtro) {
-            filtro.addEventListener('change', () => calendar.refetchEvents());
+            filtro.addEventListener('change', () => {
+                /* CAL-v3-DBG · cambio de filtro */
+                DBG.log('filtro inmueble → ' + (filtro.value || 'todos') + ' · refetchEvents', 'info');
+                calendar.refetchEvents();
+            });
         }
 
         /* ═══ FIX DEFINITIVO · updateSize & refetchEvents ═══
@@ -501,6 +773,8 @@
             ];
 
             if (targetsCalendario.includes(target)) {
+                /* CAL-v3-DBG · reacción al tab */
+                DBG.log('tab ' + target + ' visible · updateSize + refetchEvents (en 200ms)', 'info');
                 setTimeout(() => {
                     calendar.updateSize();    // Evita que se vea blanco
                     calendar.refetchEvents(); // TRAE LOS DATOS NUEVOS DE BLOQUEOS/RESERVAS
@@ -511,6 +785,10 @@
         /* Red de seguridad: resize de ventana y primer pintado */
         window.addEventListener('resize', () => calendar.updateSize());
         setTimeout(() => calendar.updateSize(), 300);
+
+        /* CAL-v3-DBG · red de seguridad armada */
+        DBG.log('red de seguridad · resize listener + updateSize(300ms) armados', 'debug');
     });
 </script>
 @endpush
+
