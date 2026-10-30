@@ -7,7 +7,36 @@
 {{-- NOTA: se retiró la simulación de hoja de cálculo (FINANZAS.XLSX, barra fx --}}
 {{-- y pestañas). Los modales viven FUERA de la tabla (HTML válido) y los      --}}
 {{-- estilos van inline (compatible con finanzasFragmento por AJAX).           --}}
+{{--                                                                           --}}
+{{-- · PANEL DE DEBUG (CAMBIO FIN-v1-1 · diseño TIP-v1.3 aprobado): pestaña    --}}
+{{--   terminal "DBG" de 16px fija SIEMPRE en la esquina inferior-derecha      --}}
+{{--   (right:0 · bottom:0, radius 3px solo superior-izquierdo) con LED de     --}}
+{{--   estado (verde = ok · rojo pulsante + conteo = errores) y panel cajón    --}}
+{{--   de 380px alineado al mismo borde. La regla exacta de distancias está    --}}
+{{--   documentada como "SPEC DE DISTANCIAS" dentro del CSS, y el panel        --}}
+{{--   esquiva a los toggles hermanos de las otras vistas midiendo píxeles    --}}
+{{--   reales (getBoundingClientRect · bottom = max(20, vecino + 4)).          --}}
+{{--   Exclusivo de esta vista: el toggle y el panel viven junto a #finRoot    --}}
+{{--   (nacen y mueren con el fragmento). Telemetría que reporta: dataset      --}}
+{{--   cargado (transacciones página/total, suma de página, distribución de    --}}
+{{--   estados, soportes, pasarelas, paginación), filtros aplicados (búsqueda  --}}
+{{--   y estado con conteo y suma en vivo), aperturas del modal de detalle y   --}}
+{{--   errores capturados del servidor.                                        --}}
 {{-- ══════════════════════════════════════════════════════════════════════════ --}}
+
+{{-- FIN-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano de #finRoot: vive y muere con el fragmento) --}}
+<div id="finDbgToggle" title="Debug Finanzas (FIN-v1-DBG)"><span class="fin-dbg-led" id="finDbgLed"></span>DBG<span class="fin-dbg-badge" id="finDbgBadge">0</span></div>
+<div id="finDbgPanel" role="dialog" aria-label="Panel de debug de Finanzas">
+    <div class="fin-dbg-header" id="finDbgHeader">
+        <span>DEBUG · Finanzas · FIN-v1-DBG</span>
+        <span class="fin-dbg-controls">
+            <button type="button" class="fin-dbg-btn" id="finDbgCopy">Copiar</button>
+            <button type="button" class="fin-dbg-btn" id="finDbgClear">Limpiar</button>
+            <button type="button" class="fin-dbg-btn" id="finDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="finDbgBody"></div>
+</div>
 
 <div class="finanzas-soft p-3 bg-white rounded-3 border" id="finRoot" style="border-color: #f1f5f9 !important;">
 
@@ -48,12 +77,41 @@
     .finanzas-soft .row-item:last-child { border-bottom: 0; }
     .finanzas-soft .row-item .lbl { color: var(--ink-4); }
     .finanzas-soft .row-item .val { color: var(--ink-2); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+    /* ═════════ SPEC DE DISTANCIAS · FIN-v1-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde) */
+    #finDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #finDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .fin-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .fin-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: finDbgBlink 1s steps(2,start) infinite; }
+    @keyframes finDbgBlink { 50% { opacity: .35; } }
+    .fin-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #finDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .fin-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .fin-dbg-controls { display: flex; gap: 4px; }
+    .fin-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .fin-dbg-btn:hover { background: #475569; }
+    #finDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    .fin-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .fin-dbg-time { color: #64748b; margin-right: 4px; }
+    .fin-dbg-info { color: #93c5fd; } .fin-dbg-ok { color: #86efac; }
+    .fin-dbg-warn { color: #fde68a; } .fin-dbg-err { color: #fca5a5; }
+    .fin-dbg-net { color: #c4b5fd; } .fin-dbg-debug { color: #94a3b8; }
 </style>
 
 @php
     /* ── Dataset blindado: la vista nunca explota si falta un dato ──
        $transacciones llega paginado (10/page, page_finanzas) desde
-       AdminDashboardController@index / finanzasFragmento, con
+       AdminDashboardController (método index) / finanzasFragmento, con
        reserva.inmueble + pasarela precargados ( eager loading ).      */
     $finTrx = $transacciones ?? collect();
     $finPas = collect($pasarelas ?? []);
@@ -79,6 +137,30 @@
     $finSoporteOk = function ($trx): bool {
         return !empty($trx->soporte_pago) && !empty($trx->url_soporte_pago) && $trx->url_soporte_pago !== '#';
     };
+
+    /* ── Colector del panel de debug (FIN-v1-DBG) · se serializa al panel como JSON ── */
+    $finDist = ['aprobado' => 0, 'pendiente' => 0, 'rechazado' => 0];
+    $finConSoporte = 0;
+    foreach ($finTrx as $finT2) {
+        $finPar = $finEstado($finT2);
+        $finDist[$finPar[0]] = ($finDist[$finPar[0]] ?? 0) + 1;
+        if ($finSoporteOk($finT2)) { $finConSoporte++; }
+    }
+
+    $finDbg = [
+        'version'      => 'FIN-v1-DBG',
+        'vista'        => 'partials/tab-finanzas.blade.php',
+        'render'       => now()->format('H:i:s'),
+        'solo_lectura' => true,
+        'trx_pagina'   => $finTrx->count(),
+        'trx_total'    => $finTotalTrx,
+        'suma_pagina'  => number_format($finSumaPagina, 2, '.', ''),
+        'pasarelas'    => $finPas->count(),
+        'estados'      => $finDist,
+        'con_soporte'  => $finConSoporte,
+        'paginada'     => (method_exists($finTrx, 'hasPages') && $finTrx->hasPages()) ? 'sí' : 'no',
+        'errores'      => [],
+    ];
 @endphp
 
     <!-- ═══ ENCABEZADO · Resumen financiero (solo lectura) ═══ -->
@@ -348,9 +430,182 @@
 
 </div>
 
-
 <script>
     (function () {
+        'use strict';
+
+        /* ═══ 0) PANEL DE DEBUG LOCAL FIN-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+           IIFE propia con getElementById: no toca el querySelector del panel.
+           Exclusiva de esta vista: los nodos viven como hermanos de #finRoot
+           (nacen y mueren con el fragmento) y el respaldo solo re-crea DENTRO
+           de #finRoot. Nada se cuelga de document.body. */
+        var DBG = (window.FinDbg && window.FinDbg.alive && window.FinDbg.alive())
+            ? window.FinDbg
+            : (function () {
+                var MAX = 250, numErr = 0;
+                function $(id) { return document.getElementById(id); }
+                function asegurarNodos() {
+                    /* Respaldo: si un swap externo borrara los nodos, se
+                       re-crean DENTRO de #finRoot. Cero document.body. */
+                    var rootDbg = document.getElementById('finRoot');
+                    if (!rootDbg) { return; } // sin vista montada → cero nodos
+                    if (!$('finDbgToggle')) {
+                        var t = document.createElement('div');
+                        t.id = 'finDbgToggle';
+                        t.title = 'Debug Finanzas (FIN-v1-DBG)';
+                        t.innerHTML = '<span class="fin-dbg-led" id="finDbgLed"></span>DBG<span class="fin-dbg-badge" id="finDbgBadge">0</span>';
+                        rootDbg.insertBefore(t, rootDbg.firstChild);
+                    }
+                    if (!$('finDbgPanel')) {
+                        var p = document.createElement('div');
+                        p.id = 'finDbgPanel';
+                        p.innerHTML = '<div class="fin-dbg-header" id="finDbgHeader">' +
+                            '<span>DEBUG · Finanzas · FIN-v1-DBG</span>' +
+                            '<span class="fin-dbg-controls">' +
+                            '<button type="button" class="fin-dbg-btn" id="finDbgCopy">Copiar</button>' +
+                            '<button type="button" class="fin-dbg-btn" id="finDbgClear">Limpiar</button>' +
+                            '<button type="button" class="fin-dbg-btn" id="finDbgClose">✕</button>' +
+                            '</span></div><div id="finDbgBody"></div>';
+                        rootDbg.appendChild(p);
+                    }
+                    apilar();
+                }
+                /* FIN-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca
+                   se apila: con 16px de alto cabe bajo cualquier otro toggle
+                   sin tocarlo). Solo el PANEL esquiva a los vecinos de las
+                   otras vistas: bottom = max(20, vecino + 4) en px reales. */
+                function apilar() {
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle']; // serie completa de hermanos
+                    var ocupado = 0;
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = $(ids[i]);
+                        if (!el) { continue; }
+                        var r = el.getBoundingClientRect();
+                        if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                        var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                        if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                    }
+                    var t = $('finDbgToggle'), p = $('finDbgPanel');
+                    if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+                }
+                function hora() {
+                    var d = new Date();
+                    function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                    return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+                }
+                var api = {
+                    log: function (txt, nivel) {
+                        var b = $('finDbgBody'); if (!b) { return; }
+                        var lv = nivel || 'info';
+                        var ln = document.createElement('div');
+                        ln.className = 'fin-dbg-line';
+                        var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                            return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                        });
+                        ln.innerHTML = '<span class="fin-dbg-time">[' + hora() + ']</span>' +
+                            '<span class="fin-dbg-' + lv + '">' + seguro + '</span>';
+                        b.appendChild(ln);
+                        while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                        b.scrollTop = b.scrollHeight;
+                        if (lv === 'err') {
+                            numErr++;
+                            var bd = $('finDbgBadge');
+                            if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                            var led = $('finDbgLed');
+                            if (led) { led.classList.add('err'); }
+                        }
+                    },
+                    open: function () {
+                        var p = $('finDbgPanel'); if (!p) { return; }
+                        p.style.display = 'flex';
+                        apilar();
+                        var bd = $('finDbgBadge');
+                        if (bd) { bd.style.display = 'none'; }
+                        var led = $('finDbgLed');
+                        if (led) { led.classList.remove('err'); }
+                        numErr = 0;
+                    },
+                    close: function () { var p = $('finDbgPanel'); if (p) { p.style.display = 'none'; } },
+                    togglePanel: function () {
+                        var p = $('finDbgPanel');
+                        if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                    },
+                    clear: function () { var b = $('finDbgBody'); if (b) { b.innerHTML = ''; } },
+                    copy: function () {
+                        var b = $('finDbgBody'); if (!b) { return; }
+                        var txt = '=== DEBUG finanzas FIN-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                        for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(txt).then(function () {
+                                api.log('log copiado al portapapeles', 'ok');
+                            }).catch(function () {
+                                api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                            });
+                        } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                    },
+                    ensure: function () { asegurarNodos(); },
+                    alive: function () { return !!$('finDbgToggle'); }
+                };
+                window.FinDbg = api;
+                return api;
+            })();
+        if (!DBG) { return; }
+
+        /* Handlers de documento UNA sola vez (el guard __finDbgDocBound
+           garantiza que se registran una única vez; sobreviven a los swaps) */
+        if (!window.__finDbgDocBound) {
+            window.__finDbgDocBound = true;
+            window.__finDbgDocHandler = function (e) {
+                var t = e.target;
+                if (!t || !t.closest) { return; }
+                if (t.closest('#finDbgToggle')) { DBG.togglePanel(); return; }
+                if (t.closest('#finDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+                if (t.closest('#finDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+                if (t.closest('#finDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+            };
+            document.addEventListener('click', window.__finDbgDocHandler);
+            window.__finDbgDblHandler = function (e) {
+                if (e.target && e.target.closest && e.target.closest('#finDbgHeader')) { DBG.close(); }
+            };
+            document.addEventListener('dblclick', window.__finDbgDblHandler);
+
+            /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+               toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+            document.addEventListener('shown.bs.tab', function () {
+                if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+            });
+
+            /* Telemetría de modales por delegación (sobrevive a los swaps) */
+            document.addEventListener('show.bs.modal', function (e) {
+                var idm = (e.target && e.target.id) ? e.target.id : '';
+                if (idm.indexOf('modalTransaccion') === 0) {
+                    DBG.log('modal · detalle de transacción ' + idm.replace('modalTransaccion', '#') + ' abierto (solo lectura)', 'info');
+                }
+            });
+        }
+
+        DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+        var finDbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+        /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+        var SRVDBG = @json($finDbg);
+        finDbg('FIN-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con la vista)', 'ok');
+        finDbg('init · transacciones página=' + (SRVDBG ? SRVDBG.trx_pagina : '?') + ' · total=' + (SRVDBG ? SRVDBG.trx_total : '?') +
+            ' · Σ página=$' + (SRVDBG ? SRVDBG.suma_pagina : '?') + ' · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : '?') +
+            ' · solo lectura (aquí no se crea ni se edita)', 'info');
+        if (SRVDBG && SRVDBG.estados) {
+            finDbg('estados · aprobado=' + SRVDBG.estados.aprobado + ' · pendiente=' + SRVDBG.estados.pendiente +
+                ' · rechazado=' + SRVDBG.estados.rechazado + ' · con soporte=' + (SRVDBG.con_soporte || 0) +
+                ' de ' + (SRVDBG.trx_pagina || 0) + ' de la página', 'debug');
+        }
+        finDbg('paginación · ' + (SRVDBG && SRVDBG.paginada === 'sí' ? 'activa (el controlador envía 10/page)' : 'no paginada en esta carga'), 'debug');
+        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+                finDbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            }
+        }
+
         function finInit() {
             var root = document.getElementById('finRoot');
             if (!root) return;
@@ -391,12 +646,32 @@
                 if (sum) sum.textContent = fmt(s);
             }
 
-            if (search) search.addEventListener('input', aplicarFiltros);
-            if (filtro) filtro.addEventListener('change', aplicarFiltros);
+            /* FIN-v1-DBG · telemetría de filtros (búsqueda con debounce de
+               400ms para no spamear el panel mientras se teclea) */
+            var finFiltroTmr = null;
+            function finLogFiltros(prefijo) {
+                finDbg('filtro · ' + prefijo + ' · ' + (vis ? vis.textContent : '?') +
+                    ' visible(s) · Σ ' + (sum ? sum.textContent : '?'), 'info');
+            }
+
+            if (search) search.addEventListener('input', function () {
+                aplicarFiltros();
+                clearTimeout(finFiltroTmr);
+                finFiltroTmr = setTimeout(function () {
+                    finLogFiltros('búsqueda "' + (search.value || '').trim() + '"');
+                }, 400);
+            });
+            if (filtro) filtro.addEventListener('change', function () {
+                aplicarFiltros();
+                finLogFiltros('estado=' + (filtro.value || 'todos'));
+            });
+
+            finDbg('finanzas · panel listo · ' + (tbody ? tbody.querySelectorAll('.trx-row').length : 0) +
+                ' fila(s) en página · búsqueda + filtro de estado activos', 'debug');
         }
 
         /* Compatible con carga normal Y con fragmentos AJAX
-           (AdminDashboardController@finanzasFragmento): si el DOM ya
+           (AdminDashboardController · finanzasFragmento): si el DOM ya
            está listo, inicializa de inmediato sin esperar un evento. */
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', finInit);

@@ -1,5 +1,5 @@
 {{-- ============================================================================
-     RSV · ADMIN · CALENDARIO · BLOQUEOS
+     RSV · ADMIN · CALENDARIO · BLOQUEOS · BLQ-v1-DBG
      Parcial: resources/views/rsv/admin/partials/calendario/bloqueos.blade.php
 
      · DISEÑO UNIFICADO: misma estética "reservas-soft" que
@@ -26,6 +26,30 @@
        - rsv.reservas.fechas-ocupadas   GET  /rsv/reservas/fechas-ocupadas/{inmueble}
        - rsv.bloqueos-calendario.store  / update / destroy (resource)
        - rsv.admin.bloqueos.fragmento   GET  /rsv/bloqueos-fragmento
+
+     · FIX (CAMBIO BLQ-v1-2): ParseError "syntax error, unexpected token ,"
+       al compilar la vista. Causa: el texto de la directiva json de Blade
+       estaba escrito LITERALMENTE dentro de dos comentarios (uno PHP dentro
+       del bloque php del servidor y otro JS en el boot del panel). Blade compila las
+       directivas a nivel de texto aunque estén dentro de comentarios, así
+       que un "json pelado" genera un json_encode con una coma huérfana
+       (sintaxis inválida). Ambos
+       comentarios se reescribieron sin la arroba; el uso REAL con expresión
+       (SRVDBG) se conserva intacto.
+     · PANEL DE DEBUG (CAMBIO BLQ-v1-1 · diseño TIP-v1.3 aprobado): pestaña
+       terminal "DBG" de 16px fija SIEMPRE en la esquina inferior-derecha
+       (right:0 · bottom:0, radius 3px solo superior-izquierdo) con LED de
+       estado (verde = ok · rojo pulsante + conteo = errores) y panel cajón
+       de 380px alineado al mismo borde. La regla exacta de distancias está
+       documentada como "SPEC DE DISTANCIAS" dentro del CSS, y el panel
+       esquiva a los toggles hermanos de las otras vistas midiendo píxeles
+       reales (getBoundingClientRect · bottom = max(20, vecino + 4)).
+       Exclusivo de esta vista: el toggle y el panel nacen y mueren con el
+       fragmento (el refresco AJAX interno solo intercambia #bloqueos-panel,
+       así que los nodos DBG sobreviven a guardar/eliminar). Telemetría que
+       reporta: dataset cargado, ocupación por inmueble (fetch), solapes
+       detectados, envíos AJAX (crear/editar/eliminar), refresco del
+       fragmento y refetch del calendario global (window.rsvCalendar).
      ============================================================================ --}}
 
 @php
@@ -128,7 +152,41 @@
 
     $jhFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
     $blqJson = json_encode($blqItems->all(), $jhFlags); if (!is_string($blqJson)) { $blqJson = '[]'; }
+
+    /* ── Colector del panel de debug (BLQ-v1-DBG) · via al panel vía la directiva json de Blade ── */
+    $blqDbg = [
+        'version'        => 'BLQ-v1-DBG',
+        'vista'          => 'partials/calendario/bloqueos.blade.php',
+        'render'         => now()->format('H:i:s'),
+        'auto_inmuebles' => $inmueblesFaltan,
+        'auto_bloqueos'  => $bloqueosFaltan,
+        'inmuebles'      => count($inmuebles),
+        'bloqueos'       => $blqItems->count(),
+        'editable'       => (bool) ($blqStore || $blqUpdate),
+        'rutas'          => [
+            'ocupadas'  => $blqOcupadas  ?: 'NO definida',
+            'store'     => $blqStore     ?: 'NO definida',
+            'update'    => $blqUpdate    ?: 'NO definida',
+            'destroy'   => $blqDestroy   ?: 'NO definida',
+            'fragmento' => $blqFragmento ?: 'NO definida',
+        ],
+        'errores'        => [],
+    ];
 @endphp
+
+{{-- BLQ-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano del panel: vive y muere con la vista · NO viaja en el refresco AJAX interno) --}}
+<div id="blqDbgToggle" title="Debug Bloqueos (BLQ-v1-DBG)"><span class="blq-dbg-led" id="blqDbgLed"></span>DBG<span class="blq-dbg-badge" id="blqDbgBadge">0</span></div>
+<div id="blqDbgPanel" role="dialog" aria-label="Panel de debug de Bloqueos">
+    <div class="blq-dbg-header" id="blqDbgHeader">
+        <span>DEBUG · Bloqueos (Calendario) · BLQ-v1-DBG</span>
+        <span class="blq-dbg-controls">
+            <button type="button" class="blq-dbg-btn" id="blqDbgCopy">Copiar</button>
+            <button type="button" class="blq-dbg-btn" id="blqDbgClear">Limpiar</button>
+            <button type="button" class="blq-dbg-btn" id="blqDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="blqDbgBody"></div>
+</div>
 
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="bloqueos-panel" style="border-color: #f1f5f9 !important;">
 
@@ -177,6 +235,35 @@
     .blq-toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 5000; min-width: 240px; max-width: 320px; padding: 8px 12px; border-radius: 5px; font-size: 11px; font-weight: 500; color: #fff; background: #3d7a5c; box-shadow: 0 10px 30px rgba(0,0,0,.18); transition: opacity .3s ease, transform .3s ease; }
     .blq-toast.blq-error { background: #c98a85; }
     .blq-toast-out { opacity: 0; transform: translateY(.4rem); }
+
+    /* ═════════ SPEC DE DISTANCIAS · BLQ-v1-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde) */
+    #blqDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #blqDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .blq-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .blq-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: blqDbgBlink 1s steps(2,start) infinite; }
+    @keyframes blqDbgBlink { 50% { opacity: .35; } }
+    .blq-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #blqDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .blq-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .blq-dbg-controls { display: flex; gap: 4px; }
+    .blq-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .blq-dbg-btn:hover { background: #475569; }
+    #blqDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    .blq-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .blq-dbg-time { color: #64748b; margin-right: 4px; }
+    .blq-dbg-info { color: #93c5fd; } .blq-dbg-ok { color: #86efac; }
+    .blq-dbg-warn { color: #fde68a; } .blq-dbg-err { color: #fca5a5; }
+    .blq-dbg-net { color: #c4b5fd; } .blq-dbg-debug { color: #94a3b8; }
 </style>
 
     {{-- ─────────────────────────── CABECERA + CONTROLES ─────────────────────────── --}}
@@ -330,6 +417,173 @@
         var q = '';                    // texto de búsqueda de la tabla
         var fpCalendario = null;       // instancia Flatpickr viva
 
+        /* ═══ 0) PANEL DE DEBUG LOCAL BLQ-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+           IIFE propia con $ por id: no toca el $ (querySelector) del panel.
+           Exclusiva de esta vista: los nodos son HTML del fragmento (hermanos
+           de #bloqueos-panel) y el respaldo solo re-crea DENTRO del panel.
+           Nada se cuelga de document.body. */
+        var DBG = (window.BlqDbg && window.BlqDbg.alive && window.BlqDbg.alive())
+            ? window.BlqDbg
+            : (function () {
+                var MAX = 250, numErr = 0;
+                function $(id) { return document.getElementById(id); }
+                function asegurarNodos() {
+                    /* Respaldo: si un swap externo borrara los nodos (normalmente
+                       viven como hermanos de #bloqueos-panel y sobreviven al
+                       refresco AJAX interno), se re-crean DENTRO del panel.
+                       Cero document.body (exclusividad total). */
+                    var rootDbg = document.getElementById('bloqueos-panel');
+                    if (!rootDbg) { return; } // sin vista montada → cero nodos
+                    if (!$('blqDbgToggle')) {
+                        var t = document.createElement('div');
+                        t.id = 'blqDbgToggle';
+                        t.title = 'Debug Bloqueos (BLQ-v1-DBG)';
+                        t.innerHTML = '<span class="blq-dbg-led" id="blqDbgLed"></span>DBG<span class="blq-dbg-badge" id="blqDbgBadge">0</span>';
+                        rootDbg.insertBefore(t, rootDbg.firstChild);
+                    }
+                    if (!$('blqDbgPanel')) {
+                        var p = document.createElement('div');
+                        p.id = 'blqDbgPanel';
+                        p.innerHTML = '<div class="blq-dbg-header" id="blqDbgHeader">' +
+                            '<span>DEBUG · Bloqueos (Calendario) · BLQ-v1-DBG</span>' +
+                            '<span class="blq-dbg-controls">' +
+                            '<button type="button" class="blq-dbg-btn" id="blqDbgCopy">Copiar</button>' +
+                            '<button type="button" class="blq-dbg-btn" id="blqDbgClear">Limpiar</button>' +
+                            '<button type="button" class="blq-dbg-btn" id="blqDbgClose">✕</button>' +
+                            '</span></div><div id="blqDbgBody"></div>';
+                        rootDbg.appendChild(p);
+                    }
+                    apilar();
+                }
+                /* BLQ-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+                   apila: con 16px de alto cabe bajo cualquier otro toggle sin
+                   tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+                   vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+                function apilar() {
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle']; // serie completa de hermanos
+                    var ocupado = 0;
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = $(ids[i]);
+                        if (!el) { continue; }
+                        var r = el.getBoundingClientRect();
+                        if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                        var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                        if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                    }
+                    var t = $('blqDbgToggle'), p = $('blqDbgPanel');
+                    if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+                }
+                function hora() {
+                    var d = new Date();
+                    function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                    return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+                }
+                var api = {
+                    log: function (txt, nivel) {
+                        var b = $('blqDbgBody'); if (!b) { return; }
+                        var lv = nivel || 'info';
+                        var ln = document.createElement('div');
+                        ln.className = 'blq-dbg-line';
+                        var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                            return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                        });
+                        ln.innerHTML = '<span class="blq-dbg-time">[' + hora() + ']</span>' +
+                            '<span class="blq-dbg-' + lv + '">' + seguro + '</span>';
+                        b.appendChild(ln);
+                        while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                        b.scrollTop = b.scrollHeight;
+                        if (lv === 'err') {
+                            numErr++;
+                            var bd = $('blqDbgBadge');
+                            if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                            var led = $('blqDbgLed');
+                            if (led) { led.classList.add('err'); }
+                        }
+                    },
+                    open: function () {
+                        var p = $('blqDbgPanel'); if (!p) { return; }
+                        p.style.display = 'flex';
+                        apilar();
+                        var bd = $('blqDbgBadge');
+                        if (bd) { bd.style.display = 'none'; }
+                        var led = $('blqDbgLed');
+                        if (led) { led.classList.remove('err'); }
+                        numErr = 0;
+                    },
+                    close: function () { var p = $('blqDbgPanel'); if (p) { p.style.display = 'none'; } },
+                    togglePanel: function () {
+                        var p = $('blqDbgPanel');
+                        if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                    },
+                    clear: function () { var b = $('blqDbgBody'); if (b) { b.innerHTML = ''; } },
+                    copy: function () {
+                        var b = $('blqDbgBody'); if (!b) { return; }
+                        var txt = '=== DEBUG bloqueos BLQ-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                        for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(txt).then(function () {
+                                api.log('log copiado al portapapeles', 'ok');
+                            }).catch(function () {
+                                api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                            });
+                        } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                    },
+                    ensure: function () { asegurarNodos(); },
+                    alive: function () { return !!$('blqDbgToggle'); }
+                };
+                window.BlqDbg = api;
+                return api;
+            })();
+        if (!DBG) { return; }
+        DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+        var blqdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+        /* Botones del panel por DELEGACIÓN en document (el guard __blqPanelInit
+           garantiza que se registran UNA sola vez; sobreviven a los swaps) */
+        if (window.__blqDbgDocHandler) { document.removeEventListener('click', window.__blqDbgDocHandler); }
+        window.__blqDbgDocHandler = function (e) {
+            var t = e.target;
+            if (!t || !t.closest) { return; }
+            if (t.closest('#blqDbgToggle')) { DBG.togglePanel(); return; }
+            if (t.closest('#blqDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+            if (t.closest('#blqDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+            if (t.closest('#blqDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+        };
+        document.addEventListener('click', window.__blqDbgDocHandler);
+        if (window.__blqDbgDblHandler) { document.removeEventListener('dblclick', window.__blqDbgDblHandler); }
+        window.__blqDbgDblHandler = function (e) {
+            if (e.target && e.target.closest && e.target.closest('#blqDbgHeader')) { DBG.close(); }
+        };
+        document.addEventListener('dblclick', window.__blqDbgDblHandler);
+
+        /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+           toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+        document.addEventListener('shown.bs.tab', function () {
+            if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+        });
+
+        /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+        var SRVDBG = @json($blqDbg);
+        blqdbg('BLQ-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con la vista)', 'ok');
+        blqdbg('init · dataset=' + (SRVDBG ? SRVDBG.bloqueos : '?') + ' bloqueo(s) · inmuebles=' + (SRVDBG ? SRVDBG.inmuebles : '?') +
+            ' · editable=' + EDITABLE + ' · autoconsulta=' +
+            (SRVDBG ? (((SRVDBG.auto_inmuebles || SRVDBG.auto_bloqueos) ? 'sí (el controlador no pasó variables)' : 'no (todo vino del controlador)')) : '?'), 'info');
+        if (SRVDBG && SRVDBG.rutas) {
+            var _rk = Object.keys(SRVDBG.rutas);
+            for (var _ri = 0; _ri < _rk.length; _ri++) {
+                if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
+                    blqdbg('ruta no definida: rsv…' + _rk[_ri] + ' (la acción se deshabilita sola)', 'warn');
+                }
+            }
+            blqdbg('Rutas · store=' + SRVDBG.rutas.store + ' · update=' + SRVDBG.rutas.update + ' · destroy=' + SRVDBG.rutas.destroy, 'debug');
+        }
+        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+                blqdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            }
+        }
+
         function $(sel) { return document.querySelector(sel); }
         function esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -463,10 +717,12 @@
 
         async function abrirCalendarioListo() {
             if (fpCalendario && fpCalendario.element && fpCalendario.element.isConnected) return;
+            var __yaHabia = !!window.flatpickr; // BLQ-v1-DBG
             try { await asegurarFlatpickr(); }
-            catch (e) { console.warn('Flatpickr no disponible:', e); }
+            catch (e) { blqdbg('Flatpickr no disponible (' + (e && e.message ? e.message : '?') + ') · uso inputs date nativos', 'warn'); console.warn('Flatpickr no disponible:', e); }
             asegurarCalendario();
-            if (!fpCalendario) calendarioFallback();
+            if (fpCalendario) { blqdbg('mini-calendario listo' + (__yaHabia ? ' (Flatpickr ya cargado)' : ' (CDN carga perezosa)'), 'debug'); }
+            if (!fpCalendario) { calendarioFallback(); }
         }
 
         function repintarCalendario() {
@@ -503,6 +759,8 @@
         async function cargarOcupadas(inmuebleId) {
             var info = $('#blqInfoOcupacion');
             var spinner = $('#blqCargando');
+            var __t0 = Date.now(); // BLQ-v1-DBG
+            blqdbg('ocupación · fetch inmueble=' + (inmuebleId || '—') + (URLS.ocupadas ? '' : ' · ruta NO definida'), 'net');
             ocupadas = [];
             repintarCalendario();
             if (info) info.textContent = '';
@@ -530,8 +788,10 @@
                 var nombre = (data.inmueble && (data.inmueble.name || data.inmueble.nombre)) || 'Inmueble';
                 info.textContent = nombre + ': ' + ocupadas.length + ' rango(s) ocupado(s) · ' +
                                    nRes + ' por reservas · ' + nBlq + ' por bloqueos';
+                blqdbg('ocupación · ' + nombre + ' · ' + ocupadas.length + ' rango(s) · ' + nRes + ' reserva(s) · ' + nBlq + ' bloqueo(s) · ' + (Date.now() - __t0) + 'ms', 'ok');
             } catch (e) {
                 info.textContent = 'Aviso: ' + e.message;
+                blqdbg('ocupación falló · ' + e.message, 'err');
             } finally {
                 if (spinner) spinner.style.display = 'none';
                 repintarCalendario();
@@ -547,6 +807,9 @@
             var fin = $('#blqFechaFin').value;
             if (!ini || !fin || !ocupadas.length) { aviso.style.display = 'none'; return; }
             var choca = ocupadas.some(function (o) { return ini <= o.fin && fin >= o.inicio; });
+            if (choca && aviso.style.display !== 'block') { // BLQ-v1-DBG: solo en la transición (no spamea)
+                blqdbg('solape detectado · ' + ini + ' → ' + fin + ' · aviso no bloqueante (overbooking permitido)', 'warn');
+            }
             aviso.style.display = choca ? 'block' : 'none';
         }
 
@@ -607,7 +870,8 @@
         /* ── Refresco AJAX del panel ─────────────────────────────────────────── */
         async function refrescarPanel() {
             var actual = $('#bloqueos-panel');
-            if (!actual || !URLS.fragmento) { location.reload(); return; }
+            if (!actual || !URLS.fragmento) { blqdbg('refresco · sin fragmento → recarga nativa', 'warn'); location.reload(); return; }
+            var __t0 = Date.now(); // BLQ-v1-DBG
             var res = await fetch(URLS.fragmento, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }
             });
@@ -618,15 +882,18 @@
             var nuevo = contenedor.querySelector('#bloqueos-panel');
             if (!nuevo) throw new Error('Fragmento inválido');
             actual.replaceWith(nuevo);
+            blqdbg('fragmento refrescado en ' + (Date.now() - __t0) + 'ms · dataset=' + leerDataset().length + ' bloqueo(s)', 'ok');
             render(); // repinta la tabla con el dataset fresco del fragmento
         }
 
         function exitoYRefrescar(mensaje) {
             mostrarToast(mensaje);
+            blqdbg(mensaje, 'ok');
             // Actualiza el calendario global de la página si existe
+            blqdbg('calendario global · window.rsvCalendar ' + (window.rsvCalendar ? 'presente → refetchEvents()' : 'ausente en esta página'), 'debug');
             if (window.rsvCalendar) { try { window.rsvCalendar.refetchEvents(); } catch (e) {} }
             setTimeout(function () {
-                refrescarPanel().catch(function () { location.reload(); });
+                refrescarPanel().catch(function (e2) { blqdbg('refresco falló · ' + (e2 && e2.message ? e2.message : '?') + ' · fallback recarga', 'err'); location.reload(); });
             }, 200);
         }
 
@@ -700,6 +967,7 @@
             if (r) {
                 modo = 'editar';
                 idEditando = r.id;
+                blqdbg('modal · modo editar · bloqueo #' + r.id + ' · ' + (r.inmueble || '?') + ' · ' + (r.desde || '?') + ' → ' + (r.hasta || '?'), 'info');
                 if (titulo) titulo.textContent = 'Editar Bloqueo #' + r.id;
                 if (btn) btn.innerHTML = '<i class="bi bi-check-lg"></i> Guardar cambios';
                 asegurarOpcionInmueble(r.inmueble_id);
@@ -714,6 +982,7 @@
                 // Precarga desde el filtro superior (si existe y tiene valor)
                 var pre = inmuebleDesdeFiltroSuperior();
                 if (pre && sel) { asegurarOpcionInmueble(pre); sel.value = pre; }
+                blqdbg('modal · modo crear' + (pre ? ' · inmueble precargado del filtro superior (#' + pre + ')' : ''), 'info');
             }
 
             var m = modalInst('modalBloqueo');
@@ -747,9 +1016,10 @@
 
         /* ── Envío genérico (patrón status.blade.php · method spoofing _method) ─ */
         function enviar(url, method, fd) {
-            if (!url) { alert('Ruta no disponible para esta acción.'); return Promise.resolve(false); }
+            if (!url) { blqdbg('AJAX abortado · ruta no disponible para esta acción', 'err'); alert('Ruta no disponible para esta acción.'); return Promise.resolve(false); }
             fd.append('_token', csrf());
             if (method !== 'POST') fd.append('_method', method);
+            blqdbg('AJAX · ' + method + ' ' + url + (method !== 'POST' ? ' (spoofing _method)' : ''), 'net');
             return fetch(url, {
                 method: 'POST', // spoofing vía _method
                 body: fd,
@@ -757,19 +1027,26 @@
             })
                 .then(function (r) { return r.json().catch(function () { return { ok: r.ok, success: r.ok }; }); })
                 .then(function (j) {
-                    if (j && j.errors) { pintarErrores(j); return false; }
+                    if (j && j.errors) {
+                        var _n = Object.keys(j.errors).length;
+                        blqdbg('AJAX 422 · validación falló · ' + _n + ' campo(s) con error', 'err');
+                        pintarErrores(j); return false;
+                    }
                     if (j && (j.ok === false || j.success === false)) {
+                        blqdbg('AJAX falló · ' + (j.message || 'sin mensaje del servidor'), 'err');
                         alert(j.message || 'No se pudo completar la operación.');
                         return false;
                     }
+                    blqdbg('AJAX OK', 'ok');
                     return true;
                 })
-                .catch(function () { alert('Error de conexión.'); return false; });
+                .catch(function () { blqdbg('AJAX error de conexión', 'err'); alert('Error de conexión.'); return false; });
         }
 
         /* ── Init: eventos delegados en document (sobreviven al refresco AJAX) ── */
         function init() {
             render();
+            blqdbg('tabla renderizada · ' + leerDataset().length + ' bloqueo(s) en dataset · búsqueda activa #blqSearch', 'debug');
 
             document.addEventListener('click', function (e) {
                 var t = e.target;
@@ -792,6 +1069,7 @@
                     var r2 = leerDataset().find(function (x) { return String(x.id) === bD.getAttribute('data-id'); });
                     if (!r2) return;
                     pendienteEliminar = r2;
+                    blqdbg('eliminar · confirmación para #' + r2.id + ' (' + r2.inmueble + ' · ' + r2.desde + ' → ' + r2.hasta + ')', 'info');
                     var nom = document.getElementById('blqDelName');
                     if (nom) nom.textContent = r2.inmueble + ' · ' + r2.desde + ' → ' + r2.hasta;
                     var mDel = modalInst('blqModalDel');
@@ -805,6 +1083,7 @@
                     var objetivo = pendienteEliminar;
                     pendienteEliminar = null;
                     bGo.disabled = true;
+                    blqdbg('eliminar · bloqueo #' + objetivo.id + ' (' + objetivo.inmueble + ') · confirmado', 'net');
                     enviar(URLS.destroy.replace(':bloqueoId', encodeURIComponent(objetivo.id)), 'DELETE', new FormData())
                         .then(function (ok) {
                             bGo.disabled = false;
@@ -833,13 +1112,16 @@
 
                 var fd = new FormData(e.target);
                 var esEditar = (modo === 'editar' && idEditando);
+                blqdbg('submit · modo=' + (esEditar ? 'editar #' + idEditando : 'crear') + ' · inmueble=' + (fd.get('id_rsv_catalogo_inmueble') || '—') + ' · fechas=' + (fd.get('fecha_inicio') || '—') + ' → ' + (fd.get('fecha_fin') || '—'), 'net');
 
                 // Validación mínima en cliente (el Form Request valida igual en el backend)
                 if (!fd.get('id_rsv_catalogo_inmueble')) {
+                    blqdbg('validación cliente · falta inmueble', 'err');
                     pintarErrores({ errors: { id_rsv_catalogo_inmueble: ['Selecciona un inmueble.'] } });
                     return;
                 }
                 if (!fd.get('fecha_inicio') || !fd.get('fecha_fin')) {
+                    blqdbg('validación cliente · faltan fechas del calendario', 'err');
                     pintarErrores({ errors: { fecha_inicio: ['Selecciona la fecha de inicio y fin en el calendario.'] } });
                     return;
                 }
