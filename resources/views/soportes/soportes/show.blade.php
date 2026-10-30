@@ -158,10 +158,17 @@
                             <i class="feather-plus-circle me-2"></i> Agregar Seguimiento o Escalamiento
                         </button>
                     </h2>
-                    <div id="collapseForm" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionForm">
+                    <div id="collapseForm" class="accordion-collapse collapse @if($errors->any()) show @endif" aria-labelledby="headingOne" data-bs-parent="#accordionForm">
                         <div class="accordion-body">
                             <form action="{{ route('soportes.observaciones.store', $soporte->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
+                                @if($errors->any())
+                                    <div class="alert alert-danger">
+                                        @foreach($errors->all() as $error)
+                                            <div>{{ $error }}</div>
+                                        @endforeach
+                                    </div>
+                                @endif
                                 <div class="mb-3">
                                     <label for="observacion" class="form-label fw-semibold">Nueva Observación:</label>
                                     <textarea id="observacion" name="observacion" class="form-control" rows="3" required placeholder="Escribe los detalles de la actualización..."></textarea>
@@ -198,10 +205,37 @@
 
                                 {{-- Al pasar a "Revisión" ya no se elige manualmente: el revisor es
                                      automáticamente quien creó el ticket (storeObservacion() lo
-                                     resuelve solo, creando su scp_usuario si hace falta). --}}
-                                <div class="mb-3 d-none alert alert-info" id="revisionAutomatica">
-                                    Este ticket se enviará automáticamente a <strong>{{ $soporte->usuario->name ?? 'quien lo creó' }}</strong> para su revisión. Si no responde a tiempo, se cierra solo.
-                                </div>
+                                     resuelve solo, creando su scp_usuario si hace falta). Si el
+                                     creador no está en MaeTerceros, se pregunta qué hacer. --}}
+                                @if($creadorSinTercero)
+                                    <div class="mb-3 d-none alert alert-warning" id="revisionAutomatica">
+                                        <p class="mb-2">
+                                            <strong>{{ $soporte->usuario->name ?? 'Quien creó el ticket' }}</strong> no está en Maestra de Terceros, así que no se le puede enviar la revisión. ¿Qué deseas hacer?
+                                        </p>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accion_sin_tercero" id="accionCrearTercero" value="crear" @disabled(!$soporte->usuario) @checked(old('accion_sin_tercero') === 'crear')>
+                                            <label class="form-check-label" for="accionCrearTercero">Crearlo en Maestra de Terceros y enviarle la revisión</label>
+                                        </div>
+                                        <div class="mb-2 ms-4 d-none" id="cedulaCreadorCampo">
+                                            <label for="cedulaCreador" class="form-label fw-semibold">Cédula:</label>
+                                            <input type="text" inputmode="numeric" id="cedulaCreador" name="cedula_creador" class="form-control" maxlength="15" value="{{ old('cedula_creador', $soporte->usuario->nid ?? '') }}" @readonly(!empty($soporte->usuario->nid))>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="accion_sin_tercero" id="accionResponsableAnterior" value="anterior" @disabled(!$soporte->scpUsuarioAsignado) @checked(old('accion_sin_tercero') === 'anterior')>
+                                            <label class="form-check-label" for="accionResponsableAnterior">
+                                                @if($soporte->scpUsuarioAsignado)
+                                                    Dejar al responsable anterior: <strong>{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'N/A' }}</strong>
+                                                @else
+                                                    Dejar al responsable anterior (este ticket no tiene)
+                                                @endif
+                                            </label>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="mb-3 d-none alert alert-info" id="revisionAutomatica">
+                                        Este ticket se enviará automáticamente a <strong>{{ $soporte->usuario->name ?? 'quien lo creó' }}</strong> para su revisión. Si no responde a tiempo, se cierra solo.
+                                    </div>
+                                @endif
 
                                 <div class="mb-3 d-none" id="usuarioEscalamiento">
                                     <label for="terceroAsignado" class="form-label fw-semibold text-danger">Asignar a Usuario (Escalamiento):</label>
@@ -443,7 +477,23 @@
                     if (!esEscalamiento) {
                         $('#terceroAsignado').val('');
                     }
+
+                    // Solo existen si el creador no está en MaeTerceros: required únicamente
+                    // cuando se ven, para no bloquear el envío con un campo oculto.
+                    $('input[name="accion_sin_tercero"]').prop('required', esRevision);
+                    if (!esRevision) {
+                        $('input[name="accion_sin_tercero"]').prop('checked', false);
+                    }
+                    evaluarCampoCedula();
                 }
+
+                function evaluarCampoCedula() {
+                    var crear = $('#accionCrearTercero').is(':checked');
+                    $('#cedulaCreadorCampo').toggleClass('d-none', !crear);
+                    $('#cedulaCreador').prop('required', crear);
+                }
+
+                $('input[name="accion_sin_tercero"]').on('change', evaluarCampoCedula);
 
                 // Evento change en el select de estado
                 $('#estado').on('change', function() {

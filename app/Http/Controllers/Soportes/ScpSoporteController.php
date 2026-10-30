@@ -62,8 +62,8 @@ class ScpSoporteController extends Controller
      * la mayoría de quienes crean tickets no están ahí — se les crea la fila al vuelo usando su
      * cédula (users.nid), igual que cualquier otro scp_usuario. cod_ter tiene FK a MaeTerceros,
      * así que si el creador no tiene una fila ahí con su cédula (caso raro, ej. usuario de
-     * prueba), no se puede crear la fila y se devuelve null — storeObservacion() cae de vuelta a
-     * lo que el formulario haya mandado en ese caso.
+     * prueba), no se puede crear la fila y se devuelve null — ese caso lo detecta antes
+     * creadorSinTercero() y storeObservacion() exige decidir qué hacer.
      */
     private function resolverScpUsuarioDelCreador(ScpSoporte $soporte): ?ScpUsuario
     {
@@ -86,6 +86,47 @@ class ScpSoporteController extends Controller
             'usuario' => $creador->id,
             'estado' => 'Activo',
         ]);
+    }
+
+    /**
+     * True cuando resolverScpUsuarioDelCreador() no podría resolver al creador. Solo consulta, sin
+     * crear nada: show() lo usa para decidir qué mostrar y storeObservacion() para exigir la
+     * decisión de quien pasa el ticket a "Revisión".
+     */
+    private function creadorSinTercero(ScpSoporte $soporte): bool
+    {
+        $creador = $soporte->usuario;
+        if (!$creador) {
+            return true;
+        }
+
+        if (ScpUsuario::where('usuario', $creador->id)->exists()) {
+            return false;
+        }
+
+        return empty($creador->nid) || !MaeTerceros::where('cod_ter', $creador->nid)->exists();
+    }
+
+    /**
+     * Crea en MaeTerceros al creador del ticket con lo que se sabe de él (cédula y nombre), para
+     * que resolverScpUsuarioDelCreador() pueda registrarlo como revisor. tdoc 13 y tip_pers 0 son
+     * los valores de cédula/persona natural que ya usa la tabla. Si no tenía cédula en users.nid
+     * se le guarda la digitada; si esa cédula ya existe en MaeTerceros se reutiliza esa fila.
+     */
+    private function crearTerceroDelCreador(ScpSoporte $soporte, string $cedula): void
+    {
+        $creador = $soporte->usuario;
+
+        DB::transaction(function () use ($creador, $cedula) {
+            MaeTerceros::firstOrCreate(
+                ['cod_ter' => $cedula],
+                ['nom_ter' => mb_strtoupper($creador->name, 'UTF-8'), 'tdoc' => '13', 'tip_pers' => '0'],
+            );
+
+            if (empty($creador->nid)) {
+                $creador->update(['nid' => $cedula]);
+            }
+        });
     }
 
     /**
@@ -557,6 +598,7 @@ class ScpSoporteController extends Controller
             'usuario',
             'cargo',
             'lineaCredito',
+            'scpUsuarioAsignado.maeTercero',
             'observaciones' => function ($query) {
                 $query->with(['estado', 'usuario', 'tipoObservacion', 'scpUsuarioAsignado.maeTercero'])->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
             },
@@ -574,6 +616,7 @@ class ScpSoporteController extends Controller
             'estados' => $estados,
             'tiposObservacion' => $tiposObservacion,
             'usuariosEscalamiento' => $usuariosEscalamiento,
+            'creadorSinTercero' => $this->creadorSinTercero($scpSoporte),
         ]);
     }
 
@@ -639,27 +682,47 @@ class ScpSoporteController extends Controller
         // sigue exigiendo selección manual, porque ahí sí puede ser cualquiera.
         $esRevision = (int) $request->input('id_scp_estados') === ScpEstado::idPorNombre('Revision');
         $esTipoEscalamiento = (int) $request->input('id_tipo_observacion') === ScpTipoObservacion::idPorNombre('Escalamiento');
+        $creadorSinTercero = $esRevision && $this->creadorSinTercero($scpSoporte);
+        $creadorEsNuevo = $creadorSinTercero && $request->input('accion_sin_tercero') === 'crear';
 
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
             'id_scp_usuario_asignado' => [Rule::requiredIf($esTipoEscalamiento && !$esRevision), 'nullable', 'integer', 'exists:scp_usuarios,id'],
+            'accion_sin_tercero' => [Rule::requiredIf($creadorSinTercero), 'nullable', Rule::in(['crear', 'anterior'])],
+            // cod_ter es bigint en MaeTerceros: una cédula con letras no cabría.
+            'cedula_creador' => [Rule::requiredIf($creadorEsNuevo), 'nullable', 'digits_between:5,15'],
             'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
             'adjunto' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
         ], [
             'id_scp_usuario_asignado.required' => 'Debes elegir a quién queda asignado el ticket (Escalamiento no puede quedar sin responsable).',
+            'accion_sin_tercero.required' => 'Quien creó el ticket no está en Maestra de Terceros: elige si deseas crearlo o dejar al responsable anterior.',
+            'cedula_creador.required' => 'Digita la cédula para crear a quien abrió el ticket en Maestra de Terceros.',
+            'cedula_creador.digits_between' => 'La cédula debe tener solo números, entre 5 y 15 dígitos.',
         ]);
 
         $idUsuarioAsignado = $request->input('id_scp_usuario_asignado');
         if ($esRevision) {
-            $revisor = $this->resolverScpUsuarioDelCreador($scpSoporte);
-            if ($revisor) {
-                $idUsuarioAsignado = $revisor->id;
+            // El creador no está en MaeTerceros: nunca se sigue en silencio, quien pasa el ticket
+            // a "Revisión" decide en el formulario si crearlo o dejar al responsable anterior.
+            if ($creadorSinTercero && $request->input('accion_sin_tercero') === 'anterior') {
+                if (empty($scpSoporte->usuario_escalado)) {
+                    return back()->withInput()->withErrors(['accion_sin_tercero' => 'Este ticket no tiene un responsable anterior: crea a quien lo abrió en Maestra de Terceros.']);
+                }
+
+                $idUsuarioAsignado = $scpSoporte->usuario_escalado;
+            } else {
+                if ($creadorEsNuevo) {
+                    if (!$scpSoporte->usuario) {
+                        return back()->withInput()->withErrors(['accion_sin_tercero' => 'Este ticket no tiene un usuario creador válido: deja al responsable anterior.']);
+                    }
+
+                    $this->crearTerceroDelCreador($scpSoporte, $scpSoporte->usuario->nid ?: $request->input('cedula_creador'));
+                }
+
+                $idUsuarioAsignado = $this->resolverScpUsuarioDelCreador($scpSoporte)?->id;
             }
-            // Si el creador no tiene cédula válida en MaeTerceros (caso raro), no se puede crear
-            // su fila en scp_usuarios por la llave foránea — se cae de vuelta a lo que el
-            // formulario haya mandado (el campo sigue existiendo como respaldo en ese caso).
         }
 
         $observacionData = [
