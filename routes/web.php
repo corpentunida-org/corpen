@@ -929,6 +929,10 @@ Route::prefix('maestras')
                 Route::post('confirmar', [CongregacionImportController::class, 'confirmar'])->name('confirmar');
             });
 
+        // Antes del resource: GET congregaciones/{congregacion} (show) se tragaría "exportar"
+        // como si fuera un código de congregación.
+        Route::get('congregaciones/exportar', [MaeCongregacionController::class, 'descargarExcel'])->name('congregacion.exportar');
+
         Route::resource('congregaciones', MaeCongregacionController::class)
             ->names('congregacion')
             ->parameters(['congregaciones' => 'congregacion']);
@@ -936,6 +940,8 @@ Route::prefix('maestras')
         Route::get('buscar-pastor', [MaeCongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
 
         // DISTRITOS
+        Route::get('distritos/exportar', [MaeDistritoController::class, 'descargarExcel'])->name('distrito.exportar');
+
         Route::resource('distritos', MaeDistritoController::class)
             ->names('distrito')
             ->parameters(['distritos' => 'distrito'])

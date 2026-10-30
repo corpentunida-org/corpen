@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
+use App\Exports\Maestras\DistritosExport;
 use App\Models\Maestras\MaeDistritos;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MaeDistritoController extends Controller
 {
@@ -65,6 +67,11 @@ class MaeDistritoController extends Controller
         $distrito->update($datos);
 
         return redirect()->route('maestras.distrito.index')->with('success', '¡Distrito actualizado exitosamente!');
+    }
+
+    public function descargarExcel()
+    {
+        return Excel::download(new DistritosExport, 'distritos_' . now()->format('Y_m_d_His') . '.xlsx');
     }
 
     public function destroy(MaeDistritos $distrito)
