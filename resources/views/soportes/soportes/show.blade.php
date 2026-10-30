@@ -196,6 +196,13 @@
                                     </div>
                                 </div>
 
+                                {{-- Al pasar a "Revisión" ya no se elige manualmente: el revisor es
+                                     automáticamente quien creó el ticket (storeObservacion() lo
+                                     resuelve solo, creando su scp_usuario si hace falta). --}}
+                                <div class="mb-3 d-none alert alert-info" id="revisionAutomatica">
+                                    Este ticket se enviará automáticamente a <strong>{{ $soporte->usuario->name ?? 'quien lo creó' }}</strong> para su revisión. Si no responde a tiempo, se cierra solo.
+                                </div>
+
                                 <div class="mb-3 d-none" id="usuarioEscalamiento">
                                     <label for="terceroAsignado" class="form-label fw-semibold text-danger">Asignar a Usuario (Escalamiento):</label>
                                     <select id="terceroAsignado" name="id_scp_usuario_asignado" class="form-select">
@@ -424,12 +431,16 @@
                 function evaluarCampoAsignacion() {
                     var estadoTexto = $('#estado').find('option:selected').text();
                     var tipoTexto = $('#tipoObservacion').find('option:selected').text();
-                    var necesitaAsignar = estadoTexto.toLowerCase().includes('revision')
-                        || tipoTexto.toLowerCase().includes('escalamiento');
+                    var esRevision = estadoTexto.toLowerCase().includes('revision');
+                    var esEscalamiento = tipoTexto.toLowerCase().includes('escalamiento');
 
-                    $('#usuarioEscalamiento').toggleClass('d-none', !necesitaAsignar);
-                    $('#terceroAsignado').prop('required', necesitaAsignar);
-                    if (!necesitaAsignar) {
+                    // "Revision" ya no pide elegir a mano: el revisor es automáticamente quien
+                    // creó el ticket (ver storeObservacion()) — solo se informa. "Escalamiento"
+                    // (pasarle el ticket a alguien más) sí sigue pidiendo elegir manualmente.
+                    $('#revisionAutomatica').toggleClass('d-none', !esRevision);
+                    $('#usuarioEscalamiento').toggleClass('d-none', !esEscalamiento);
+                    $('#terceroAsignado').prop('required', esEscalamiento);
+                    if (!esEscalamiento) {
                         $('#terceroAsignado').val('');
                     }
                 }

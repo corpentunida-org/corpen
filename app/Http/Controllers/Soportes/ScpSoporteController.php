@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
 use App\Models\Creditos\LineaCredito;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Soportes\ScpCategoria;
 use App\Models\Soportes\ScpEstado;
 use App\Models\Soportes\ScpObservacion;
@@ -50,6 +51,41 @@ class ScpSoporteController extends Controller
             || $user->hasDirectPermission('soporte.lista.administrador');
 
         abort_unless($esCreador || $esAsignado || $vePorPermiso, 404);
+    }
+
+    /**
+     * El revisor de un ticket que pasa a "Revisión" es automáticamente quien lo creó — tiene más
+     * sentido que quien reportó el problema confirme que quedó resuelto, que pedirle a quien lo
+     * atendió que busque manualmente a esa misma persona en una lista.
+     *
+     * scp_usuarios es el catálogo de gente asignable (8 personas hoy, típicamente de Sistemas) y
+     * la mayoría de quienes crean tickets no están ahí — se les crea la fila al vuelo usando su
+     * cédula (users.nid), igual que cualquier otro scp_usuario. cod_ter tiene FK a MaeTerceros,
+     * así que si el creador no tiene una fila ahí con su cédula (caso raro, ej. usuario de
+     * prueba), no se puede crear la fila y se devuelve null — storeObservacion() cae de vuelta a
+     * lo que el formulario haya mandado en ese caso.
+     */
+    private function resolverScpUsuarioDelCreador(ScpSoporte $soporte): ?ScpUsuario
+    {
+        $creador = $soporte->usuario;
+        if (!$creador) {
+            return null;
+        }
+
+        $existente = ScpUsuario::where('usuario', $creador->id)->first();
+        if ($existente) {
+            return $existente;
+        }
+
+        if (empty($creador->nid) || !MaeTerceros::where('cod_ter', $creador->nid)->exists()) {
+            return null;
+        }
+
+        return ScpUsuario::create([
+            'cod_ter' => $creador->nid,
+            'usuario' => $creador->id,
+            'estado' => 'Activo',
+        ]);
     }
 
     /**
@@ -528,6 +564,9 @@ class ScpSoporteController extends Controller
 
         $estados = ScpEstado::all();
         $tiposObservacion = ScpTipoObservacion::all();
+        // Usado solo por el caso "Escalamiento" (pasar el ticket a otra persona) — el caso
+        // "Revisión" ya no necesita esta lista, el revisor se resuelve solo (ver
+        // resolverScpUsuarioDelCreador() / storeObservacion()).
         $usuariosEscalamiento = ScpUsuario::with('maeTercero')->get();
 
         return view('soportes.soportes.show', [
@@ -592,19 +631,36 @@ class ScpSoporteController extends Controller
         // usuario_escalado se quedaba con quien lo tenía antes (que ya no tiene ninguna
         // injerencia) y la alerta de "soportes sin cerrar" seguía molestando a esa persona en vez
         // de a quien debía revisar. Espejo del toggle de show.blade.php (evaluarCampoAsignacion).
-        $exigeAsignar = fn () => (int) $request->input('id_scp_estados') === ScpEstado::idPorNombre('Revision')
-            || (int) $request->input('id_tipo_observacion') === ScpTipoObservacion::idPorNombre('Escalamiento');
+        //
+        // "Revision" ya NO pide elegir manualmente: el revisor es automáticamente quien creó el
+        // ticket (resolverScpUsuarioDelCreador más abajo) — tiene más sentido que el creador
+        // confirme que su propio problema quedó resuelto, sin que quien lo atendió tenga que
+        // buscarlo a mano en la lista. "Escalamiento" (pasarle el ticket a un tercero distinto)
+        // sigue exigiendo selección manual, porque ahí sí puede ser cualquiera.
+        $esRevision = (int) $request->input('id_scp_estados') === ScpEstado::idPorNombre('Revision');
+        $esTipoEscalamiento = (int) $request->input('id_tipo_observacion') === ScpTipoObservacion::idPorNombre('Escalamiento');
 
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
-            'id_scp_usuario_asignado' => [Rule::requiredIf($exigeAsignar), 'nullable', 'integer', 'exists:scp_usuarios,id'],
+            'id_scp_usuario_asignado' => [Rule::requiredIf($esTipoEscalamiento && !$esRevision), 'nullable', 'integer', 'exists:scp_usuarios,id'],
             'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
             'adjunto' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
         ], [
-            'id_scp_usuario_asignado.required' => 'Debes elegir a quién queda asignado el ticket (Revisión/Escalamiento no pueden quedar sin responsable).',
+            'id_scp_usuario_asignado.required' => 'Debes elegir a quién queda asignado el ticket (Escalamiento no puede quedar sin responsable).',
         ]);
+
+        $idUsuarioAsignado = $request->input('id_scp_usuario_asignado');
+        if ($esRevision) {
+            $revisor = $this->resolverScpUsuarioDelCreador($scpSoporte);
+            if ($revisor) {
+                $idUsuarioAsignado = $revisor->id;
+            }
+            // Si el creador no tiene cédula válida en MaeTerceros (caso raro), no se puede crear
+            // su fila en scp_usuarios por la llave foránea — se cae de vuelta a lo que el
+            // formulario haya mandado (el campo sigue existiendo como respaldo en ese caso).
+        }
 
         $observacionData = [
             'observacion' => $request->observacion,
@@ -612,7 +668,7 @@ class ScpSoporteController extends Controller
             'id_scp_soporte' => $scpSoporte->id,
             'id_scp_estados' => $request->id_scp_estados,
             'id_users' => Auth::id(),
-            'id_users_asignado' => $request->id_scp_usuario_asignado ?? null,
+            'id_users_asignado' => $idUsuarioAsignado,
             'id_tipo_observacion' => $request->id_tipo_observacion,
         ];
 
@@ -638,8 +694,8 @@ class ScpSoporteController extends Controller
             'estado' => $request->id_scp_estados,
         ];
 
-        if ($request->filled('id_scp_usuario_asignado') && $request->input('id_scp_usuario_asignado') != '0') {
-            $updateData['usuario_escalado'] = $request->input('id_scp_usuario_asignado');
+        if (!empty($idUsuarioAsignado) && $idUsuarioAsignado != '0') {
+            $updateData['usuario_escalado'] = $idUsuarioAsignado;
         }
 
         $scpSoporte->update($updateData);
