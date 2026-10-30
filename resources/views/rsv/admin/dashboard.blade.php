@@ -293,6 +293,13 @@
                         </div>
 
                         {{-- GLOBAL - TAB 5: AUDITORÍA (Estructura de hijos añadida) --}}
+                        {{-- ============================================================================
+                            RSV · ADMIN · DASHBOARD · GLOBAL TAB 5 (AUDITORÍA) · rutas reales v1-3
+                            · aud-sub-inicio → tab-auditoria (el include anterior apuntaba a
+                            tab-auditoria, que NO existe: esa era la rotura "View not found")
+                            · aud-sub-logs   → auditorias/informes (la tabla inline vive ahora
+                            ahí, con KPIs, filtros, CSV y su LOG de debug)
+                            ============================================================================ --}}
                         <div class="tab-pane fade" id="global-auditoria" role="tabpanel">
                             <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -304,55 +311,8 @@
                                 </ul>
                             </div>
                             <div class="tab-content p-4" id="auditoriaSubContent">
-                                <div class="tab-pane fade show active" id="aud-sub-inicio" role="tabpanel">
-                                    @include('rsv.admin.partials.tab-auditoria')
-                                </div>
-                                <div class="tab-pane fade" id="aud-sub-logs" role="tabpanel">
-                                    <div class="p-3 bg-white rounded border border-light shadow-sm">
-                                        <h6 class="fw-bold mb-3 text-dark">
-                                            <i class="bi bi-shield-check me-1 text-success"></i> Registro de Auditoría del Sistema
-                                        </h6>
-                                        @isset($auditoria)
-                                            <div class="table-responsive bg-white">
-                                                <table class="table table-sm table-bordered align-middle mb-0 small">
-                                                    <thead class="table-light text-uppercase text-secondary" style="font-size: 0.75rem;">
-                                                        <tr>
-                                                            <th>ID</th>
-                                                            <th>Acción / Evento</th>
-                                                            <th>Usuario</th>
-                                                            <th>Detalles</th>
-                                                            <th>Fecha</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse($auditoria as $log)
-                                                            <tr>
-                                                                <td class="fw-bold">#{{ $log->id }}</td>
-                                                                <td><span class="badge bg-light text-dark border">{{ $log->action ?? $log->evento ?? 'Acción' }}</span></td>
-                                                                <td>{{ $log->user->name ?? $log->usuario ?? 'Sistema' }}</td>
-                                                                <td class="text-muted text-truncate" style="max-width: 250px;" title="{{ json_encode($log->details ?? $log->detalles ?? '') }}">
-                                                                    {{ Str::limit(json_encode($log->details ?? $log->detalles ?? 'N/A'), 50) }}
-                                                                </td>
-                                                                <td>{{ $log->created_at ? $log->created_at->format('Y-m-d H:i') : '' }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="5" class="text-center text-muted py-3">No hay registros de auditoría disponibles.</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            @if(method_exists($auditoria, 'links'))
-                                                <div class="mt-3">
-                                                    {{ $auditoria->appends(['inmueble_id' => 'todos'])->links() }}
-                                                </div>
-                                            @endif
-                                        @else
-                                            <p class="text-muted small mb-0">No hay información de auditoría cargada.</p>
-                                        @endisset
-                                    </div>
-                                </div>
+                                <div class="tab-pane fade show active" id="aud-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-auditoria')</div>
+                                <div class="tab-pane fade" id="aud-sub-logs" role="tabpanel">@include('rsv.admin.partials.auditorias.informes')</div>
                             </div>
                         </div>
 
@@ -621,6 +581,31 @@
                         </div>
 
                         {{-- INMUEBLE - TAB 5: AUDITORÍA (Estructura de hijos añadida) --}}
+                        {{-- ============================================================================
+                            RSV · ADMIN · INMUEBLE · TAB 5 (AUDITORÍA) · rutas reales v1-3
+                            Fragmento del padre: resources/views/rsv/admin/inmuebles/show.blade.php
+                            (o el archivo donde viva el bloque "INMUEBLE - TAB 5: AUDITORÍA")
+
+                            · CAMBIO (v1-3): las dos sub-pestañas ahora incluyen las vistas por su
+                            RUTA REAL, con el mismo patrón ya aprobado en el TAB 5 GLOBAL
+                            (tab5-auditoria.blade.php):
+                                - single-aud-sub-inicio → rsv.admin.partials.auditoria-tab
+                                (sustituye la tarjeta inline "Registro de Auditoría del Sistema":
+                                    esa vista vive ahora en el parcial con su LOG de debug)
+                                - single-aud-sub-logs → rsv.admin.partials.auditorias.informes
+                                (sustituye el placeholder "Próximamente": el registro de eventos
+                                    vive ahora en el parcial con KPIs, filtros, CSV y su LOG de
+                                    debug; si el controlador de esta vista ya carga $auditoria, el
+                                    parcial la reutiliza en vez de autoconsultar)
+                            · CERO RUTAS NUEVAS en routes/web.php: los include son de vistas, no
+                            de URLs, y el parcial informes cae a autoconsulta si faltan datos.
+                            · Estructura del padre INTACTA: subnav-fusion + sub-pills con memoria
+                            de pestaña (tab-memory-child) e ids single-aud-sub-* sin tocar.
+                            · NOTA: los comentarios nombran las directivas de Blade SIN arroba
+                            (p.ej. "la directiva include de Blade"): Blade compila a nivel de
+                            texto aunque estén dentro de comentarios y una arroba pelada rompe
+                            la compilación (lección BLQ-v1-2).
+                            ============================================================================ --}}
                         <div class="tab-pane fade" id="auditoria" role="tabpanel">
                             <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -632,57 +617,11 @@
                                 </ul>
                             </div>
                             <div class="tab-content p-4" id="singleAuditoriaSubContent">
-                                <div class="tab-pane fade show active" id="single-aud-sub-inicio" role="tabpanel">
-                                    <div class="p-3 bg-white rounded border border-light shadow-sm">
-                                        <h6 class="fw-bold mb-3 text-dark">
-                                            <i class="bi bi-shield-check me-1 text-success"></i> Registro de Auditoría del Sistema
-                                        </h6>
-                                        @isset($auditoria)
-                                            <div class="table-responsive bg-white">
-                                                <table class="table table-sm table-bordered align-middle mb-0 small">
-                                                    <thead class="table-light text-uppercase text-secondary" style="font-size: 0.75rem;">
-                                                        <tr>
-                                                            <th>ID</th>
-                                                            <th>Acción / Evento</th>
-                                                            <th>Usuario</th>
-                                                            <th>Detalles</th>
-                                                            <th>Fecha</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @forelse($auditoria as $log)
-                                                            <tr>
-                                                                <td class="fw-bold">#{{ $log->id }}</td>
-                                                                <td><span class="badge bg-light text-dark border">{{ $log->action ?? $log->evento ?? 'Acción' }}</span></td>
-                                                                <td>{{ $log->user->name ?? $log->usuario ?? 'Sistema' }}</td>
-                                                                <td class="text-muted text-truncate" style="max-width: 250px;" title="{{ json_encode($log->details ?? $log->detalles ?? '') }}">
-                                                                    {{ Str::limit(json_encode($log->details ?? $log->detalles ?? 'N/A'), 50) }}
-                                                                </td>
-                                                                <td>{{ $log->created_at ? $log->created_at->format('Y-m-d H:i') : '' }}</td>
-                                                            </tr>
-                                                        @empty
-                                                            <tr>
-                                                                <td colspan="5" class="text-center text-muted py-3">No hay registros de auditoría disponibles.</td>
-                                                            </tr>
-                                                        @endforelse
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                            @if(method_exists($auditoria, 'links'))
-                                                <div class="mt-3">
-                                                    {{ $auditoria->appends(['inmueble_id' => $inmueble->id])->links() }}
-                                                </div>
-                                            @endif
-                                        @else
-                                            <p class="text-muted small mb-0">No hay información de auditoría cargada.</p>
-                                        @endisset
-                                    </div>
-                                </div>
-                                <div class="tab-pane fade" id="single-aud-sub-logs" role="tabpanel">
-                                    <p class="text-muted small mb-0">Logs detallados de este inmueble (Próximamente)</p>
-                                </div>
+                                <div class="tab-pane fade show active" id="single-aud-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-auditoria')</div>
+                                <div class="tab-pane fade" id="single-aud-sub-logs" role="tabpanel">@include('rsv.admin.partials.auditorias.informes')</div>
                             </div>
                         </div>
+
 
                     </div>
                 </div>

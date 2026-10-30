@@ -1,4 +1,42 @@
-{{-- tab-reservas.blade.php · v26.1 --}}
+{{-- tab-reservas.blade.php · v28-DBG --}}
+{{--
+   NOVEDADES v28-DBG (AGENDA DENTRO DEL FRAGMENTO · la tabla y el CRUD no cambian):
+   · "Consultar" (botón) e "Ir a hoy" (enlace) dejan de navegar la página
+     completa: ahora re-piden SOLO este partial vía reservasFragmento()
+     (GET del data-fragmento de #rvTabWrap con agenda_fecha ajustada) y
+     reemplazan el wrap en caliente — el mismo mecanismo del alta v26 —,
+     así que el dashboard, el calendario grande y el panel de debug quedan
+     intactos y vivos (cada refresco queda registrado en el panel DBG).
+   · Enter sobre el input de fecha consulta igual que el botón (igual que
+     antes, pero por fragmento).
+   · Fallbacks conservados: si la ruta del fragmento no existe o el fetch
+     falla, se navega la página completa con el parámetro (comportamiento
+     anterior) y el panel DBG muestra la causa real del fallo.
+   · "Ir a hoy" sin ruta de fragmento deja navegar su href completo como
+     siempre (degradación elegante).
+--}}{{-- NOVEDADES v27-DBG (SOLO PANEL DE DEBUG · cero cambios funcionales):
+   · El panel 🐛 Debug se rediseña al diseño TIP-v1.3 aprobado (canónico
+     BLQ-v1-2, el mismo de status.blade.php): pestaña terminal "DBG" de
+     16px fija SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0,
+     radius 3px solo superior-izquierdo) con LED de estado (verde = ok ·
+     rojo pulsante + conteo = errores) y panel cajón de 380px alineado al
+     mismo borde. La regla exacta de distancias está documentada como
+     "SPEC DE DISTANCIAS" dentro del CSS, y el panel esquiva a los toggles
+     hermanos de las otras vistas midiendo píxeles reales
+     (getBoundingClientRect · bottom = max(20, vecino + 4)).
+   · El toggle y el panel pasan a ser HERMANOS de #rvTabWrap (antes del
+     wrap): el refresco AJAX interno solo intercambia el wrap, así que los
+     nodos DBG y sus logs sobreviven SIN el parche de restauración de v26
+     (refrescarSoloTab ya no copia innerHTML; solo re-apila con RvDbg).
+     Nada se cuelga de document.body: el respaldo re-crea DENTRO de #rvRoot.
+   · Cabecera canónica con Copiar / Limpiar / ✕ (clic en la cabecera o
+     doble clic cierra) · unicarDbg() deja UN solo toggle/panel por página
+     · la API viva queda en window.RvDbg · LED rojo + badge con conteo de
+     errores (se resetean al abrir).
+   · dbgLog(nivel, msg) conserva su firma para TODAS las llamadas
+     existentes: ahora escribe en el panel nuevo. $phpDebugLogs y el JSON
+     #rvPhpDebug siguen llegando igual (con prefijo "<b>PHP</b> ").
+--}}
 {{-- NOVEDADES v26.1:
    · Diagnóstico: si GET /rsv/reservas-fragmento responde error (p.ej.
      HTTP 500), ahora se extrae el MENSAJE REAL de la excepción desde el
@@ -50,6 +88,20 @@
         } catch (\Throwable $e) { /* siguiente candidato */ }
     }
 @endphp
+{{-- RV-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermanos de #rvTabWrap: el refresco AJAX interno solo intercambia el wrap, así que estos nodos y sus logs sobreviven) --}}
+<div id="rvDebugToggle" title="Debug Reservas (RV-v1-DBG)"><span class="rv-dbg-led" id="rvDbgLed"></span>DBG<span class="rv-dbg-badge" id="rvDbgBadge">0</span></div>
+<div id="rvDebugPanel" role="dialog" aria-label="Panel de debug del tab de Reservas">
+    <div class="rv-dbg-header" id="rvDbgHeader">
+        <span>DEBUG · Reservas · tab-reservas · RV-v1-DBG</span>
+        <span class="rv-dbg-controls">
+            <button type="button" class="rv-dbg-btn" id="rvDbgCopy">Copiar</button>
+            <button type="button" class="rv-dbg-btn" id="rvDbgClear">Limpiar</button>
+            <button type="button" class="rv-dbg-btn" id="rvDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="rvDebugBody"></div>
+</div>
+
 <div id="rvTabWrap" data-fragmento="{{ $rvFragmentoUrl }}">
 
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="rvRoot"
@@ -500,52 +552,42 @@
     #modalNuevaReserva .cal-tarifa-box .tarifa-warn { color: #d97706; font-weight: 700; }
     #modalNuevaReserva .cal-tarifa-box .tarifa-err { color: #dc3545; font-weight: 700; }
 
-    /* ─── PANEL DE DEBUG FLOTANTE ─── */
-    #rvDebugPanel {
-        position: fixed; bottom: 10px; right: 10px; z-index: 9999;
-        width: 380px; max-width: calc(100vw - 20px); max-height: 60vh;
-        background: #0f172a; color: #e2e8f0;
-        border: 1px solid #1e293b; border-radius: 6px;
-        font-family: 'Courier New', monospace; font-size: 9px;
-        display: none; flex-direction: column;
-        box-shadow: 0 8px 24px rgba(0,0,0,.4);
-    }
+    /* ═════════ SPEC DE DISTANCIAS · RV-v1-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
+       UNICIDAD  · toggle y panel son HERMANOS de #rvTabWrap (el refresco
+                   AJAX interno solo intercambia el wrap: los nodos y el CSS
+                   sobreviven) y unicarDbg() deja UN solo toggle/panel por
+                   página. El respaldo re-crea DENTRO de #rvRoot. */
+    #rvDebugToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #rvDebugToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .rv-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .rv-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: rvDbgBlink 1s steps(2,start) infinite; }
+    @keyframes rvDbgBlink { 50% { opacity: .35; } }
+    .rv-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #rvDebugPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
     #rvDebugPanel.open { display: flex; }
-    #rvDebugPanel .dbg-header {
-        background: #1e293b; padding: 5px 8px; border-radius: 6px 6px 0 0;
-        display: flex; justify-content: space-between; align-items: center;
-        cursor: pointer;
-    }
-    #rvDebugPanel .dbg-header b { font-size: 9.5px; color: #f1f5f9; }
-    #rvDebugPanel .dbg-controls { display: flex; gap: 4px; }
-    #rvDebugPanel .dbg-btn {
-        background: #334155; color: #f1f5f9; border: 0;
-        font-size: 8px; padding: 1px 6px; border-radius: 2px; cursor: pointer;
-        font-family: inherit;
-    }
-    #rvDebugPanel .dbg-btn:hover { background: #475569; }
-    #rvDebugPanel .dbg-body { flex: 1; overflow-y: auto; padding: 6px 8px; }
-    #rvDebugPanel .dbg-body::-webkit-scrollbar { width: 6px; }
-    #rvDebugPanel .dbg-body::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-    #rvDebugPanel .dbg-log {
-        padding: 3px 0; border-bottom: 1px solid #1e293b; line-height: 1.3;
-        word-wrap: break-word; white-space: pre-wrap;
-    }
-    #rvDebugPanel .dbg-log:last-child { border-bottom: 0; }
-    #rvDebugPanel .dbg-log .dbg-time { color: #64748b; font-size: 8px; }
-    #rvDebugPanel .dbg-log.info  { color: #93c5fd; }
-    #rvDebugPanel .dbg-log.ok    { color: #86efac; }
-    #rvDebugPanel .dbg-log.warn  { color: #fcd34d; }
-    #rvDebugPanel .dbg-log.err   { color: #fca5a5; }
-    #rvDebugPanel .dbg-log.debug { color: #c4b5fd; }
-    #rvDebugToggle {
-        position: fixed; bottom: 10px; right: 10px; z-index: 10000;
-        background: #1e293b; color: #f1f5f9; border: 0;
-        border-radius: 50%; width: 36px; height: 36px;
-        cursor: pointer; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,.3);
-        display: flex; align-items: center; justify-content: center;
-    }
-    #rvDebugToggle:hover { background: #334155; }
+    .rv-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .rv-dbg-controls { display: flex; gap: 4px; }
+    .rv-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .rv-dbg-btn:hover { background: #475569; }
+    #rvDebugBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    #rvDebugBody::-webkit-scrollbar { width: 6px; }
+    #rvDebugBody::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+    .rv-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .rv-dbg-line:last-child { border-bottom: 0; }
+    .rv-dbg-time { color: #64748b; margin-right: 4px; }
+    .rv-dbg-info { color: #93c5fd; } .rv-dbg-ok { color: #86efac; }
+    .rv-dbg-warn { color: #fde68a; } .rv-dbg-err { color: #fca5a5; }
+    .rv-dbg-net { color: #c4b5fd; } .rv-dbg-debug { color: #94a3b8; }
 
     /* v25 - POPUP DE INFO DE RESERVA (al clicar dia bloqueado) */
     .cal-info-popup {
@@ -950,6 +992,9 @@
     // 🆕 v24 · Usuario logueado (para chip de respuesta rápida "Reserva creada por usuario X")
     $authUserName = auth()->check() ? (auth()->user()->name ?? 'admin') : 'admin';
 
+    // 🆕 v27-DBG · Marcador de versión del panel de debug (TIP-v1.3 · canónico BLQ-v1-2)
+    $phpDebugLogs[] = ['ok', 'RV-v1-DBG · panel debug TIP-v1.3 activo · tab DBG terminal + LED + panel cajón 380px (hermanos de #rvTabWrap, sobreviven al refresco AJAX)'];
+
     $phpDebugJson = json_encode($phpDebugLogs, $dsJsonFlags);
 @endphp
 
@@ -959,6 +1004,7 @@
     <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
         <i class="bi bi-calendar2-check me-1" style="font-size: 8px; color: #5d8a70;"></i>
         {{ ($modoGlobal ?? true) ? 'Reservas Globales del Sistema' : 'Reservas del Inmueble' }}
+        <span class="badge rounded-pill ms-1" id="rvChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">RV-v1-DBG</span>
     </h6>
     <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
         @if(!($modoGlobal ?? true) && ($xlsInmId ?? null))
@@ -1018,12 +1064,12 @@
             <i class="bi bi-calendar-event" style="font-size: 8.5px; color: #c3ccd6;"></i>
             <input type="date" id="agendaFechaInput" class="xls-date" style="width: 118px;"
                    value="{{ $agendaFecha->toDateString() }}" title="Elija la fecha y presione Consultar (o Enter)">
-            <button type="button" id="agendaConsultarBtn" class="ag-consultar" title="Consultar la fecha elegida">
+            <button type="button" id="agendaConsultarBtn" class="ag-consultar" title="Consultar la fecha elegida (refresca SOLO el tab · sin recargar el dashboard)">
                 <i class="bi bi-arrow-right-circle"></i> Consultar
             </button>
         </div>
         @if(!($esAgendaHoy ?? true))
-            <a href="{{ request()->fullUrlWithQuery(['agenda_fecha' => null]) }}" class="ag-hoy-btn" title="Volver a la agenda de hoy">
+            <a href="{{ request()->fullUrlWithQuery(['agenda_fecha' => null]) }}" id="agendaHoyBtn" class="ag-hoy-btn" title="Volver a la agenda de hoy (refresca SOLO el tab)">
                 <i class="bi bi-arrow-counterclockwise" style="font-size: 7px;"></i> Ir a hoy
             </a>
         @endif
@@ -1351,20 +1397,10 @@
 <script type="application/json" id="rvPhpDebug">{!! $phpDebugJson !!}</script>
 
 
-{{-- Botón flotante de Debug --}}
-<button type="button" id="rvDebugToggle" title="Mostrar/ocultar panel de debug">...</button>
-
-{{-- Panel de Debug --}}
-<div id="rvDebugPanel">
-    <div class="dbg-header" id="rvDebugHeader">
-        <b>🐛 Debug · tab-reservas</b>
-        <div class="dbg-controls">
-            <button type="button" class="dbg-btn" id="rvDebugClear">Limpiar</button>
-            <button type="button" class="dbg-btn" id="rvDebugClose">✕</button>
-        </div>
-    </div>
-    <div class="dbg-body" id="rvDebugBody"></div>
-</div>
+{{-- 🆕 v27-DBG · El botón flotante y el panel de debug subieron a HERMANOS de
+   #rvTabWrap (al inicio del partial, antes de abrir el wrap): el refresco
+   AJAX interno solo intercambia el wrap, así que los nodos DBG y sus logs
+   sobreviven sin parches. Diseño TIP-v1.3 aprobado (canónico BLQ-v1-2). --}}
 
 
 {{-- 🆕 v25.2 · MODAL DETALLE DE RESERVA (botón "Detalle" de la tabla) --}}
@@ -1432,44 +1468,164 @@
 <script>
     function rvTabInit() {
 
-        /* ═══ PANEL DE DEBUG ═══ */
-        var dbgPanel  = document.getElementById('rvDebugPanel');
-        var dbgBody   = document.getElementById('rvDebugBody');
-        var dbgToggle = document.getElementById('rvDebugToggle');
-        var dbgClose  = document.getElementById('rvDebugClose');
-        var dbgClear  = document.getElementById('rvDebugClear');
-        var dbgHeader = document.getElementById('rvDebugHeader');
-        var dbgOpen = false;
+        /* ═══ 0) PANEL DE DEBUG LOCAL RV-v1-DBG (diseño TIP-v1.3 aprobado · canónico BLQ-v1-2) ═══
+           IIFE propia con $ por id: no toca el resto del script.
+           Exclusiva de esta vista: los nodos son HTML del fragmento (hermanos
+           de #rvTabWrap, sobreviven al refresco AJAX interno que solo
+           intercambia el wrap) y el respaldo solo re-crea DENTRO de #rvRoot.
+           Nada se cuelga de document.body. */
+        var DBG = (window.RvDbg && window.RvDbg.alive && window.RvDbg.alive())
+            ? window.RvDbg
+            : (function () {
+                var MAX = 250, numErr = 0;
+                function $(id) { return document.getElementById(id); }
+                function asegurarNodos() {
+                    /* Respaldo: si un swap externo borrara los nodos (normalmente
+                       viven como hermanos de #rvTabWrap), se re-crean DENTRO del root.
+                       Cero document.body (exclusividad total). */
+                    var rootDbg = document.getElementById('rvRoot');
+                    if (!rootDbg) { return; } // sin vista montada → cero nodos
+                    if (!$('rvDebugToggle')) {
+                        var t = document.createElement('div');
+                        t.id = 'rvDebugToggle';
+                        t.title = 'Debug Reservas (RV-v1-DBG)';
+                        t.innerHTML = '<span class="rv-dbg-led" id="rvDbgLed"></span>DBG<span class="rv-dbg-badge" id="rvDbgBadge">0</span>';
+                        rootDbg.insertBefore(t, rootDbg.firstChild);
+                    }
+                    if (!$('rvDebugPanel')) {
+                        var p = document.createElement('div');
+                        p.id = 'rvDebugPanel';
+                        p.innerHTML = '<div class="rv-dbg-header" id="rvDbgHeader">' +
+                            '<span>DEBUG · Reservas · tab-reservas · RV-v1-DBG</span>' +
+                            '<span class="rv-dbg-controls">' +
+                            '<button type="button" class="rv-dbg-btn" id="rvDbgCopy">Copiar</button>' +
+                            '<button type="button" class="rv-dbg-btn" id="rvDbgClear">Limpiar</button>' +
+                            '<button type="button" class="rv-dbg-btn" id="rvDbgClose">✕</button>' +
+                            '</span></div><div id="rvDebugBody"></div>';
+                        rootDbg.appendChild(p);
+                    }
+                    apilar();
+                }
+                /* RV-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+                   apila: con 16px de alto cabe bajo cualquier otro toggle sin
+                   tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+                   vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+                function apilar() {
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle', 'stDbgToggle']; // serie completa de hermanos
+                    var ocupado = 0;
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = $(ids[i]);
+                        if (!el) { continue; }
+                        var r = el.getBoundingClientRect();
+                        if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                        var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                        if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                    }
+                    var t = $('rvDebugToggle'), p = $('rvDebugPanel');
+                    if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+                }
+                function hora() {
+                    var d = new Date();
+                    function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                    return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+                }
+                var api = {
+                    log: function (txt, nivel) {
+                        var b = $('rvDebugBody'); if (!b) { return; }
+                        var lv = nivel || 'info';
+                        var ln = document.createElement('div');
+                        ln.className = 'rv-dbg-line';
+                        var seguro = String(txt).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                        ln.innerHTML = '<span class="rv-dbg-time">[' + hora() + ']</span>' +
+                            '<span class="rv-dbg-' + lv + '">' + seguro + '</span>';
+                        b.appendChild(ln);
+                        while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                        b.scrollTop = b.scrollHeight;
+                        if (lv === 'err') {
+                            numErr++;
+                            var bd = $('rvDbgBadge');
+                            if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                            var led = $('rvDbgLed');
+                            if (led) { led.classList.add('err'); }
+                        }
+                    },
+                    open: function () {
+                        var p = $('rvDebugPanel'); if (!p) { return; }
+                        p.classList.add('open');
+                        apilar();
+                        var bd = $('rvDbgBadge');
+                        if (bd) { bd.style.display = 'none'; }
+                        var led = $('rvDbgLed');
+                        if (led) { led.classList.remove('err'); }
+                        numErr = 0;
+                    },
+                    close: function () { var p = $('rvDebugPanel'); if (p) { p.classList.remove('open'); } },
+                    togglePanel: function () {
+                        var p = $('rvDebugPanel');
+                        if (p) { (p.classList.contains('open')) ? api.close() : api.open(); }
+                    },
+                    clear: function () { var b = $('rvDebugBody'); if (b) { b.innerHTML = ''; } },
+                    copy: function () {
+                        var b = $('rvDebugBody'); if (!b) { return; }
+                        var txt = '=== DEBUG tab-reservas RV-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                        for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                        if (navigator.clipboard && navigator.clipboard.writeText) {
+                            navigator.clipboard.writeText(txt).then(function () {
+                                api.log('log copiado al portapapeles', 'ok');
+                            }).catch(function () {
+                                api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                            });
+                        } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                    },
+                    ensure: function () { asegurarNodos(); },
+                    alive: function () { return !!$('rvDebugToggle'); }
+                };
+                window.RvDbg = api;
+                return api;
+            })();
+        if (!DBG) { return; }
+        DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+        function dbgLog(level, msg) { if (DBG && DBG.log) { DBG.log(msg, level); } }
 
-        function dbgTogglePanel(forceState) {
-            dbgOpen = (typeof forceState === 'boolean') ? forceState : !dbgOpen;
-            if (dbgOpen) {
-                dbgPanel.classList.add('open');
-                dbgToggle.style.display = 'none';
-            } else {
-                dbgPanel.classList.remove('open');
-                dbgToggle.style.display = 'flex';
-            }
+        function unicarDbg() {
+            /* RV-v1-DBG: el parcial puede renderizarse 2+ veces; el HTML de cada
+               copia trae sus propios nodos DBG → se conservan los del primero y
+               se eliminan los duplicados (un solo toggle/panel por página). */
+            var ts = document.querySelectorAll('#rvDebugToggle');
+            for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
+            var ps = document.querySelectorAll('#rvDebugPanel');
+            for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
         }
-        function dbgLog(level, msg) {
-            /* 🆕 v26 · lookup vivo del body del panel: tras un refresco AJAX el
-               panel viejo se reemplaza; los logs siguen entrando al nuevo. */
-            var bEl = document.getElementById('rvDebugBody');
-            if (!bEl) return;
-            var t = new Date();
-            var time = ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2)+':'+('0'+t.getSeconds()).slice(-2);
-            var div = document.createElement('div');
-            div.className = 'dbg-log ' + (level || 'info');
-            div.innerHTML = '<span class="dbg-time">['+time+']</span> ' + String(msg).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-            bEl.appendChild(div);
-            bEl.scrollTop = bEl.scrollHeight;
-        }
-        if (dbgToggle) dbgToggle.addEventListener('click', function(){ dbgTogglePanel(true); });
-        if (dbgClose) dbgClose.addEventListener('click', function(){ dbgTogglePanel(false); });
-        if (dbgClear) dbgClear.addEventListener('click', function(){ if (dbgBody) dbgBody.innerHTML = ''; });
-        if (dbgHeader) dbgHeader.addEventListener('click', function(e){
-            if (e.target === dbgHeader) dbgTogglePanel(false);
-        });
+        unicarDbg();
+
+        /* Botones del panel por DELEGACIÓN en document (sobreviven a los swaps;
+           el guard __rvDbgDocHandler garantiza que se registran UNA sola vez) */
+        if (window.__rvDbgDocHandler) { document.removeEventListener('click', window.__rvDbgDocHandler); }
+        window.__rvDbgDocHandler = function (e) {
+            var t = e.target;
+            if (!t || !t.closest) { return; }
+            if (t.closest('#rvDebugToggle')) { DBG.togglePanel(); return; }
+            if (t.closest('#rvDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+            if (t.closest('#rvDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+            if (t.closest('#rvDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+        };
+        document.addEventListener('click', window.__rvDbgDocHandler);
+        if (window.__rvDbgDblHandler) { document.removeEventListener('dblclick', window.__rvDbgDblHandler); }
+        window.__rvDbgDblHandler = function (e) {
+            if (e.target && e.target.closest && e.target.closest('#rvDbgHeader')) { DBG.close(); }
+        };
+        document.addEventListener('dblclick', window.__rvDbgDblHandler);
+
+        /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+           toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+        if (window.__rvDbgTabHandler) { document.removeEventListener('shown.bs.tab', window.__rvDbgTabHandler); }
+        window.__rvDbgTabHandler = function () {
+            if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+        };
+        document.addEventListener('shown.bs.tab', window.__rvDbgTabHandler);
+
+        dbgLog('ok', 'RV-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · el panel sobrevive al refresco AJAX (hermano de #rvTabWrap)');
 
         try {
             var phpLogs = JSON.parse(document.getElementById('rvPhpDebug').textContent || '[]');
@@ -1841,20 +1997,110 @@
             });
         });
 
+        /* ═══════════════════════════════════════════════════════════════
+           🆕 v28-DBG · AGENDA DENTRO DEL FRAGMENTO
+           "Consultar" (botón), Enter (input) e "Ir a hoy" (enlace) ya NO
+           recargan el dashboard: re-piden SOLO este partial al endpoint
+           reservasFragmento (data-fragmento de #rvTabWrap) con agenda_fecha
+           ajustada y reemplazan el wrap en caliente — el mismo mecanismo
+           del alta de reservas (v26). El dashboard, el calendario grande y
+           el panel de debug quedan vivos; cada paso queda en el panel DBG.
+           Fallback: navegación completa con el parámetro si la ruta del
+           fragmento no existe o el fetch falla (comportamiento anterior).
+           ═══════════════════════════════════════════════════════════════ */
         var agDate = document.getElementById('agendaFechaInput');
         var agGo   = document.getElementById('agendaConsultarBtn');
-        function irAFechaAgenda() {
+        var agHoy  = document.getElementById('agendaHoyBtn');
+
+        /* URL del dashboard con agenda_fecha ajustada (fallback de navegación) */
+        function urlNavegacionAgenda(fechaIso) {
             try {
                 var url = new URL(window.location.href);
-                if (agDate && agDate.value) { url.searchParams.set('agenda_fecha', agDate.value); }
+                if (fechaIso) { url.searchParams.set('agenda_fecha', fechaIso); }
                 else { url.searchParams.delete('agenda_fecha'); }
-                window.location.href = url.toString();
-            } catch (e) { window.location.reload(); }
+                return url.toString();
+            } catch (e) { return null; }
+        }
+
+        function recargarAgendaFragmento(fechaIso) {
+            var wrap = document.getElementById('rvTabWrap');
+            var fragUrl = wrap ? (wrap.getAttribute('data-fragmento') || '') : '';
+            /* Sin ruta de fragmento → navegación completa (como antes) */
+            if (!fragUrl) {
+                dbgLog('warn', 'Agenda: ruta de fragmento no disponible → navegación completa (agenda_fecha=' + (fechaIso || 'hoy') + ')');
+                var urlNav = urlNavegacionAgenda(fechaIso);
+                if (urlNav) { window.location.href = urlNav; } else { window.location.reload(); }
+                return;
+            }
+            var params = new URLSearchParams(window.location.search || '');
+            if (fechaIso) { params.set('agenda_fecha', fechaIso); }
+            else { params.delete('agenda_fecha'); }
+            var qs = params.toString();
+            var url = fragUrl + (qs ? '?' + qs : '');
+            dbgLog('net', 'Agenda · refresco SOLO del tab → ' + url);
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+                .then(function (resp) {
+                    if (!resp.ok) {
+                        /* v26.1 · extrae el mensaje REAL del backend si viene */
+                        return resp.text().then(function (bt) {
+                            var er = new Error('HTTP ' + resp.status);
+                            er.__body = bt || '';
+                            throw er;
+                        });
+                    }
+                    return resp.text();
+                })
+                .then(function (html) {
+                    var doc = new DOMParser().parseFromString(html, 'text/html');
+                    var fresh = doc.getElementById('rvTabWrap');
+                    if (!fresh) { throw new Error('#rvTabWrap no vino en la respuesta'); }
+                    var mainJs = '';
+                    fresh.querySelectorAll('script').forEach(function (s) {
+                        if (!mainJs && !s.getAttribute('type') && (s.textContent || '').indexOf('rvTabInit') !== -1) { mainJs = s.textContent; }
+                    });
+                    var target = document.getElementById('rvTabWrap');
+                    if (!target) { throw new Error('#rvTabWrap desapareció del documento'); }
+                    target.replaceWith(fresh);
+                    if (mainJs) {
+                        var sc = document.createElement('script');
+                        sc.textContent = mainJs;
+                        document.body.appendChild(sc);
+                        sc.remove();
+                    }
+                    try { limpiarOverlaysHuerfanos(); } catch (eL1) {}
+                    try { if (window.rsvCalendar && typeof window.rsvCalendar.refetchEvents === 'function') { window.rsvCalendar.refetchEvents(); } } catch (eL2) {}
+                    try { if (window.RvDbg && window.RvDbg.ensure) { window.RvDbg.ensure(); } } catch (eL3) {}
+                    dbgLog('ok', '✅ Agenda · ' + (fechaIso ? 'fecha ' + fechaIso : 'hoy') + ' · tab refrescado SIN recargar el dashboard');
+                    toastRv(fechaIso ? ('Agenda · ' + fechaIso) : 'Agenda · hoy');
+                })
+                .catch(function (err) {
+                    var detalle = extraerMensajeError500(err && err.__body ? err.__body : '', err);
+                    dbgLog('err', '<b>Agenda FAIL</b>: ' + esc(detalle));
+                    dbgLog('warn', 'Agenda: caigo a navegación completa con agenda_fecha=' + (fechaIso || 'hoy'));
+                    var urlNav = urlNavegacionAgenda(fechaIso);
+                    if (urlNav) { window.location.href = urlNav; } else { window.location.reload(); }
+                });
+        }
+
+        function irAFechaAgenda() {
+            var val = (agDate && agDate.value) ? agDate.value : '';
+            if (!val) { dbgLog('debug', 'Agenda: sin fecha en el input → se consulta HOY'); }
+            recargarAgendaFragmento(val || null);
         }
         if (agGo) { agGo.addEventListener('click', irAFechaAgenda); }
         if (agDate) {
             agDate.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') { e.preventDefault(); irAFechaAgenda(); }
+            });
+        }
+        /* "Ir a hoy" · con ruta de fragmento refresca SOLO el tab; sin ruta
+           deja navegar el href completo del enlace (como siempre). */
+        if (agHoy) {
+            agHoy.addEventListener('click', function (e) {
+                var wrapHoy = document.getElementById('rvTabWrap');
+                var fragHoy = wrapHoy ? (wrapHoy.getAttribute('data-fragmento') || '') : '';
+                if (fragHoy) { e.preventDefault(); recargarAgendaFragmento(null); }
+                else { dbgLog('warn', 'Agenda: sin ruta de fragmento · "Ir a hoy" navega la página completa'); }
             });
         }
 
@@ -3078,13 +3324,9 @@ function refrescarSoloTab(nueva, payload) {
     }
     var url = fragUrl + (window.location.search || '');
     dbgLog('info', '<b>Refresco AJAX del tab</b> → ' + url);
-    var oldLogs = '', panelOpen = false;
-    try {
-        var op = document.getElementById('rvDebugPanel');
-        var ob = document.getElementById('rvDebugBody');
-        panelOpen = !!(op && op.classList.contains('open'));
-        if (ob) { oldLogs = ob.innerHTML; }
-    } catch (e) {}
+    /* 🆕 v27-DBG · El panel DBG es HERMANO de #rvTabWrap: el swap no lo
+       toca, así que sus logs y su estado abierto/cerrado sobreviven solos
+       (ya no hace falta el parche de restauración de v26). */
     fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
         .then(function (resp) {
             if (!resp.ok) {
@@ -3116,12 +3358,7 @@ function refrescarSoloTab(nueva, payload) {
             }
             try { limpiarOverlaysHuerfanos(); } catch (e) {}
             try { if (window.rsvCalendar && typeof window.rsvCalendar.refetchEvents === 'function') { window.rsvCalendar.refetchEvents(); } } catch (e) {}
-            try {
-                var nb = document.getElementById('rvDebugBody');
-                if (nb && oldLogs) { nb.innerHTML = oldLogs + nb.innerHTML; nb.scrollTop = nb.scrollHeight; }
-                var np = document.getElementById('rvDebugPanel');
-                if (np && panelOpen) { np.classList.add('open'); }
-            } catch (e) {}
+            try { if (window.RvDbg && window.RvDbg.ensure) { window.RvDbg.ensure(); } } catch (e) {}
             dbgLog('ok', '✅ tab-reservas actualizado por AJAX · dashboard intacto (sin reload)');
             toastRv('Reserva creada · tab actualizado');
         })
@@ -3267,7 +3504,7 @@ function abrirDetalleReserva(cod) {
    SOBREVIVE a los refrescos AJAX (se registra UNA sola vez), así que
    debe llamar siempre a las funciones del closure VIGENTE (DS fresco),
    no a las del closure viejo que quedó huérfano tras el swap. */
-window.rsvTabApi = { abrirDetalleReserva: abrirDetalleReserva, dbgLog: dbgLog };
+window.rsvTabApi = { abrirDetalleReserva: abrirDetalleReserva, dbgLog: dbgLog, recargarAgendaFragmento: recargarAgendaFragmento };
 
 if (!window.__rvDetailClickBound) {
     window.__rvDetailClickBound = true;
@@ -3304,6 +3541,7 @@ if (!window.__rvDetailClickBound) {
            Detalle (reemplazar el archivo y recargar con Ctrl+F5). */
         dbgLog('ok', '🆕 v25.3 activo · ' + document.querySelectorAll('.rv-detail').length + ' botón(es) Detalle enlazado(s) en la tabla');
         dbgLog('ok', '🆕 v26.1 activo · refresco parcial por AJAX + fallback local si el fragmento falla');
+        dbgLog('ok', '🆕 v28-DBG activo · agenda dentro del fragmento (Consultar / Enter / Ir a hoy refrescan SOLO el tab)');
     }
 
     /* 🆕 v26 · Bootstrap re-ejecutable: la primera carga pasa por

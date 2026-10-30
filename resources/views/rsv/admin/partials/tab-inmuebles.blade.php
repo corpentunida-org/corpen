@@ -1,7 +1,26 @@
-{{-- resources/views/rsv/admin/partials/inmuebles/show.blade.php --}}
+{{-- resources/views/rsv/admin/partials/tab-inmuebles.blade.php · INM-v3-DBG · NIVEL 2 (tab de inmuebles del dashboard) --}}
+{{-- INM-v3-DBG · CAMBIO INM-v3-1 · Panel de debug rediseñado con el estilo "terminal" aprobado (mismo de TIP-v1.3): --}}
+{{--    la pestaña circular 🐛 de 40px pasa a TAB DBG textual de 16px de alto (monospace 8px + LED de estado --}}
+{{--    verde/rojo pulsante + badge numérico), fundida SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0 --}}
+{{--    · nunca se apila hacia arriba) y el panel abre como CAJÓN pegado al mismo borde (radius solo sup-izq, --}}
+{{--    bordes solo arriba/izquierda). El apilado con los demás toggles de la página se mide en px REALES --}}
+{{--    (getBoundingClientRect · ocultos 0×0 descartados) y la regla exacta vive como "SPEC DE DISTANCIAS" --}}
+{{--    dentro del CSS. La pestaña sigue siendo LOCAL de esta vista: muere con el fragmento, no captura --}}
+{{--    errores ajenos y el panel sigue registrando SOLO operaciones de tab-inmuebles. --}}
+{{-- NOVEDADES v2 · 3) AUTO-TAB: si la página llega por navegación normal con ?inmueble_id=... --}}
+{{--    (p.ej. tras un "Gestionar" que recargó todo), el tab que contiene esta vista se activa SOLO y la --}}
+{{--    ficha queda visible sin buscar el tab a mano. Si la vista no vive en un .tab-pane queda log en el panel. --}}
+{{--    4) El apilado del panel también cuenta al panel del catálogo (catDbgToggle). --}}
+{{-- NOVEDADES v1 · 1) Navegación SIN recarga: los enlaces internos de #showRoot que apuntan al dashboard con --}}
+{{--    inmueble_id (botón "Gestionar" y "Volver al Catálogo") se abren por AJAX: fetch al fragmento admin.inmuebles.fragmento --}}
+{{--    + swap de #showRoot; si el fragmento falla, respaldo de navegación nativa. 2) Panel de Errores LOCAL estilo Huéspedes --}}
+{{--    (pestaña abajo-derecha + Copiar/Limpiar/cerrar): registra SOLO operaciones de esta vista; el colector de contexto del --}}
+{{--    servidor (marca INM-v3-DBG) viaja al panel como JSON. --}}
+{{-- Arquitectura: el script viaja DENTRO de #showRoot (renace con listeners tras cada swap) y el panel va ANTES del root --}}
+{{-- (sobrevive a swaps y evita duplicados). Tras cada swap se dispara el evento document "rsv:inmueble-cambiado" con --}}
+{{-- detail.inmuebleId por si el dashboard quiere refrescar otras zonas. --}}
 {{-- MODO GLOBAL = tabla resumen con TODAS las relaciones + botón Gestionar --}}
-{{-- MODO INDIVIDUAL = expediente SOLO LECTURA (tarifa/galeria se incluyen con --}}
-{{-- soloLectura=true: aparecen las tablas, JAMÁS los botones de acciones)     --}}
+{{-- MODO INDIVIDUAL = expediente SOLO LECTURA (tarifa/galeria se incluyen con soloLectura=true: tablas, sin botones) --}}
 
 @php
     // ── Detección de modo (idéntico a tarifas) ──
@@ -264,7 +283,39 @@
     .show-soft [data-bs-toggle="collapse"][aria-expanded="false"] .m1-chev { transform: rotate(-90deg); }
 </style>
 
-<div id="showRoot" class="show-soft">
+@php
+    // ── INM-v3-DBG · colector de contexto del servidor (solo lectura, sin lógica de negocio) ──
+    $inmDbg = [
+        'marca'       => 'INM-v3-DBG',
+        'vista'       => 'rsv.admin.partials.tab-inmuebles',
+        'url'         => url()->full(),
+        'peticion'    => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
+        'modoGlobal'  => $modoGlobal,
+        'expedientes' => $modoGlobal
+            ? (isset($expedientes) && $expedientes
+                ? (method_exists($expedientes, 'total') ? $expedientes->total() : $expedientes->count())
+                : 0)
+            : 0,
+        'inmuebleId'  => isset($inmueble) && $inmueble ? $inmueble->id : null,
+        'errores'     => [],
+    ];
+@endphp
+
+{{-- INM-v3-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps · NO global) --}}
+<div id="inmDbgToggle" title="Debug Inmuebles (INM-v3-DBG)"><span class="inm-dbg-led" id="inmDbgLed"></span>DBG<span class="inm-dbg-badge" id="inmDbgBadge">0</span></div>
+<div id="inmDbgPanel" role="dialog" aria-label="Panel de debug de Inmuebles">
+    <div class="inm-dbg-header" id="inmDbgHeader">
+        <span>DEBUG · Inmuebles (N2) · INM-v3-DBG</span>
+        <span class="inm-dbg-controls">
+            <button type="button" class="inm-dbg-btn" id="inmDbgCopy">Copiar</button>
+            <button type="button" class="inm-dbg-btn" id="inmDbgClear">Limpiar</button>
+            <button type="button" class="inm-dbg-btn" id="inmDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="inmDbgBody"></div>
+</div>
+
+<div id="showRoot" class="show-soft" data-frag="{{ route('rsv.admin.inmuebles.fragmento') }}" data-dash="{{ route('rsv.admin.dashboard') }}">
 
 @if($modoGlobal)
 
@@ -278,6 +329,7 @@
             <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
                 <i class="bi bi-houses me-1" style="font-size: 8px; color: #5d8a70;"></i>
                 Visión Global de Expedientes
+                <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">INM-v3-DBG</span>
             </h6>
 
             <span class="sh-chip tipo" style="font-size: 7.5px;">
@@ -451,7 +503,7 @@
     <div class="sh-titlebar">
         <div>
             <span class="sh-live mb-1"><span class="pulse"></span> EXPEDIENTE #{{ $inmueble->id }}</span>
-            <div class="strong">Panel de Gestión: {{ $inmueble->name }}</div>
+            <div class="strong">Panel de Gestión: {{ $inmueble->name }} <span class="badge rounded-pill ms-1" style="font-size:6px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">INM-v3-DBG</span></div>
             <div class="sub">Vista informativa: identidad, tarifas y fotos del inmueble</div>
         </div>
         <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => 'todos']) }}" class="btn-soft">
@@ -680,5 +732,299 @@
     </div>
 
 @endif
+
+    <script>
+    /* ═══════════════ INM-v3-DBG · tab-inmuebles · NIVEL 2 ═══════════════
+       Script LOCAL de esta vista: viaja DENTRO de #showRoot, por lo que se
+       re-ejecuta tras cada swap AJAX y renace con sus listeners.
+       NO captura fetch ni errores de otros módulos de la página.          */
+    (function () {
+        var root = document.getElementById('showRoot');
+        if (!root) { return; }
+
+        var FRAG = root.getAttribute('data-frag') || '';
+        var DASH = root.getAttribute('data-dash') || '';
+        var SRVDBG = @json($inmDbg);
+
+        /* ═══ 1) PANEL DE DEBUG LOCAL (tab terminal · estilo TIP-v1.3) ═══ */
+        var DBG = (window.InmDbg && window.InmDbg.alive && window.InmDbg.alive())
+            ? window.InmDbg
+            : (function () {
+                var MAX = 250, numErr = 0;
+                function $(id) { return document.getElementById(id); }
+                function asegurarCSS() {
+                    if ($('inmDbgStyle')) { return; }
+                    var st = document.createElement('style');
+                    st.id = 'inmDbgStyle';
+                    st.textContent = [
+                        /* ═════════ SPEC DE DISTANCIAS · INM-v3 (tab terminal · patrón TIP-v1.3) ════════
+                           TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la
+                                       esquina inferior-derecha (nunca sube: con
+                                       16px de alto cabe bajo cualquier otro toggle)
+                                     · altura fija 16px · padding lateral 8px
+                                     · radius 3px solo sup-izq · borde 1px arriba/izq
+                                     · monospace 8px · LED 5px (verde ok / rojo error)
+                           PANEL     · right:0px · bottom = max(20, vecino + 4px)
+                                       (20 = 16 de tab + 4 de aire mínimo)
+                                       · ancho 380px · radius 6px 0 0 0 (cajón pegado) */
+                        '#inmDbgToggle{position:fixed;right:0;bottom:0;z-index:1090;height:16px;padding:0 8px;',
+                        'border-radius:3px 0 0 0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
+                        'background:rgba(2,6,23,.94);color:#64748b;',
+                        'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;',
+                        'font-size:8px;font-weight:700;letter-spacing:.18em;line-height:1;',
+                        'cursor:pointer;display:flex;align-items:center;gap:5px;',
+                        'user-select:none;-webkit-user-select:none;',
+                        'transition:color .15s ease,background .15s ease,box-shadow .15s ease;}',
+                        '#inmDbgToggle:hover{color:#38bdf8;border-color:#334155;',
+                        'background:rgba(8,15,30,.97);box-shadow:0 0 12px rgba(56,189,248,.12);}',
+                        '.inm-dbg-led{width:5px;height:5px;border-radius:1px;flex-shrink:0;',
+                        'background:#10b981;box-shadow:0 0 5px rgba(16,185,129,.75);}',
+                        '.inm-dbg-led.err{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.85);',
+                        'animation:inmDbgBlink 1s steps(2,start) infinite;}',
+                        '@keyframes inmDbgBlink{50%{opacity:.35;}}',
+                        '.inm-dbg-badge{display:none;color:#f87171;font-size:8px;',
+                        'font-weight:700;line-height:1;letter-spacing:0;}',
+                        '#inmDbgPanel{position:fixed;right:0;bottom:20px;z-index:1091;width:380px;',
+                        'max-width:calc(100vw - 16px);max-height:60vh;display:none;flex-direction:column;',
+                        'background:rgba(2,6,23,.97);color:#e2e8f0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
+                        'border-radius:6px 0 0 0;box-shadow:0 12px 32px rgba(0,0,0,.55);overflow:hidden;',
+                        'font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}',
+                        '.inm-dbg-header{display:flex;justify-content:space-between;align-items:center;gap:6px;',
+                        'padding:5px 8px;background:#0b1220;border-bottom:1px solid #1e293b;',
+                        'font-size:9px;font-weight:700;letter-spacing:.1em;color:#38bdf8;cursor:pointer;}',
+                        '.inm-dbg-controls{display:flex;gap:4px;}',
+                        '.inm-dbg-btn{background:#334155;color:#e2e8f0;border:0;border-radius:4px;',
+                        'font-size:9px;padding:2px 7px;cursor:pointer;font-family:inherit;}',
+                        '.inm-dbg-btn:hover{background:#475569;}',
+                        '#inmDbgBody{overflow-y:auto;padding:6px 8px;font-size:9.5px;line-height:1.55;}',
+                        '.inm-dbg-line{white-space:pre-wrap;word-break:break-word;padding:2px 0;',
+                        'border-bottom:1px dashed #1e293b;}',
+                        '.inm-dbg-time{color:#64748b;margin-right:4px;}',
+                        '.inm-dbg-info{color:#93c5fd;}.inm-dbg-ok{color:#86efac;}',
+                        '.inm-dbg-warn{color:#fde68a;}.inm-dbg-err{color:#fca5a5;}',
+                        '.inm-dbg-net{color:#c4b5fd;}.inm-dbg-debug{color:#94a3b8;}'
+                    ].join('\n');
+                    document.head.appendChild(st);
+                }
+                function asegurarNodos() {
+                    if (!$('inmDbgToggle')) {
+                        var t = document.createElement('div');
+                        t.id = 'inmDbgToggle';
+                        t.title = 'Debug Inmuebles (INM-v3-DBG)';
+                        t.innerHTML = '<span class="inm-dbg-led" id="inmDbgLed"></span>DBG<span class="inm-dbg-badge" id="inmDbgBadge">0</span>';
+                        document.body.appendChild(t);
+                    }
+                    if (!$('inmDbgPanel')) {
+                        var p = document.createElement('div');
+                        p.id = 'inmDbgPanel';
+                        p.innerHTML = '<div class="inm-dbg-header" id="inmDbgHeader">' +
+                            '<span>DEBUG · Inmuebles (N2) · INM-v3-DBG</span>' +
+                            '<span class="inm-dbg-controls">' +
+                            '<button type="button" class="inm-dbg-btn" id="inmDbgCopy">Copiar</button>' +
+                            '<button type="button" class="inm-dbg-btn" id="inmDbgClear">Limpiar</button>' +
+                            '<button type="button" class="inm-dbg-btn" id="inmDbgClose">✕</button>' +
+                            '</span></div><div id="inmDbgBody"></div>';
+                        document.body.appendChild(p);
+                    }
+                    apilar();
+                }
+                /* INM-v3: la TAB se queda SIEMPRE abajo (bottom:0, nunca se apila:
+                   con 16px de alto cabe bajo cualquier otro toggle sin tocarlo).
+                   Solo el PANEL esquiva a los vecinos: bottom = max(20, vecino + 4). */
+                function apilar() {
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle']; /* serie TAR/GM/TIP */
+                    var ocupado = 0;
+                    for (var i = 0; i < ids.length; i++) {
+                        var el = $(ids[i]);
+                        if (!el) { continue; }
+                        var r = el.getBoundingClientRect();
+                        if (!r.width && !r.height) { continue; } /* display:none no ocupa sitio */
+                        var desdeAbajo = window.innerHeight - r.top; /* cuánto sube ese vecino desde el fondo */
+                        if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                    }
+                    var t = $('inmDbgToggle'), p = $('inmDbgPanel');
+                    if (t) { t.style.bottom = '0px'; } /* SI O SI pegada abajo */
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } /* 16 tab + 4 aire */
+                }
+                function hora() {
+                    var d = new Date();
+                    function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                    return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+                }
+                var api = {
+                    log: function (txt, nivel) {
+                        var b = $('inmDbgBody'); if (!b) { return; }
+                        var lv = nivel || 'info';
+                        var ln = document.createElement('div');
+                        ln.className = 'inm-dbg-line';
+                        var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                            return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                        });
+                        ln.innerHTML = '<span class="inm-dbg-time">[' + hora() + ']</span>' +
+                            '<span class="inm-dbg-' + lv + '">' + seguro + '</span>';
+                        b.appendChild(ln);
+                        while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                        b.scrollTop = b.scrollHeight;
+                        if (lv === 'err') {
+                            numErr++;
+                            var bd = $('inmDbgBadge');
+                            if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                            var led = $('inmDbgLed');
+                            if (led) { led.classList.add('err'); }
+                        }
+                    },
+                    open: function () {
+                        var p = $('inmDbgPanel'); if (!p) { return; }
+                        p.style.display = 'flex';
+                        apilar();
+                        var bd = $('inmDbgBadge');
+                        if (bd) { bd.style.display = 'none'; }
+                        var led = $('inmDbgLed');
+                        if (led) { led.classList.remove('err'); }
+                        numErr = 0;
+                    },
+                    close: function () { var p = $('inmDbgPanel'); if (p) { p.style.display = 'none'; } },
+                    togglePanel: function () {
+                        var p = $('inmDbgPanel');
+                        if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                    },
+                    clear: function () { var b = $('inmDbgBody'); if (b) { b.innerHTML = ''; } },
+                    alive: function () { return !!$('inmDbgToggle'); }
+                };
+                asegurarCSS();
+                asegurarNodos();
+                $('inmDbgToggle').addEventListener('click', api.togglePanel);
+                $('inmDbgClose').addEventListener('click', function (e2) { e2.stopPropagation(); api.close(); });
+                $('inmDbgClear').addEventListener('click', function (e2) { e2.stopPropagation(); api.clear(); });
+                $('inmDbgCopy').addEventListener('click', function (e2) {
+                    e2.stopPropagation();
+                    var b = $('inmDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG tab-inmuebles INM-v3-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                });
+                $('inmDbgHeader').addEventListener('dblclick', api.close);
+                window.InmDbg = api;
+                return api;
+            })();
+        if (!DBG) { return; }
+
+        /* ═══ 2) BOOT · contexto del servidor (como el Panel de Huéspedes) ═══ */
+        DBG.log('INM-v3-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · panel LOCAL (solo tab-inmuebles · NO captura errores ajenos)', 'ok');
+        DBG.log('init · modo=' + (SRVDBG && SRVDBG.modoGlobal ? 'GLOBAL (grid de expedientes)' : 'INDIVIDUAL (ficha solo lectura)') +
+            ' · expedientes=' + (SRVDBG ? SRVDBG.expedientes : '?') +
+            (SRVDBG && SRVDBG.inmuebleId ? ' · inmuebleSel=' + SRVDBG.inmuebleId : ''), 'info');
+        DBG.log('SRV · peticion=' + (SRVDBG && SRVDBG.peticion ? SRVDBG.peticion : '?') +
+            ' · url=' + (SRVDBG && SRVDBG.url ? SRVDBG.url : '?'), 'debug');
+        DBG.log('Rutas · FRAG=' + (FRAG || 'NO') + ' · DASH=' + (DASH || 'NO') +
+            (FRAG ? ' · navegación interna por AJAX activa' : ' → FRAG vacío: los enlaces navegarán normal (sin swap)'), FRAG ? 'ok' : 'warn');
+        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+                DBG.log('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            }
+        }
+
+        /* ═══ 2b) AUTO-TAB (heredado de la v2) · AUTO-ACTIVAR EL TAB propio al llegar por navegación normal ═══
+           Con ?inmueble_id=... en la URL (p.ej. tras un "Gestionar" que recargó la página),
+           el navegador cae en el tab "inicio"; aquí activamos el tab que contiene esta
+           vista para que la ficha quede visible de inmediato. En swaps AJAX el tab ya
+           está activo → no hace nada.                                                       */
+        try {
+            var __q = new URLSearchParams(window.location.search || '');
+            if (__q.has('inmueble_id')) {
+                var __pane = root.closest('.tab-pane');
+                if (__pane && __pane.id && !__pane.classList.contains('active')) {
+                    var __link = document.querySelector('[data-bs-target="#' + __pane.id + '"], [href="#' + __pane.id + '"]');
+                    if (__link && typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+                        bootstrap.Tab.getOrCreateInstance(__link).show();
+                        DBG.log('auto-tab · tab #' + __pane.id + ' activado (llegada con inmueble_id=' + __q.get('inmueble_id') + ')', 'ok');
+                    } else {
+                        DBG.log('auto-tab · tab #' + __pane.id + ' NO activado (falta el enlace del nav o bootstrap.Tab)', 'debug');
+                    }
+                }
+            }
+        } catch (eAT) { DBG.log('auto-tab omitido (' + eAT.message + ')', 'debug'); }
+
+        /* ═══ 3) NAVEGACIÓN SIN RECARGA · Gestionar / Volver al Catálogo ═══ */
+        function inmRunScripts(scope) {
+            var scripts = scope.querySelectorAll('script');
+            for (var i = 0; i < scripts.length; i++) {
+                var viejo = scripts[i];
+                var nuevo = document.createElement('script');
+                for (var j = 0; j < viejo.attributes.length; j++) {
+                    nuevo.setAttribute(viejo.attributes[j].name, viejo.attributes[j].value);
+                }
+                nuevo.textContent = viejo.textContent;
+                viejo.parentNode.replaceChild(nuevo, viejo);
+            }
+        }
+        function extraerErrorLaravel(html) {
+            var m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+            if (m) { return m[1]; }
+            m = html.match(/<h1[^>]*>([\s\S]{0,160}?)<\/h1>/i);
+            if (m) { return m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); }
+            return '';
+        }
+        function inmCargarFragmento(rid, urlDestino) {
+            var url = FRAG + (FRAG.indexOf('?') === -1 ? '?' : '&') + 'inmueble_id=' + encodeURIComponent(rid);
+            DBG.log('clic interno → inmueble_id=' + rid + ' (cargando por AJAX, sin recargar la página)', 'info');
+            DBG.log('fetch ' + url, 'net');
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+                credentials: 'same-origin'
+            }).then(function (r) {
+                if (!r.ok) {
+                    return r.text().then(function (t) {
+                        var det = extraerErrorLaravel(t);
+                        throw new Error('HTTP ' + r.status + (det ? ' · ' + det : ''));
+                    });
+                }
+                return r.text();
+            }).then(function (html) {
+                var tmp = document.createElement('div');
+                tmp.innerHTML = html;
+                var nuevo = tmp.querySelector('#showRoot');
+                if (!nuevo) { throw new Error('el fragmento no trajo #showRoot'); }
+                var actual = document.getElementById('showRoot');
+                if (!actual) { throw new Error('#showRoot actual no está en el DOM'); }
+                actual.replaceWith(nuevo);
+                inmRunScripts(nuevo);
+                try { window.history.pushState({}, '', urlDestino); } catch (e3) {}
+                try { document.dispatchEvent(new CustomEvent('rsv:inmueble-cambiado', { detail: { inmuebleId: rid } })); } catch (e4) {}
+                DBG.log('fragmento inmuebles recargado · ' + html.length + ' bytes · sin recargar la página', 'ok');
+            }).catch(function (e2) {
+                DBG.log('⚠ swap falló (' + e2.message + ') → respaldo: navegación nativa', 'err');
+                DBG.open();
+                window.location.href = urlDestino;
+            });
+        }
+        /* Handler RE-REGISTRABLE: al re-ejecutarse el script tras cada swap,
+           quita el oyente anterior y registra uno nuevo (sin acumular).      */
+        if (window.__inmLinkHandler) { document.removeEventListener('click', window.__inmLinkHandler, true); }
+        window.__inmLinkHandler = function (e) {
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) { return; }
+            if (!FRAG || !DASH) { return; }
+            var a = (e.target && e.target.closest) ? e.target.closest('a[href]') : null;
+            if (!a || a.target === '_blank' || a.hasAttribute('download')) { return; }
+            if (!a.closest('#showRoot')) { return; } /* solo enlaces de ESTA vista */
+            var href = a.getAttribute('href') || '';
+            if (!href || href.charAt(0) === '#') { return; }
+            var u; try { u = new URL(a.href, window.location.href); } catch (e0) { return; }
+            var dash; try { dash = new URL(DASH, window.location.href); } catch (e5) { return; }
+            if (u.pathname !== dash.pathname) { return; }
+            var rid = u.searchParams.has('inmueble_id') ? u.searchParams.get('inmueble_id') : 'todos';
+            e.preventDefault();
+            inmCargarFragmento(rid, u.pathname + '?inmueble_id=' + encodeURIComponent(rid));
+        };
+        document.addEventListener('click', window.__inmLinkHandler, true);
+        DBG.log('interceptor de enlaces listo (Gestionar / Volver al Catálogo → swap AJAX de #showRoot)', 'debug');
+    })();
+    </script>
 
 </div>

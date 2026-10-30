@@ -1,9 +1,50 @@
-{{-- partials/finanzas/pasarela.blade.php · diseño reservas-soft v2 --}}
-{{-- · CRUD 100% Bootstrap/Blade (funciona incluso sin JS) + AJAX opcional --}}
-{{-- · Refresca TODAS las copias de #sheet-pasarelas (parcial incluido 2+ veces) --}}
-{{-- · Colores normalizados (evita warnings de <input type="color">)         --}}
+{{-- ============================================================================
+     RSV · ADMIN · FINANZAS · PASARELAS · PS-v1-DBG
+     Parcial: resources/views/rsv/admin/partials/finanzas/pasarela.blade.php
+
+     · CRUD 100% Bootstrap/Blade (funciona incluso sin JS) + AJAX opcional
+     · Refresca TODAS las copias de #sheet-pasarelas (parcial incluido 2+ veces)
+     · Colores normalizados (evita warnings de <input type="color">)
+
+     · PANEL DE DEBUG (CAMBIO PS-v1-DBG · diseño TIP-v1.3 aprobado): pestaña
+       terminal "DBG" de 16px fija SIEMPRE en la esquina inferior-derecha
+       (right:0 · bottom:0, radius 3px solo superior-izquierdo) con LED de
+       estado (verde = ok · rojo pulsante + conteo = errores) y panel cajón
+       de 380px alineado al mismo borde. La regla exacta de distancias está
+       documentada como "SPEC DE DISTANCIAS" dentro del CSS, y el panel
+       esquiva a los toggles hermanos de las otras vistas midiendo píxeles
+       reales (getBoundingClientRect · bottom = max(20, vecino + 4)).
+       Exclusivo de este fragmento: el toggle y el panel nacen y mueren con
+       cada copia de la hoja (el refresco AJAX las reemplaza enteras y los
+       nodos renacen con el HTML nuevo) y unicarDbg() deduplica dejando UN
+       solo toggle/panel por página. Nada se cuelga de document.body.
+       Telemetría que reporta: pasarelas cargadas, rutas centralizadas
+       (store/base/fragmento), envíos AJAX (crear/editar/eliminar),
+       validación 422, refresco del fragmento, filtro de búsqueda y
+       errores de red.
+     · RUTAS centralizadas en el bloque php del servidor (store/base/fragmento)
+       y el script consume la misma variable (una sola fuente de verdad).
+     · NOTA: los comentarios nombran las directivas de Blade SIN arroba
+       (p.ej. "la directiva json de Blade"): Blade compila a nivel de texto
+       aunque estén dentro de comentarios y una arroba pelada rompe la
+       compilación (lección BLQ-v1-2).
+     ============================================================================ --}}
 
 <div id="sheet-pasarelas">
+
+    {{-- PS-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3 · vive y muere con esta copia · unicarDbg deja un solo par por página) --}}
+    <div id="psDbgToggle" title="Debug Pasarelas (PS-v1-DBG)"><span class="ps-dbg-led" id="psDbgLed"></span>DBG<span class="ps-dbg-badge" id="psDbgBadge">0</span></div>
+    <div id="psDbgPanel" role="dialog" aria-label="Panel de debug de Pasarelas">
+        <div class="ps-dbg-header" id="psDbgHeader">
+            <span>DEBUG · Pasarelas de Pago · PS-v1-DBG</span>
+            <span class="ps-dbg-controls">
+                <button type="button" class="ps-dbg-btn" id="psDbgCopy">Copiar</button>
+                <button type="button" class="ps-dbg-btn" id="psDbgClear">Limpiar</button>
+                <button type="button" class="ps-dbg-btn" id="psDbgClose">✕</button>
+            </span>
+        </div>
+        <div id="psDbgBody"></div>
+    </div>
 
     <div class="reservas-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
@@ -34,6 +75,38 @@
 
             @keyframes destelloFila { 0%,100% { background-color: transparent; } 35% { background-color: rgba(61,122,92,.16); } }
             .reservas-soft tr.fila-nueva > td { animation: destelloFila 1.5s ease; }
+
+            /* ═════════ SPEC DE DISTANCIAS · PS-v1-DBG (tab terminal TIP-v1.3) ═════════
+               TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                           inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                           cualquier otro toggle sin tocarlo)
+                         · altura fija 16px · padding lateral 8px
+                         · radius 3px solo sup-izq · borde 1px arriba/izq
+                         · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+               PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                           reales con getBoundingClientRect (los toggles ocultos 0×0
+                           no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                         · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
+               UNICIDAD  · este parcial puede renderizarse 2+ veces en la página: los
+                           nodos nacen y mueren con cada copia y unicarDbg() deja UN
+                           solo toggle/panel (los duplicados se eliminan al vuelo). */
+            #psDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+            #psDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+            .ps-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+            .ps-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: psDbgBlink 1s steps(2,start) infinite; }
+            @keyframes psDbgBlink { 50% { opacity: .35; } }
+            .ps-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+            #psDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .ps-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+            .ps-dbg-controls { display: flex; gap: 4px; }
+            .ps-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+            .ps-dbg-btn:hover { background: #475569; }
+            #psDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+            .ps-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+            .ps-dbg-time { color: #64748b; margin-right: 4px; }
+            .ps-dbg-info { color: #93c5fd; } .ps-dbg-ok { color: #86efac; }
+            .ps-dbg-warn { color: #fde68a; } .ps-dbg-err { color: #fca5a5; }
+            .ps-dbg-net { color: #c4b5fd; } .ps-dbg-debug { color: #94a3b8; }
         </style>
 
         @php
@@ -41,6 +114,7 @@
 
             $psStore = \Illuminate\Support\Facades\Route::has('rsv.pasarelas.store') ? route('rsv.pasarelas.store') : null;
             $psBase  = \Illuminate\Support\Facades\Route::has('rsv.pasarelas.index') ? route('rsv.pasarelas.index') : null;
+            $psFragmento = \Illuminate\Support\Facades\Route::has('rsv.admin.pasarelas.fragmento') ? route('rsv.admin.pasarelas.fragmento') : null;
 
             $psColor = function ($color) {
                 $c = strtoupper(trim((string) $color));
@@ -55,6 +129,21 @@
                 } catch (\Throwable $e) {}
                 return null;
             };
+
+            /* ── Colector del panel de debug (PS-v1-DBG) · via al panel vía la directiva json de Blade ── */
+            $psDbg = [
+                'version'   => 'PS-v1-DBG',
+                'vista'     => 'partials/finanzas/pasarela.blade.php',
+                'render'    => now()->format('H:i:s'),
+                'pasarelas' => $psItems->count(),
+                'editable'  => (bool) ($psStore || $psBase),
+                'rutas'     => [
+                    'store'     => $psStore     ?: 'NO definida',
+                    'base'      => $psBase      ?: 'NO definida',
+                    'fragmento' => $psFragmento ?: 'NO definida',
+                ],
+                'errores'   => [],
+            ];
         @endphp
 
         {{-- ALERTAS --}}
@@ -84,6 +173,7 @@
             <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
                 <i class="bi bi-credit-card-2-front me-1" style="font-size: 8px; color: #5d8a70;"></i> Pasarelas de Pago
                 <span class="badge rounded-pill ms-1" style="font-size: 6.5px; background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; vertical-align: middle;">FZ</span>
+                <span class="badge rounded-pill ms-1" id="psChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">PS-v1-DBG</span>
             </h6>
             <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
                 <span class="count-badge" title="Pasarelas registradas en el sistema">
@@ -279,7 +369,172 @@
     if (window.__jsPasarelasListo) return;
     window.__jsPasarelasListo = true;
 
-    var URL_FRAGMENTO = '{{ Route::has("rsv.admin.pasarelas.fragmento") ? route("rsv.admin.pasarelas.fragmento") : "" }}';
+    var URL_FRAGMENTO = '{{ $psFragmento ?? "" }}';
+
+    /* ═══ 0) PANEL DE DEBUG LOCAL PS-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+       IIFE propia con $ por id: no toca el resto del script.
+       Exclusiva de este fragmento: los nodos son HTML de la hoja (viven
+       DENTRO de #sheet-pasarelas y renacen con cada refresco) y el respaldo
+       solo re-crea DENTRO de la primera hoja. Cero document.body.
+       Con copias múltiples del parcial, unicarDbg() deja un solo par. */
+    var DBG = (window.PsDbg && window.PsDbg.alive && window.PsDbg.alive())
+        ? window.PsDbg
+        : (function () {
+            var MAX = 250, numErr = 0;
+            function $(id) { return document.getElementById(id); }
+            function asegurarNodos() {
+                /* Respaldo: si un swap externo borrara los nodos (normalmente
+                   viven dentro de la primera #sheet-pasarelas y renacen con el
+                   HTML del refresco), se re-crean DENTRO de esa hoja. */
+                var rootDbg = document.querySelector('#sheet-pasarelas');
+                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                if (!$('psDbgToggle')) {
+                    var t = document.createElement('div');
+                    t.id = 'psDbgToggle';
+                    t.title = 'Debug Pasarelas (PS-v1-DBG)';
+                    t.innerHTML = '<span class="ps-dbg-led" id="psDbgLed"></span>DBG<span class="ps-dbg-badge" id="psDbgBadge">0</span>';
+                    rootDbg.insertBefore(t, rootDbg.firstChild);
+                }
+                if (!$('psDbgPanel')) {
+                    var p = document.createElement('div');
+                    p.id = 'psDbgPanel';
+                    p.innerHTML = '<div class="ps-dbg-header" id="psDbgHeader">' +
+                        '<span>DEBUG · Pasarelas de Pago · PS-v1-DBG</span>' +
+                        '<span class="ps-dbg-controls">' +
+                        '<button type="button" class="ps-dbg-btn" id="psDbgCopy">Copiar</button>' +
+                        '<button type="button" class="ps-dbg-btn" id="psDbgClear">Limpiar</button>' +
+                        '<button type="button" class="ps-dbg-btn" id="psDbgClose">✕</button>' +
+                        '</span></div><div id="psDbgBody"></div>';
+                    rootDbg.appendChild(p);
+                }
+                apilar();
+            }
+            /* PS-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+               apila: con 16px de alto cabe bajo cualquier otro toggle sin
+               tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+               vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+            function apilar() {
+                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle']; // serie completa de hermanos
+                var ocupado = 0;
+                for (var i = 0; i < ids.length; i++) {
+                    var el = $(ids[i]);
+                    if (!el) { continue; }
+                    var r = el.getBoundingClientRect();
+                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                }
+                var t = $('psDbgToggle'), p = $('psDbgPanel');
+                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+            }
+            function hora() {
+                var d = new Date();
+                function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+            }
+            var api = {
+                log: function (txt, nivel) {
+                    var b = $('psDbgBody'); if (!b) { return; }
+                    var lv = nivel || 'info';
+                    var ln = document.createElement('div');
+                    ln.className = 'ps-dbg-line';
+                    var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                        return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                    });
+                    ln.innerHTML = '<span class="ps-dbg-time">[' + hora() + ']</span>' +
+                        '<span class="ps-dbg-' + lv + '">' + seguro + '</span>';
+                    b.appendChild(ln);
+                    while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                    b.scrollTop = b.scrollHeight;
+                    if (lv === 'err') {
+                        numErr++;
+                        var bd = $('psDbgBadge');
+                        if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                        var led = $('psDbgLed');
+                        if (led) { led.classList.add('err'); }
+                    }
+                },
+                open: function () {
+                    var p = $('psDbgPanel'); if (!p) { return; }
+                    p.style.display = 'flex';
+                    apilar();
+                    var bd = $('psDbgBadge');
+                    if (bd) { bd.style.display = 'none'; }
+                    var led = $('psDbgLed');
+                    if (led) { led.classList.remove('err'); }
+                    numErr = 0;
+                },
+                close: function () { var p = $('psDbgPanel'); if (p) { p.style.display = 'none'; } },
+                togglePanel: function () {
+                    var p = $('psDbgPanel');
+                    if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                },
+                clear: function () { var b = $('psDbgBody'); if (b) { b.innerHTML = ''; } },
+                copy: function () {
+                    var b = $('psDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG pasarelas PS-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                },
+                ensure: function () { asegurarNodos(); },
+                alive: function () { return !!$('psDbgToggle'); }
+            };
+            window.PsDbg = api;
+            return api;
+        })();
+    if (!DBG) { return; }
+    DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+    var psdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+    /* Botones del panel por DELEGACIÓN en document (el guard __jsPasarelasListo
+       garantiza que se registran UNA sola vez; sobreviven a los swaps) */
+    if (window.__psDbgDocHandler) { document.removeEventListener('click', window.__psDbgDocHandler); }
+    window.__psDbgDocHandler = function (e) {
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        if (t.closest('#psDbgToggle')) { DBG.togglePanel(); return; }
+        if (t.closest('#psDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+        if (t.closest('#psDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+        if (t.closest('#psDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+    };
+    document.addEventListener('click', window.__psDbgDocHandler);
+    if (window.__psDbgDblHandler) { document.removeEventListener('dblclick', window.__psDbgDblHandler); }
+    window.__psDbgDblHandler = function (e) {
+        if (e.target && e.target.closest && e.target.closest('#psDbgHeader')) { DBG.close(); }
+    };
+    document.addEventListener('dblclick', window.__psDbgDblHandler);
+
+    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+       toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+    document.addEventListener('shown.bs.tab', function () {
+        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+    });
+
+    /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+    var SRVDBG = @json($psDbg);
+    psdbg('PS-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · nodos nacen y mueren con el fragmento', 'ok');
+    psdbg('init · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : '?') + ' · editable=' + (SRVDBG && SRVDBG.editable ? 'sí' : 'no') + ' · unicarDbg deja un solo panel por página', 'info');
+    if (SRVDBG && SRVDBG.rutas) {
+        var _rk = Object.keys(SRVDBG.rutas);
+        for (var _ri = 0; _ri < _rk.length; _ri++) {
+            if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
+                psdbg('ruta no definida: rsv…' + _rk[_ri] + ' (la acción se deshabilita sola)', 'warn');
+            }
+        }
+        psdbg('Rutas · store=' + SRVDBG.rutas.store + ' · base=' + SRVDBG.rutas.base + ' · fragmento=' + SRVDBG.rutas.fragmento, 'debug');
+    }
+    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+        for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+            psdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+        }
+    }
 
     function cerrarBruto(el) {
         el.classList.remove('show');
@@ -323,6 +578,16 @@
         });
     }
 
+    function unicarDbg() {
+        /* PS-v1-DBG: el parcial puede renderizarse 2+ veces; el HTML de cada
+           copia trae sus propios nodos DBG → se conservan los de la primera
+           hoja y se eliminan los duplicados (un solo toggle/panel por página). */
+        var ts = document.querySelectorAll('#psDbgToggle');
+        for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
+        var ps = document.querySelectorAll('#psDbgPanel');
+        for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
+    }
+
     function avisar(mensaje, tipo) {
         if (!window.bootstrap || !window.bootstrap.Toast) { window.alert(mensaje); return; }
         var div = document.createElement('div');
@@ -364,7 +629,7 @@
     }
 
     function refrescarTabla(idResaltar) {
-        if (!URL_FRAGMENTO) { window.location.reload(); return; }
+        if (!URL_FRAGMENTO) { psdbg('sin ruta de fragmento · fallback reload()', 'warn'); window.location.reload(); return; }
         fetch(URL_FRAGMENTO, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
             .then(function (r) { if (!r.ok) throw new Error('fragmento'); return r.text(); })
             .then(function (html) {
@@ -372,17 +637,20 @@
                 temp.innerHTML = html;
                 var nuevo = temp.querySelector('#sheet-pasarelas');
                 var copias = document.querySelectorAll('#sheet-pasarelas');
-                if (!nuevo || copias.length === 0) { window.location.reload(); return; }
+                if (!nuevo || copias.length === 0) { psdbg('respuesta sin #sheet-pasarelas · fallback reload()', 'warn'); window.location.reload(); return; }
                 copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
-                unicarModales(); aplicarFiltro(); if (idResaltar) resaltarFila(idResaltar); limpiarResiduos();
+                unicarModales(); unicarDbg(); aplicarFiltro(); if (idResaltar) resaltarFila(idResaltar); limpiarResiduos();
+                if (window.PsDbg && window.PsDbg.ensure) { window.PsDbg.ensure(); }
+                psdbg('fragmento refrescado · copias=' + copias.length + (idResaltar ? ' · fila resaltada id=' + idResaltar : ''), 'net');
             })
-            .catch(function () { window.location.reload(); });
+            .catch(function () { psdbg('fallo al refrescar el fragmento · fallback reload()', 'err'); window.location.reload(); });
     }
 
     function enviarFormulario(form) {
         var btn = form.querySelector('button[type="submit"]');
         var txt = btn ? btn.innerHTML : '';
         if (btn) { btn.disabled = true; btn.innerHTML = 'Procesando…'; }
+        psdbg('enviando AJAX · ' + (form.getAttribute('action') || '?'), 'net');
 
         var tokIn = form.querySelector('input[name="_token"]');
         var tokMt = document.querySelector('meta[name="csrf-token"]');
@@ -399,15 +667,18 @@
                 var d = res.json.data || {};
                 var idNuevo = d.id || (d.data && d.data.id) || null;
                 ocultarModal(form.closest('.modal'));
+                psdbg('AJAX ok · ' + (res.json.message || 'Guardado correctamente') + (idNuevo ? ' · id=' + idNuevo : ''), 'ok');
                 avisar(res.json.message || 'Guardado correctamente', 'success');
                 setTimeout(function () { refrescarTabla(idNuevo); }, 350);
             } else if (res.status === 422 && res.json && res.json.errors) {
+                psdbg('422 validación · ' + Object.keys(res.json.errors || {}).join(', '), 'warn');
                 pintarErrores(form, res.json.errors);
             } else {
+                psdbg('error AJAX · ' + ((res.json && res.json.message) || 'No se pudo completar la operación.'), 'err');
                 errorGeneral(form, (res.json && res.json.message) || 'No se pudo completar la operación.');
             }
         })
-        .catch(function () { errorGeneral(form, 'Error de conexión. Intenta de nuevo.'); })
+        .catch(function () { psdbg('fallo de red en el envío', 'err'); errorGeneral(form, 'Error de conexión. Intenta de nuevo.'); })
         .finally(function () { if (btn) { btn.disabled = false; btn.innerHTML = txt; } });
     }
 
@@ -415,9 +686,13 @@
         inp = inp || document.getElementById('psSearch');
         if (!inp) return;
         var val = (inp.value || '').toLowerCase().trim();
+        var visibles = 0;
         document.querySelectorAll('#sheet-pasarelas tr[data-ps-name]').forEach(function (tr) {
-            tr.style.display = (!val || (tr.getAttribute('data-ps-name') || '').indexOf(val) !== -1) ? '' : 'none';
+            var mostrar = (!val || (tr.getAttribute('data-ps-name') || '').indexOf(val) !== -1);
+            tr.style.display = mostrar ? '' : 'none';
+            if (mostrar) visibles++;
         });
+        if (val) { psdbg('filtro "' + val + '" · ' + visibles + ' fila(s) visibles', 'debug'); }
     }
 
     document.addEventListener('submit', function (e) {
@@ -438,7 +713,10 @@
         m.querySelectorAll('.is-invalid').forEach(function (i) { i.classList.remove('is-invalid'); });
     });
 
-    function iniciar() { unicarModales(); limpiarResiduos(); aplicarFiltro(); }
+    function iniciar() {
+        unicarDbg(); unicarModales(); limpiarResiduos(); aplicarFiltro();
+        if (window.PsDbg && window.PsDbg.ensure) { window.PsDbg.ensure(); }
+    }
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', iniciar); } else { iniciar(); }
 })();
 </script>

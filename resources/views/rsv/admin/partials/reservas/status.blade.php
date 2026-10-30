@@ -1,7 +1,50 @@
-{{-- partials/reservas/status.blade.php · v5 · CRUD 100% Bootstrap/Blade + fila TOTAL --}}
-{{-- · Alertas de sesión/validación visibles · old() en forms                      --}}
-{{-- · Conteos contextuales (global vs inmueble) · guard de eliminar global          --}}
-{{-- · tfoot: Sin estado asignado + TOTAL · búsqueda progresiva con ids únicos       --}}
+{{-- ============================================================================
+     RSV · ADMIN · RESERVAS · ESTADOS · ST-v1-DBG
+     Parcial: resources/views/rsv/admin/partials/reservas/status.blade.php
+
+     · Base v5 (conservada ÍNTEGRA): CRUD 100% Bootstrap/Blade + fila TOTAL,
+       alertas de sesión/validación visibles, old() en forms, conteos
+       contextuales (global vs inmueble), guard de eliminar global, tfoot
+       "Sin estado asignado" + TOTAL, búsqueda progresiva con ids únicos.
+     · PANEL DE DEBUG (ST-v1-DBG · diseño TIP-v1.3 aprobado · canónico
+       BLQ-v1-2): pestaña terminal "DBG" de 16px fija SIEMPRE en la esquina
+       inferior-derecha (right:0 · bottom:0, radius 3px solo superior-
+       izquierdo) con LED de estado (verde = ok · rojo pulsante + conteo =
+       errores) y panel cajón de 380px alineado al mismo borde. La regla
+       exacta de distancias está documentada como "SPEC DE DISTANCIAS"
+       dentro del CSS, y el panel esquiva a los toggles hermanos de las
+       otras vistas midiendo píxeles reales (getBoundingClientRect ·
+       bottom = max(20, vecino + 4)).
+       Exclusivo de este fragmento: el toggle y el panel son HERMANOS de
+       #stRoot (el refresco AJAX interno solo intercambia el root y los
+       nodos DBG sobreviven con el CSS que viaja dentro de él) y unicarDbg()
+       deduplica dejando UN solo toggle/panel por página. Nada se cuelga de
+       document.body: el respaldo re-crea DENTRO de #stRoot.
+       Telemetría que reporta: contexto (global/inmueble), estados y
+       reservas cargados, reservas sin estado, estados bloqueados para
+       eliminar, alertas de sesión/validación, rutas (store/update/destroy/
+       fragmento), submits AJAX (alta/edición/baja), rechazos HTTP con
+       mensaje, refresco del fragmento, búsqueda progresiva y errores
+       capturados por el servidor.
+     · NOTA: los comentarios nombran las directivas de Blade SIN arroba
+       (p.ej. "la directiva json de Blade"): Blade compila a nivel de texto
+       aunque estén dentro de comentarios y una arroba pelada rompe la
+       compilación (lección BLQ-v1-2).
+     ============================================================================ --}}
+
+{{-- ST-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano del root: vive y muere con la vista · NO viaja en el refresco AJAX interno) --}}
+<div id="stDbgToggle" title="Debug Estados (ST-v1-DBG)"><span class="st-dbg-led" id="stDbgLed"></span>DBG<span class="st-dbg-badge" id="stDbgBadge">0</span></div>
+<div id="stDbgPanel" role="dialog" aria-label="Panel de debug de Estados de Reserva">
+    <div class="st-dbg-header" id="stDbgHeader">
+        <span>DEBUG · Estados de Reserva · ST-v1-DBG</span>
+        <span class="st-dbg-controls">
+            <button type="button" class="st-dbg-btn" id="stDbgCopy">Copiar</button>
+            <button type="button" class="st-dbg-btn" id="stDbgClear">Limpiar</button>
+            <button type="button" class="st-dbg-btn" id="stDbgClose">✕</button>
+        </span>
+    </div>
+    <div id="stDbgBody"></div>
+</div>
 
 <div class="reservas-soft p-3 bg-white rounded-3 border" id="stRoot"
      style="border-color: #f1f5f9 !important;">
@@ -44,6 +87,39 @@
     .reservas-soft-modal .form-label { font-size: 7.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #94a3b8; margin-bottom: 2px; }
     .reservas-soft-modal .modal-header { border-bottom: 1px solid #f1f5f9; padding: 9px 14px; }
     .reservas-soft-modal .modal-footer { border-top: 1px solid #f1f5f9; padding: 9px 14px; }
+
+    /* ═════════ SPEC DE DISTANCIAS · ST-v1-DBG (tab terminal TIP-v1.3) ═════════
+       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
+                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
+                   cualquier otro toggle sin tocarlo)
+                 · altura fija 16px · padding lateral 8px
+                 · radius 3px solo sup-izq · borde 1px arriba/izq
+                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
+       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
+                   reales con getBoundingClientRect (los toggles ocultos 0×0
+                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
+                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
+       UNICIDAD  · toggle y panel son HERMANOS de #stRoot (el refresco AJAX
+                   interno solo intercambia el root: los nodos y el CSS
+                   sobreviven) y unicarDbg() deja UN solo toggle/panel por
+                   página. El respaldo re-crea DENTRO de #stRoot. */
+    #stDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+    #stDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+    .st-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
+    .st-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: stDbgBlink 1s steps(2,start) infinite; }
+    @keyframes stDbgBlink { 50% { opacity: .35; } }
+    .st-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+    #stDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .st-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
+    .st-dbg-controls { display: flex; gap: 4px; }
+    .st-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
+    .st-dbg-btn:hover { background: #475569; }
+    #stDbgBody { overflow-y: auto; padding: 6px 8px; font-size: 9.5px; line-height: 1.55; }
+    .st-dbg-line { white-space: pre-wrap; word-break: break-word; padding: 2px 0; border-bottom: 1px dashed #1e293b; }
+    .st-dbg-time { color: #64748b; margin-right: 4px; }
+    .st-dbg-info { color: #93c5fd; } .st-dbg-ok { color: #86efac; }
+    .st-dbg-warn { color: #fde68a; } .st-dbg-err { color: #fca5a5; }
+    .st-dbg-net { color: #c4b5fd; } .st-dbg-debug { color: #94a3b8; }
 </style>
 
 @php
@@ -59,6 +135,8 @@
       suma el total de reservas del contexto actual.
     ══════════════════════════════════════════════════════════════
     */
+    $stDbgErrores = [];
+
     $stInm = null; $stInmId = null; $stGlobal = true; $stCtxName = 'Global';
 
     if (isset($inmueble) && $inmueble) {
@@ -124,6 +202,7 @@
         }
     } catch (\Throwable $e) {
         \Illuminate\Support\Facades\Log::warning('st dataset: '.$e->getMessage());
+        $stDbgErrores[] = 'dataset: ' . $e->getMessage();
         $stItems = collect();
     }
 
@@ -138,10 +217,40 @@
             if (!$stGlobal && $stInmId) { $stQ->where('id_rsv_catalogo_inmueble', $stInmId); }
             $stTotalReservas = (clone $stQ)->count();
         }
-    } catch (\Throwable $e) { $stTotalReservas = $stSumaCnt; }
+    } catch (\Throwable $e) {
+        $stTotalReservas = $stSumaCnt;
+        $stDbgErrores[] = 'total del contexto: ' . $e->getMessage();
+    }
 
     // Reservas sin ningún estado asignado (diferencia corregida)
     $stSinEstado = max(0, $stTotalReservas - $stSumaCnt);
+
+    /* ═══ Colector del panel de debug (ST-v1-DBG) · via al panel vía la directiva json de Blade ═══ */
+    $stFragmentoDbg = \Illuminate\Support\Facades\Route::has('rsv.admin.reservas.status.fragmento')
+        ? route('rsv.admin.reservas.status.fragmento')
+        : null;
+    $stDbg = [
+        'version'    => 'ST-v1-DBG',
+        'vista'      => 'partials/reservas/status.blade.php',
+        'render'     => now()->format('H:i:s'),
+        'contexto'   => $stGlobal ? 'global' : ('inmueble · ' . $stCtxName),
+        'estados'    => $stItems->count(),
+        'reservas'   => $stTotalReservas,
+        'sin_estado' => $stSinEstado,
+        'bloqueados' => $stItems->where('cntTotal', '>', 0)->count(),
+        'alertas'    => [
+            'success'    => session('success') ? 'sí' : 'no',
+            'error'      => session('error') ? 'sí' : 'no',
+            'validacion' => $errors->any() ? 'sí' : 'no',
+        ],
+        'rutas'      => [
+            'store'     => $stStore   ?: 'NO definida',
+            'update'    => $stUpdate  ?: 'NO definida',
+            'destroy'   => $stDestroy ?: 'NO definida',
+            'fragmento' => $stFragmentoDbg ?: 'NO definida',
+        ],
+        'errores'    => $stDbgErrores,
+    ];
 @endphp
 
 
@@ -174,6 +283,7 @@
         <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
             <i class="bi bi-flag me-1" style="font-size: 8px; color: #5d8a70;"></i> Estados de Reserva
             <span class="badge rounded-pill ms-1" style="font-size: 6.5px; background: #f0f7f2; color: #3d7a5c; border: 1px solid #d5e7dc; vertical-align: middle;">S5</span>
+            <span class="badge rounded-pill ms-1" id="stChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">ST-v1-DBG</span>
         </h6>
         <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
 
@@ -379,14 +489,209 @@
 
 @endforeach
 
-{{-- SCRIPT AJAX, MODALES Y BÚSQUEDA PROGRESIVA DINÁMICA --}}
+{{-- SCRIPT AJAX, MODALES Y BÚSQUEDA PROGRESIVA DINÁMICA + PANEL DE DEBUG (ST-v1-DBG) --}}
 <script>
 (function () {
+    'use strict';
+
+    // Evita doble binding de eventos cuando el fragmento se re-inyecta vía AJAX.
+    if (window.__stPanelInit) return;
+    window.__stPanelInit = true;
+
     const ST_FRAG_URL = '{{ route("rsv.admin.reservas.status.fragmento") }}';
     const CSRF_TOKEN = '{{ csrf_token() }}';
 
+    /* ═══ 0) PANEL DE DEBUG LOCAL ST-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+       IIFE propia con $ por id: no toca el resto del script.
+       Exclusiva de esta vista: los nodos son HTML del fragmento (hermanos
+       de #stRoot, sobreviven al refresco AJAX interno que solo intercambia
+       el root) y el respaldo solo re-crea DENTRO de #stRoot.
+       Nada se cuelga de document.body. */
+    var DBG = (window.StDbg && window.StDbg.alive && window.StDbg.alive())
+        ? window.StDbg
+        : (function () {
+            var MAX = 250, numErr = 0;
+            function $(id) { return document.getElementById(id); }
+            function asegurarNodos() {
+                /* Respaldo: si un swap externo borrara los nodos (normalmente
+                   viven como hermanos de #stRoot), se re-crean DENTRO del root.
+                   Cero document.body (exclusividad total). */
+                var rootDbg = document.getElementById('stRoot');
+                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                if (!$('stDbgToggle')) {
+                    var t = document.createElement('div');
+                    t.id = 'stDbgToggle';
+                    t.title = 'Debug Estados (ST-v1-DBG)';
+                    t.innerHTML = '<span class="st-dbg-led" id="stDbgLed"></span>DBG<span class="st-dbg-badge" id="stDbgBadge">0</span>';
+                    rootDbg.insertBefore(t, rootDbg.firstChild);
+                }
+                if (!$('stDbgPanel')) {
+                    var p = document.createElement('div');
+                    p.id = 'stDbgPanel';
+                    p.innerHTML = '<div class="st-dbg-header" id="stDbgHeader">' +
+                        '<span>DEBUG · Estados de Reserva · ST-v1-DBG</span>' +
+                        '<span class="st-dbg-controls">' +
+                        '<button type="button" class="st-dbg-btn" id="stDbgCopy">Copiar</button>' +
+                        '<button type="button" class="st-dbg-btn" id="stDbgClear">Limpiar</button>' +
+                        '<button type="button" class="st-dbg-btn" id="stDbgClose">✕</button>' +
+                        '</span></div><div id="stDbgBody"></div>';
+                    rootDbg.appendChild(p);
+                }
+                apilar();
+            }
+            /* ST-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+               apila: con 16px de alto cabe bajo cualquier otro toggle sin
+               tocarlo). Solo el PANEL esquiva a los vecinos de las otras
+               vistas: bottom = max(20, vecino + 4) en píxeles reales. */
+            function apilar() {
+                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle']; // serie completa de hermanos
+                var ocupado = 0;
+                for (var i = 0; i < ids.length; i++) {
+                    var el = $(ids[i]);
+                    if (!el) { continue; }
+                    var r = el.getBoundingClientRect();
+                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
+                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
+                }
+                var t = $('stDbgToggle'), p = $('stDbgPanel');
+                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+            }
+            function hora() {
+                var d = new Date();
+                function f(n2) { return (n2 < 10 ? '0' : '') + n2; }
+                return f(d.getHours()) + ':' + f(d.getMinutes()) + ':' + f(d.getSeconds());
+            }
+            var api = {
+                log: function (txt, nivel) {
+                    var b = $('stDbgBody'); if (!b) { return; }
+                    var lv = nivel || 'info';
+                    var ln = document.createElement('div');
+                    ln.className = 'st-dbg-line';
+                    var seguro = String(txt).replace(/[<>&]/g, function (c2) {
+                        return c2 === '<' ? '&lt;' : (c2 === '>' ? '&gt;' : '&amp;');
+                    });
+                    ln.innerHTML = '<span class="st-dbg-time">[' + hora() + ']</span>' +
+                        '<span class="st-dbg-' + lv + '">' + seguro + '</span>';
+                    b.appendChild(ln);
+                    while (b.children.length > MAX) { b.removeChild(b.firstChild); }
+                    b.scrollTop = b.scrollHeight;
+                    if (lv === 'err') {
+                        numErr++;
+                        var bd = $('stDbgBadge');
+                        if (bd) { bd.textContent = numErr; bd.style.display = 'inline'; }
+                        var led = $('stDbgLed');
+                        if (led) { led.classList.add('err'); }
+                    }
+                },
+                open: function () {
+                    var p = $('stDbgPanel'); if (!p) { return; }
+                    p.style.display = 'flex';
+                    apilar();
+                    var bd = $('stDbgBadge');
+                    if (bd) { bd.style.display = 'none'; }
+                    var led = $('stDbgLed');
+                    if (led) { led.classList.remove('err'); }
+                    numErr = 0;
+                },
+                close: function () { var p = $('stDbgPanel'); if (p) { p.style.display = 'none'; } },
+                togglePanel: function () {
+                    var p = $('stDbgPanel');
+                    if (p) { (p.style.display === 'flex') ? api.close() : api.open(); }
+                },
+                clear: function () { var b = $('stDbgBody'); if (b) { b.innerHTML = ''; } },
+                copy: function () {
+                    var b = $('stDbgBody'); if (!b) { return; }
+                    var txt = '=== DEBUG estados ST-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                    for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(txt).then(function () {
+                            api.log('log copiado al portapapeles', 'ok');
+                        }).catch(function () {
+                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
+                        });
+                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                },
+                ensure: function () { asegurarNodos(); },
+                alive: function () { return !!$('stDbgToggle'); }
+            };
+            window.StDbg = api;
+            return api;
+        })();
+    if (!DBG) { return; }
+    DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+    var stdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
+
+    function unicarDbg() {
+        /* ST-v1-DBG: el parcial puede renderizarse 2+ veces; el HTML de cada
+           copia trae sus propios nodos DBG → se conservan los del primero y
+           se eliminan los duplicados (un solo toggle/panel por página). */
+        var ts = document.querySelectorAll('#stDbgToggle');
+        for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
+        var ps = document.querySelectorAll('#stDbgPanel');
+        for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
+    }
+    unicarDbg();
+
+    /* Botones del panel por DELEGACIÓN en document (el guard __stPanelInit
+       garantiza que se registran UNA sola vez; sobreviven a los swaps) */
+    if (window.__stDbgDocHandler) { document.removeEventListener('click', window.__stDbgDocHandler); }
+    window.__stDbgDocHandler = function (e) {
+        var t = e.target;
+        if (!t || !t.closest) { return; }
+        if (t.closest('#stDbgToggle')) { DBG.togglePanel(); return; }
+        if (t.closest('#stDbgClose')) { e.stopPropagation(); DBG.close(); return; }
+        if (t.closest('#stDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
+        if (t.closest('#stDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+    };
+    document.addEventListener('click', window.__stDbgDocHandler);
+    if (window.__stDbgDblHandler) { document.removeEventListener('dblclick', window.__stDbgDblHandler); }
+    window.__stDbgDblHandler = function (e) {
+        if (e.target && e.target.closest && e.target.closest('#stDbgHeader')) { DBG.close(); }
+    };
+    document.addEventListener('dblclick', window.__stDbgDblHandler);
+
+    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
+       toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
+    document.addEventListener('shown.bs.tab', function () {
+        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+    });
+
+    /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
+    var SRVDBG = @json($stDbg ?? null);
+    stdbg('ST-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con la vista)', 'ok');
+    stdbg('init · contexto=' + (SRVDBG ? SRVDBG.contexto : '?') + ' · estados=' + (SRVDBG ? SRVDBG.estados : '?') +
+        ' · reservas=' + (SRVDBG ? SRVDBG.reservas : '?') + ' · sin estado=' + (SRVDBG ? SRVDBG.sin_estado : '?'), 'info');
+    if (SRVDBG && SRVDBG.bloqueados > 0) {
+        stdbg('guard de eliminar: ' + SRVDBG.bloqueados + ' estado(s) bloqueado(s) por reservas asociadas', 'warn');
+    }
+    if (SRVDBG && SRVDBG.estados === 0) {
+        stdbg('dataset vacío · catálogo sin estados definidos todavía', 'warn');
+    }
+    if (SRVDBG && SRVDBG.alertas) {
+        if (SRVDBG.alertas.success === 'sí') { stdbg('alerta success en sesión (flash de la última operación)', 'ok'); }
+        if (SRVDBG.alertas.error === 'sí') { stdbg('alerta error en sesión', 'err'); }
+        if (SRVDBG.alertas.validacion === 'sí') { stdbg('errores de validación visibles (old() conservado)', 'warn'); }
+    }
+    if (SRVDBG && SRVDBG.rutas) {
+        var _rk = Object.keys(SRVDBG.rutas);
+        for (var _ri = 0; _ri < _rk.length; _ri++) {
+            if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
+                stdbg('ruta no definida: rsv.admin.reservas.status…' + _rk[_ri] + ' (la acción se deshabilita sola)', 'warn');
+            }
+        }
+        stdbg('Rutas · store=' + SRVDBG.rutas.store + ' · update=' + SRVDBG.rutas.update + ' · destroy=' + SRVDBG.rutas.destroy, 'debug');
+    }
+    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+        for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
+            stdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+        }
+    }
+
     // Función para recargar SOLO este micro-fragmento vía AJAX
     window.reloadStFragment = function() {
+        stdbg('refrescando fragmento · ' + ST_FRAG_URL, 'net');
         fetch(ST_FRAG_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(res => res.text())
             .then(html => {
@@ -395,9 +700,17 @@
                 const newContent = temp.querySelector('#stRoot');
                 if (newContent) {
                     document.getElementById('stRoot').replaceWith(newContent);
+                    unicarDbg();
+                    if (DBG && DBG.ensure) { DBG.ensure(); } // re-apila tras el swap
+                    stdbg('fragmento refrescado · dataset releído del servidor', 'ok');
+                } else {
+                    stdbg('respuesta sin #stRoot · el fragmento no se reemplazó', 'warn');
                 }
             })
-            .catch(err => console.error('Error recargando fragmento de estados:', err));
+            .catch(err => {
+                console.error('Error recargando fragmento de estados:', err);
+                stdbg('fallo al recargar el fragmento · ' + (err && err.message ? err.message : 'error de red'), 'err');
+            });
     };
 
     // Interceptar clics en los botones de envío de cualquier formulario del módulo de estados
@@ -408,9 +721,9 @@
         const form = btn.closest('form');
         if (!form) return;
 
-        const isModuleForm = form.id === 'stFormCreate' || 
-                             form.classList.contains('st-form-edit') || 
-                             form.classList.contains('st-form-del') || 
+        const isModuleForm = form.id === 'stFormCreate' ||
+                             form.classList.contains('st-form-edit') ||
+                             form.classList.contains('st-form-del') ||
                              form.closest('#stRoot') !== null;
 
         if (!isModuleForm) return;
@@ -424,6 +737,8 @@
         if (btn.name) {
             formData.append(btn.name, btn.value);
         }
+
+        stdbg('submit AJAX · ' + url + ' · form=' + (form.id || form.className || 'inline'), 'debug');
 
         fetch(url, {
             method: 'POST',
@@ -447,6 +762,7 @@
                 } else if (res.body.message) {
                     msg = res.body.message;
                 }
+                stdbg('rechazo HTTP ' + res.status + ' · ' + String(msg).replace(/\s+/g, ' ').slice(0, 120), 'err');
                 alert(msg);
                 return;
             }
@@ -461,10 +777,12 @@
             document.body.style.removeProperty('overflow');
             document.body.style.removeProperty('padding-right');
 
+            stdbg('operación OK · modal(es) cerrados · refrescando fragmento', 'ok');
             window.reloadStFragment();
         })
         .catch(err => {
             console.error(err);
+            stdbg('error de conexión con el servidor', 'err');
             alert('Error de conexión con el servidor.');
         });
     }, true);
@@ -477,11 +795,14 @@
             if (!stTbody) return;
 
             var stRows = stTbody.querySelectorAll('tr[data-st-name]');
+            var stVis = 0;
             stRows.forEach(function (tr) {
                 var nameAttr = tr.getAttribute('data-st-name') || '';
                 var show = !stVal || nameAttr.indexOf(stVal) !== -1;
                 tr.style.display = show ? '' : 'none';
+                if (show) { stVis++; }
             });
+            stdbg('búsqueda · "' + stVal + '" · ' + stVis + ' de ' + stRows.length + ' estado(s) visible(s)', 'debug');
         }
     });
 })();
