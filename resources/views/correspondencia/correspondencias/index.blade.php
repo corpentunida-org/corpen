@@ -351,7 +351,7 @@
                 id="filter-form-minimal">
                 <input type="hidden" name="flujo_id" id="input-flujo" value="{{ request('flujo_id') }}">
 
-                <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                     <div class="position-relative flex-grow-1" style="max-width: 350px;">
                         <i class="bi bi-search position-absolute text-muted"
                             style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem;"></i>
@@ -362,11 +362,31 @@
                         style="width: auto; cursor: pointer; background-color: var(--bg-app);">
                         <option value="" {{ empty(request('estado')) ? 'selected' : '' }}>Estado: Todos</option>
                         @foreach ($estados as $est)
-                            <option value="{{ $est->id_estado }}"
-                                {{ request('estado') == $est->id_estado ? 'selected' : '' }}>{{ $est->nombre }}
+                            <option value="{{ $est->id }}"
+                                {{ request('estado') == $est->id ? 'selected' : '' }}>{{ $est->nombre }}
                             </option>
                         @endforeach
                     </select>
+                    <input type="text" name="radicado" class="form-control search-pill" style="width: 120px;"
+                        placeholder="Radicado" value="{{ request('radicado') }}">
+                    <input type="text" name="asunto" class="form-control search-pill" style="width: 180px;"
+                        placeholder="Asunto" value="{{ request('asunto') }}">
+                    <input type="text" name="remitente" class="form-control search-pill" style="width: 200px;"
+                        placeholder="Remitente o cédula" value="{{ request('remitente') }}">
+                    <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
+                        Desde
+                        <input type="date" name="fecha_desde" class="form-control search-pill" style="width: auto;"
+                            value="{{ request('fecha_desde') }}">
+                    </label>
+                    <label class="d-flex align-items-center gap-1 mb-0 text-muted small">
+                        Hasta
+                        <input type="date" name="fecha_hasta" class="form-control search-pill" style="width: auto;"
+                            value="{{ request('fecha_hasta') }}">
+                    </label>
+                    <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none"
+                        onclick="limpiarFiltros()">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                    </button>
                 </div>
 
                 {{-- CONTENEDOR DINÁMICO DE CHIPS --}}
@@ -802,17 +822,25 @@
 
         function initRealTimeFilters() {
             const form = document.getElementById('filter-form-minimal');
-            const searchInput = form.querySelector('input[name="search"]');
-            const estadoSelect = form.querySelector('select[name="estado"]');
 
-            // Evento para input de búsqueda (con retraso)
-            searchInput.addEventListener('input', () => {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => triggerAjaxUpdate(), 350);
+            // Evento para los campos de texto (con retraso)
+            form.querySelectorAll('input[type="text"]').forEach(input => {
+                input.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => triggerAjaxUpdate(), 350);
+                });
             });
 
-            // Evento para el Select
-            estadoSelect.addEventListener('change', () => triggerAjaxUpdate());
+            // Evento para el Select y las fechas
+            form.querySelectorAll('select, input[type="date"]').forEach(campo => {
+                campo.addEventListener('change', () => triggerAjaxUpdate());
+            });
+
+            // Enter en un campo de texto no debe recargar la página
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                triggerAjaxUpdate();
+            });
 
             // Interceptar clics en los enlaces de paginación
             document.addEventListener('click', function(e) {
@@ -826,6 +854,12 @@
 
         function applyCategoryFilter(idFlujo) {
             document.getElementById('input-flujo').value = idFlujo;
+            triggerAjaxUpdate();
+        }
+
+        function limpiarFiltros() {
+            const form = document.getElementById('filter-form-minimal');
+            form.querySelectorAll('input, select').forEach(campo => campo.value = '');
             triggerAjaxUpdate();
         }
 
