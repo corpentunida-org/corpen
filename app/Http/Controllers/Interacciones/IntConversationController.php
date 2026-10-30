@@ -74,6 +74,16 @@ class IntConversationController extends Controller
     }
 
     /**
+     * Lista para el panel de mensajes (components/messenger-sidebar), que la pide al abrirse.
+     */
+    public function usuariosDisponibles()
+    {
+        return response()->json(
+            \App\Models\User::where('id', '!=', auth()->id())->orderBy('name', 'asc')->get(['id', 'name'])
+        );
+    }
+
+    /**
      * Caso de Uso: Iniciar o recuperar un chat privado entre dos personas (Messenger Style)
      */
     public function iniciarChatPrivado(Request $request)

@@ -367,12 +367,8 @@
                         @else
                             @candirect('correspondencia.asignar.remitente')
                             <select name="remitente_id" id="remitente_id" class="form-select select2-remitente"
-                                required>
+                                data-buscar-url="{{ route('correspondencia.ajax.remitentes.buscar') }}" required>
                                 <option value="">Buscar por nombre o cédula...</option>
-                                @foreach ($remitentes as $r)
-                                    <option value="{{ $r->cod_ter }}">{{ $r->cod_ter }} - {{ $r->nom_ter }}
-                                    </option>
-                                @endforeach
                             </select>
                         @else
                             <select name="remitente_id" id="remitente_id" class="form-select select2-remitente"
@@ -456,9 +452,28 @@
     $(document).ready(function() {
         // 1. SELECT2
         if ($.fn.select2) {
-            $('.select2-remitente').select2({
+            // Sin data-buscar-url el usuario solo puede radicar a su nombre: no hay nada que buscar.
+            const $remitente = $('.select2-remitente');
+            const urlBuscarRemitente = $remitente.data('buscar-url');
+            $remitente.select2({
                 theme: 'bootstrap-5',
-                width: '100%'
+                width: '100%',
+                ...(urlBuscarRemitente ? {
+                    minimumInputLength: 2,
+                    language: {
+                        inputTooShort: () => 'Escribe al menos 2 caracteres...',
+                        noResults: () => 'No se encontraron remitentes',
+                        searching: () => 'Buscando...',
+                        errorLoading: () => 'No se pudo consultar. Intenta de nuevo.'
+                    },
+                    ajax: {
+                        url: urlBuscarRemitente,
+                        dataType: 'json',
+                        delay: 300,
+                        data: params => ({ q: params.term }),
+                        processResults: data => ({ results: data })
+                    }
+                } : {})
             });
         }
 

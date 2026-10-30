@@ -1237,6 +1237,7 @@ Route::prefix('interactions')
             ->group(function () {
                 // Iniciar o recuperar chat privado (Messenger Style)
                 Route::post('/private', [IntConversationController::class, 'iniciarChatPrivado'])->name('startPrivate');
+                Route::get('/usuarios-disponibles', [IntConversationController::class, 'usuariosDisponibles'])->name('usuariosDisponibles');
 
                 Route::post('/contextual', [IntConversationController::class, 'storeContextual'])->name('storeContextual');
 
@@ -1608,6 +1609,10 @@ Route::middleware(['auth'])
         Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])->name('ajax.trds.flujo');
 
         Route::get('ajax/remitente-por-codigo/{cod_ter}', [CorrespondenciaController::class, 'getRemitenteByCodigo'])->name('ajax.remitente.codigo');
+
+        Route::get('ajax/remitentes-buscar', [CorrespondenciaController::class, 'buscarRemitentes'])
+            ->name('ajax.remitentes.buscar')
+            ->middleware('candirect:correspondencia.asignar.remitente');
 
         // ---------------------------------------------------
         // 3. FLUJOS Y PROCESOS

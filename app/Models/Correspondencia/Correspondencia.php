@@ -80,17 +80,12 @@ class Correspondencia extends Model
     }
 
     /**
-     * Obtiene la URL temporal firmada desde el disco S3 de AWS.
+     * Obtiene la URL temporal firmada desde el disco S3 de AWS. Firmarla no consulta S3; preguntar
+     * exists() antes costaba unos 100 ms por archivo en cada carga.
      */
     public function getFile($nameFile)
     {
-        $url = '#';
-        if ($nameFile) {
-            if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
-            }
-        }
-        return $url;
+        return $nameFile ? Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5)) : '#';
     }
 
     /**

@@ -12,7 +12,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Mail\CorrespondenciaRemitenteNotificacion;
 use App\Mail\FlujoNotificacion;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class CorrespondenciaProcesoController extends Controller
@@ -92,41 +94,44 @@ class CorrespondenciaProcesoController extends Controller
 
         try {
             $idRadicado = $request->id_correspondencia;
+            $rutasArchivos = [];
 
-            DB::transaction(function () use ($request, $idRadicado, $proceso) {
-                $estadoMaestro = Estado::findOrFail($request->estado_id);
-                $rutasArchivos = [];
+            // Se sube ANTES de abrir la transacción: subir a S3 puede tardar segundos y dentro de
+            // ella mantenía abierta la conexión a la base de datos todo ese tiempo.
+            if ($request->hasFile('documento_arc')) {
+                // Aseguramos de tener el array de nombres de archivos requeridos
+                $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
 
-                if ($request->hasFile('documento_arc')) {
-                    // Aseguramos de tener el array de nombres de archivos requeridos
-                    $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
+                // Agregamos el $index al foreach para saber qué archivo estamos procesando
+                foreach ($request->file('documento_arc') as $index => $file) {
+                    // Determinamos el nombre base. Si no existe un nombre requerido (ej. archivo opcional), usamos 'doc-adjunto'
+                    $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
 
-                    // Agregamos el $index al foreach para saber qué archivo estamos procesando
-                    foreach ($request->file('documento_arc') as $index => $file) {
-                        // Determinamos el nombre base. Si no existe un nombre requerido (ej. archivo opcional), usamos 'doc-adjunto'
-                        $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
+                    // 1. Generamos el nombre del archivo integrando el nombre requerido
+                    $nombreArchivo = 'seg_' . $idRadicado . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 
-                        // 1. Generamos el nombre del archivo integrando el nombre requerido
-                        $nombreArchivo = 'seg_' . $idRadicado . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    // 2. Usamos storeAs a S3 sin forzar visibilidad pública
+                    $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
 
-                        // 2. Usamos storeAs a S3 sin forzar visibilidad pública
-                        $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
-
-                        // 3. Verificamos estrictamente que la subida haya sido exitosa
-                        if ($path === false) {
-                            throw new \Exception("Error al subir el archivo $nombreArchivo a Amazon S3. El bucket rechazó la solicitud.");
-                        }
-
-                        $rutasArchivos[] = $path;
+                    // 3. Verificamos estrictamente que la subida haya sido exitosa
+                    if ($path === false) {
+                        throw new \Exception("Error al subir el archivo $nombreArchivo a Amazon S3. El bucket rechazó la solicitud.");
                     }
-                }
 
-                CorrespondenciaProceso::create([
+                    $rutasArchivos[] = $path;
+                }
+            }
+
+            $estadoMaestro = Estado::findOrFail($request->estado_id);
+
+            $seguimiento = DB::transaction(function () use ($request, $idRadicado, $proceso, $rutasArchivos, $estadoMaestro) {
+                $seguimiento = CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
                     'observacion' => $request->observacion,
                     'estado' => $estadoMaestro->id,
                     'id_proceso' => $proceso->id,
-                    'notificado_email' => $request->boolean('notificado_email'),
+                    // Queda en false hasta que el correo salga de verdad: ver notificarRemitente().
+                    'notificado_email' => false,
                     'fecha_gestion' => $request->fecha_gestion,
                     'documento_arc' => $rutasArchivos,
                     'finalizado' => $request->boolean('finalizado'),
@@ -136,7 +141,15 @@ class CorrespondenciaProcesoController extends Controller
                 Correspondencia::where('id_radicado', $idRadicado)->update([
                     'estado_id' => $estadoMaestro->id,
                 ]);
+
+                return $seguimiento;
             });
+
+            $mensaje = 'Seguimiento registrado y archivos guardados correctamente.';
+            if ($request->boolean('notificado_email') && !$this->notificarRemitente($seguimiento, $estadoMaestro)) {
+                $mensaje .= ' No se notificó al remitente porque no tiene un correo válido en Maestra de Terceros.';
+            }
+
             if ($request->boolean('finalizado')) {
                 $siguienteProceso = Proceso::where('flujo_id', $proceso->flujo_id)
                     ->where('secuencia', $proceso->secuencia + 1)
@@ -144,17 +157,64 @@ class CorrespondenciaProcesoController extends Controller
 
                 if ($siguienteProceso) {
                     $correos = $siguienteProceso->usuarios()->wherePivot('activo', 1)->pluck('email')->toArray();
-                    Mail::to($correos)->send(new FlujoNotificacion($request->id_correspondencia, $siguienteProceso->nombre));
+
+                    // Se envía al terminar la respuesta para que el usuario no espere al SMTP. Aquí
+                    // la gestión YA quedó guardada: un fallo del correo no debe mostrarse como
+                    // error, porque el usuario la registraría de nuevo y quedaría duplicada.
+                    if ($correos) {
+                        app()->terminating(function () use ($correos, $idRadicado, $siguienteProceso) {
+                            try {
+                                Mail::to($correos)->send(new FlujoNotificacion($idRadicado, $siguienteProceso->nombre));
+                            } catch (\Throwable $e) {
+                                Log::error('Error enviando notificación de flujo (radicado ' . $idRadicado . '): ' . $e->getMessage());
+                            }
+                        });
+                    }
                 }
             }
 
-            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)->with('success', 'Seguimiento registrado y archivos guardados correctamente.');
+            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)->with('success', $mensaje);
         } catch (\Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
                 ->with('error', 'Error en la operación: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Envía al remitente la observación y los adjuntos de la gestión. Devuelve false si no tiene
+     * un correo válido. Sale al terminar la respuesta (descargar adjuntos de S3 y hablar con el
+     * SMTP puede tardar) y notificado_email solo pasa a true si el envío funcionó, para que el
+     * historial no diga "notificado" cuando el correo nunca salió.
+     */
+    private function notificarRemitente(CorrespondenciaProceso $seguimiento, Estado $estado): bool
+    {
+        $correspondencia = Correspondencia::with('remitente:cod_ter,nom_ter,email')->find($seguimiento->id_correspondencia);
+        $correo = trim((string) $correspondencia?->remitente?->email);
+
+        if (!filter_var($correo, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        app()->terminating(function () use ($seguimiento, $correspondencia, $estado, $correo) {
+            try {
+                Mail::to($correo)->send(new CorrespondenciaRemitenteNotificacion(
+                    $correspondencia->id_radicado,
+                    $correspondencia->asunto,
+                    trim($correspondencia->remitente->nom_ter),
+                    $estado->nombre,
+                    $seguimiento->observacion,
+                    $seguimiento->documento_arc ?? [],
+                ));
+
+                $seguimiento->update(['notificado_email' => true]);
+            } catch (\Throwable $e) {
+                Log::error('Error notificando al remitente (radicado ' . $correspondencia->id_radicado . '): ' . $e->getMessage());
+            }
+        });
+
+        return true;
     }
 
     public function show(CorrespondenciaProceso $correspondenciaProceso)

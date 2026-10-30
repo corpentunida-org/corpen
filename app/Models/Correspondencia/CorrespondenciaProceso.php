@@ -36,7 +36,8 @@ class CorrespondenciaProceso extends Model
     ];
 
     /**
-     * Obtiene una lista con las URLs temporales de todos los archivos guardados
+     * Obtiene una lista con las URLs temporales de todos los archivos guardados. Firmar la URL no
+     * consulta S3; preguntar exists() antes costaba unos 100 ms por adjunto en cada carga.
      */
     public function getArchivosUrls()
     {
@@ -45,7 +46,7 @@ class CorrespondenciaProceso extends Model
 
         if (is_array($archivos)) {
             foreach ($archivos as $archivo) {
-                if ($archivo && Storage::disk('s3')->exists($archivo)) {
+                if ($archivo) {
                     $urls[] = [
                         'nombre' => basename($archivo), // Saca el nombre del archivo de la ruta
                         'url'    => Storage::disk('s3')->temporaryUrl($archivo, now()->addMinutes(5))
@@ -54,12 +55,10 @@ class CorrespondenciaProceso extends Model
             }
         } elseif (is_string($archivos) && $archivos) {
             // Por si tienes registros antiguos guardados como un solo string
-            if (Storage::disk('s3')->exists($archivos)) {
-                $urls[] = [
-                    'nombre' => basename($archivos),
-                    'url'    => Storage::disk('s3')->temporaryUrl($archivos, now()->addMinutes(5))
-                ];
-            }
+            $urls[] = [
+                'nombre' => basename($archivos),
+                'url'    => Storage::disk('s3')->temporaryUrl($archivos, now()->addMinutes(5))
+            ];
         }
 
         return $urls;
