@@ -6,10 +6,16 @@
         <div class="card-body">
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0">Distritos</h5>
-                <a href="{{ route('maestras.distrito.create') }}" class="btn btn-success">
-                    <i class="feather-plus me-2"></i>
-                    <span>Crear Nuevo</span>
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('maestras.distrito.exportar') }}" class="btn btn-outline-secondary" data-no-loading>
+                        <i class="feather-download me-2"></i>
+                        <span>Descargar Todos (Excel)</span>
+                    </a>
+                    <a href="{{ route('maestras.distrito.create') }}" class="btn btn-success">
+                        <i class="feather-plus me-2"></i>
+                        <span>Crear Nuevo</span>
+                    </a>
+                </div>
             </div>
 
             <div class="px-4 pb-4">

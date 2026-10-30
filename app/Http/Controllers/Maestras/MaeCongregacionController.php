@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
+use App\Exports\Maestras\CongregacionesExport;
 use App\Models\Maestras\MaeClaseCongregacion;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeTerceros;
@@ -11,6 +12,7 @@ use App\Models\Maestras\MaeCongregacion;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
 
 class MaeCongregacionController extends Controller
 {
@@ -291,5 +293,10 @@ class MaeCongregacionController extends Controller
         $pdf = Pdf::loadView('maestras.congregacion.pdf', compact('congregacion'))->setPaper('a4', 'portrait');
 
         return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
+    }
+
+    public function descargarExcel()
+    {
+        return Excel::download(new CongregacionesExport, 'congregaciones_' . now()->format('Y_m_d_His') . '.xlsx');
     }
 }
