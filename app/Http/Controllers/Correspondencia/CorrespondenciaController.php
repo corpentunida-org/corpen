@@ -74,7 +74,37 @@ class CorrespondenciaController extends Controller
                 }
             });
         }
-        
+
+        // 4. FILTROS POR RADICADO, ASUNTO, REMITENTE Y FECHA DE RADICACIÓN
+        if ($request->filled('radicado')) {
+            $query->where('id_radicado', ltrim(trim($request->radicado), '#'));
+        }
+
+        if ($request->filled('asunto')) {
+            $query->where('asunto', 'LIKE', '%' . $request->asunto . '%');
+        }
+
+        if ($request->filled('remitente')) {
+            $remitente = trim($request->remitente);
+            $query->whereHas('remitente', function ($q) use ($remitente) {
+                if (ctype_digit($remitente)) {
+                    $q->where('cod_ter', 'LIKE', "{$remitente}%");
+                } else {
+                    foreach (preg_split('/\s+/', $remitente) as $palabra) {
+                        $q->where('nom_ter', 'LIKE', "%{$palabra}%");
+                    }
+                }
+            });
+        }
+
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_solicitud', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_solicitud', '<=', $request->fecha_hasta);
+        }
+
         if (auth()->user()->hasPermission('correspondencia.lista.todos')) {
             $correspondencias = $query->paginate(15)->appends($request->all());
         } else {
