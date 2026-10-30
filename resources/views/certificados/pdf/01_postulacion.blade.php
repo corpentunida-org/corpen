@@ -6,7 +6,7 @@
     <style>
         /* 1. CONFIGURACIÓN DE PÁGINA Y MÁRGENES */
         @page { margin: 4cm 2cm 3.5cm 2cm; }
-
+ 
         body {
             font-family: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
             font-size: 10pt;
