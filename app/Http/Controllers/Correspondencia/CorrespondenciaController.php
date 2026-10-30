@@ -41,7 +41,17 @@ class CorrespondenciaController extends Controller
         $estados = Estado::all();
         $procesos_disponibles = Proceso::with(['estadosProcesos.estado'])->get();
 
-        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente', 'medioRecepcion'])->latest();
+        // procesos, flujo.procesos... y comunicacion_salida_exists los recorre index.blade.php por
+        // cada fila: sin cargarlos aquí eran cerca de 130 consultas extra por página.
+        $query = Correspondencia::with([
+            'trd',
+            'flujo.procesos.usuariosAsignados.usuario',
+            'estado',
+            'usuario',
+            'remitente',
+            'medioRecepcion',
+            'procesos',
+        ])->withExists('comunicacionSalida')->latest();
 
         // 1. FILTRO DE CATEGORÍAS
         if ($request->filled('flujo_id')) {
@@ -97,13 +107,12 @@ class CorrespondenciaController extends Controller
         $trds = Trd::all();
         $flujos = FlujoDeTrabajo::all();
         $estados = Estado::all();
-        $remitentes = MaeTerceros::all();
         $medios = MedioRecepcion::activos()->get();
 
         $ultimoId = Correspondencia::max('id_radicado');
         $siguienteId = $ultimoId ? (int) $ultimoId + 1 : 1;
 
-        return view('correspondencia.correspondencias.create', compact('trds', 'flujos', 'estados', 'remitentes', 'medios', 'siguienteId'));
+        return view('correspondencia.correspondencias.create', compact('trds', 'flujos', 'estados', 'medios', 'siguienteId'));
     }
 
     /**
@@ -191,7 +200,7 @@ class CorrespondenciaController extends Controller
             $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])->get();
         }
 
-        $usuarios = User::orderBy('name', 'asc')->get();
+        $usuarios = User::orderBy('name', 'asc')->get(['id', 'name']);
         $plantillas = \App\Models\Correspondencia\Plantilla::all();
 
         $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
@@ -224,10 +233,9 @@ class CorrespondenciaController extends Controller
         $trds = Trd::all();
         $flujos = FlujoDeTrabajo::all();
         $estados = Estado::all();
-        $remitentes = MaeTerceros::all();
         $medios = MedioRecepcion::activos()->get();
 
-        return view('correspondencia.correspondencias.edit', compact('correspondencia', 'trds', 'flujos', 'estados', 'remitentes', 'medios'));
+        return view('correspondencia.correspondencias.edit', compact('correspondencia', 'trds', 'flujos', 'estados', 'medios'));
     }
 
     /**
@@ -365,7 +373,7 @@ class CorrespondenciaController extends Controller
         $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(15)->appends($request->all());
 
         $flujos = FlujoDeTrabajo::withCount('correspondencias')->get();
-        $usuarios = User::orderBy('name')->get();
+        $usuarios = User::orderBy('name')->get(['id', 'name']);
         $estados = Estado::withCount('correspondencias')->get();
 
         return view('correspondencia.tablero.index', compact('correspondencias', 'kpis', 'flujos', 'usuarios', 'estados'));
@@ -448,6 +456,34 @@ class CorrespondenciaController extends Controller
     {
         $trds = Trd::where('fk_flujo', $flujo_id)->get(['id_trd', 'serie_documental', 'tiempo_gestion']);
         return response()->json($trds);
+    }
+
+    /**
+     * API: Busca remitentes para el selector del radicado (select2 con AJAX). MaeTerceros tiene
+     * más de 26.000 filas y 160 columnas: traerla completa al formulario consumía 800 MB por
+     * petición y agregaba 4,6 MB de HTML.
+     */
+    public function buscarRemitentes(Request $request)
+    {
+        $termino = trim((string) $request->input('q'));
+        if (mb_strlen($termino) < 2) {
+            return response()->json([]);
+        }
+
+        $query = MaeTerceros::select('cod_ter', 'nom_ter')->orderBy('nom_ter')->limit(30);
+
+        if (ctype_digit($termino)) {
+            $query->where('cod_ter', 'LIKE', "{$termino}%");
+        } else {
+            foreach (preg_split('/\s+/', $termino) as $palabra) {
+                $query->where('nom_ter', 'LIKE', "%{$palabra}%");
+            }
+        }
+
+        return response()->json($query->get()->map(fn ($tercero) => [
+            'id' => $tercero->cod_ter,
+            'text' => "{$tercero->cod_ter} - {$tercero->nom_ter}",
+        ]));
     }
 
     /**
