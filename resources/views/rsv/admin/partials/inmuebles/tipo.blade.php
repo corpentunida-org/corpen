@@ -1,6 +1,6 @@
 {{--
     ═══════════════════════════════════════════════════════════════════════
-    partials/inmuebles/tipo.blade.php · TIP-v1.3-DBG
+    partials/inmuebles/tipo.blade.php · TIP-v1.4-DBG
     Tipos de Inmueble · NIVEL 3 (panel + modal Nuevo + modal Editar)
     ───────────────────────────────────────────────────────────────────────
     FIXES TIP-v1:
@@ -44,6 +44,18 @@
     tarifa y galeria) ya traen 'tipDbgToggle' en el array de ids de su
     función apilar(); si el toggle no está en el DOM (porque saliste de
     Tipos), simplemente lo omiten y no reservan hueco.
+      9 · AJUSTE TIP-v1.4 · REFRESCO POR MICRO-FRAGMENTO PROPIO (N3):
+          tras guardar (Nuevo/Editar) la vista ya NO depende de
+          #showRoot ni recarga la página: consulta SU PROPIA ruta
+          rsv.admin.inmuebles.tipo.fragmento (inmueblesTipoFragmento)
+          y repinta SOLO #tipRoot con la tabla fresca (una consulta,
+          sin recargar todo el dashboard). La tab DBG vive FUERA del
+          root y sobrevive con todo su historial. Respaldo en cascada:
+          micro-fragmento N3 → #showRoot (N2, mecanismo original) →
+          recarga nativa solo como último recurso. Además: acepta
+          $tipos del controlador, muestra el contador con el alias
+          inmuebles_count y reporta la ruta del fragmento en el panel
+          (ruta_fragmento).
     ═══════════════════════════════════════════════════════════════════════
 --}}
 
@@ -53,7 +65,12 @@
 
     // Fallbacks de seguridad
     $modoGlobal       = $modoGlobal ?? true;
-    $tiposCollection  = $tiposCollection ?? TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get();
+    /* AJUSTE TIP-v1.4 · prioridad de datos: $tiposCollection explícita →
+       $tipos (la que envía inmueblesTipoFragmento del controlador) →
+       consulta propia de la vista. Así el micro-fragmento N3 alimenta
+       la vista sin consultas duplicadas. */
+    $tiposCollection  = $tiposCollection ?? ($tipos ?? null);
+    if (!$tiposCollection) { $tiposCollection = TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get(); }
     $tipoAsignado     = $tipoAsignado ?? null;
 
     // FIX TIP-v1-1: $tipoAsignadoId se usaba en el foreach sin fallback
@@ -63,9 +80,17 @@
 
     $tiUid            = $tiUid ?? ('ti' . substr(md5(uniqid('', true)), 0, 8));
 
-    // Colector del panel de debug (TIP-v1.3-DBG) · via al panel vía @json
+    /* AJUSTE TIP-v1.4 · URL del MICRO-FRAGMENTO propio (N3): tras guardar,
+       la vista se repinta A SÍ MISMA con inmueblesTipoFragmento (rápido,
+       solo la tabla de tipos) sin depender de #showRoot ni recargar todo. */
+    $tipFragUrl = null;
+    foreach ([ 'rsv.admin.inmuebles.tipo.fragmento', 'admin.inmuebles.tipo.fragmento' ] as $tipFragCand) {
+        if (\Illuminate\Support\Facades\Route::has($tipFragCand)) { $tipFragUrl = route($tipFragCand); break; }
+    }
+
+    // Colector del panel de debug (TIP-v1.4-DBG) · via al panel vía @json
     $tipDbg = [
-        'version'     => 'TIP-v1.3-DBG',
+        'version'     => 'TIP-v1.4-DBG',
         'vista'       => 'partials/inmuebles/tipo.blade.php',
         'render'      => now()->format('H:i:s'),
         'uid'         => $tiUid,
@@ -74,15 +99,16 @@
         'asignado'    => $tipoAsignado->nombre ?? null,
         'asignado_id' => $tipoAsignadoId,
         'ruta_store'  => route('rsv.tipos-inmuebles.store'),
+        'ruta_fragmento' => $tipFragUrl ?: 'NO definida',
         'errores'     => [],
     ];
 @endphp
 
 {{-- TIP-v1.3 · Tab DBG textual + LED + Panel LOCAL (fuera del root: mueren con el fragmento · NO global) --}}
-<div id="tipDbgToggle" title="Debug Tipos (TIP-v1.3-DBG)"><span class="tip-dbg-led" id="tipDbgLed"></span>DBG<span class="tip-dbg-badge" id="tipDbgBadge">0</span></div>
+<div id="tipDbgToggle" title="Debug Tipos (TIP-v1.4-DBG)"><span class="tip-dbg-led" id="tipDbgLed"></span>DBG<span class="tip-dbg-badge" id="tipDbgBadge">0</span></div>
 <div id="tipDbgPanel" role="dialog" aria-label="Panel de debug de Tipos">
     <div class="tip-dbg-header" id="tipDbgHeader">
-        <span>DEBUG · Tipos (N3) · TIP-v1.3-DBG</span>
+        <span>DEBUG · Tipos (N3) · TIP-v1.4-DBG</span>
         <span class="tip-dbg-controls">
             <button type="button" class="tip-dbg-btn" id="tipDbgCopy">Copiar</button>
             <button type="button" class="tip-dbg-btn" id="tipDbgClear">Limpiar</button>
@@ -165,7 +191,7 @@
                     @if(isset($tiposCollection) && count($tiposCollection) > 0)
                         @foreach($tiposCollection as $tipo)
                             @php
-                                $nInmuebles = $tipo->catalogo_inmuebles_count ?? 0;
+                                $nInmuebles = $tipo->catalogo_inmuebles_count ?? $tipo->inmuebles_count ?? 0; // AJUSTE TIP-v1.4 · también el withCount('inmuebles') del controlador
                                 $esAsignado = (!$modoGlobal && !is_null($tipoAsignadoId) && $tipoAsignadoId == $tipo->id);
                                 // Estilos inline para simular fila "ti-assigned" sin CSS custom
                                 $tdBg     = $esAsignado ? 'background-color: #f0f7f2;' : '';
@@ -409,13 +435,13 @@
     </div>
 
     {{-- ════════════════════════════════════════════════════════════════════ --}}
-    {{-- SCRIPT · TIP-v1.3-DBG · filtros + modal Editar + forms AJAX + tab DBG --}}
+    {{-- SCRIPT · TIP-v1.4-DBG · filtros + modal Editar + forms AJAX + tab DBG --}}
     {{-- Patrón v31: el script viaja DENTRO de #tipRoot → se re-ejecuta tras   --}}
     {{-- cada swap AJAX y renace con sus listeners. Sin DOMContentLoaded       --}}
     {{-- (no vuelve a dispararse tras un swap). NO captura errores ajenos.     --}}
     {{-- ════════════════════════════════════════════════════════════════════ --}}
     <script>
-    /* ═══════════════ TIP-v1.3-DBG · tipo · NIVEL 3 ═══════════════ */
+    /* ═══════════════ TIP-v1.4-DBG · tipo · NIVEL 3 ═══════════════ */
     (function () {
         var UID = '{{ $tiUid }}';
         var GUARD = '__tipInit_' + UID;
@@ -494,7 +520,7 @@
                     if (!$('tipDbgToggle')) {
                         var t = document.createElement('div');
                         t.id = 'tipDbgToggle';
-                        t.title = 'Debug Tipos (TIP-v1.3-DBG)';
+                        t.title = 'Debug Tipos (TIP-v1.4-DBG)';
                         t.innerHTML = '<span class="tip-dbg-led" id="tipDbgLed"></span>DBG<span class="tip-dbg-badge" id="tipDbgBadge">0</span>';
                         rootDbg.insertBefore(t, rootDbg.firstChild);
                     }
@@ -502,7 +528,7 @@
                         var p = document.createElement('div');
                         p.id = 'tipDbgPanel';
                         p.innerHTML = '<div class="tip-dbg-header" id="tipDbgHeader">' +
-                            '<span>DEBUG · Tipos (N3) · TIP-v1.3-DBG</span>' +
+                            '<span>DEBUG · Tipos (N3) · TIP-v1.4-DBG</span>' +
                             '<span class="tip-dbg-controls">' +
                             '<button type="button" class="tip-dbg-btn" id="tipDbgCopy">Copiar</button>' +
                             '<button type="button" class="tip-dbg-btn" id="tipDbgClear">Limpiar</button>' +
@@ -575,7 +601,7 @@
                     clear: function () { var b = $('tipDbgBody'); if (b) { b.innerHTML = ''; } },
                     copy: function () {
                         var b = $('tipDbgBody'); if (!b) { return; }
-                        var txt = '=== DEBUG tipo TIP-v1.3-DBG · ' + new Date().toISOString() + ' ===\n';
+                        var txt = '=== DEBUG tipo TIP-v1.4-DBG · ' + new Date().toISOString() + ' ===\n';
                         for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                         if (navigator.clipboard && navigator.clipboard.writeText) {
                             navigator.clipboard.writeText(txt).then(function () {
@@ -620,7 +646,7 @@
         document.addEventListener('dblclick', window.__tipDbgDblHandler);
 
         /* ═══ 2) BOOT · contexto del servidor ═══ */
-        DBG.log('TIP-v1.3-DBG activo · tab DBG fija en esquina (0,0) · LED de estado · exclusiva (muere con el fragmento)', 'ok');
+        DBG.log('TIP-v1.4-DBG activo · tab DBG fija en esquina (0,0) · LED de estado · exclusiva (muere con el fragmento)', 'ok');
         if (window.__tipEverBooted) { DBG.log('script re-ejecutado tras swap AJAX (el panel LOCAL continúa)', 'debug'); }
         window.__tipEverBooted = true;
         DBG.log('init · modo=' + (SRVDBG ? SRVDBG.modo : '?') +
@@ -630,6 +656,7 @@
             DBG.log('tipo asignado: ' + SRVDBG.asignado + ' (id ' + SRVDBG.asignado_id + ')', 'info');
         }
         DBG.log('Ruta store · ' + ((SRVDBG && SRVDBG.ruta_store) ? SRVDBG.ruta_store : '?'), 'debug');
+        DBG.log('Ruta fragmento N3 (propio) · ' + ((SRVDBG && SRVDBG.ruta_fragmento) ? SRVDBG.ruta_fragmento : 'NO definida'), 'debug'); // AJUSTE TIP-v1.4
 
         var __sr = document.getElementById('showRoot');
         var __miRoot = document.getElementById('tipRoot-' + UID);
@@ -637,8 +664,8 @@
         DBG.log('Zona · showRoot=' + (__sr ? 'presente' : 'ausente') +
             ' · data-frag=' + ((__sr && __sr.getAttribute('data-frag')) || 'NO') +
             ' · tipo dentro de showRoot=' + (__dentroSR ? 'sí' : 'no'), __dentroSR ? 'ok' : 'warn');
-        if (!__dentroSR) {
-            DBG.log('el refresco tras guardar será recarga nativa (esta vista no vive dentro de #showRoot)', 'warn');
+        if (!__dentroSR && !(SRVDBG && SRVDBG.ruta_fragmento && SRVDBG.ruta_fragmento.indexOf('NO definida') === -1)) {
+            DBG.log('sin #showRoot y sin ruta de fragmento propio → el refresco tras guardar será recarga nativa', 'warn'); // AJUSTE TIP-v1.4
         }
         if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
             for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
@@ -753,9 +780,65 @@
             });
         }
 
-        /* Refresco post-guardado: repinta #showRoot (N2) por AJAX si esta vista vive
-           dentro de él; si no, recarga nativa honesta (la tabla debe reflejar el cambio). */
+        /* AJUSTE TIP-v1.4 · Refresco post-guardado en CASCADA (3 niveles):
+           1 · MICRO-FRAGMENTO PROPIO (N3): repinta SOLO esta vista con su
+               propia ruta (inmueblesTipoFragmento → rsv.admin.inmuebles.tipo.
+               fragmento): una consulta, sin recargar el dashboard completo.
+           2 · #showRoot (N2): el mecanismo original, si esta vista vive
+               dentro de él y trae data-frag.
+           3 · Recarga nativa honesta, SOLO como último recurso. */
         function refrescarZona(etiqueta) {
+            var miRoot = document.getElementById('tipRoot-' + UID);
+            var fragPropia = (SRVDBG && SRVDBG.ruta_fragmento && SRVDBG.ruta_fragmento.indexOf('NO definida') === -1) ? SRVDBG.ruta_fragmento : '';
+
+            if (fragPropia && miRoot) {
+                DBG.log(etiqueta + ' → refrescando MICRO-FRAGMENTO propio (N3 · solo Tipos): ' + fragPropia, 'net');
+                fetch(fragPropia, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
+                    .then(function (r) {
+                        if (esLogin(r.url)) { window.location.href = r.url; throw new Error('__sesion__'); }
+                        if (!r.ok) { throw new Error('HTTP ' + r.status); }
+                        return r.text();
+                    })
+                    .then(function (html) {
+                        var tmp = document.createElement('div');
+                        tmp.innerHTML = html;
+                        var nuevoRoot = tmp.querySelector('[id^="tipRoot-"]');
+                        if (!nuevoRoot) { throw new Error('el fragmento N3 no contiene #tipRoot-*'); }
+
+                        /* limpieza anti-backdrop congelado (el modal moría a mitad de la transición) */
+                        try {
+                            document.querySelectorAll('.modal-backdrop').forEach(function (n) { if (n.parentNode) n.parentNode.removeChild(n); });
+                            document.body.classList.remove('modal-open');
+                            document.body.style.overflow = '';
+                        } catch (e2) { /* silencioso */ }
+
+                        /* el fragmento trae UID nuevo (ids frescos) y su script viaja
+                           DENTRO de #tipRoot → re-ejecuta sus bindings; la tab DBG
+                           vive FUERA del root y sobrevive con todo su historial */
+                        miRoot.replaceWith(nuevoRoot);
+                        tipRunScripts(nuevoRoot);
+
+                        try { window.dispatchEvent(new CustomEvent('rsv:inmueble-cambiado', { detail: { origen: 'tipo' } })); } catch (e3) { /* silencioso */ }
+
+                        var cnt = nuevoRoot.querySelectorAll('tr[data-tipo-id]').length;
+                        DBG.log(etiqueta + ' → micro-fragmento N3 actualizado · ' + cnt + ' tipo(s) · SIN recarga de página', 'ok');
+                    })
+                    .catch(function (e) {
+                        if (e && e.message === '__sesion__') { return; }
+                        DBG.log('✗ micro-fragmento N3 falló (' + ((e && e.message) ? e.message : e) + ') → respaldo por #showRoot (N2)', 'warn');
+                        refrescarShowRoot(etiqueta);
+                    });
+                return;
+            }
+
+            DBG.log(etiqueta + ' → sin ruta de fragmento propio' + (miRoot ? '' : ' ni #tipRoot en DOM') + ' → respaldo por #showRoot (N2)', 'debug');
+            refrescarShowRoot(etiqueta);
+        }
+
+        /* AJUSTE TIP-v1.4 · nivel 2 de la cascada: el mecanismo original por
+           #showRoot (N2), intacto salvo el selector del auto-tab corregido
+           (decía ref= en vez de href= → SyntaxError → recarga nativa). */
+        function refrescarShowRoot(etiqueta) {
             var sr = document.getElementById('showRoot');
             var miRoot = document.getElementById('tipRoot-' + UID);
 
@@ -795,12 +878,12 @@
                     /* auto-tab: reactiva el .tab-pane que contiene el fragmento repintado */
                     var pane = nuevo.closest ? nuevo.closest('.tab-pane') : null;
                     if (pane && pane.id && !pane.classList.contains('active')) {
-                        var link = document.querySelector('[data-bs-target="#' + pane.id + '"], [href="#' + pane.id + '"]');
+                        var link = document.querySelector('[data-bs-target="#' + pane.id + '"], a[href="#' + pane.id + '"]');
                         if (link && window.bootstrap && bootstrap.Tab) { bootstrap.Tab.getOrCreateInstance(link).show(); }
                     }
                     try { window.dispatchEvent(new CustomEvent('rsv:inmueble-cambiado', { detail: { origen: 'tipo' } })); } catch (e3) { /* silencioso */ }
 
-                    DBG.log(etiqueta + ' → fragmento N2 actualizado ✓ (tabla de tipos fresca)', 'ok');
+                    DBG.log(etiqueta + ' → fragmento N2 actualizado (tabla de tipos fresca)', 'ok');
                 })
                 .catch(function (e) {
                     if (e && e.message === '__sesion__') { return; }

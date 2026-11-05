@@ -1,4 +1,22 @@
-{{-- tab-reservas.blade.php · v28-DBG --}}
+{{-- tab-reservas.blade.php · v29-DBG --}}
+{{-- NOVEDADES v29-DBG (CORRECCIÓN · el front acompaña al ReservaController v29):
+   · El controlador v29 ya no trae quemado el "1 reserva por año": lee
+     max_reservas_anuales_cliente de la TARIFA ACTIVA del inmueble que
+     rige el check-in (default 1 si no hay tarifa activa o el campo es
+     null/0). Esta vista acompaña esa regla en el cliente:
+     · Caja de tarifa del mini-calendario: ahora muestra el "Límite
+       anual por asociado: N reserva(s)/año" y la temporada que rige
+       (o "sistema" si no hay tarifa aplicable).
+     · Nueva DEFENSA FINAL en el submit (antes de viajar al servidor):
+       cuenta las reservas ACTIVAS del titular en la ventana rolling
+       ±1 año del check-in nuevo, excluyendo Cancelada/Rechazada/
+       Anulada vía #rvNoBloqueantes, y bloquea con el mismo criterio
+       del backend. El 422 del servidor sigue siendo la autoridad
+       final (en modo single el DS solo ve el contexto del inmueble).
+   · dsMap ahora incluye 'uid' (id_user) para poder contar por titular.
+   · Log DBG de tarifas imprime también límite_año=N por tarifa.
+   · La tabla, el CRUD y el panel DBG no cambian.
+--}}
 {{--
    NOVEDADES v28-DBG (AGENDA DENTRO DEL FRAGMENTO · la tabla y el CRUD no cambian):
    · "Consultar" (botón) e "Ir a hoy" (enlace) dejan de navegar la página
@@ -678,6 +696,7 @@
             'uname'  => (string) (optional($r->user)->name ?? 'Sin asignar'),
             'umail'  => (string) (optional($r->user)->email ?? ''),
             'unid'   => (string) (optional($r->user)->nid ?? ''),
+            'uid'    => (string) ($r->id_user ?? ''), // 🆕 v29-DBG · para el chequeo del límite anual por titular
             'inm'    => (string) (optional($r->inmueble)->name ?? 'N/D'),
             'st'     => $r->id_rsv_statuses,
             'stn'    => (string) (optional($r->status)->name ?? 'Pendiente'),
@@ -1394,6 +1413,7 @@
 {{-- DATASET + logs PHP --}}
 <script type="application/json" id="rvDataset">{!! $dsJson !!}</script>
 <script type="application/json" id="rvStatuses">{!! $dsStatusesJson !!}</script>
+<script type="application/json" id="rvNoBloqueantes">{!! json_encode(array_values(array_map('intval', $estadosNoBloqueantesIds))) !!}</script>{{-- 🆕 v29-DBG · para el chequeo client-side del límite anual --}}
 <script type="application/json" id="rvPhpDebug">{!! $phpDebugJson !!}</script>
 
 
@@ -1648,6 +1668,16 @@
             dbgLog('ok', '<b>Dataset</b> cargado: ' + DS.length + ' reservas');
         } catch (e) { DS = []; dbgLog('err', 'Error parseando dataset: ' + e.message); }
         if (!Array.isArray(DS)) { DS = []; }
+
+        /* 🆕 v29-DBG · Estados NO-bloqueantes (Cancelada/Rechazada/Anulada)
+           para el chequeo client-side del límite anual por asociado. */
+        var RV_NO_BLOQ = [];
+        try {
+            var rawNB = document.getElementById('rvNoBloqueantes');
+            RV_NO_BLOQ = JSON.parse(rawNB ? (rawNB.textContent || '[]') : '[]');
+        } catch (e) { RV_NO_BLOQ = []; }
+        if (!Array.isArray(RV_NO_BLOQ)) { RV_NO_BLOQ = []; }
+        dbgLog('info', '<b>Límite anual v29</b>: chequeo client-side activo · estados no-bloqueantes=' + (RV_NO_BLOQ.length ? RV_NO_BLOQ.join(',') : 'NINGUNO'));
 
         var PAGE_SIZE = 15;
         var page = 1;
@@ -2555,6 +2585,44 @@
             return menor;
         }
 
+        /* 🆕 v29-DBG · LÍMITE ANUAL POR ASOCIADO (espejo client-side de
+           validarLimiteAnualCliente del controlador v29):
+           · Máximo = max_reservas_anuales_cliente de la tarifa aplicable
+             al rango (la más restrictiva) · sin tarifa / null / 0 → 1.
+           · Ventana rolling ±1 año alrededor del check-in nuevo.
+           · Cuenta reservas ACTIVAS del titular desde el DS local. */
+        function limiteAnualDelRango(start, end) {
+            var tarifas = tarifasEnRango(start, end);
+            var limite = 0, tarifa = null;
+            for (var i = 0; i < tarifas.length; i++) {
+                var v = parseInt(tarifas[i].max_reservas_anuales_cliente || 0, 10);
+                if (v > 0 && (limite === 0 || v < limite)) { limite = v; tarifa = tarifas[i]; }
+            }
+            if (limite === 0) { limite = 1; tarifa = null; }
+            return { limite: limite, tarifa: tarifa };
+        }
+        function rvYmd(d) {
+            return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        }
+        function conteoAnualTitular(uid, fiStr) {
+            var fi = calParse(fiStr);
+            if (!fi || isNaN(fi.getTime())) return { conteo: 0, limInf: '', limSup: '' };
+            var dInf = new Date(fi.getTime()); dInf.setFullYear(dInf.getFullYear() - 1);
+            var dSup = new Date(fi.getTime()); dSup.setFullYear(dSup.getFullYear() + 1);
+            var limInf = rvYmd(dInf), limSup = rvYmd(dSup);
+            var noBloq = (typeof RV_NO_BLOQ !== 'undefined' && Array.isArray(RV_NO_BLOQ)) ? RV_NO_BLOQ.map(String) : [];
+            var conteo = 0;
+            for (var i = 0; i < DS.length; i++) {
+                var it = DS[i];
+                if (!it || String(it.uid || '') !== String(uid)) continue;
+                if (!it.fi) continue;
+                if (it.fi < limInf || it.fi > limSup) continue;
+                if (noBloq.length && noBloq.indexOf(String(it.st)) !== -1) continue;
+                conteo++;
+            }
+            return { conteo: conteo, limInf: limInf, limSup: limSup };
+        }
+
         function tarifaParaNoche(fecha) {
             var t = fecha.getTime();
             for (var i=0; i<calState.tarifas.length; i++) {
@@ -2848,6 +2916,9 @@
                             h += '</div>';
                         }
 
+                        /* 🆕 v29-DBG · Límite anual por asociado que rige el rango */
+                        var limInfo = limiteAnualDelRango(calState.startSel, calState.endSel);
+                        h += '<br><small>Límite anual por asociado: <b>' + limInfo.limite + ' reserva(s)/año</b>' + (limInfo.tarifa ? ' (temporada ' + esc(limInfo.tarifa.nombre) + ')' : ' (sistema)') + '</small><br>';
                         h += '<br><small>Mín. reserva aplicable: <b>' + money0(minAplicable) + '</b></small><br>';
                         h += '<span class="precio-sug">Precio sugerido: ' + money(precioSug) + ' <small>(' + noches + ' noches)</small></span>';
                     }
@@ -2938,7 +3009,8 @@
                                 + ' · $/noche=' + t.precio_noche
                                 + ' · finde=' + t.precio_fin_semana
                                 + ' · mín=' + t.precio_minimo_reserva
-                                + ' · max_días=' + t.dias_maximos);
+                                + ' · max_días=' + t.dias_maximos
+                                + ' · límite_año=' + (t.max_reservas_anuales_cliente || 0)); // 🆕 v29-DBG
                         });
                     }
                     if (calState.occupied.length === 0) {
@@ -3187,6 +3259,29 @@
                         alertNR.classList.remove('d-none');
                     }
                     return;
+                }
+
+                /* 🆕 v29-DBG · DEFENSA FINAL: LÍMITE ANUAL POR ASOCIADO
+                   (espejo de validarLimiteAnualCliente · controlador v29).
+                   Cuenta las reservas ACTIVAS del titular en la ventana
+                   rolling ±1 año del check-in nuevo. El 422 del servidor
+                   sigue siendo la autoridad final. */
+                var uidSel = fldUser ? String(fldUser.value || '') : '';
+                if (uidSel) {
+                    var limAnual = limiteAnualDelRango(fiDate, ffDate);
+                    var resAnual = conteoAnualTitular(uidSel, fiVal);
+                    if (resAnual.conteo >= limAnual.limite) {
+                        var origenLim = limAnual.tarifa
+                            ? 'La temporada "' + esc(limAnual.tarifa.nombre) + '" permite un máximo de ' + limAnual.limite + ' reserva(s) por año por asociado.'
+                            : 'Se aplica el límite del sistema: 1 reserva por año.';
+                        dbgLog('warn', '<b>Submit bloqueado</b>: límite anual del asociado · conteo=' + resAnual.conteo + ' · límite=' + limAnual.limite + ' · ventana ' + resAnual.limInf + ' → ' + resAnual.limSup);
+                        if (alertNR) {
+                            alertNR.innerHTML = '<i class="bi bi-calendar-x me-1"></i>El asociado ya tiene <b>' + resAnual.conteo + ' reserva(s) ACTIVA(S)</b> en menos de un año de diferencia (ventana ' + fmtDMY(resAnual.limInf) + ' → ' + fmtDMY(resAnual.limSup) + '). ' + origenLim + ' Verifique que la reserva anterior esté en estado "Cancelada", "Rechazada" o "Anulada".';
+                            alertNR.classList.remove('d-none');
+                        }
+                        return;
+                    }
+                    dbgLog('ok', '<b>Límite anual OK</b>: ' + resAnual.conteo + '/' + limAnual.limite + ' en ventana ' + resAnual.limInf + ' → ' + resAnual.limSup + (modo === 'single' ? ' (contexto single: el servidor valida el histórico global)' : ''));
                 }
 
                 var montoInput = document.getElementById('fldMonto');

@@ -210,5 +210,60 @@ class TarifaTemporadaController extends Controller
         }
     }
 
-    // ELIMINADO EL METODO destroy()
+    /**
+     * ════════════════════════════════════════════════════════════════
+     * ELIMINACIÓN LÓGICA (Soft Delete)
+     * Utiliza el trait SoftDeletes del modelo para llenar 'deleted_at'.
+     * Maneja respuestas Duales (Web/JSON).
+     * ════════════════════════════════════════════════════════════════
+     */
+    public function destroy(Request $request, string $id): JsonResponse|RedirectResponse
+    {
+        try {
+            $tarifa = TarifaTemporada::findOrFail($id);
+
+            DB::transaction(function () use ($tarifa) {
+                $tarifa->delete(); // Esto llena 'deleted_at', no borra de la BD
+            });
+
+            Log::info('Tarifa de temporada ELIMINADA LÓGICAMENTE', [
+                'id' => $tarifa->id,
+                'inmueble_id' => $tarifa->id_rsv_catalogo_inmueble,
+            ]);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarifa eliminada lógicamente de manera exitosa.',
+                ], 200);
+            }
+
+            return redirect()->back()
+                ->with('success', 'Tarifa eliminada exitosamente.');
+
+        } catch (ModelNotFoundException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La tarifa solicitada no existe o ya fue eliminada.',
+                ], 404);
+            }
+            return back()->with('error', 'La tarifa solicitada no existe o ya fue eliminada.');
+
+        } catch (Throwable $e) {
+            Log::error('Error en TarifaTemporadaController@destroy: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al eliminar la tarifa.',
+                    'error'   => config('app.debug') ? $e->getMessage() : null,
+                ], 500);
+            }
+
+            return back()->with('error', 'Ocurrió un error al intentar eliminar la tarifa.');
+        }
+    }
 }

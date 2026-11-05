@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- *  ReservaController · App\Http\Controllers\Rsv · v28 (CORREGIDO)
+ *  ReservaController · App\Http\Controllers\Rsv · v29
  * ============================================================================
  *
  *  Controller del módulo de Reservas (RSV).
@@ -20,23 +20,55 @@
  *   · cambiarEstado()     → Cambio de estado justificado + historial
  *   · fechasOcupadasAjax() → Disponibilidad por inmueble (para mini-calendario)
  *
+ *  Helpers privados (motor de reglas):
+ *  ────────────────────────────────────────────────────────────────────────
+ *   · getEstadosNoBloqueantesIds()  → IDs de estados Cancelada/Rechazada/Anulada.
+ *   · getTarifaAplicable()        🆕 v29 → Tarifa ACTIVA del inmueble que rige
+ *                                   el rango (si cubre todo el rango se usa
+ *                                   esa; si el rango cruza temporadas, rige
+ *                                   la tarifa activa del CHECK-IN).
+ *   · getLimiteAnualDesdeTarifa() 🆕 v29 → Límite anual leído del MODELO
+ *                                   (max_reservas_anuales_cliente).
+ *                                   Sin tarifa / null / 0 → 1 (legacy v28).
+ *   · validarLimiteAnualCliente() 🆕 v29 → ÚNICA implementación de la regla
+ *                                   del año (la usan store/update/storeAjax).
+ *
  *  Reglas de negocio críticas (NO REMOVER):
  *  ────────────────────────────────────────────────────────────────────────
  *   1. storeAjax() SIEMPRE asigna estado "Pendiente" (ignora el del form).
- *   2. 🆕 v28 · UN ASOCIADO SOLO PUEDE TENER UNA RESERVA CON UN AÑO DE DIFERENCIA
- *      (sin importar el inmueble). El check-in (fecha_inicio) define la restricción.
- *      Se cambió whereYear() por whereBetween() para ser 100% compatible con la BD
- *      y asegurar que la distancia mínima sea 1 año.
- *      🆕 v28.1 · Se EXCLUYEN reservas con estado Cancelada/Rechazada/Anulada.
+ *   2. 🆕 v29 · LÍMITE ANUAL DE RESERVAS POR ASOCIADO — YA NO ESTÁ QUEMADO:
+ *      · Ventana ROLLING de ±1 año alrededor del check-in nuevo (se mantiene
+ *        la lógica v28/v28.1: whereBetween + exclusión de Cancelada/
+ *        Rechazada/Anulada). El check-in (fecha_inicio) define la ventana y
+ *        se cuentan reservas ACTIVAS de CUALQUIER inmueble (como en v28).
+ *      · El MÁXIMO permitido se lee del modelo TarifaTemporada:
+ *        max_reservas_anuales_cliente de la TARIFA ACTIVA del inmueble que
+ *        cubre el check-in. Si no hay tarifa activa aplicable o el campo es
+ *        null / 0 / vacío → límite 1 (retrocompatible con v28).
+ *      · Se pasa de exists() a COUNT(): el límite ahora puede ser 1, 2, 3...
+ *      · La regla vive SOLO en validarLimiteAnualCliente() (antes estaba
+ *        duplicada en store(), update() y storeAjax() con mensajes distintos).
+ *   2b. 🆕 v29 · SOLO TARIFAS ACTIVAS (active = true) APLICAN:
+ *      · Una tarifa DESACTIVADA deja de gobernar monto mínimo, días máximos
+ *        y límite anual de las reservas nuevas.
+ *      · fechasOcupadasAjax() deja de entregar tarifas inactivas al
+ *        mini-calendario.
+ *      · Semántica del catálogo: un inmueble puede tener muchas temporadas
+ *        al año pero solo UNA activa por período; pueden coexistir dos
+ *        activas de distinto año (la fecha del check-in decide cuál rige).
  *   3. storeAjax() valida SOLAPAMIENTO de fechas contra reservas existentes
  *      del mismo inmueble + bloqueos de calendario + día de alistamiento.
  *   4. storeAjax() valida monto mínimo según tarifa aplicable
  *      (precio_minimo_reserva) o 200.000 si no hay tarifa.
  *   5. storeAjax() valida noches máximas según tarifa aplicable (dias_maximos).
  *   6. Toda creación/actualización/cambio de estado registra HistorialEstado.
+ *      🆕 v29 · storeAjax() deja en el historial el límite anual aplicado.
  *   7. La creación/actualización va envuelta en DB::transaction para rollback.
  *   8. fechasOcupadasAjax() incluye datos del TITULAR.
- * ============================================================================
+ *   9. 🆕 v29 · update() valida límite anual y solapamiento aunque el form
+ *      solo envíe UNA de las dos fechas (v28 se saltaba TODAS las
+ *      validaciones si faltaba una; la faltante se toma de la reserva actual).
+ *  ============================================================================
  */
 
 namespace App\Http\Controllers\Rsv;
@@ -80,6 +112,113 @@ class ReservaController extends Controller
             Log::warning('getEstadosNoBloqueantesIds: ' . $e->getMessage());
             return [];
         }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+     * 🆕 v29 · MOTOR DE TARIFA APLICABLE Y LÍMITE ANUAL (antes quemado en v28)
+     * ═══════════════════════════════════════════════════════════════════════ */
+
+    /**
+     * 🆕 v29 · Tarifa ACTIVA del inmueble que rige el rango solicitado.
+     *
+     * 1) Preferida: tarifa activa que cubre TODO el rango de la estadía.
+     * 2) Fallback: si el rango cruza temporadas (o ninguna cubre todo), rige
+     *    la tarifa ACTIVA que cubre el CHECK-IN (fecha_inicio).
+     *
+     * Nunca devuelve tarifas inactivas: active = false queda fuera siempre.
+     */
+    private function getTarifaAplicable($idInmueble, \Illuminate\Support\Carbon $fi, \Illuminate\Support\Carbon $ff): ?TarifaTemporada
+    {
+        try {
+            if (!class_exists(TarifaTemporada::class)) {
+                return null;
+            }
+
+            // Preferida: cubre TODO el rango
+            $tarifa = TarifaTemporada::where('id_rsv_catalogo_inmueble', $idInmueble)
+                ->where('active', true)
+                ->whereDate('fecha_inicio', '<=', $fi->toDateString())
+                ->whereDate('fecha_fin', '>=', $ff->toDateString())
+                ->orderBy('fecha_inicio', 'desc')
+                ->first();
+
+            // Fallback v29: rango que cruza temporadas → rige la del CHECK-IN
+            if (!$tarifa) {
+                $tarifa = TarifaTemporada::where('id_rsv_catalogo_inmueble', $idInmueble)
+                    ->where('active', true)
+                    ->whereDate('fecha_inicio', '<=', $fi->toDateString())
+                    ->whereDate('fecha_fin', '>=', $fi->toDateString())
+                    ->orderBy('fecha_inicio', 'desc')
+                    ->first();
+            }
+
+            return $tarifa;
+        } catch (Throwable $e) {
+            Log::warning('getTarifaAplicable: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 🆕 v29 · Límite anual por asociado leído del MODELO (ya no está quemado).
+     *
+     * max_reservas_anuales_cliente de la tarifa aplicable.
+     * Sin tarifa / null / 0 / vacío → 1 (comportamiento legacy de v28).
+     */
+    private function getLimiteAnualDesdeTarifa(?TarifaTemporada $tarifa): int
+    {
+        if (!$tarifa) {
+            return 1;
+        }
+        $valor = (int) ($tarifa->max_reservas_anuales_cliente ?? 0);
+        return $valor > 0 ? $valor : 1;
+    }
+
+    /**
+     * 🆕 v29 · ÚNICA implementación de la regla del año (store/update/storeAjax).
+     *
+     * Ventana ROLLING ±1 año alrededor del check-in nuevo (whereBetween,
+     * inclusiva — se mantiene exactamente la ventana de v28). Cuenta reservas
+     * ACTIVAS del asociado en cualquier inmueble, excluyendo los estados
+     * Cancelada/Rechazada/Anulada y, en update(), la propia reserva.
+     *
+     * Devuelve null si el límite se cumple, o el mensaje de error (422) si se
+     * supera. El mensaje informa cuántas reservas hay, la ventana evaluada y
+     * de dónde sale el máximo (temporada X o límite del sistema).
+     */
+    private function validarLimiteAnualCliente($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): ?string
+    {
+        $limite = $this->getLimiteAnualDesdeTarifa($tarifa);
+
+        $limiteInferior = $fi->copy()->subYear()->format('Y-m-d');
+        $limiteSuperior = $fi->copy()->addYear()->format('Y-m-d');
+
+        $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
+
+        $query = Reserva::where('id_user', $idUsuario)
+            ->whereBetween('fecha_inicio', [$limiteInferior, $limiteSuperior]);
+
+        if (!empty($estadosNoBloqueantes)) {
+            $query->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
+        }
+        if (!empty($excluirReservaId)) {
+            $query->where('id', '!=', $excluirReservaId);
+        }
+
+        $conteo = (int) $query->count();
+
+        if ($conteo < $limite) {
+            return null;
+        }
+
+        $origenLimite = $tarifa
+            ? 'La temporada "' . $tarifa->nombre_temporada . '" permite un máximo de ' . $limite . ' reserva(s) por año por asociado.'
+            : 'Se aplica el límite del sistema: 1 reserva por año (sin tarifa activa aplicable a la fecha del check-in).';
+
+        return 'El asociado ya tiene ' . $conteo . ' reserva(s) ACTIVA(S) en menos de un año de diferencia '
+            . '(ventana ' . $limiteInferior . ' → ' . $limiteSuperior . '; se cuentan reservas de cualquier inmueble y el check-in define la ventana). '
+            . $origenLimite . ' '
+            . 'Si canceló una reserva, verifique que su estado sea "Cancelada", "Rechazada" o "Anulada".';
     }
 
 
@@ -174,27 +313,21 @@ class ReservaController extends Controller
             $fi = \Illuminate\Support\Carbon::parse($validatedData['fecha_inicio'])->startOfDay();
             $ff = \Illuminate\Support\Carbon::parse($validatedData['fecha_fin'])->startOfDay();
 
-            // ─── 🆕 v28 · VALIDACIÓN EXTRICTA: UNA RESERVA POR AÑO ───
-            // Se usa rango estricto de 1 año (365 días) de diferencia.
-            $limiteInferior = $fi->copy()->subYear()->format('Y-m-d');
-            $limiteSuperior = $fi->copy()->addYear()->format('Y-m-d');
+            // ─── 🆕 v29 · LÍMITE ANUAL CONFIGURABLE (en v28 estaba quemado a 1) ───
+            // Regla unificada en validarLimiteAnualCliente(): ventana rolling
+            // ±1 año alrededor del check-in + máximo leído de la tarifa ACTIVA
+            // del inmueble (max_reservas_anuales_cliente; null/0 → 1).
+            $tarifaLimite = $this->getTarifaAplicable($validatedData['id_rsv_catalogo_inmueble'], $fi, $ff);
+            $errorLimite = $this->validarLimiteAnualCliente((int) $validatedData['id_user'], $fi, null, $tarifaLimite);
 
-            $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
-            $asociadoTieneReservaEnAnio = Reserva::where('id_user', $validatedData['id_user'])
-                ->whereBetween('fecha_inicio', [$limiteInferior, $limiteSuperior])
-                ->when(!empty($estadosNoBloqueantes), function ($q) use ($estadosNoBloqueantes) {
-                    $q->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
-                })
-                ->exists();
-
-            if ($asociadoTieneReservaEnAnio) {
+            if ($errorLimite !== null) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'El asociado seleccionado ya tiene una reserva ACTIVA en menos de un año de diferencia. '
-                        . 'La diferencia de fechas entre reservas debe ser estrictamente de al menos 1 año. '
-                        . 'Si canceló una reserva, verifique que su estado sea "Cancelada" o "Rechazada".',
+                    'message' => $errorLimite,
                 ], 422);
             }
+
+            $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
 
             // ─── Validar solapamiento de fechas (defensa en profundidad) ───
             $solapada = Reserva::where('id_rsv_catalogo_inmueble', $validatedData['id_rsv_catalogo_inmueble'])
@@ -318,50 +451,58 @@ class ReservaController extends Controller
             }
 
             $validatedData = $request->validated();
-            $newFi = isset($validatedData['fecha_inicio']) ? \Illuminate\Support\Carbon::parse($validatedData['fecha_inicio'])->startOfDay() : null;
-            $newFf = isset($validatedData['fecha_fin']) ? \Illuminate\Support\Carbon::parse($validatedData['fecha_fin'])->startOfDay() : null;
 
-            if ($newFi && $newFf) {
-                // ─── Validación 1 año diferencia ───
-                $limiteInferior = $newFi->copy()->subYear()->format('Y-m-d');
-                $limiteSuperior = $newFi->copy()->addYear()->format('Y-m-d');
-                
-                $userId = $validatedData['id_user'] ?? $reserva->id_user;
-                $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
-                
-                $asociadoTieneReservaEnAnio = Reserva::where('id_user', $userId)
-                    ->where('id', '!=', $reserva->id)
-                    ->whereBetween('fecha_inicio', [$limiteInferior, $limiteSuperior])
-                    ->when(!empty($estadosNoBloqueantes), function ($q) use ($estadosNoBloqueantes) {
-                        $q->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
-                    })
-                    ->exists();
+            // ─── 🆕 v29 · FECHAS EFECTIVAS ───
+            // Si el form solo envía una fecha, la otra se toma de la reserva
+            // actual (v28 se saltaba TODAS las validaciones en ese caso).
+            $efFi = isset($validatedData['fecha_inicio'])
+                ? \Illuminate\Support\Carbon::parse($validatedData['fecha_inicio'])->startOfDay()
+                : ($reserva->fecha_inicio ? \Illuminate\Support\Carbon::parse($reserva->fecha_inicio)->startOfDay() : null);
+            $efFf = isset($validatedData['fecha_fin'])
+                ? \Illuminate\Support\Carbon::parse($validatedData['fecha_fin'])->startOfDay()
+                : ($reserva->fecha_fin ? \Illuminate\Support\Carbon::parse($reserva->fecha_fin)->startOfDay() : null);
 
-                if ($asociadoTieneReservaEnAnio) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El asociado ya tiene otra reserva ACTIVA en menos de 1 año de diferencia. '
-                            . 'Un asociado solo puede tener una reserva activa con 1 año de distancia mínima.',
-                    ], 422);
+            $cambiaFechas  = isset($validatedData['fecha_inicio']) || isset($validatedData['fecha_fin']);
+            $cambiaUsuario = array_key_exists('id_user', $validatedData)
+                && (int) $validatedData['id_user'] !== (int) $reserva->id_user;
+
+            if ($cambiaFechas || $cambiaUsuario) {
+
+                // ─── 🆕 v29 · LÍMITE ANUAL (regla unificada v29, excluyéndose a sí misma) ───
+                if ($efFi) {
+                    $userId = $validatedData['id_user'] ?? $reserva->id_user;
+                    $tarifaLimite = $this->getTarifaAplicable($reserva->id_rsv_catalogo_inmueble, $efFi, $efFf ?? $efFi);
+                    $errorLimite = $this->validarLimiteAnualCliente((int) $userId, $efFi, (int) $reserva->id, $tarifaLimite);
+
+                    if ($errorLimite !== null) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $errorLimite,
+                        ], 422);
+                    }
                 }
 
-                // ─── Validación de Solapamiento
-                $solapada = Reserva::where('id_rsv_catalogo_inmueble', $reserva->id_rsv_catalogo_inmueble)
-                    ->where('id', '!=', $reserva->id)
-                    ->whereNotNull('fecha_inicio')
-                    ->whereNotNull('fecha_fin')
-                    ->where('fecha_inicio', '<', $newFf)
-                    ->whereRaw('DATE_ADD(fecha_fin, INTERVAL 1 DAY) > ?', [$newFi])
-                    ->when(!empty($estadosNoBloqueantes), function ($q) use ($estadosNoBloqueantes) {
-                        $q->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
-                    })
-                    ->exists();
+                // ─── Validación de Solapamiento (v29: también si solo cambia una fecha) ───
+                if ($cambiaFechas && $efFi && $efFf) {
+                    $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
 
-                if ($solapada) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El nuevo rango de fechas se solapa con otra reserva existente (o su día de alistamiento).',
-                    ], 422);
+                    $solapada = Reserva::where('id_rsv_catalogo_inmueble', $reserva->id_rsv_catalogo_inmueble)
+                        ->where('id', '!=', $reserva->id)
+                        ->whereNotNull('fecha_inicio')
+                        ->whereNotNull('fecha_fin')
+                        ->where('fecha_inicio', '<', $efFf)
+                        ->whereRaw('DATE_ADD(fecha_fin, INTERVAL 1 DAY) > ?', [$efFi])
+                        ->when(!empty($estadosNoBloqueantes), function ($q) use ($estadosNoBloqueantes) {
+                            $q->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
+                        })
+                        ->exists();
+
+                    if ($solapada) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'El nuevo rango de fechas se solapa con otra reserva existente (o su día de alistamiento).',
+                        ], 422);
+                    }
                 }
             }
 
@@ -569,13 +710,17 @@ class ReservaController extends Controller
             $hoy = now()->startOfDay();
             if (class_exists(TarifaTemporada::class)) {
                 try {
+                    // 🆕 v29 · Solo tarifas ACTIVAS llegan al mini-calendario
+                    // (una desactivada deja de mostrarse/aplicar en nueva reserva).
                     $tarifasDb = TarifaTemporada::where('id_rsv_catalogo_inmueble', $inmueble)
+                        ->where('active', true)
                         ->whereDate('fecha_fin', '>=', $hoy->toDateString())
                         ->orderBy('fecha_inicio')
                         ->get([
                             'nombre_temporada', 'fecha_inicio', 'fecha_fin',
                             'precio_noche', 'precio_fin_semana',
-                            'precio_minimo_reserva', 'dias_maximos', 'active',
+                            'precio_minimo_reserva', 'dias_maximos',
+                            'max_reservas_anuales_cliente', 'active',
                         ]);
 
                     foreach ($tarifasDb as $t) {
@@ -587,6 +732,7 @@ class ReservaController extends Controller
                             'precio_fin_semana'     => (float) ($t->precio_fin_semana ?? 0),
                             'precio_minimo_reserva' => (float) ($t->precio_minimo_reserva ?? 0),
                             'dias_maximos'          => (int) ($t->dias_maximos ?? 0),
+                            'max_reservas_anuales_cliente' => (int) ($t->max_reservas_anuales_cliente ?? 0), // 🆕 v29
                             'active'                => (bool) ($t->active ?? true),
                         ];
                     }
@@ -638,48 +784,34 @@ class ReservaController extends Controller
 
             $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
 
-            // ─── 2 · 🆕 v28 · UN ASOCIADO = UNA RESERVA CON AL MENOS 1 AÑO DE DISTANCIA ───
-            // Se abandona el whereYear que puede fallar en ciertos motores y en cambio 
-            // se verifica explicitamente un radio de 365 días (+/- un año) 
-            $limiteInferior = $fi->copy()->subYear()->format('Y-m-d');
-            $limiteSuperior = $fi->copy()->addYear()->format('Y-m-d');
-
-            $asociadoTieneReservaEnAnio = Reserva::where('id_user', $data['id_user'])
-                ->whereBetween('fecha_inicio', [$limiteInferior, $limiteSuperior])
-                ->when(!empty($estadosNoBloqueantes), function ($q) use ($estadosNoBloqueantes) {
-                    $q->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
-                })
-                ->exists();
-
-            if ($asociadoTieneReservaEnAnio) {
-                return response()->json([
-                    'ok'      => false,
-                    'message' => 'El asociado seleccionado ya tiene una reserva ACTIVA creada a menos de un año de distancia. '
-                        . 'La diferencia obligatoria entre reservas debe ser al menos de 1 año exacto (365 días). '
-                        . 'Si el usuario canceló su reserva anterior, asegúrate de que esté en estado "Cancelada" o "Anulada" y no "Pendiente".',
-                ], 422);
-            }
-
-            // ─── 3 · Calcular tarifa aplicable al rango ───
+            // ─── 3 · 🆕 v29 · TARIFA APLICABLE PRIMERO (v28 la consultaba después) ───
+            // getTarifaAplicable() SOLO devuelve tarifas ACTIVAS: al desactivar
+            // una temporada, esta deja de gobernar monto mínimo, días máximos
+            // y límite anual de las reservas nuevas.
             $montoMinAplicable = self::MONTO_MIN_BASE;
             $diasMaxAplicable  = 0;
-            $tarifaAplicable   = null;
+            $tarifaAplicable   = $this->getTarifaAplicable($data['id_rsv_catalogo_inmueble'], $fi, $ff);
 
-            if (class_exists(TarifaTemporada::class)) {
-                $tarifaAplicable = TarifaTemporada::where('id_rsv_catalogo_inmueble', $data['id_rsv_catalogo_inmueble'])
-                    ->whereDate('fecha_inicio', '<=', $fi->toDateString())
-                    ->whereDate('fecha_fin', '>=', $ff->toDateString())
-                    ->orderBy('fecha_inicio', 'desc')
-                    ->first();
-
-                if ($tarifaAplicable) {
-                    if ($tarifaAplicable->precio_minimo_reserva > 0) {
-                        $montoMinAplicable = max(self::MONTO_MIN_BASE, (float) $tarifaAplicable->precio_minimo_reserva);
-                    }
-                    if ($tarifaAplicable->dias_maximos > 0) {
-                        $diasMaxAplicable = (int) $tarifaAplicable->dias_maximos;
-                    }
+            if ($tarifaAplicable) {
+                if ($tarifaAplicable->precio_minimo_reserva > 0) {
+                    $montoMinAplicable = max(self::MONTO_MIN_BASE, (float) $tarifaAplicable->precio_minimo_reserva);
                 }
+                if ($tarifaAplicable->dias_maximos > 0) {
+                    $diasMaxAplicable = (int) $tarifaAplicable->dias_maximos;
+                }
+            }
+
+            // ─── 2 · 🆕 v29 · LÍMITE ANUAL DESDE EL MODELO (v28 estaba quemado a 1) ───
+            // Ventana rolling ±1 año alrededor del check-in nuevo (se mantiene
+            // v28/v28.1). El máximo se lee de max_reservas_anuales_cliente de la
+            // tarifa ACTIVA aplicable; sin tarifa / null / 0 → 1 (legacy v28).
+            $errorLimite = $this->validarLimiteAnualCliente((int) $data['id_user'], $fi, null, $tarifaAplicable);
+
+            if ($errorLimite !== null) {
+                return response()->json([
+                    'ok'      => false,
+                    'message' => $errorLimite,
+                ], 422);
             }
 
             if ((float) $data['monto_total'] < $montoMinAplicable) {
@@ -753,6 +885,9 @@ class ReservaController extends Controller
         $data['id_rsv_statuses'] = $pendiente->id;
         $data['codigo_reserva'] = $this->generarCodigoReserva();
 
+        // 🆕 v29 · Para dejar trazabilidad del límite aplicado en el historial
+        $limiteAnualAplicable = $this->getLimiteAnualDesdeTarifa($tarifaAplicable);
+
         DB::beginTransaction();
         try {
             $reserva = Reserva::create([
@@ -773,7 +908,8 @@ class ReservaController extends Controller
                 'id_rsv_statuses_nuevo'    => $reserva->id_rsv_statuses,
                 'id_user'                  => Auth::check() ? Auth::id() : $data['id_user'],
                 'comentario'               => 'Reserva creada desde tab-reservas · Estado inicial: Pendiente · Año ' . $fi->year
-                    . ($tarifaAplicable ? ' · Tarifa aplicada: ' . $tarifaAplicable->nombre_temporada : ' · Sin tarifa aplicable'),
+                    . ($tarifaAplicable ? ' · Tarifa aplicada: ' . $tarifaAplicable->nombre_temporada : ' · Sin tarifa aplicable')
+                    . ' · Límite anual asociado: ' . $limiteAnualAplicable, // 🆕 v29
             ]);
 
             DB::commit();

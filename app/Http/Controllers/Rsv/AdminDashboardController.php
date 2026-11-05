@@ -399,12 +399,20 @@ class AdminDashboardController extends Controller
     public function inmueblesTipoFragmento(Request $request)
     {
         try {
-            $tipos = TipoInmueble::withCount('inmuebles')->orderBy('name', 'asc')->get();
+            // AJUSTE TIP-v1.4 · consulta canónica (columna 'nombre' + relación 'catalogoInmuebles')
+            try {
+                $tipos = \App\Models\Rsv\TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get();
+            } catch (\Throwable $e1) {
+                // Respaldo: tu consulta original (alias 'name' / relación 'inmuebles')
+                $tipos = \App\Models\Rsv\TipoInmueble::withCount('inmuebles')->orderBy('name', 'asc')->get();
+            }
+
             return response()
-                ->view('rsv.admin.partials.inmuebles.tipo', compact('tipos'))
+                // La vista acepta $tipos (nuevo) y $tiposCollection (histórico)
+                ->view('rsv.admin.partials.inmuebles.tipo', ['tipos' => $tipos, 'tiposCollection' => $tipos])
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (\Throwable $e) {
-            Log::error('inmueblesTipoFragmento: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('inmueblesTipoFragmento: ' . $e->getMessage());
             return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
         }
     }
@@ -427,13 +435,27 @@ class AdminDashboardController extends Controller
             /* ── CIERRES-AYUDA (todo dentro del método: un solo bloque que pegar) ── */
 
             /* Extrae el bloque <div id="rvTabWrap">…</div> por balance de <div>.
+            🆕 v16-FRAG · el balance corre sobre una copia SANITIZADA donde los
+            cuerpos de <script>…</script>, <style>…</style> y los comentarios
+            <!-- … --> se sustituyen por espacios (mismo largo en bytes), así los
+            <div> que el JS del tab escribe dentro de strings (filas, toasts…)
+            y los </div> en comentarios ya no pueden desbalancear el corte. La
+            copia tiene EXACTAMENTE los mismos bytes que el original (solo cambia
+            contenido por espacios), así que sus offsets coinciden 1 a 1 y el
+            bloque se recorta del $html ORIGINAL.
             Devuelve [bloque, offsetDelInicio] o null si no es balanceable. */
             $extraerWrap = function ($html) {
                 if (!is_string($html) || $html === '') { return null; }
-                if (!preg_match('/<div\b[^>]*\bid=(["\'])rvTabWrap\1[^>]*>/i', $html, $mA, PREG_OFFSET_CAPTURE)) { return null; }
+                /* 🆕 v16-FRAG · copia sanitizada (mismo largo, offsets intactos) */
+                $limpio = preg_replace_callback(
+                    '/<!--.*?-->|<script\b[^>]*>.*?<\/script\s*>|<style\b[^>]*>.*?<\/style\s*>/is',
+                    function ($mS) { return str_repeat(' ', strlen($mS[0])); },
+                    $html
+                );
+                if (!preg_match('/<div\b[^>]*\bid=(["\'])rvTabWrap\1[^>]*>/i', $limpio, $mA, PREG_OFFSET_CAPTURE)) { return null; }
                 $ini         = $mA[0][1];
                 $finApertura = $ini + strlen($mA[0][0]);
-                if (!preg_match_all('/<div\b|<\/div\s*>/i', $html, $mT, PREG_OFFSET_CAPTURE)) { return null; }
+                if (!preg_match_all('/<div\b|<\/div\s*>/i', $limpio, $mT, PREG_OFFSET_CAPTURE)) { return null; }
                 $prof = 0;
                 foreach ($mT[0] as $t) {
                     if ($t[1] < $finApertura) { continue; }
@@ -529,8 +551,9 @@ class AdminDashboardController extends Controller
             };
 
             /* ── RED 1 · CANDIDATAS EXPLÍCITAS (baratas: exists + contrato) ──
-            🆕 v15-AGD · PRIMERA: el nombre CORRECTO del archivo actual
-            (tab-reservas.blade.php v28-DBG). El typo histórico v14
+            🆕 v16-FRAG · PRIMERA: el nombre CORRECTO del archivo actual
+            (tab-reservas.blade.php v29-DBG, alineado al ReservaController v29:
+            límite anual desde la tarifa ACTIVA). El typo histórico v14
             ('tab-resrvas') queda como fallback por si el archivo viejo
             aún vive en el servidor: si existe el correcto, gana el correcto. */
             $candidatas1a = [
@@ -681,8 +704,10 @@ class AdminDashboardController extends Controller
                     'vista=' . $v . ' · envuelta en el wrap (modo compatible v10)');
             }
 
-            /* ── Nada válido → fallo LIMPIO, visible en el panel 🐛 ── */
-            $msg = 'error: fragmento v14: sin fragmento del tab de reservas (detalle: '
+            /* ── Nada válido → fallo LIMPIO, visible en el panel 🐛 ──
+            🆕 v16-FRAG · el texto decía "fragmento v14" (histórico): ahora dice
+            la versión que realmente corre. */
+            $msg = 'error: fragmento v16: sin fragmento del tab de reservas (detalle: '
                 . implode(' · ', array_slice($cortas, 0, 6))
                 . '). Todo el detalle está en laravel.log · "reservasFragmento". Si persiste, pega el @include del tab del dashboard.';
             Log::error('reservasFragmento: ninguna red entregó el tab', ['probadas' => $probadas]);
