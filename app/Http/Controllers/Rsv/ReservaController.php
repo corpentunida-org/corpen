@@ -2,7 +2,7 @@
 
 /**
  * ============================================================================
- *  ReservaController · App\Http\Controllers\Rsv · v29
+ *  ReservaController · App\Http\Controllers\Rsv · v31
  * ============================================================================
  *
  *  Controller del módulo de Reservas (RSV).
@@ -30,8 +30,22 @@
  *   · getLimiteAnualDesdeTarifa() 🆕 v29 → Límite anual leído del MODELO
  *                                   (max_reservas_anuales_cliente).
  *                                   Sin tarifa / null / 0 → 1 (legacy v28).
- *   · validarLimiteAnualCliente() 🆕 v29 → ÚNICA implementación de la regla
- *                                   del año (la usan store/update/storeAjax).
+ *   · validarLimiteAnualCliente() 🆕 v29 → wrapper del motor: devuelve solo
+ *                                   el mensaje (o null). El motor único es
+ *                                   evaluarLimiteAnual() desde v30-EXC.
+ *   · evaluarLimiteAnual()        🆕 v30 → motor ÚNICO de la regla del año:
+ *                                   mensaje + contexto completo para auditar.
+ *   · resolverExcepcionLimite()   🆕 v31 → decide el salto del bloque con
+ *                                   motivo obligatorio (revalidación
+ *                                   server-side). SIN validar usuario ni
+ *                                   rol: quien corre el controlador YA ES
+ *                                   admin (lo garantiza la ruta).
+ *   · textoAuditoriaExcepcion()   🆕 v31 → texto de auditoría completo
+ *                                   (por qué + contexto del límite saltado)
+ *                                   guardado en el HistorialEstado, en la
+ *                                   MISMA transacción (sin tabla extra).
+ *   · respuesta422Excepcion()     🆕 v30 → 422 uniforme con datos de la
+ *                                   excepción para el front.
  *
  *  Reglas de negocio críticas (NO REMOVER):
  *  ────────────────────────────────────────────────────────────────────────
@@ -68,6 +82,45 @@
  *   9. 🆕 v29 · update() valida límite anual y solapamiento aunque el form
  *      solo envíe UNA de las dos fechas (v28 se saltaba TODAS las
  *      validaciones si faltaba una; la faltante se toma de la reserva actual).
+ *  10. 🆕 v30-EXC · EXCEPCIONES A POLÍTICAS CON AUDITORÍA OBLIGATORIA
+ *      (🆕 v31 · SIN validación de rol y SIN tabla dedicada):
+ *      · El bloque del LÍMITE ANUAL (y SOLO ese) puede saltarse con
+ *        justificación: la alerta 422 sale igual; si la petición envía
+ *        motivo_excepcion (obligatorio, 10-1000 caracteres) la operación
+ *        continúa y se guarda TODA la auditoría.
+ *      · 🆕 v31 · Quien ejecuta este controlador YA ES admin (lo garantiza
+ *        la ruta/middleware): NO se valida usuario, rol ni permiso. La
+ *        única condición server-side es el motivo válido (revalidado).
+ *      · Auditoría ATÓMICA: el texto de auditoría (justificación + quién +
+ *        contexto del límite saltado) va en el comentario del
+ *        HistorialEstado, DENTRO de la misma transacción: si falla se
+ *        revierte TODO (sin auditoría no hay excepción).
+ *      · NO son excepcionables: solapamiento, bloqueos de calendario,
+ *        monto mínimo y días máximos (reglas físicas/contrato).
+ *      · Trazabilidad: rsv_historial_estados ya guarda quién (id_user),
+ *        cuándo (created_at) y por qué (comentario) — no hace falta una
+ *        tabla rsv_excepciones_politicas (retirada en v31).
+ *
+ *  🆕 v31 · SIN TABLA DEDICADA DE AUDITORÍA (rsv_excepciones_politicas
+ *  retirada a petición del admin):
+ *  ────────────────────────────────────────────────────────────────────────
+ *  La auditoría de la excepción vive en rsv_historial_estados (ya existe):
+ *  el comentario del historial guarda el código de política, la
+ *  justificación OBLIGATORIA y el contexto del límite saltado (conteo,
+ *  límite, ventana, tarifa, fechas). Quién y cuándo ya los guarda la
+ *  propia tabla (id_user, created_at). Cero migraciones nuevas.
+ *
+ *  CONTRATO PARA EL FRONT (modal de tab-reservas):
+ *  ────────────────────────────────────────────────────────────────────────
+ *  · 422 con límite alcanzado: { ok|success: false, message: <alerta v29>,
+ *      excepcion: { disponible: true, requiere_motivo: true,
+ *      error_motivo: null|"...", campo: "motivo_excepcion",
+ *      min_caracteres: 10, max_caracteres: 1000,
+ *      codigo_politica: "LIMITE_ANUAL_ASOCIADO" } }
+ *    (🆕 v31 · el bloque "excepcion" va SIEMPRE: no hay validación de rol.)
+ *  · Reintento: mismo form + campo "motivo_excepcion" (textarea).
+ *  · Éxito con excepción: la respuesta de éxito NO cambia; la auditoría
+ *    completa queda en el HistorialEstado de la reserva.
  *  ============================================================================
  */
 
@@ -96,6 +149,17 @@ use Throwable;
 class ReservaController extends Controller
 {
     private const MONTO_MIN_BASE = 200000;
+
+    /* ═══ 🆕 v31-EXC · EXCEPCIONES A POLÍTICAS · SIN VALIDAR ROL, SIN TABLA ═══
+       Quien ejecuta este controlador YA ES admin (lo garantiza la ruta):
+       NO se valida usuario, rol ni permiso. La alerta 422 sale igual, pero
+       si la petición envía motivo_excepcion (10-1000 caracteres), la
+       operación continúa y TODA la auditoría se guarda en el comentario del
+       HistorialEstado DENTRO de la misma transacción (si el historial
+       falla, la reserva NO se guarda). Sin tabla dedicada. */
+    private const CODIGO_POLITICA_LIMITE_ANUAL = 'LIMITE_ANUAL_ASOCIADO';
+    private const MOTIVO_EXC_MIN               = 10;
+    private const MOTIVO_EXC_MAX               = 1000;
 
     private function getEstadosNoBloqueantesIds(): array
     {
@@ -175,18 +239,18 @@ class ReservaController extends Controller
     }
 
     /**
-     * 🆕 v29 · ÚNICA implementación de la regla del año (store/update/storeAjax).
+     * 🆕 v30-EXC · MOTOR ÚNICO de la regla del año (store/update/storeAjax).
+     * Comportamiento EXACTO al validador v29 (no cambia la regla):
+     * ventana ROLLING ±1 año alrededor del check-in (whereBetween inclusiva),
+     * COUNT() de reservas ACTIVAS de cualquier inmueble excluyendo
+     * Cancelada/Rechazada/Anulada y, en update(), la propia reserva; máximo
+     * leído de la tarifa ACTIVA (max_reservas_anuales_cliente; null/0 → 1).
      *
-     * Ventana ROLLING ±1 año alrededor del check-in nuevo (whereBetween,
-     * inclusiva — se mantiene exactamente la ventana de v28). Cuenta reservas
-     * ACTIVAS del asociado en cualquier inmueble, excluyendo los estados
-     * Cancelada/Rechazada/Anulada y, en update(), la propia reserva.
-     *
-     * Devuelve null si el límite se cumple, o el mensaje de error (422) si se
-     * supera. El mensaje informa cuántas reservas hay, la ventana evaluada y
-     * de dónde sale el máximo (temporada X o límite del sistema).
+     * Devuelve UN array con TODO lo necesario para validar Y auditar:
+     *   mensaje (null si cumple) · conteo · limite · ventana_desde/hasta
+     *   tarifa_id · tarifa_nombre · limite_origen
      */
-    private function validarLimiteAnualCliente($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): ?string
+    private function evaluarLimiteAnual($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): array
     {
         $limite = $this->getLimiteAnualDesdeTarifa($tarifa);
 
@@ -207,18 +271,144 @@ class ReservaController extends Controller
 
         $conteo = (int) $query->count();
 
+        // 🆕 v30-EXC · origen del límite, tal cual lo informa el mensaje v29
+        $limiteOrigen = $tarifa
+            ? 'Tarifa "' . $tarifa->nombre_temporada . '" (max_reservas_anuales_cliente)'
+            : 'Sistema: 1 reserva/año (sin tarifa activa aplicable)';
+
+        $base = [
+            'conteo'        => $conteo,
+            'limite'        => $limite,
+            'ventana_desde' => $limiteInferior,
+            'ventana_hasta' => $limiteSuperior,
+            'tarifa_id'     => $tarifa->id ?? null,
+            'tarifa_nombre' => $tarifa->nombre_temporada ?? null,
+            'limite_origen' => $limiteOrigen,
+        ];
+
         if ($conteo < $limite) {
-            return null;
+            $base['mensaje'] = null;
+            return $base;
         }
 
         $origenLimite = $tarifa
             ? 'La temporada "' . $tarifa->nombre_temporada . '" permite un máximo de ' . $limite . ' reserva(s) por año por asociado.'
             : 'Se aplica el límite del sistema: 1 reserva por año (sin tarifa activa aplicable a la fecha del check-in).';
 
-        return 'El asociado ya tiene ' . $conteo . ' reserva(s) ACTIVA(S) en menos de un año de diferencia '
+        $base['mensaje'] = 'El asociado ya tiene ' . $conteo . ' reserva(s) ACTIVA(S) en menos de un año de diferencia '
             . '(ventana ' . $limiteInferior . ' → ' . $limiteSuperior . '; se cuentan reservas de cualquier inmueble y el check-in define la ventana). '
             . $origenLimite . ' '
             . 'Si canceló una reserva, verifique que su estado sea "Cancelada", "Rechazada" o "Anulada".';
+        return $base;
+    }
+
+    /**
+     * 🆕 v29 · Wrapper de compatibilidad: devuelve SOLO el mensaje (o null).
+     * Desde v30-EXC el motor real es evaluarLimiteAnual(); la regla y el
+     * mensaje son IDÉNTICOS (una sola implementación, cero duplicación).
+     */
+    private function validarLimiteAnualCliente($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): ?string
+    {
+        return $this->evaluarLimiteAnual($idUsuario, $fi, $excluirReservaId, $tarifa)['mensaje'];
+    }
+
+    /* ═══════════════ 🆕 v31-EXC · EXCEPCIONES A POLÍTICAS CON AUDITORÍA ═══════════════ */
+    /* 🆕 v31 · esAdminRsv() ELIMINADO: ya NO se valida usuario, rol ni
+       permiso — quien corre este controlador YA ES admin por la ruta. */
+
+    /**
+     * 🆕 v31-EXC · Decide si el bloque del límite anual se salta o no.
+     *
+     * Revalidación SERVER-SIDE del motivo: la excepción SOLO se concede con
+     * un motivo_excepcion enviado y válido (10-1000 caracteres).
+     * 🆕 v31 · NO se valida usuario, rol ni permiso: quien ejecuta este
+     * controlador YA ES admin (lo garantiza la ruta).
+     *
+     * mensaje null → no hubo bloque: proceder sin excepción.
+     * Devuelve:
+     *   proceder         bool → continuar la operación
+     *   motivo           ?str → justificación validada (para la auditoría)
+     *   requiere_motivo  bool → la alerta salió y se espera la justificación
+     *   error_motivo     ?str → motivo enviado pero inválido (corto/largo)
+     */
+    private function resolverExcepcionLimite(Request $request, ?string $mensaje): array
+    {
+        if ($mensaje === null) {
+            return ['proceder' => true, 'motivo' => null, 'requiere_motivo' => false, 'error_motivo' => null];
+        }
+
+        $motivo = trim((string) $request->input('motivo_excepcion', ''));
+        $largo  = mb_strlen($motivo);
+
+        if ($motivo === '') {
+            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true, 'error_motivo' => null];
+        }
+
+        if ($largo < self::MOTIVO_EXC_MIN || $largo > self::MOTIVO_EXC_MAX) {
+            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true,
+                'error_motivo' => 'La justificación debe tener entre ' . self::MOTIVO_EXC_MIN . ' y ' . self::MOTIVO_EXC_MAX . ' caracteres (enviada: ' . $largo . ').'];
+        }
+
+        return ['proceder' => true, 'motivo' => $motivo, 'requiere_motivo' => false, 'error_motivo' => null];
+    }
+
+    /**
+     * 🆕 v30-EXC · 422 uniforme con datos de la excepción para el front.
+     * $campoEstado = 'ok' (storeAjax) | 'success' (store/update) para
+     * respetar el formato de respuesta de cada endpoint.
+     * 🆕 v31 · El bloque "excepcion" va SIEMPRE (no se valida rol): es la
+     * señal para que el modal pida la justificación obligatoria.
+     */
+    private function respuesta422Excepcion(string $campoEstado, string $mensaje, array $excepcion): JsonResponse
+    {
+        $payload = [
+            $campoEstado => false,
+            'message'    => $mensaje,
+        ];
+        $payload['excepcion'] = [
+            'disponible'      => true,
+            'requiere_motivo' => true,
+            'error_motivo'    => $excepcion['error_motivo'] ?? null,
+            'campo'           => 'motivo_excepcion',
+            'min_caracteres'  => self::MOTIVO_EXC_MIN,
+            'max_caracteres'  => self::MOTIVO_EXC_MAX,
+            'codigo_politica' => self::CODIGO_POLITICA_LIMITE_ANUAL,
+        ];
+        return response()->json($payload, 422);
+    }
+
+    /**
+     * 🆕 v31-EXC · Texto de AUDITORÍA de la excepción (SIN tabla dedicada).
+     * Se incrusta en el comentario del HistorialEstado, que ya guarda QUIÉN
+     * (id_user) y CUÁNDO (created_at); aquí va el POR QUÉ (justificación
+     * obligatoria) y el contexto exacto del límite que se saltó.
+     * Se construye ANTES de la transacción y se guarda DENTRO de ella: si el
+     * historial falla, TODO se revierte (sin auditoría no hay excepción).
+     */
+    private function textoAuditoriaExcepcion(
+        array $evaluacion,
+        string $metodo,
+        $idReserva,
+        $idAsociado,
+        string $motivo,
+        ?string $checkIn = null,
+        ?string $checkOut = null,
+        $idInmueble = null
+    ): string {
+        $contexto = 'metodo=' . $metodo
+            . ' · reserva=' . ($idReserva !== null ? (int) $idReserva : 'nueva')
+            . ' · asociado=' . (int) $idAsociado
+            . ' · inmueble=' . ($idInmueble !== null ? (int) $idInmueble : 'n/d')
+            . ' · check-in=' . ($checkIn ?? 'n/d')
+            . ' · check-out=' . ($checkOut ?? 'n/d')
+            . ' · conteo_activo=' . (int) ($evaluacion['conteo'] ?? 0)
+            . ' · limite=' . (int) ($evaluacion['limite'] ?? 0)
+            . ' · ventana=' . ($evaluacion['ventana_desde'] ?? '') . ' → ' . ($evaluacion['ventana_hasta'] ?? '')
+            . ' · origen=' . (string) ($evaluacion['limite_origen'] ?? '');
+
+        return '⚠ EXCEPCIÓN ' . self::CODIGO_POLITICA_LIMITE_ANUAL
+            . ' · justificación: "' . mb_substr($motivo, 0, self::MOTIVO_EXC_MAX) . '"'
+            . ' · [' . $contexto . ']';
     }
 
 
@@ -313,19 +503,23 @@ class ReservaController extends Controller
             $fi = \Illuminate\Support\Carbon::parse($validatedData['fecha_inicio'])->startOfDay();
             $ff = \Illuminate\Support\Carbon::parse($validatedData['fecha_fin'])->startOfDay();
 
-            // ─── 🆕 v29 · LÍMITE ANUAL CONFIGURABLE (en v28 estaba quemado a 1) ───
-            // Regla unificada en validarLimiteAnualCliente(): ventana rolling
-            // ±1 año alrededor del check-in + máximo leído de la tarifa ACTIVA
-            // del inmueble (max_reservas_anuales_cliente; null/0 → 1).
+            // ─── 🆕 v31-EXC · LÍMITE ANUAL + EXCEPCIÓN CON AUDITORÍA ───
+            // Regla unificada en evaluarLimiteAnual() (motor v30 del validador
+            // v29): ventana rolling ±1 año + máximo de la tarifa ACTIVA
+            // (max_reservas_anuales_cliente; null/0 → 1).
+            // Si excede: la alerta sale igual; con motivo_excepcion
+            // (obligatorio), continúa Y SE AUDITA (sin validar rol: quien
+            // ejecuta ya es admin por la ruta).
             $tarifaLimite = $this->getTarifaAplicable($validatedData['id_rsv_catalogo_inmueble'], $fi, $ff);
-            $errorLimite = $this->validarLimiteAnualCliente((int) $validatedData['id_user'], $fi, null, $tarifaLimite);
+            $evalLimite = $this->evaluarLimiteAnual((int) $validatedData['id_user'], $fi, null, $tarifaLimite);
 
-            if ($errorLimite !== null) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorLimite,
-                ], 422);
+            $excepcionLimite = $this->resolverExcepcionLimite($request, $evalLimite['mensaje']);
+
+            if (!$excepcionLimite['proceder']) {
+                return $this->respuesta422Excepcion('success', $evalLimite['mensaje'], $excepcionLimite);
             }
+
+            $motivoExcepcion = $excepcionLimite['motivo']; // null si no hubo bloque
 
             $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
 
@@ -366,7 +560,18 @@ class ReservaController extends Controller
                 }
             }
 
-            $reserva = DB::transaction(function () use ($validatedData) {
+            /* 🆕 v31-EXC · texto de auditoría (justificación + contexto del
+               límite saltado); se incrusta en el historial DENTRO de la
+               transacción: si el historial falla, no se guarda nada */
+            $textoAuditoria = $motivoExcepcion !== null
+                ? $this->textoAuditoriaExcepcion(
+                    $evalLimite, 'store', null, (int) $validatedData['id_user'],
+                    $motivoExcepcion,
+                    $validatedData['fecha_inicio'] ?? null, $validatedData['fecha_fin'] ?? null,
+                    $validatedData['id_rsv_catalogo_inmueble'] ?? null)
+                : '';
+
+            $reserva = DB::transaction(function () use ($validatedData, $textoAuditoria) {
                 $validatedData['codigo_reserva'] = 'RSV-' . strtoupper(uniqid());
                 $reserva = Reserva::create($validatedData);
 
@@ -375,7 +580,10 @@ class ReservaController extends Controller
                     'id_rsv_statuses_anterior' => null,
                     'id_rsv_statuses_nuevo'    => $reserva->id_rsv_statuses,
                     'id_user'                  => Auth::id() ?? $reserva->id_user,
-                    'comentario'               => 'Creación inicial de la reserva.',
+                    /* 🆕 v31-EXC · el historial ES la auditoría (quién/cuándo/
+                       por qué/contexto) · sin auditoría no hay excepción */
+                    'comentario'               => 'Creación inicial de la reserva.'
+                        . ($textoAuditoria !== '' ? ' · ' . $textoAuditoria : ''),
                 ]);
                 return $reserva;
             });
@@ -466,20 +674,30 @@ class ReservaController extends Controller
             $cambiaUsuario = array_key_exists('id_user', $validatedData)
                 && (int) $validatedData['id_user'] !== (int) $reserva->id_user;
 
+            // 🆕 v31 · inicialización fuera del if (evita variables no definidas
+            // cuando el form no cambia fechas ni titular)
+            $motivoExcepcion = null;
+            $evalLimite = null;
+            $userIdLimite = null;
+
             if ($cambiaFechas || $cambiaUsuario) {
 
-                // ─── 🆕 v29 · LÍMITE ANUAL (regla unificada v29, excluyéndose a sí misma) ───
+                // ─── 🆕 v31-EXC · LÍMITE ANUAL + EXCEPCIÓN CON AUDITORÍA ───
+                // Motor evaluarLimiteAnual() (se excluye la propia reserva,
+                // como en v29). Si excede: alerta igual; motivo obligatorio
+                // → continúa Y SE AUDITA en la transacción (sin validar rol).
                 if ($efFi) {
-                    $userId = $validatedData['id_user'] ?? $reserva->id_user;
+                    $userIdLimite = $validatedData['id_user'] ?? $reserva->id_user;
                     $tarifaLimite = $this->getTarifaAplicable($reserva->id_rsv_catalogo_inmueble, $efFi, $efFf ?? $efFi);
-                    $errorLimite = $this->validarLimiteAnualCliente((int) $userId, $efFi, (int) $reserva->id, $tarifaLimite);
+                    $evalLimite = $this->evaluarLimiteAnual((int) $userIdLimite, $efFi, (int) $reserva->id, $tarifaLimite);
 
-                    if ($errorLimite !== null) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => $errorLimite,
-                        ], 422);
+                    $excepcionLimite = $this->resolverExcepcionLimite($request, $evalLimite['mensaje']);
+
+                    if (!$excepcionLimite['proceder']) {
+                        return $this->respuesta422Excepcion('success', $evalLimite['mensaje'], $excepcionLimite);
                     }
+
+                    $motivoExcepcion = $excepcionLimite['motivo'];
                 }
 
                 // ─── Validación de Solapamiento (v29: también si solo cambia una fecha) ───
@@ -506,7 +724,18 @@ class ReservaController extends Controller
                 }
             }
 
-            DB::transaction(function () use ($reserva, $validatedData) {
+            /* 🆕 v31-EXC · texto de auditoría (justificación + contexto del
+               límite saltado); se incrusta en el historial DENTRO de la
+               transacción: si el historial falla, no se guarda nada */
+            $textoAuditoria = ($motivoExcepcion !== null && $evalLimite !== null)
+                ? $this->textoAuditoriaExcepcion(
+                    $evalLimite, 'update', $reserva->id, (int) $userIdLimite,
+                    $motivoExcepcion,
+                    $efFi ? $efFi->toDateString() : null, $efFf ? $efFf->toDateString() : null,
+                    $reserva->id_rsv_catalogo_inmueble)
+                : '';
+
+            DB::transaction(function () use ($reserva, $validatedData, $textoAuditoria) {
                 $estadoAnterior = $reserva->id_rsv_statuses;
                 $nuevoEstado = $validatedData['id_rsv_statuses'] ?? $estadoAnterior;
 
@@ -518,7 +747,20 @@ class ReservaController extends Controller
                         'id_rsv_statuses_anterior' => $estadoAnterior,
                         'id_rsv_statuses_nuevo'    => $nuevoEstado,
                         'id_user'                  => Auth::id() ?? $reserva->id_user,
-                        'comentario'               => 'Actualización de estado en modificación general de reserva.',
+                        /* 🆕 v31-EXC · el historial ES la auditoría */
+                        'comentario'               => 'Actualización de estado en modificación general de reserva.'
+                            . ($textoAuditoria !== '' ? ' · ' . $textoAuditoria : ''),
+                    ]);
+                } elseif ($textoAuditoria !== '') {
+                    /* 🆕 v31-EXC · sin cambio de estado, la excepción igual
+                       queda auditada en el historial de la reserva */
+                    HistorialEstado::create([
+                        'id_rsv_reservas'          => $reserva->id,
+                        'id_rsv_statuses_anterior' => $estadoAnterior,
+                        'id_rsv_statuses_nuevo'    => $nuevoEstado,
+                        'id_user'                  => Auth::id() ?? $reserva->id_user,
+                        'comentario'               => 'Excepción de límite anual aplicada en modificación general de reserva.'
+                            . ' · ' . $textoAuditoria,
                     ]);
                 }
             });
@@ -801,18 +1043,21 @@ class ReservaController extends Controller
                 }
             }
 
-            // ─── 2 · 🆕 v29 · LÍMITE ANUAL DESDE EL MODELO (v28 estaba quemado a 1) ───
+            // ─── 2 · 🆕 v31-EXC · LÍMITE ANUAL + EXCEPCIÓN CON AUDITORÍA ───
             // Ventana rolling ±1 año alrededor del check-in nuevo (se mantiene
             // v28/v28.1). El máximo se lee de max_reservas_anuales_cliente de la
             // tarifa ACTIVA aplicable; sin tarifa / null / 0 → 1 (legacy v28).
-            $errorLimite = $this->validarLimiteAnualCliente((int) $data['id_user'], $fi, null, $tarifaAplicable);
+            // Si excede: la alerta sale igual; con motivo_excepcion
+            // (obligatorio), continúa Y SE AUDITA (sin validar rol).
+            $evalLimite = $this->evaluarLimiteAnual((int) $data['id_user'], $fi, null, $tarifaAplicable);
 
-            if ($errorLimite !== null) {
-                return response()->json([
-                    'ok'      => false,
-                    'message' => $errorLimite,
-                ], 422);
+            $excepcionLimite = $this->resolverExcepcionLimite($request, $evalLimite['mensaje']);
+
+            if (!$excepcionLimite['proceder']) {
+                return $this->respuesta422Excepcion('ok', $evalLimite['mensaje'], $excepcionLimite);
             }
+
+            $motivoExcepcion = $excepcionLimite['motivo']; // null si no hubo bloque
 
             if ((float) $data['monto_total'] < $montoMinAplicable) {
                 return response()->json([
@@ -902,6 +1147,16 @@ class ReservaController extends Controller
                 'comentario_reserva'       => $data['comentario_reserva'] ?? null,
             ]);
 
+            /* 🆕 v31-EXC · auditoría OBLIGATORIA en el historial (quién/
+               cuándo/por qué/contexto), MISMA transacción: si el historial
+               falla, la reserva NO se guarda. Sin tabla dedicada. */
+            $textoAuditoria = $motivoExcepcion !== null
+                ? $this->textoAuditoriaExcepcion(
+                    $evalLimite, 'storeAjax', $reserva->id, (int) $data['id_user'],
+                    $motivoExcepcion, $data['fecha_inicio'], $data['fecha_fin'],
+                    $data['id_rsv_catalogo_inmueble'])
+                : '';
+
             HistorialEstado::create([
                 'id_rsv_reservas'          => $reserva->id,
                 'id_rsv_statuses_anterior' => null,
@@ -909,7 +1164,8 @@ class ReservaController extends Controller
                 'id_user'                  => Auth::check() ? Auth::id() : $data['id_user'],
                 'comentario'               => 'Reserva creada desde tab-reservas · Estado inicial: Pendiente · Año ' . $fi->year
                     . ($tarifaAplicable ? ' · Tarifa aplicada: ' . $tarifaAplicable->nombre_temporada : ' · Sin tarifa aplicable')
-                    . ' · Límite anual asociado: ' . $limiteAnualAplicable, // 🆕 v29
+                    . ' · Límite anual asociado: ' . $limiteAnualAplicable // 🆕 v29
+                    . ($textoAuditoria !== '' ? ' · ' . $textoAuditoria : ''), // 🆕 v31-EXC
             ]);
 
             DB::commit();

@@ -154,4 +154,62 @@ class TipoInmuebleController extends Controller
             return back()->withInput()->with('error', 'Ocurrió un error al actualizar.');
         }
     }
+
+    /* =====================================================================
+     * [PATCH REQ check · asignarTipo] Cambiar SOLO la clasificación (tipo)
+     * de una propiedad. Ruta: rsv.inmuebles.tipo.asignar
+     * (PUT /rsv/inmuebles/{id}/tipo) · la llama la vista
+     * partials/inmuebles/tipo.blade.php (check del tipo actual).
+     * Deliberadamente NO valida nombre/city/etc. (solo mueve
+     * tipo_inmueble_id): no se usa el update() del resource porque ese
+     * exige el registro completo (causa del HTTP 422 visto en pruebas).
+     * ===================================================================== */
+    public function asignarTipo(Request $request, $id): JsonResponse|RedirectResponse
+    {
+        try {
+            // La vista envía tipo_id y el alias tipo_inmueble_id (mismo valor)
+            $tipoId = $request->input('tipo_id') ?: $request->input('tipo_inmueble_id');
+
+            if (empty($tipoId) || !is_numeric($tipoId)) {
+                return response()->json(['success' => false, 'message' => 'Debe indicar el tipo de inmueble (tipo_id).'], 422);
+            }
+
+            $tipo = TipoInmueble::find((int) $tipoId);
+            if (!$tipo) {
+                return response()->json(['success' => false, 'message' => 'El tipo de inmueble indicado no existe.'], 422);
+            }
+
+            $inmueble = CatalogoInmueble::find((int) $id);
+            if (!$inmueble) {
+                return response()->json(['success' => false, 'message' => 'La propiedad indicada no existe.'], 422);
+            }
+
+            DB::transaction(function () use ($inmueble, $tipo) {
+                // forceFill: escribe tipo_inmueble_id sin depender del $fillable del modelo
+                $inmueble->forceFill(['tipo_inmueble_id' => $tipo->id])->save();
+            });
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Clasificación de la propiedad actualizada exitosamente.',
+                    'data'    => [
+                        'inmueble_id' => (int) $inmueble->id,
+                        'tipo_id'     => (int) $tipo->id,
+                        'tipo'        => $tipo->nombre ?? null,
+                    ]
+                ], 200);
+            }
+
+            return back()->with('success', 'Clasificación de la propiedad actualizada exitosamente.');
+
+        } catch (Throwable $e) {
+            Log::error('Error en TipoInmuebleController@asignarTipo: ' . $e->getMessage());
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Ocurrió un error al cambiar la clasificación de la propiedad.'], 500);
+            }
+            return back()->with('error', 'Ocurrió un error al cambiar la clasificación de la propiedad.');
+        }
+    }
 }

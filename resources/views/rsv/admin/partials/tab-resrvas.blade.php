@@ -1,4 +1,20 @@
-{{-- tab-reservas.blade.php · v29-DBG --}}
+{{-- tab-reservas.blade.php · v31-EXC-DBG --}}
+{{-- NOVEDADES v31-EXC (SALTO DE ADMIN PARA EL LÍMITE ANUAL · acompaña al ReservaController v31):
+   · En el modal de crear, cuando la defensa client-side bloquea por el
+     límite anual del asociado, el administrador puede SALTAR la regla:
+     · Se construye el DETALLE de lo que pasó (conteo/límite/ventana) y
+       se agrega al MISMO campo de observación (comentario_reserva).
+     · Ese detalle viaja también como motivo_excepcion: el controlador
+       v31 lo exige (10-1000 caracteres) para permitir la creación y
+       escribir la auditoría en el historial de la reserva.
+     · El texto de la observación es el insumo de la tabla de auditoría
+       (a integrar más adelante).
+   · Si el bloqueo llega del SERVIDOR (422 con bloque "excepcion", p.ej.
+     modo single o datos viejos), se ofrece el mismo salto y se reintenta
+     automáticamente el guardado con motivo_excepcion.
+   · Consentimiento único por apertura del modal (los reintentos no
+     duplican el detalle) · el resto de defensas NO son saltables.
+--}}
 {{-- NOVEDADES v29-DBG (CORRECCIÓN · el front acompaña al ReservaController v29):
    · El controlador v29 ya no trae quemado el "1 reserva por año": lee
      max_reservas_anuales_cliente de la TARIFA ACTIVA del inmueble que
@@ -1677,7 +1693,7 @@
             RV_NO_BLOQ = JSON.parse(rawNB ? (rawNB.textContent || '[]') : '[]');
         } catch (e) { RV_NO_BLOQ = []; }
         if (!Array.isArray(RV_NO_BLOQ)) { RV_NO_BLOQ = []; }
-        dbgLog('info', '<b>Límite anual v29</b>: chequeo client-side activo · estados no-bloqueantes=' + (RV_NO_BLOQ.length ? RV_NO_BLOQ.join(',') : 'NINGUNO'));
+        dbgLog('info', '<b>Límite anual v29</b>: chequeo client-side activo · estados no-bloqueantes=' + (RV_NO_BLOQ.length ? RV_NO_BLOQ.join(',') : 'NINGUNO') + ' · 🆕 v31-EXC: salto de admin disponible (detalle → campo de observación)');
 
         var PAGE_SIZE = 15;
         var page = 1;
@@ -2623,6 +2639,33 @@
             return { conteo: conteo, limInf: limInf, limSup: limSup };
         }
 
+        /* ═══ 🆕 v31-EXC · SALTO DE ADMIN PARA EL LÍMITE ANUAL ═══
+           · excepcionLimiteDetalle persiste entre submits: si el admin ya
+             autorizó el salto, los reintentos no vuelven a preguntar ni
+             duplican el detalle en la observación (se resetea al abrir
+             el modal).
+           · detalleExcepcionLimite() construye el detalle de lo que pasó
+             (conteo/límite/ventana) → aplicarDetalleObservacion() lo
+             agrega al MISMO campo de observación (comentario_reserva) y
+             el submit lo envía también como motivo_excepcion: insumo de
+             la auditoría v31 (historial) y de la futura tabla. */
+        var excepcionLimiteDetalle = null;
+        function detalleExcepcionLimite(conteo, limite, limInf, limSup, origen) {
+            var d = '⚠ EXCEPCIÓN ADMIN · límite anual del asociado';
+            if (origen) { d += ' (' + origen + ')'; }
+            return d + ' · conteo=' + conteo + ' · límite=' + limite + ' · ventana ' + limInf + ' → ' + limSup;
+        }
+        function aplicarDetalleObservacion(det) {
+            if (!fldComentario) return;
+            var base = String(fldComentario.value || '').trim();
+            if (base && (base + ' · ' + det).length > 2000) {
+                var espacio = 2000 - det.length - 3;
+                base = espacio > 0 ? base.substring(0, espacio).trim() : '';
+            }
+            fldComentario.value = base ? base + ' · ' + det : det;
+            dbgLog('debug', 'Detalle de excepción agregado al campo de observación (' + fldComentario.value.length + '/2000 chars)');
+        }
+
         function tarifaParaNoche(fecha) {
             var t = fecha.getTime();
             for (var i=0; i<calState.tarifas.length; i++) {
@@ -3151,6 +3194,8 @@
                 var montoInputReset = document.getElementById('fldMonto');
                 if (montoInputReset) { montoInputReset.value = ''; montoInputReset.classList.remove('is-invalid'); }
                 if (fldComentario) fldComentario.value = '';
+                /* 🆕 v31-EXC · nuevo consentimiento por cada apertura del modal */
+                excepcionLimiteDetalle = null;
                 document.querySelectorAll('.com-chip').forEach(function(c) { c.classList.remove('added'); });
             }
         }
@@ -3275,13 +3320,34 @@
                             ? 'La temporada "' + esc(limAnual.tarifa.nombre) + '" permite un máximo de ' + limAnual.limite + ' reserva(s) por año por asociado.'
                             : 'Se aplica el límite del sistema: 1 reserva por año.';
                         dbgLog('warn', '<b>Submit bloqueado</b>: límite anual del asociado · conteo=' + resAnual.conteo + ' · límite=' + limAnual.limite + ' · ventana ' + resAnual.limInf + ' → ' + resAnual.limSup);
-                        if (alertNR) {
-                            alertNR.innerHTML = '<i class="bi bi-calendar-x me-1"></i>El asociado ya tiene <b>' + resAnual.conteo + ' reserva(s) ACTIVA(S)</b> en menos de un año de diferencia (ventana ' + fmtDMY(resAnual.limInf) + ' → ' + fmtDMY(resAnual.limSup) + '). ' + origenLim + ' Verifique que la reserva anterior esté en estado "Cancelada", "Rechazada" o "Anulada".';
-                            alertNR.classList.remove('d-none');
+                        /* 🆕 v31-EXC · el ADMIN puede saltar la regla: el
+                           detalle de lo que pasó se construye, se agrega al
+                           MISMO campo de observación y viaja como
+                           motivo_excepcion para el controlador v31 */
+                        var saltarLimite = false;
+                        if (excepcionLimiteDetalle) {
+                            saltarLimite = true; /* consentimiento ya dado (reintento) */
+                        } else if (confirm('⚠ Límite anual del asociado alcanzado (conteo=' + resAnual.conteo + ' · límite=' + limAnual.limite + ').\n\n¿Saltar la regla como ADMINISTRADOR?\n\nSe agregará al campo de observación el detalle de la excepción, que luego alimenta la auditoría.')) {
+                            var detalleExc = detalleExcepcionLimite(resAnual.conteo, limAnual.limite, resAnual.limInf, resAnual.limSup, '');
+                            aplicarDetalleObservacion(detalleExc);
+                            excepcionLimiteDetalle = detalleExc;
+                            saltarLimite = true;
+                        } else {
+                            dbgLog('info', 'Excepción de límite anual cancelada por el usuario');
                         }
-                        return;
+                        if (saltarLimite) {
+                            dbgLog('warn', '<b>EXCEPCIÓN ADMIN</b>: límite anual SALTADO · detalle en el campo de observación · motivo_excepcion viaja en el payload');
+                            if (alertNR) { alertNR.classList.add('d-none'); alertNR.textContent = ''; }
+                        } else {
+                            if (alertNR) {
+                                alertNR.innerHTML = '<i class="bi bi-calendar-x me-1"></i>El asociado ya tiene <b>' + resAnual.conteo + ' reserva(s) ACTIVA(S)</b> en menos de un año de diferencia (ventana ' + fmtDMY(resAnual.limInf) + ' → ' + fmtDMY(resAnual.limSup) + '). ' + origenLim + ' Verifique que la reserva anterior esté en estado "Cancelada", "Rechazada" o "Anulada".';
+                                alertNR.classList.remove('d-none');
+                            }
+                            return;
+                        }
+                    } else {
+                        dbgLog('ok', '<b>Límite anual OK</b>: ' + resAnual.conteo + '/' + limAnual.limite + ' en ventana ' + resAnual.limInf + ' → ' + resAnual.limSup + (modo === 'single' ? ' (contexto single: el servidor valida el histórico global)' : ''));
                     }
-                    dbgLog('ok', '<b>Límite anual OK</b>: ' + resAnual.conteo + '/' + limAnual.limite + ' en ventana ' + resAnual.limInf + ' → ' + resAnual.limSup + (modo === 'single' ? ' (contexto single: el servidor valida el histórico global)' : ''));
                 }
 
                 var montoInput = document.getElementById('fldMonto');
@@ -3313,6 +3379,14 @@
 
                 var storeUrl = formNR.getAttribute('data-store') || formNR.getAttribute('action');
                 var fd = new FormData(formNR);
+                /* 🆕 v31-EXC · el detalle de la excepción viaja como
+                   motivo_excepcion: el controlador v31 lo exige (10-1000
+                   caracteres) para permitir la creación y auditar en el
+                   historial de la reserva */
+                if (excepcionLimiteDetalle) {
+                    fd.append('motivo_excepcion', excepcionLimiteDetalle);
+                    dbgLog('debug', 'Payload + motivo_excepcion (' + excepcionLimiteDetalle.length + ' chars)');
+                }
                 var csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : (fd.get('_token') || '');
 
@@ -3354,13 +3428,40 @@
                         return;
                     }
                     var msg = j.message || (j.errors ? Object.values(j.errors).map(function (a) { return Array.isArray(a) ? a.join(' · ') : a; }).join(' · ') : 'Error al crear la reserva.');
-                    if (alertNR) {
-                        alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg);
-                        alertNR.classList.remove('d-none');
-                    }
                     if (btnGuardar) {
                         btnGuardar.disabled = false;
                         if (btnTxt) { btnTxt.innerHTML = originalTxt; }
+                    }
+                    /* 🆕 v31-EXC · bloqueo del SERVIDOR con excepción
+                       disponible (422 + bloque "excepcion" del controlador
+                       v31): mismo salto de admin → reintento automático con
+                       motivo_excepcion (no aplica si ya se autorizó) */
+                    if (j.excepcion && j.excepcion.disponible) {
+                        if (j.excepcion.error_motivo) {
+                            dbgLog('warn', '<b>motivo_excepcion rechazado</b>: ' + j.excepcion.error_motivo);
+                        }
+                        if (!excepcionLimiteDetalle && confirm('El servidor bloqueó la reserva por el límite anual del asociado.\n\n¿Saltar la regla como ADMINISTRADOR?\n\nSe agregará al campo de observación el detalle de la excepción y se reintentará el guardado.')) {
+                            var detSrv = (typeof resAnual !== 'undefined' && resAnual && typeof limAnual !== 'undefined' && limAnual)
+                                ? detalleExcepcionLimite(resAnual.conteo, limAnual.limite, resAnual.limInf, resAnual.limSup, 'bloqueo del servidor')
+                                : '⚠ EXCEPCIÓN ADMIN · límite anual del asociado (bloqueo del servidor) · saltado desde el modal';
+                            aplicarDetalleObservacion(detSrv);
+                            excepcionLimiteDetalle = detSrv;
+                            dbgLog('warn', '<b>EXCEPCIÓN ADMIN (servidor)</b>: reintento automático con motivo_excepcion');
+                            formNR.dispatchEvent(new Event('submit', { cancelable: true }));
+                        } else {
+                            if (!excepcionLimiteDetalle) {
+                                dbgLog('info', 'Excepción de límite anual (servidor) cancelada por el usuario');
+                            }
+                            if (alertNR) {
+                                alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg) + (j.excepcion.error_motivo ? '<br>' + esc(j.excepcion.error_motivo) : '');
+                                alertNR.classList.remove('d-none');
+                            }
+                        }
+                        return;
+                    }
+                    if (alertNR) {
+                        alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg);
+                        alertNR.classList.remove('d-none');
                     }
                 })
                 .catch(function (err) {
