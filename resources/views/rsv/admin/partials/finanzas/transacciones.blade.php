@@ -1,5 +1,5 @@
 {{-- ============================================================================
-     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v1-DBG
+     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v3.1-DBG
      Parcial: resources/views/rsv/admin/partials/finanzas/transacciones.blade.php
 
      · DISEÑO UNIFICADO: estética "reservas-soft" (variables CSS, tabla
@@ -29,10 +29,215 @@
        estados, envíos AJAX (crear/editar/anular) con método real (PUT/
        DELETE por spoofing), errores 422 campo a campo, refresco del
        fragmento con tiempos, copias detectadas y apertura de detalle.
+     · TRX-v3 (mejora de estructura): botones "Actualizar" (recarga AJAX del
+       fragmento con icono girando y pulso verde de confirmación, id
+       trxRefresh) y "Exportar" (CSV compatible con Excel · BOM UTF-8 ·
+       separador ; de TODO lo filtrado en pantalla, id trxExport), montados
+       por delegación en document para sobrevivir a los refrescos. IDs con
+       prefijo trx* a propósito: NO reutilizan rhRefresh/rhExport de la
+       pestaña Huéspedes, que convive en la misma página (ids duplicados se
+       pisarían entre pestañas).
+     · FIX MODO SINGLE (un solo inmueble seleccionado): el contexto ahora se
+       resuelve en el SERVIDOR (modelo inmueble · variable inmuebleId ·
+       request('inmueble_id')) y viaja SIEMPRE en la URL del fragmento
+       (inmueble_id=todos|id). Antes solo se leía de la querystring del
+       navegador: si la página llegaba sin ese parámetro, cada refresco AJAX
+       (crear/editar/anular/Actualizar) devolvía el listado global y el
+       filtro "no funcionaba". Además la vista es autosuficiente: si no
+       llega transacciones ni la relación del inmueble, consulta la BD ella
+       misma (whereHas reserva por inmueble · paginado 15 · reintento sin
+       eager), igual que hace la vista de Huéspedes.
+     · Badge de contexto en el header: con un inmueble seleccionado se
+       muestra su nombre junto al contador, para ver el filtro activo.
+     · Apilado del panel: el vecino de Huéspedes es rhDbgToggle (antes se
+       apilaba contra "rhDebugToggle", id inexistente → podían solaparse).
+     · TRX-v3 (fechas + eliminación lógica · base: tu TRX-v2-DBG):
+       (1) FILTROS POR RANGO DE FECHAS en el header: #trxFechaDesde y
+       #trxFechaHasta con botones Aplicar y Este mes, y aplicación
+       automática al cambiar la fecha; todo por delegación en document
+       (sobrevive a los refrescos). El rango viaja SIEMPRE en la URL del
+       fragmento (fecha_desde / fecha_hasta) y se aplica en SERVIDOR con
+       whereBetween sobre created_at · badge con el rango activo.
+       (2) CARGA SOLO LOS DEL MES: sin fechas en la URL se carga
+       únicamente el mes en curso (día 1 00:00 → último día 23:59:59);
+       la vista consulta ella misma el modelo confirmado
+       (TransaccionFinanciera · SoftDeletes) con prioridad sobre los
+       datos del controlador, así la paginación del rango es real; el
+       dataset del controlador queda de respaldo con el rango aplicado
+       en memoria (avisando en el panel DBG).
+       (3) VALIDACIÓN DE LA ELIMINACIÓN LÓGICA: el panel DBG reporta si
+       el modelo usa SoftDeletes (deleted_at), el camino de anulación
+       (DELETE con confirm() → estado_pago=Anulado + deleted_at · nunca
+       borra físico ni el soporte de S3) y las filas ANULADAS se ven
+       atenuadas (clase trx-anulada).
+     · TRX-v3.1 (buscador instantáneo): el buscador filtra AL ESCRIBIR
+       (cada tecla, sin Enter ni botones) en dos capas: la capa CLIENTE
+       filtra al instante las filas ya cargadas y, 320ms después de la
+       última tecla, el término q viaja en la URL del fragmento y el
+       SERVIDOR busca en TODAS las páginas del rango (referencia, ID,
+       código de reserva, pasarela, método, estado y monto · los mismos
+       campos de data-trx-search). El intercambio de la hoja no pierde
+       el foco ni el texto del buscador, Enter busca de inmediato,
+       Actualizar y la paginación heredan q, y el panel DBG reporta
+       cada búsqueda con su término y su tiempo.
      ============================================================================ --}}
 @php
-    $listadoTransacciones = $transacciones ?? ($inmueble->transacciones ?? collect());
+    $trxDbgErrores = []; // TRX-v3.1-DBG · colector de errores del servidor para el panel
 
+    /* TRX-v3 · FIX MODO SINGLE: el contexto de inmueble se resuelve en el
+       SERVIDOR con la misma cadena que la vista de Huéspedes: primero el
+       modelo inmueble, luego la variable inmuebleId y por último la
+       querystring. Ese id viaja SIEMPRE en la URL del fragmento. */
+    $trxInm = null;
+    $trxInmId = $inmuebleId ?? null;
+    if (isset($inmueble) && $inmueble) {
+        $trxInm = $inmueble;
+        $trxInmId = is_object($trxInm) ? ($trxInm->id ?? null) : $trxInm;
+    } elseif (empty($trxInmId) && request('inmueble_id') && is_numeric(request('inmueble_id'))) {
+        $trxInmId = request('inmueble_id');
+    }
+    $trxGlobal = empty($trxInmId);
+
+    /* ── TRX-v3 · FILTRO POR RANGO DE FECHAS · por defecto SOLO el mes en curso ──
+       fecha_desde / fecha_hasta llegan por querystring (formato Y-m-d)
+       desde los inputs #trxFechaDesde/#trxFechaHasta del header. Sin
+       parámetros se carga únicamente el mes actual: día 1 00:00:00 →
+       último día 23:59:59. El rango se aplica sobre created_at con
+       whereBetween en SERVIDOR (paginación real del rango). */
+    $trxHoy = now();
+    $trxReqDesde = trim((string) request('fecha_desde', ''));
+    $trxReqHasta = trim((string) request('fecha_hasta', ''));
+    try { $trxDesde = $trxReqDesde !== '' ? \Carbon\Carbon::parse($trxReqDesde)->startOfDay() : $trxHoy->copy()->startOfMonth(); }
+    catch (\Throwable $e) { $trxDesde = $trxHoy->copy()->startOfMonth(); }
+    try { $trxHasta = $trxReqHasta !== '' ? \Carbon\Carbon::parse($trxReqHasta)->endOfDay() : $trxHoy->copy()->endOfMonth(); }
+    catch (\Throwable $e) { $trxHasta = $trxHoy->copy()->endOfMonth(); }
+    if ($trxHasta->lt($trxDesde)) { $trxTmp = $trxDesde; $trxDesde = $trxHasta->copy()->startOfDay(); $trxHasta = $trxTmp->copy()->endOfDay(); }
+    $trxMesPorDefecto = ($trxReqDesde === '' && $trxReqHasta === '');
+
+    /* ── TRX-v3.1 · BUSCADOR INSTANTÁNEO · término q en SERVIDOR ──
+       Llega por querystring desde el buscador en vivo (#trxSearch) y
+       filtra TODAS las páginas del rango, no solo la visible. Mismos
+       campos que data-trx-search en cliente: referencia, ID, código
+       de reserva, pasarela, método, estado y monto. */
+    $trxQ = trim((string) request('q', ''));
+    if (function_exists('mb_strlen') && mb_strlen($trxQ) > 100) { $trxQ = trim(mb_substr($trxQ, 0, 100)); }
+    $trxQWhere = null;     // cierre completo (incluye pasarela por nombre)
+    $trxQWhereSin = null;  // cierre de respaldo (sin pasarela, por si la columna no existe)
+    if ($trxQ !== '') {
+        $trxQLike = '%' . $trxQ . '%';
+        $trxQEsId = ctype_digit($trxQ) ? (int) $trxQ : null;
+        $trxQWhere = function ($qq) use ($trxQLike, $trxQEsId) {
+            $qq->where(function ($w) use ($trxQLike, $trxQEsId) {
+                $w->where('referencia_externa', 'like', $trxQLike)
+                    ->orWhere('metodo_pago', 'like', $trxQLike)
+                    ->orWhere('estado_pago', 'like', $trxQLike)
+                    ->orWhere('monto', 'like', $trxQLike);
+                if ($trxQEsId !== null) { $w->orWhere('id', $trxQEsId); }
+                $w->orWhereHas('reserva', function ($r) use ($trxQLike) { $r->where('codigo_reserva', 'like', $trxQLike); })
+                    ->orWhereHas('pasarela', function ($p) use ($trxQLike) { $p->where('nombre', 'like', $trxQLike); });
+            });
+        };
+        $trxQWhereSin = function ($qq) use ($trxQLike, $trxQEsId) {
+            $qq->where(function ($w) use ($trxQLike, $trxQEsId) {
+                $w->where('referencia_externa', 'like', $trxQLike)
+                    ->orWhere('metodo_pago', 'like', $trxQLike)
+                    ->orWhere('estado_pago', 'like', $trxQLike)
+                    ->orWhere('monto', 'like', $trxQLike);
+                if ($trxQEsId !== null) { $w->orWhere('id', $trxQEsId); }
+                $w->orWhereHas('reserva', function ($r) use ($trxQLike) { $r->where('codigo_reserva', 'like', $trxQLike); });
+            });
+        };
+    }
+
+    /* TRX-v3 · FUENTE DE DATOS con prioridad invertida respecto a v2: la
+       vista consulta SIEMPRE por sí misma el modelo confirmado
+       (TransaccionFinanciera · SoftDeletes) y ahí aplica el rango de
+       fechas con whereBetween sobre created_at, así "solo los del mes"
+       es exacto y la paginación es real. Si el modelo no existe o la
+       consulta falla: relación del inmueble (también con fechas) y, de
+       último, los datos del controlador con el rango aplicado EN MEMORIA. */
+    $listadoTransacciones = null;
+    $trxFuente = 'consulta propia (vista)';
+    $trxModelo = class_exists('\App\Models\Rsv\TransaccionFinanciera') ? '\App\Models\Rsv\TransaccionFinanciera' : null;
+    if (!$trxModelo) {
+        foreach (['\\App\\Models\\Rsv\\RsvTransaccionFinanciera', '\\App\\Models\\Rsv\\TransaccionesFinancieras', '\\App\\Models\\TransaccionFinanciera', '\\App\\Models\\Rsv\\Transaccion'] as $trxClase) {
+            if (class_exists($trxClase)) { $trxModelo = $trxClase; break; }
+        }
+    }
+    if ($trxModelo) {
+        try {
+            $qTrx = $trxModelo::query()->with(['reserva:id,codigo_reserva', 'pasarela']);
+            if (!$trxGlobal && is_numeric($trxInmId)) {
+                $qTrx->whereHas('reserva', function ($qq) use ($trxInmId) {
+                    $qq->where('id_rsv_catalogo_inmueble', $trxInmId);
+                });
+            }
+            $qTrx->whereBetween('created_at', [$trxDesde, $trxHasta]); // TRX-v3 · rango de fechas en servidor
+            if ($trxQWhere) { $qTrx->where($trxQWhere); } // TRX-v3.1 · búsqueda en todas las páginas
+            $listadoTransacciones = $qTrx->orderByDesc('created_at')->paginate(15)->withQueryString();
+            $trxFuente = 'consulta propia (vista · con fechas' . ($trxQ !== '' ? ' + búsqueda' : '') . ')';
+        } catch (\Throwable $e) {
+            $trxDbgErrores[] = 'consulta propia con fechas: ' . $e->getMessage();
+            try {
+                $qTrx2 = $trxModelo::query();
+                if (!$trxGlobal && is_numeric($trxInmId)) {
+                    $qTrx2->whereHas('reserva', function ($qq) use ($trxInmId) {
+                        $qq->where('id_rsv_catalogo_inmueble', $trxInmId);
+                    });
+                }
+                $qTrx2->whereBetween('created_at', [$trxDesde, $trxHasta]);
+                if ($trxQWhereSin) { $qTrx2->where($trxQWhereSin); } // TRX-v3.1 · búsqueda (respaldo sin pasarela)
+                $listadoTransacciones = $qTrx2->orderByDesc('created_at')->paginate(15)->withQueryString();
+                $trxFuente = 'consulta propia (sin eager · con fechas' . ($trxQ !== '' ? ' + búsqueda' : '') . ')';
+            } catch (\Throwable $e2) {
+                $trxDbgErrores[] = 'dataset transacciones (reintento sin eager): ' . $e2->getMessage();
+                $listadoTransacciones = null;
+            }
+        }
+    }
+    if ($listadoTransacciones === null && isset($inmueble) && is_object($inmueble) && method_exists($inmueble, 'transacciones')) {
+        try {
+            $qRelTrx = $inmueble->transacciones()->whereBetween('created_at', [$trxDesde, $trxHasta]);
+            if ($trxQWhere) { $qRelTrx->where($trxQWhere); } // TRX-v3.1 · búsqueda en todas las páginas
+            $listadoTransacciones = $qRelTrx->orderByDesc('created_at')->paginate(15)->withQueryString();
+            $trxFuente = 'relación del inmueble (con fechas' . ($trxQ !== '' ? ' + búsqueda' : '') . ')';
+        } catch (\Throwable $e) {
+            $trxDbgErrores[] = 'relación inmueble-transacciones: ' . $e->getMessage();
+            $listadoTransacciones = null;
+        }
+    }
+    if ($listadoTransacciones === null && isset($transacciones) && $transacciones !== null) {
+        /* Respaldo: dataset del controlador · el rango se aplica EN MEMORIA
+           sobre la página recibida (el total del paginador puede incluir
+           registros fuera del rango; el panel DBG lo reporta). */
+        $listadoTransacciones = $transacciones;
+        try {
+            $trxEsPaginador = method_exists($listadoTransacciones, 'getCollection');
+            $trxColeccion = $trxEsPaginador ? $listadoTransacciones->getCollection() : $listadoTransacciones;
+            $trxFueraRango = 0;
+            $trxFiltrada = $trxColeccion->filter(function ($t) use ($trxDesde, $trxHasta, &$trxFueraRango, $trxQ) {
+                $trxQOk = true;
+                if ($trxQ !== '') {
+                    $trxPaja = strtolower(($t->referencia_externa ?? '') . ' ' . ($t->id ?? '') . ' ' . ($t->reserva->codigo_reserva ?? $t->id_rsv_reservas ?? '') . ' ' . ($t->pasarela->nombre ?? $t->pasarela->name ?? '') . ' ' . ($t->metodo_pago ?? '') . ' ' . ($t->estado_pago ?? '') . ' ' . ($t->monto ?? ''));
+                    $trxQOk = strpos($trxPaja, strtolower($trxQ)) !== false;
+                }
+                $f = $t->created_at ?? null;
+                if (!$f) { return $trxQOk; }
+                $enRango = $f->between($trxDesde, $trxHasta);
+                if (!$enRango) { $trxFueraRango++; }
+                return $enRango && $trxQOk;
+            })->values();
+            if ($trxEsPaginador) { $listadoTransacciones->setCollection($trxFiltrada); } else { $listadoTransacciones = $trxFiltrada; }
+            $trxFuente = 'controlador (fechas' . ($trxQ !== '' ? ' + búsqueda' : '') . ' aplicadas en memoria)';
+            if ($trxFueraRango > 0) { $trxDbgErrores[] = 'el controlador entregó ' . $trxFueraRango . ' registro(s) fuera del rango en esta página (filtrados en memoria)'; }
+        } catch (\Throwable $e) {
+            $trxDbgErrores[] = 'filtro de fechas en memoria: ' . $e->getMessage();
+        }
+    }
+    if ($listadoTransacciones === null) {
+        $trxDbgErrores[] = 'dataset transacciones: sin modelo, sin relación y sin variable del controlador';
+        $listadoTransacciones = collect();
+    }
     $trxRuta = function (array $cands, $param = null) {
         foreach ($cands as $c) {
             if (\Illuminate\Support\Facades\Route::has($c)) {
@@ -51,9 +256,11 @@
     $trxEstados = ['Pendiente', 'Aprobado', 'Rechazado', 'Anulado'];
     $trxTotal = method_exists($listadoTransacciones, 'total') ? $listadoTransacciones->total() : $listadoTransacciones->count();
 
-    /* ── Colector del panel de debug (TRX-v1-DBG) · via al panel vía la directiva json de Blade ── */
-    $trxFragmento = \Illuminate\Support\Facades\Route::has('rsv.admin.transacciones.fragmento')
-        ? route('rsv.admin.transacciones.fragmento') : null;
+    /* ── Colector del panel de debug (TRX-v3.1-DBG) · via al panel vía la directiva json de Blade ── */
+    $trxFragmentoUrl = \Illuminate\Support\Facades\Route::has('rsv.admin.transacciones.fragmento')
+        ? route('rsv.admin.transacciones.fragmento', ['inmueble_id' => $trxInmId ?? 'todos']) : null;
+    /* TRX-v3 · la URL del fragmento lleva SIEMPRE el inmueble resuelto en
+       servidor (inmueble_id); en modo global viaja 'todos' */
 
     $trxDbgSoporte = 0;
     $trxDbgEstados = [];
@@ -63,10 +270,33 @@
         $trxDbgEstados[$trxDbgClave] = ($trxDbgEstados[$trxDbgClave] ?? 0) + 1;
     }
 
+    /* TRX-v3 · VALIDACIÓN DE LA ELIMINACIÓN LÓGICA: la vista confirma
+       que el modelo real usa SoftDeletes (deleted_at) y lo reporta en
+       el panel. Flujo de anulación configurado en esta vista: modal con
+       confirm() → DELETE por spoofing → el controlador marca
+       estado_pago='Anulado' y borra lógicamente (nunca físico · el
+       soporte de S3 se conserva) · botón deshabilitado si ya está
+       ANULADA · las filas anuladas se ven atenuadas (trx-anulada). */
+    $trxSoftDeletes = false;
+    if (!empty($trxModelo)) {
+        try { $trxSoftDeletes = in_array('Illuminate\Database\Eloquent\SoftDeletes', class_uses_recursive($trxModelo)); }
+        catch (\Throwable $e) { $trxSoftDeletes = false; }
+    }
+
     $trxDbg = [
-        'version'       => 'TRX-v1-DBG',
+        'version'       => 'TRX-v3.1-DBG',
         'vista'         => 'partials/finanzas/transacciones.blade.php',
         'render'        => now()->format('H:i:s'),
+        'modo'          => $trxGlobal ? 'global' : ('inmueble #' . $trxInmId),
+        'fuente_datos'  => $trxFuente,
+        'rango_fechas'  => ['desde' => $trxDesde->format('Y-m-d'), 'hasta' => $trxHasta->format('Y-m-d'), 'modo' => $trxMesPorDefecto ? 'mes-por-defecto' : 'personalizado'],
+        'busqueda'      => ['q' => $trxQ !== '' ? $trxQ : null, 'ambito' => 'todas las páginas del rango'],
+        'eliminacion_logica' => [
+            'modelo_soft_deletes'  => $trxSoftDeletes,
+            'anular_via'           => 'DELETE (spoofing) · estado_pago=Anulado + deleted_at',
+            'modal_anular'         => true,
+            'bloqueado_si_anulada' => true,
+        ],
         'transacciones' => $trxTotal,
         'en_pagina'     => $listadoTransacciones->count(),
         'pagina'        => method_exists($listadoTransacciones, 'currentPage') ? $listadoTransacciones->currentPage() : 1,
@@ -78,17 +308,17 @@
         'rutas'         => [
             'store'     => $trxStore     ?: 'NO definida',
             'index'     => $trxBase      ?: 'NO definida',
-            'fragmento' => $trxFragmento ?: 'NO definida',
+            'fragmento' => $trxFragmentoUrl ?: 'NO definida',
         ],
-        'errores'       => [],
+        'errores'       => $trxDbgErrores,
     ];
 @endphp
 
-{{-- TRX-v1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano de la hoja: vive y muere con el parcial · NO viaja en el refresco AJAX interno) --}}
-<div id="trxDbgToggle" title="Debug Transacciones (TRX-v1-DBG)"><span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span></div>
+{{-- TRX-v3.1-DBG · Tab DBG terminal + LED + Panel LOCAL (hermano de la hoja: vive y muere con el parcial · NO viaja en el refresco AJAX interno) --}}
+<div id="trxDbgToggle" title="Debug Transacciones (TRX-v3.1-DBG)"><span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span></div>
 <div id="trxDbgPanel" role="dialog" aria-label="Panel de debug de Transacciones Financieras">
     <div class="trx-dbg-header" id="trxDbgHeader">
-        <span>DEBUG · Finanzas · Transacciones · TRX-v1-DBG</span>
+        <span>DEBUG · Finanzas · Transacciones · TRX-v3.1-DBG</span>
         <span class="trx-dbg-controls">
             <button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>
             <button type="button" class="trx-dbg-btn" id="trxDbgClear">Limpiar</button>
@@ -112,9 +342,12 @@
             .reservas-soft .sub { font-size: 7.5px; color: var(--ink-4); }
             .reservas-soft .btn-mini { border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3); font-family: inherit; font-size: 8.5px; font-weight: 500; padding: 1px 8px; border-radius: 3px; cursor: pointer; }
             .reservas-soft .btn-mini:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
+            .reservas-soft .btn-mini:disabled { color: #d4dae2; background: #fcfdfe; border-color: var(--grid); cursor: default; }
             .reservas-soft .btn-green { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 10px; border-radius: 3px; }
             .reservas-soft .xls-search { font-size: 9px; color: var(--ink-2); background: #fff; border: 1px solid var(--grid-2); border-radius: 3px; padding: 2px 8px; box-shadow: none !important; outline: 0; min-width: 200px; }
             .reservas-soft .xls-search:focus { border-color: #c8d6cd; }
+            .reservas-soft .xls-fecha { font-size: 9px; color: var(--ink-2); background: #fff; border: 1px solid var(--grid-2); border-radius: 3px; padding: 1px 5px; box-shadow: none !important; outline: 0; height: 22px; font-family: inherit; color-scheme: light; }
+            .reservas-soft .xls-fecha:focus { border-color: #c8d6cd; }
             .reservas-soft .count-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 8px; padding: 1px 8px; white-space: nowrap; }
             .reservas-soft .count-badge b { color: var(--accent); }
             .reservas-soft .st-dot { display: inline-block; width: 9px; height: 9px; border-radius: 3px; border: 1px solid rgba(0,0,0,.08); vertical-align: middle; }
@@ -127,8 +360,16 @@
 
             @keyframes destelloFila { 0%,100% { background-color: transparent; } 35% { background-color: rgba(61,122,92,.16); } }
             .reservas-soft tr.fila-nueva > td { animation: destelloFila 1.5s ease; }
+            .reservas-soft tr.trx-anulada > td { opacity: .55; }
 
-            /* ═════════ SPEC DE DISTANCIAS · TRX-v1-DBG (tab terminal TIP-v1.3) ═════════
+            /* TRX-v3 · giro del icono del botón Actualizar mientras recarga */
+            @keyframes trxSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            .reservas-soft .trx-spin { animation: trxSpin .8s linear infinite; }
+            /* TRX-v3 · pulso verde de confirmación tras cada refresco */
+            @keyframes trxPulseFade { 0% { background-color: #e3f2e8; } 100% { background-color: transparent; } }
+            .reservas-soft.trx-pulse { animation: trxPulseFade .9s ease-out 1; }
+
+            /* ═════════ SPEC DE DISTANCIAS · TRX-v3.1-DBG (tab terminal TIP-v1.3) ═════════
                TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
                            inferior-derecha (nunca sube: con 16px de alto cabe bajo
                            cualquier otro toggle sin tocarlo)
@@ -176,10 +417,34 @@
                 <i class="bi bi-wallet2 me-1" style="font-size: 8px; color: #5d8a70;"></i> Transacciones Financieras
             </h6>
             <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+                @if(!$trxGlobal)
+                    <span class="count-badge" title="Filtro activo: transacciones de un solo inmueble">
+                        <i class="bi bi-house-door" style="font-size: 7.5px; color: #b3bcc7;"></i>
+                        {{ is_object($trxInm) ? ($trxInm->name ?? ('Inmueble #' . $trxInmId)) : ('Inmueble #' . $trxInmId) }}
+                    </span>
+                @endif
                 <span class="count-badge" title="Transacciones registradas (total del contexto)">
                     <b>{{ $trxTotal }}</b> transacción(es)
                 </span>
-                <input type="text" id="trxSearch" class="xls-search" placeholder="Buscar transacción…" autocomplete="off" style="width: 170px;">
+                <input type="text" id="trxSearch" class="xls-search" placeholder="Buscar transacción…" autocomplete="off" enterkeyhint="search" title="Búsqueda instantánea · filtra al escribir y busca en TODAS las páginas del rango (Enter = buscar ya)" style="width: 170px;">
+                <span class="count-badge" title="Rango de fechas activo · por defecto solo se carga el mes en curso">
+                    <i class="bi bi-calendar3" style="font-size: 7.5px; color: #b3bcc7;"></i>
+                    {{ $trxDesde->format('d/m/Y') }} – {{ $trxHasta->format('d/m/Y') }}
+                </span>
+                <input type="date" id="trxFechaDesde" class="xls-fecha" value="{{ $trxDesde->format('Y-m-d') }}" title="Desde · fecha de creación de la transacción" autocomplete="off">
+                <input type="date" id="trxFechaHasta" class="xls-fecha" value="{{ $trxHasta->format('Y-m-d') }}" title="Hasta · fecha de creación de la transacción" autocomplete="off">
+                <button type="button" id="trxAplicarFechas" class="btn-mini d-inline-flex align-items-center gap-1" title="Aplicar el rango de fechas al listado (vuelve a la página 1)">
+                    <i class="bi bi-funnel" style="font-size: 8px;"></i> Aplicar
+                </button>
+                <button type="button" id="trxMesActual" class="btn-mini d-inline-flex align-items-center gap-1" title="Restablecer el rango al mes en curso">
+                    <i class="bi bi-calendar-week" style="font-size: 8px;"></i> Este mes
+                </button>
+                <button type="button" id="trxRefresh" class="btn-mini d-inline-flex align-items-center gap-1" title="Recargar transacciones por AJAX (sin F5)">
+                    <i class="bi bi-arrow-clockwise" style="font-size: 8px;"></i> Actualizar
+                </button>
+                <button type="button" id="trxExport" class="btn-mini d-inline-flex align-items-center gap-1" title="Excel (CSV · BOM UTF-8 · separador ;) de TODO lo filtrado en pantalla">
+                    <i class="bi bi-download" style="font-size: 8px;"></i> Exportar
+                </button>
                 @if($trxStore)
                     <button type="button" class="btn-green" data-bs-toggle="modal" data-bs-target="#trxModalCreate">
                         <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Transacción
@@ -223,7 +488,7 @@
                             ));
                         @endphp
 
-                        <tr class="trx-row" data-id="{{ $trx->id }}" data-trx-search="{{ $trxBuscar }}">
+                        <tr class="trx-row{{ strtolower((string) ($trx->estado_pago ?? '')) === 'anulado' ? ' trx-anulada' : '' }}" data-id="{{ $trx->id }}" data-trx-search="{{ $trxBuscar }}">
                             <td class="text-center sub">{{ $loop->iteration }}</td>
                             <td class="strong">
                                 {{ $trx->referencia_externa ?? 'N/A' }}
@@ -275,7 +540,7 @@
                     @empty
                         <tr>
                             <td colspan="9" class="text-center py-4" style="font-size: 8.5px; color: #b3bcc7;">
-                                <i class="bi bi-inbox me-1"></i> No hay transacciones financieras registradas en este momento.
+                                <i class="bi bi-inbox me-1"></i> {{ $trxQ !== '' ? 'Ninguna transacción coincide con «' . $trxQ . '» en el rango seleccionado.' : 'No hay transacciones en el rango de fechas seleccionado (por defecto, solo el mes en curso).' }}
                             </td>
                         </tr>
                     @endforelse
@@ -525,10 +790,17 @@
     if (window.__jsTransaccionesListo) return;
     window.__jsTransaccionesListo = true;
 
-    var URL_FRAGMENTO = '{{ Route::has("rsv.admin.transacciones.fragmento") ? route("rsv.admin.transacciones.fragmento") : "" }}';
+    /* TRX-v3 · URL del fragmento resuelta en servidor: ya lleva inmueble_id
+       (el del contexto Blade). El cliente solo agrega página y _t. */
+    var TRX_FRAG_URL = '{!! $trxFragmentoUrl ?? "" !!}';
     var PAGINA_ACTUAL = 1;
 
-    /* ═══ 0) PANEL DE DEBUG LOCAL TRX-v1-DBG (diseño TIP-v1.3 aprobado) ═══
+    var TRX_Q = '';         // TRX-v3.1 · término de búsqueda activo (viaja en la URL del fragmento)
+    var TRX_Q_ENVIADO = ''; // TRX-v3.1 · último término consultado al servidor (evita repetir)
+    var TRX_Q_SEQ = 0;      // TRX-v3.1 · guarda anti-carrera: solo gana la última búsqueda
+    var TRX_Q_TIMER = null; // TRX-v3.1 · temporizador del debounce (320ms tras la última tecla)
+
+    /* ═══ 0) PANEL DE DEBUG LOCAL TRX-v3.1-DBG (diseño TIP-v1.3 aprobado) ═══
        IIFE propia con $ por id: no interfiere con el resto del script.
        Exclusiva de esta vista: los nodos son HTML del parcial (hermanos de
        #sheet-transacciones, FUERA del contenedor que intercambia el refresco
@@ -557,7 +829,7 @@
                 if (!$('trxDbgToggle')) {
                     var t = document.createElement('div');
                     t.id = 'trxDbgToggle';
-                    t.title = 'Debug Transacciones (TRX-v1-DBG)';
+                    t.title = 'Debug Transacciones (TRX-v3.1-DBG)';
                     t.innerHTML = '<span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -565,7 +837,7 @@
                     var p = document.createElement('div');
                     p.id = 'trxDbgPanel';
                     p.innerHTML = '<div class="trx-dbg-header" id="trxDbgHeader">' +
-                        '<span>DEBUG · Finanzas · Transacciones · TRX-v1-DBG</span>' +
+                        '<span>DEBUG · Finanzas · Transacciones · TRX-v3.1-DBG</span>' +
                         '<span class="trx-dbg-controls">' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgClear">Limpiar</button>' +
@@ -575,12 +847,14 @@
                 }
                 apilar();
             }
-            /* TRX-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
+            /* TRX-v3.1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
                apila: con 16px de alto cabe bajo cualquier otro toggle sin
                tocarlo). Solo el PANEL esquiva a los vecinos de las otras
                vistas: bottom = max(20, vecino + 4) en píxeles reales. */
             function apilar() {
-                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'finDbgToggle']; // serie completa de hermanos
+                /* TRX-v3 · vecino de Huéspedes corregido: es rhDbgToggle (antes
+                   se apilaba contra rhDebugToggle, id que no existe) */
+                var ids = ['rsvShowDebugToggle', 'rhDbgToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle', 'finDbgToggle']; // serie completa de hermanos
                 var ocupado = 0;
                 for (var i = 0; i < ids.length; i++) {
                     var el = $(ids[i]);
@@ -639,7 +913,7 @@
                 clear: function () { var b = $('trxDbgBody'); if (b) { b.innerHTML = ''; } },
                 copy: function () {
                     var b = $('trxDbgBody'); if (!b) { return; }
-                    var txt = '=== DEBUG transacciones TRX-v1-DBG · ' + new Date().toISOString() + ' ===\n';
+                    var txt = '=== DEBUG transacciones TRX-v3.1-DBG · ' + new Date().toISOString() + ' ===\n';
                     for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(txt).then(function () {
@@ -686,10 +960,18 @@
     /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
     var SRVDBG = @json($trxDbg);
     if (DBG) {
-        trxdbg('TRX-v1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con el parcial)', 'ok');
+        trxdbg('TRX-v3.1-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · exclusiva (muere con el parcial)', 'ok');
+        trxdbg('init · modo=' + (SRVDBG ? SRVDBG.modo : '?') + ' · fuente=' + (SRVDBG ? SRVDBG.fuente_datos : '?'), 'info');
         trxdbg('init · total=' + (SRVDBG ? SRVDBG.transacciones : '?') + ' transacción(es) · en página=' + (SRVDBG ? SRVDBG.en_pagina : '?') +
             ' · página=' + (SRVDBG ? SRVDBG.pagina : '?') + '/' + (SRVDBG ? SRVDBG.por_pagina : '?') +
             ' · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : '?') + ' · editable=' + !!(SRVDBG && SRVDBG.editable), 'info');
+        if (SRVDBG && SRVDBG.rango_fechas) {
+            trxdbg('fechas · rango cargado ' + SRVDBG.rango_fechas.desde + ' → ' + SRVDBG.rango_fechas.hasta + ' · modo=' + SRVDBG.rango_fechas.modo + ' · por defecto SOLO el mes en curso', 'ok');
+        }
+        if (SRVDBG && SRVDBG.eliminacion_logica) {
+            var _elg = SRVDBG.eliminacion_logica;
+            trxdbg('eliminación lógica · SoftDeletes en el modelo=' + (_elg.modelo_soft_deletes ? 'SÍ' : 'NO') + ' · anular=' + _elg.anular_via + (_elg.modelo_soft_deletes ? '' : ' · ⚠ REVISAR: el modelo no reporta SoftDeletes'), _elg.modelo_soft_deletes ? 'ok' : 'warn');
+        }
         if (SRVDBG && SRVDBG.estados) {
             var _ek = Object.keys(SRVDBG.estados), _partes = [];
             for (var _ei = 0; _ei < _ek.length; _ei++) { _partes.push(_ek[_ei] + '=' + SRVDBG.estados[_ek[_ei]]); }
@@ -780,17 +1062,58 @@
             setTimeout(function () { fila.classList.remove('fila-nueva'); }, 1600);
         });
     }
+    /* TRX-v3 · inmueble_id: manda el de la querystring del navegador (por si
+       el usuario acaba de cambiar el filtro) y si no viene, el que resolvió
+       el servidor en TRX_FRAG_URL · así el refresco NUNCA pierde el filtro
+       de un solo inmueble aunque la página no lo lleve en la URL */
+    /* ═══ TRX-v3 · FILTROS POR RANGO DE FECHAS ═══
+       Los inputs #trxFechaDesde/#trxFechaHasta viven DENTRO de la hoja;
+       igual que Actualizar/Exportar, todo por delegación en document
+       para sobrevivir a los refrescos. El rango viaja SIEMPRE en la URL
+       del fragmento (fecha_desde / fecha_hasta) y en servidor se aplica
+       con whereBetween sobre created_at. Sin fechas → solo el mes en curso. */
+    function leerRangoFechas() {
+        var d = document.querySelector('#sheet-transacciones #trxFechaDesde');
+        var h = document.querySelector('#sheet-transacciones #trxFechaHasta');
+        return { desde: d ? (d.value || '') : '', hasta: h ? (h.value || '') : '' };
+    }
+    function aplicarRangoFechas(origen) {
+        var r = leerRangoFechas();
+        if (r.desde && r.hasta && r.hasta < r.desde) { trxdbg('fechas · rango invertido (hasta < desde) → el servidor lo intercambia', 'warn'); }
+        PAGINA_ACTUAL = 1;
+        trxdbg('fechas · ' + (origen || 'botón Aplicar') + ' · rango ' + (r.desde || '(vacío → inicio de mes)') + ' → ' + (r.hasta || '(vacío → fin de mes)') + ' · recargando página 1', 'net');
+        refrescarTabla(null, 1);
+    }
+    function ponerMesActual() {
+        var hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth();
+        function fm(n) { return (n < 10 ? '0' : '') + n; }
+        var primero = y + '-' + fm(m + 1) + '-01';
+        var ult = new Date(y, m + 1, 0);
+        var fin = ult.getFullYear() + '-' + fm(ult.getMonth() + 1) + '-' + fm(ult.getDate());
+        document.querySelectorAll('#sheet-transacciones #trxFechaDesde').forEach(function (i) { i.value = primero; });
+        document.querySelectorAll('#sheet-transacciones #trxFechaHasta').forEach(function (i) { i.value = fin; });
+        trxdbg('fechas · restablecido el mes en curso ' + primero + ' → ' + fin, 'info');
+        PAGINA_ACTUAL = 1;
+        refrescarTabla(null, 1);
+    }
     function urlFragmento(pagina) {
-        if (!URL_FRAGMENTO) return '';
+        if (!TRX_FRAG_URL) return '';
+        var base = TRX_FRAG_URL.split('?')[0];
+        var inmBase = new URLSearchParams(TRX_FRAG_URL.split('?')[1] || '').get('inmueble_id');
+        var inmLoc = new URLSearchParams(window.location.search).get('inmueble_id');
         var qs = new URLSearchParams();
-        var inm = new URLSearchParams(window.location.search).get('inmueble_id');
-        if (inm) qs.set('inmueble_id', inm);
+        qs.set('inmueble_id', inmLoc || inmBase || 'todos');
+        var rango = leerRangoFechas(); // TRX-v3 · el rango de fechas SIEMPRE en la URL
+        if (rango.desde) { qs.set('fecha_desde', rango.desde); }
+        if (rango.hasta) { qs.set('fecha_hasta', rango.hasta); }
+        if (TRX_Q) { qs.set('q', TRX_Q); } // TRX-v3.1 · la búsqueda viaja SIEMPRE en la URL del fragmento
         var pg = pagina || PAGINA_ACTUAL || 1;
         if (pg > 1) qs.set('page_finanzas', pg);
-        var s = qs.toString();
-        return URL_FRAGMENTO + (s ? '?' + s : '');
+        qs.set('_t', Date.now());
+        return base + '?' + qs.toString();
     }
     function refrescarTabla(idResaltar, pagina) {
+        TRX_Q_SEQ++; // TRX-v3.1 · invalida búsquedas en vuelo (gana el refresco más nuevo)
         var url = urlFragmento(pagina);
         if (!url) { trxdbg('refresco · sin fragmento → recarga nativa', 'warn'); window.location.reload(); return; }
         var __t0 = Date.now();
@@ -803,7 +1126,11 @@
                 var copias = document.querySelectorAll('#sheet-transacciones');
                 if (!nuevo || copias.length === 0) { trxdbg('refresco · fragmento sin hoja → recarga nativa', 'warn'); window.location.reload(); return; }
                 copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
+                if (TRX_Q) { document.querySelectorAll('#sheet-transacciones #trxSearch').forEach(function (i2) { i2.value = TRX_Q; }); } // TRX-v3.1 · el clone llega vacío → re-sincroniza el buscador
                 unicarModales(); aplicarFiltro(); if (idResaltar) resaltarFila(idResaltar); limpiarResiduos();
+                document.querySelectorAll('#sheet-transacciones > .reservas-soft').forEach(function (t) {
+                    t.classList.remove('trx-pulse'); void t.offsetWidth; t.classList.add('trx-pulse');
+                });
                 if (DBG && DBG.ensure) { DBG.ensure(); }
                 trxdbg('fragmento refrescado en ' + (Date.now() - __t0) + 'ms · copias actualizadas=' + copias.length + (idResaltar ? ' · fila #' + idResaltar + ' resaltada' : ''), 'ok');
             })
@@ -863,8 +1190,69 @@
         if (!form || !form.classList || !form.classList.contains('js-ajax-trx')) return;
         e.preventDefault(); enviarFormulario(form);
     });
+    /* ═══ TRX-v3.1 · BUSCADOR INSTANTÁNEO (dos capas) ═══
+       Capa 1 · CLIENTE: cada tecla filtra al instante las filas ya
+       cargadas. Capa 2 · SERVIDOR: 320ms después de la última tecla,
+       q viaja en la URL del fragmento y el servidor busca en TODAS
+       las páginas del rango. El intercambio de la hoja re-pone el
+       texto y el foco en el buscador (parece que nunca se movió) y
+       la paginación y el botón Actualizar heredan q desde la URL. ═══ */
+    function restaurarBusqueda() {
+        if (!TRX_Q) return;
+        document.querySelectorAll('#sheet-transacciones #trxSearch').forEach(function (i2) { i2.value = TRX_Q; });
+    }
+    function buscarServidor(valor) {
+        if (valor === TRX_Q_ENVIADO) { return; }
+        TRX_Q_ENVIADO = valor; TRX_Q = valor;
+        var seq = ++TRX_Q_SEQ;
+        PAGINA_ACTUAL = 1;
+        try { var u = new URL(window.location.href); if (valor) { u.searchParams.set('q', valor); } else { u.searchParams.delete('q'); } window.history.replaceState(null, '', u); } catch (e0) {}
+        var url = urlFragmento(1);
+        aplicarFiltro(); // la capa cliente ya responde mientras llega el servidor
+        if (!url) { trxdbg('búsqueda en vivo · sin fragmento → queda el filtro de la página visible', 'warn'); return; }
+        var __tq = Date.now();
+        trxdbg('búsqueda en vivo · "' + (valor || '(vacía)') + '" · consultando TODAS las páginas del rango…', 'net');
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw new Error('fragmento'); return r.text(); })
+            .then(function (html) {
+                if (seq !== TRX_Q_SEQ) { return; } // llegó tarde: ya hay una búsqueda más nueva
+                var temp = document.createElement('div'); temp.innerHTML = html;
+                var nuevo = temp.querySelector('#sheet-transacciones');
+                var copias = document.querySelectorAll('#sheet-transacciones');
+                if (!nuevo || copias.length === 0) { trxdbg('búsqueda en vivo · fragmento sin hoja → se mantiene el filtro de la página visible', 'warn'); return; }
+                var activo = document.activeElement, idxCopia = -1, pos = valor.length;
+                if (activo && activo.id === 'trxSearch') {
+                    var hojas = Array.prototype.slice.call(document.querySelectorAll('#sheet-transacciones'));
+                    idxCopia = hojas.indexOf(activo.closest('#sheet-transacciones'));
+                    try { pos = (typeof activo.selectionStart === 'number') ? activo.selectionStart : valor.length; } catch (e1) {}
+                }
+                copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
+                var hojasNuevas = document.querySelectorAll('#sheet-transacciones');
+                hojasNuevas.forEach(function (h2) { var i2 = h2.querySelector('#trxSearch'); if (i2) { i2.value = valor; } });
+                if (idxCopia >= 0 && hojasNuevas[idxCopia]) {
+                    var inp2 = hojasNuevas[idxCopia].querySelector('#trxSearch');
+                    if (inp2) { inp2.focus(); try { inp2.setSelectionRange(pos, pos); } catch (e2) {} }
+                }
+                unicarModales(); aplicarFiltro(); limpiarResiduos();
+                if (DBG && DBG.ensure) { DBG.ensure(); }
+                var enPagina = nuevo.querySelectorAll('tr[data-trx-search]').length;
+                trxdbg('búsqueda en vivo · "' + (valor || '(vacía)') + '" · ' + enPagina + ' fila(s) en ' + (Date.now() - __tq) + 'ms · copias=' + copias.length + ' · paginación hereda q', 'ok');
+            })
+            .catch(function () { if (seq === TRX_Q_SEQ) { trxdbg('búsqueda en vivo falló · se mantiene el filtro de la página visible', 'err'); } });
+    }
     document.addEventListener('input', function (e) {
-        if (e.target && e.target.id === 'trxSearch') aplicarFiltro(e.target);
+        if (!e.target || e.target.id !== 'trxSearch') return;
+        aplicarFiltro(e.target); // capa 1 · instantánea con lo ya cargado
+        var val = (e.target.value || '').toLowerCase().trim();
+        if (TRX_Q_TIMER) { clearTimeout(TRX_Q_TIMER); }
+        TRX_Q_TIMER = setTimeout(function () { TRX_Q_TIMER = null; buscarServidor(val); }, 320); // capa 2 · todas las páginas
+    });
+    document.addEventListener('keydown', function (e) {
+        if (!e.target || e.target.id !== 'trxSearch' || e.key !== 'Enter') return;
+        e.preventDefault(); // Enter = buscar YA, sin esperar el debounce
+        if (TRX_Q_TIMER) { clearTimeout(TRX_Q_TIMER); TRX_Q_TIMER = null; }
+        var val = (e.target.value || '').toLowerCase().trim();
+        buscarServidor(val);
     });
     document.addEventListener('click', function (e) {
         if (!e.target || !e.target.closest) return;
@@ -879,6 +1267,75 @@
             refrescarTabla(null, PAGINA_ACTUAL);
         } catch (err) { trxdbg('paginación · URL inválida → navegación nativa', 'warn'); window.location.href = a.getAttribute('href'); }
     });
+
+    /* ═══ TRX-v3 · BOTONES ACTUALIZAR / EXPORTAR (delegación en document:
+       los botones viven DENTRO de la hoja y mueren con cada refresco; el
+       listener en document sobrevive y sigue funcionando tras el swap). ═══ */
+    function exportarTrx() {
+        var inp = document.getElementById('trxSearch');
+        var val = inp ? (inp.value || '').toLowerCase().trim() : '';
+        var vistos = {}; var filas = [];
+        document.querySelectorAll('#sheet-transacciones tr[data-trx-search]').forEach(function (tr) {
+            var mostrar = !val || (tr.getAttribute('data-trx-search') || '').indexOf(val) !== -1;
+            if (!mostrar) return;
+            var idFila = tr.getAttribute('data-id');
+            if (idFila) { if (vistos[idFila]) return; vistos[idFila] = 1; } // dedup multi-copia
+            var b = tr.querySelector('.js-ver-trx');
+            if (!b) return;
+            var d = b.dataset;
+            filas.push([d.referencia || 'N/A', 'ID ' + (d.id || '—'), d.reserva || '', d.pasarela || '', d.metodo || '', d.monto || '0.00', d.moneda || 'COP', d.estado || '', d.fecha || '', (d.soporte === '1' ? 'SÍ' : 'NO')]);
+        });
+        if (!filas.length) {
+            trxdbg('Exportar: no hay transacciones que exportar con el filtro actual', 'warn');
+            avisar('No hay transacciones que exportar con el filtro actual.', 'danger');
+            return;
+        }
+        var celda = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+        var lineas = [['#', 'Referencia', 'ID interno', 'Reserva', 'Pasarela', 'Método', 'Monto', 'Moneda', 'Estado', 'Fecha', 'Soporte'].map(celda).join(';')];
+        filas.forEach(function (r, i) { lineas.push(([i + 1].concat(r)).map(celda).join(';')); });
+        var d0 = new Date();
+        function f2(n) { return (n < 10 ? '0' : '') + n; }
+        var nombre = 'transacciones_' + d0.getFullYear() + f2(d0.getMonth() + 1) + f2(d0.getDate()) + '_' + f2(d0.getHours()) + f2(d0.getMinutes()) + '.csv';
+        try {
+            var blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = nombre;
+            document.body.appendChild(a); a.click(); a.remove();
+            var __rg = leerRangoFechas();
+            trxdbg('Exportado ' + nombre + ' · ' + filas.length + ' fila(s) · filtro: ' + (val || 'sin filtro') + ' · fechas: ' + (__rg.desde || 'inicio-mes') + '→' + (__rg.hasta || 'fin-mes'), 'ok');
+            avisar('Exportadas ' + filas.length + ' transacción(es) a ' + nombre, 'success');
+        } catch (e2) {
+            trxdbg('Exportar falló: ' + e2.message, 'err');
+        }
+    }
+    document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) return;
+        var btnR = e.target.closest('#trxRefresh');
+        if (btnR) {
+            var ico = btnR.querySelector('i.bi');
+            try { btnR.disabled = true; if (ico) ico.classList.add('trx-spin'); } catch (e2) {}
+            trxdbg('Actualización manual solicitada · recargando fragmento (página ' + PAGINA_ACTUAL + ')…', 'info');
+            try { refrescarTabla(null, PAGINA_ACTUAL); }
+            catch (e3) { trxdbg('Actualizar falló: ' + e3.message, 'err'); }
+            setTimeout(function () {
+                try { btnR.disabled = false; if (ico) ico.classList.remove('trx-spin'); } catch (e4) {}
+            }, 1200);
+            return;
+        }
+        if (e.target.closest('#trxExport')) { exportarTrx(); return; }
+    });
+    /* ═══ TRX-v3 · botones de fecha y cambio de fecha (delegación en document) ═══ */
+    document.addEventListener('click', function (e) {
+        if (!e.target || !e.target.closest) return;
+        if (e.target.closest('#trxAplicarFechas')) { aplicarRangoFechas(); return; }
+        if (e.target.closest('#trxMesActual')) { ponerMesActual(); return; }
+    });
+    document.addEventListener('change', function (e) {
+        if (e.target && (e.target.id === 'trxFechaDesde' || e.target.id === 'trxFechaHasta')) {
+            aplicarRangoFechas('cambio de fecha');
+        }
+    });
     document.addEventListener('show.bs.modal', function (e) {
         var m = e.target;
         if (!m || !m.closest || !m.closest('#sheet-transacciones')) return;
@@ -890,8 +1347,11 @@
     function iniciar() {
         var p = parseInt(new URLSearchParams(window.location.search).get('page_finanzas') || '1', 10);
         PAGINA_ACTUAL = isNaN(p) ? 1 : Math.max(1, p);
+        var q0 = (new URLSearchParams(window.location.search).get('q') || '').trim();
+        if (q0) { TRX_Q = q0; TRX_Q_ENVIADO = q0; restaurarBusqueda(); trxdbg('buscador · término activo "' + q0 + '" · el servidor ya filtró TODAS las páginas del rango', 'info'); } // TRX-v3.1 · F5 mantiene la búsqueda
         unicarModales(); limpiarResiduos(); aplicarFiltro();
-        trxdbg('DOM listo · página=' + PAGINA_ACTUAL + ' · copias de la hoja=' + document.querySelectorAll('#sheet-transacciones').length + ' · búsqueda activa #trxSearch', 'debug');
+        trxdbg('DOM listo · página=' + PAGINA_ACTUAL + ' · copias de la hoja=' + document.querySelectorAll('#sheet-transacciones').length + ' · búsqueda #trxSearch · botones trxRefresh (AJAX) y trxExport (CSV) por delegación', 'debug');
+        trxdbg('fechas · controles #trxFechaDesde/#trxFechaHasta + Aplicar/Este mes · rango activo ' + (SRVDBG && SRVDBG.rango_fechas ? SRVDBG.rango_fechas.desde + ' → ' + SRVDBG.rango_fechas.hasta : 'n/d'), 'debug');
     }
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', iniciar); } else { iniciar(); }
 })();

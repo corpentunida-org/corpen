@@ -5,10 +5,13 @@ namespace App\Models\Rsv;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
 
 class TransaccionFinanciera extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'rsv_transacciones_financieras';
 
     protected $fillable = [

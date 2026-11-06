@@ -705,7 +705,7 @@ Route::middleware(['auth'])
         // =====================================================================
         // Panel de control general para administradores
         Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-        
+
         // Panel de autogestión para clientes
         Route::get('/cliente', [ClientePortalController::class, 'index'])->name('cliente.portal');
         // =====================================================================
@@ -716,10 +716,10 @@ Route::middleware(['auth'])
         // =====================================================================
         // INICIO 2. PETICIONES AJAX Y FRAGMENTOS (Sin recarga de página)
         // =====================================================================
-        
+
         // --- Portal Cliente ---
         Route::get('cliente-fragmento', [ClientePortalController::class, 'fragmento'])->name('cliente.fragmento');
-        
+
         // --- Dashboard Administrativo ---
         // Carga parcial de vistas Blade (sin recargar la página) agrupadas por pestaña
         // y sus respectivos micro-fragmentos (submódulos Nivel 3).
@@ -733,7 +733,7 @@ Route::middleware(['auth'])
         // Contenedor principal de la pestaña (partials/tab-inmuebles.blade.php) - NIVEL 2
         Route::get('inmuebles-fragmento', [AdminDashboardController::class, 'inmueblesFragmento'])
             ->name('admin.inmuebles.fragmento');
-            
+
         // Micro-fragmentos (Nivel 3)
         Route::get('inmuebles-catalogo-fragmento', [AdminDashboardController::class, 'inmueblesCatalogoFragmento'])
             ->name('admin.inmuebles.catalogo.fragmento'); // partials/inmuebles/catalogo.blade.php
@@ -752,7 +752,7 @@ Route::middleware(['auth'])
         // Contenedor principal de la pestaña (partials/tab-reservas.blade.php) - NIVEL 2
         Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
             ->name('admin.reservas.fragmento');
-            
+
         // Micro-fragmentos (Nivel 3)
         Route::get('reservas-lista-fragmento', [AdminDashboardController::class, 'reservasListaFragmento'])
             ->name('admin.reservas.lista.fragmento'); // partials/reservas/reservas.blade.php
@@ -806,7 +806,7 @@ Route::middleware(['auth'])
         Route::get('auditoria-informes-fragmento', [AdminDashboardController::class, 'auditoriaInformesFragmento'])
             ->name('admin.auditoria.informes.fragmento'); // partials/auditorias/informes.blade.php
         // --- FIN 5. TAB AUDITORÍA ---
-        
+
         // =====================================================================
         // FIN 2. PETICIONES AJAX Y FRAGMENTOS
         // =====================================================================
@@ -817,11 +817,14 @@ Route::middleware(['auth'])
         // =====================================================================
         // Acciones de Inmuebles
         Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
-        
+
         // Acciones de Reservas
         Route::get('reservas/fechas-ocupadas/{inmueble}', [ReservaController::class, 'fechasOcupadasAjax'])->name('reservas.fechas-ocupadas');
         Route::post('reservas/store-ajax', [ReservaController::class, 'storeAjax'])->name('reservas.store-ajax');
         Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
+        // [REQ check] Cambiar SOLO la clasificación (tipo) de una propiedad · la usa partials/inmuebles/tipo.blade.php
+        Route::put('inmuebles/{id}/tipo', [TipoInmuebleController::class, 'asignarTipo'])->name('inmuebles.tipo.asignar');
+
         Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
         // =====================================================================
         // FIN 3. RUTAS ESPECÍFICAS DE ACCIÓN
@@ -831,7 +834,7 @@ Route::middleware(['auth'])
         // =====================================================================
         // INICIO 4. RUTAS CRUD (Resources) ORGANIZADAS POR DOMINIO
         // =====================================================================
-        
+
         // --- A. Catálogo y Configuración de Inmuebles ---
         Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
         Route::resource('tipos-inmuebles', TipoInmuebleController::class)->parameters(['tipos-inmuebles' => 'rsvTipoInmueble']);

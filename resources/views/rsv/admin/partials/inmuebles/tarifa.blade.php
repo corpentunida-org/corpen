@@ -173,6 +173,7 @@
                         <th class="text-end" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Fin Sem.</th>
                         <th class="text-end" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Mín. Reserva</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Días Máx.</th>
+                        <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Rsv. Máx/Año</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Estado</th>
                         @if(empty($soloLectura))
                             <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">·</th>
@@ -217,6 +218,10 @@
                                     {{ $tarifa->dias_maximos ?? 'N/A' }}
                                 </td>
 
+                                <td class="text-center" style="font-size: 8px; color: #64748b; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
+                                    {{ $tarifa->max_reservas_anuales_cliente ?? 'N/A' }}
+                                </td>
+
                                 <td class="text-center" style="border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
                                     @if(isset($tarifa->active) && $tarifa->active)
                                         <span class="d-inline-block border" style="font-size: 7.5px; font-weight: 600; padding: 0 7px; border-radius: 8px; line-height: 13px; color: #5d8a70; background: #f0f7f2; border-color: #d8e9de !important;">Activa</span>
@@ -243,6 +248,7 @@
                                                 data-precio-fin-semana="{{ $tarifa->precio_fin_semana }}"
                                                 data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
                                                 data-dias-maximos="{{ $tarifa->dias_maximos }}"
+                                                data-max-reservas="{{ $tarifa->max_reservas_anuales_cliente }}"
                                                 data-active="{{ $tarifa->active ? 1 : 0 }}">
                                             Editar
                                         </button>
@@ -254,7 +260,7 @@
 
                     @else
                         <tr>
-                            <td colspan="{{ $modoGlobal ? 9 : 8 }}" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px; border-bottom: 1px solid #f1f5f9;">
+                            <td colspan="{{ $modoGlobal ? 10 : 9 }}" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px; border-bottom: 1px solid #f1f5f9;">
                                 No hay tarifas registradas.
                             </td>
                         </tr>
@@ -394,21 +400,27 @@
                             </div>
 
                             <div class="row g-2 align-items-center">
-                                <div class="col-5">
+                                <div class="col-4">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Días máx.</label>
                                     <input type="number" class="form-control form-control-sm shadow-none border" name="dias_maximos" placeholder="Ej. 30" min="1" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                     <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Vacío = sin límite</div>
                                 </div>
 
-                                <div class="col-7">
+                                <div class="col-4">
+                                    <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Rsv. máx/año</label>
+                                    <input type="number" class="form-control form-control-sm shadow-none border" name="max_reservas_anuales_cliente" placeholder="Ej. 2" min="0" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Por cliente al año</div>
+                                </div>
+
+                                <div class="col-4">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Disponibilidad</label>
                                     <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border" style="border-color: #f1f5f9 !important;">
-                                        <div class="text-start w-100 me-2">
+                                        <div class="text-start w-100 me-1">
                                             <div class="fw-semibold" style="font-size: 9px; color: #475569;">Activa</div>
-                                            <div style="font-size: 7px; color: #b3bcc7;">Aplica al cotizar</div>
+                                            <div style="font-size: 7px; color: #b3bcc7; line-height: 1.1;">Aplica al cotizar</div>
                                         </div>
                                         <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="addActive-{{ $tzUid }}" checked>
+                                            <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="addActive-{{ $tzUid }}" checked style="margin-left:-1.5em;">
                                         </div>
                                     </div>
                                 </div>
@@ -556,21 +568,27 @@
                             </div>
 
                             <div class="row g-2 align-items-center">
-                                <div class="col-5">
+                                <div class="col-4">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Días máx.</label>
                                     <input type="number" class="form-control form-control-sm shadow-none border" id="edit_tarifa_dias_maximos-{{ $tzUid }}" name="dias_maximos" min="1" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                     <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Vacío = sin límite</div>
                                 </div>
 
-                                <div class="col-7">
+                                <div class="col-4">
+                                    <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Rsv. máx/año</label>
+                                    <input type="number" class="form-control form-control-sm shadow-none border" id="edit_tarifa_max_reservas-{{ $tzUid }}" name="max_reservas_anuales_cliente" min="0" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Por cliente al año</div>
+                                </div>
+
+                                <div class="col-4">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Disponibilidad</label>
                                     <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border" style="border-color: #f1f5f9 !important;">
-                                        <div class="text-start w-100 me-2">
+                                        <div class="text-start w-100 me-1">
                                             <div class="fw-semibold" style="font-size: 9px; color: #475569;">Activa</div>
-                                            <div style="font-size: 7px; color: #b3bcc7;">Pausar sin eliminar</div>
+                                            <div style="font-size: 7px; color: #b3bcc7; line-height: 1.1;">Pausar sin borrar</div>
                                         </div>
                                         <div class="form-check form-switch mb-0">
-                                            <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active-{{ $tzUid }}">
+                                            <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active-{{ $tzUid }}" style="margin-left:-1.5em;">
                                         </div>
                                     </div>
                                 </div>
@@ -1011,7 +1029,7 @@
         /* ═══ 7) LLENADO DEL MODAL DE EDITAR · delegado en document (capture · re-registrable) ═══
            FIX del script muerto: antes era DOMContentLoaded + querySelectorAll por uid (no corría
            cuando el fragmento llegaba por AJAX). Ahora UN solo oyente atiende a TODOS los botones
-           con data-tar-editar, vivos o re-creados tras cada swap.                              */
+           con data-tar-editar, vivos o re-creados tras cada swap.                               */
         if (window.__tarFillHandler) { document.removeEventListener('click', window.__tarFillHandler, true); }
         window.__tarFillHandler = function (e) {
             var btn = (e.target && e.target.closest) ? e.target.closest('[data-tar-editar]') : null;
@@ -1032,6 +1050,7 @@
             if ((f = porNombre('precio_fin_semana'))) { f.value = get('precio-fin-semana'); }
             if ((f = porNombre('precio_minimo_reserva'))) { f.value = get('precio-minimo-reserva'); }
             if ((f = porNombre('dias_maximos'))) { f.value = get('dias-maximos'); }
+            if ((f = porNombre('max_reservas_anuales_cliente'))) { f.value = get('max-reservas'); } // <-- FIX NUEVO CAMPO
             if ((f = porNombre('active'))) { f.checked = get('active') === '1'; }
             /* Contexto del header/footer (igual que el script original) */
             var hTitle = modal.querySelector('[data-tar-hint="title"]');

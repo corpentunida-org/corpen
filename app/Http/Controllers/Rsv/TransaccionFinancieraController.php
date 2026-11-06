@@ -285,39 +285,34 @@ class TransaccionFinancieraController extends Controller
 
     /**
      * ════════════════════════════════════════════════════════════════
-     * ELIMINACIÓN LÓGICA (ANULACIÓN) — REGULA DE NEGOCIO:
-     * · NUNCA se borra el registro.
+     * ELIMINACIÓN LÓGICA (Soft Delete) — REGULA DE NEGOCIO:
+     * · NUNCA se borra el registro (se usa SoftDeletes de Laravel).
      * · NUNCA se borra el soporte de S3: permanece visible/auditable.
-     * · Se marca estado_pago = 'Anulado' (excluido del balance).
-     * El endpoint se mantiene para compatibilidad con consumidores API,
-     * pero su efecto es la anulación, no la destrucción.
+     * · Se marca estado_pago = 'Anulado' y se llena 'deleted_at' (excluido del balance).
      * ════════════════════════════════════════════════════════════════
      */
     public function destroy(string $id): JsonResponse
     {
         try {
+            // Nota: find() ya ignora automáticamente los registros que tengan 'deleted_at' lleno.
             $transaccion = TransaccionFinanciera::find($id);
 
             if (!$transaccion) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La transacción financiera solicitada no existe.',
+                    'message' => 'La transacción financiera solicitada no existe o ya fue eliminada.',
                 ], 404);
             }
 
-            // Idempotente: si ya está anulada, informar sin re-procesar
-            if (mb_strtolower((string) ($transaccion->estado_pago ?? '')) === 'anulado') {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'La transacción ya se encontraba ANULADA. El registro y su soporte se conservan.',
-                ], 200);
-            }
-
             DB::transaction(function () use ($transaccion) {
+                // 1. Mantenemos tu lógica de cambiar el estado
                 $transaccion->update(['estado_pago' => 'Anulado']);
+                
+                // 2. Aplicamos la eliminación lógica nativa (llena la columna deleted_at)
+                $transaccion->delete();
             });
 
-            Log::info('Transacción financiera ANULADA (eliminación lógica)', [
+            Log::info('Transacción financiera ANULADA y ELIMINADA LÓGICAMENTE', [
                 'id'      => $transaccion->id,
                 'reserva' => $transaccion->id_rsv_reservas,
                 'soporte' => $transaccion->soporte_pago, // se conserva
@@ -325,7 +320,7 @@ class TransaccionFinancieraController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Transacción ANULADA (eliminación lógica). El registro y su soporte se conservan para auditoría.',
+                'message' => 'Transacción eliminada lógicamente. El registro y su soporte se conservan para auditoría.',
             ], 200);
 
         } catch (Throwable $e) {
