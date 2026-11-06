@@ -622,7 +622,14 @@
             if (link.target && link.target !== '_self') {
                 return;
             }
-            mostrarCarga();
+            // Este listener corre antes que los delegados de cada vista (ej. paginación por AJAX):
+            // se espera a que todos actúen para ver si alguno canceló la navegación. Si no, el
+            // clic sumaba una carga que nunca se descontaba y el overlay quedaba fijo.
+            setTimeout(function () {
+                if (!e.defaultPrevented) {
+                    mostrarCarga();
+                }
+            });
         });
     })();
 </script>

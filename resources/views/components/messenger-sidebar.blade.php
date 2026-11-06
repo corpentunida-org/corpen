@@ -1,9 +1,6 @@
-@php
-    $usuariosDisponibles = auth()->check() 
-        ? \App\Models\User::where('id', '!=', auth()->id())->orderBy('name', 'asc')->get() 
-        : [];
-@endphp
-
+{{-- Este panel está en TODAS las páginas (layouts/base), así que la lista de usuarios se pide por
+     AJAX la primera vez que se abre: pintarla aquí agregaba más de 1 MB de HTML a cada pantalla,
+     aunque nadie abriera el chat. --}}
 <div class="offcanvas offcanvas-end shadow border-0" tabindex="-1" id="offcanvasMessenger" style="width: 100%; max-width: 400px;">
     
     <div class="offcanvas-header border-bottom py-3 px-4 bg-white">
@@ -40,29 +37,25 @@
 
         <div class="flex-grow-1 overflow-auto custom-scroll p-3" id="user-list-container">
             <div class="d-grid gap-1">
-                @forelse($usuariosDisponibles as $user)
-                    <button type="button" 
-                            class="btn btn-link text-decoration-none p-3 rounded-3 user-row transition-all border-0 text-start w-100" 
-                            data-user-id="{{ $user->id }}"
-                            data-user-name="{{ strtolower($user->name) }}">
-                        
-                        <div class="d-flex align-items-center">
-                            @php $initial = strtoupper(substr($user->name, 0, 1)); @endphp
-                            <div class="avatar-circle me-3 shadow-sm">
-                                {{ $initial }}
-                            </div>
+                <div id="user-list" class="d-grid gap-1"></div>
+
+                <template id="user-row-template">
+                    <button type="button"
+                            class="btn btn-link text-decoration-none p-3 rounded-3 user-row transition-all border-0 text-start w-100">
+                        <div class="d-flex align-items-center w-100">
+                            <div class="avatar-circle me-3 shadow-sm"></div>
                             <div class="flex-grow-1">
-                                <h6 class="mb-0 text-dark fw-bold fs-8">{{ $user->name }}</h6>
+                                <h6 class="mb-0 text-dark fw-bold fs-8"></h6>
                                 <span class="text-muted fs-9 text-uppercase">Hacer clic para chatear</span>
                             </div>
                             <i class="bi bi-chevron-right text-light-emphasis fs-9"></i>
                         </div>
                     </button>
-                @empty
-                    <div class="text-center py-5">
-                        <p class="text-muted fs-8">No hay usuarios disponibles.</p>
-                    </div>
-                @endforelse
+                </template>
+
+                <div id="user-list-status" class="text-center py-5 d-none">
+                    <p class="text-muted fs-8 mb-0"></p>
+                </div>
 
                 <div id="no-users-found" class="text-center py-5 d-none">
                     <i class="bi bi-emoji-frown fs-1 text-muted opacity-25"></i>
@@ -123,16 +116,61 @@
 document.addEventListener("DOMContentLoaded", function() {
     const offcanvas = document.getElementById('offcanvasMessenger');
     const searchInput = document.getElementById('user-search-input');
-    const userRows = document.querySelectorAll('.user-row');
+    const userList = document.getElementById('user-list');
+    const rowTemplate = document.getElementById('user-row-template');
+    const listStatus = document.getElementById('user-list-status');
     const noResults = document.getElementById('no-users-found');
     const loader = document.getElementById('global-loader-chat');
+    const getUserRows = () => userList.querySelectorAll('.user-row');
+    let usuariosCargados = false;
+
+    function mostrarEstadoLista(mensaje) {
+        listStatus.querySelector('p').textContent = mensaje || '';
+        listStatus.classList.toggle('d-none', !mensaje);
+    }
+
+    function pintarUsuarios(usuarios) {
+        const filas = usuarios.map(usuario => {
+            const row = rowTemplate.content.firstElementChild.cloneNode(true);
+            row.dataset.userId = usuario.id;
+            row.dataset.userName = usuario.name.toLowerCase();
+            row.querySelector('.avatar-circle').textContent = usuario.name.charAt(0).toUpperCase();
+            row.querySelector('h6').textContent = usuario.name;
+            return row;
+        });
+        userList.replaceChildren(...filas);
+    }
+
+    // Solo se consulta una vez por página; si falla, se reintenta al volver a abrir el panel.
+    function cargarUsuarios() {
+        if (usuariosCargados) return;
+        usuariosCargados = true;
+        mostrarEstadoLista('Cargando usuarios...');
+
+        fetch("{{ route('interactions.conversations.usuariosDisponibles') }}", {
+            headers: { "Accept": "application/json" }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(response.status);
+            return response.json();
+        })
+        .then(usuarios => {
+            pintarUsuarios(usuarios);
+            mostrarEstadoLista(usuarios.length ? '' : 'No hay usuarios disponibles.');
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            usuariosCargados = false;
+            mostrarEstadoLista('No se pudieron cargar los usuarios. Cierra y vuelve a abrir el panel.');
+        });
+    }
 
     // 1. Lógica del Buscador (Filtrado instantáneo)
     searchInput?.addEventListener('input', function() {
         const term = this.value.toLowerCase().trim();
         let count = 0;
 
-        userRows.forEach(row => {
+        getUserRows().forEach(row => {
             const userName = row.getAttribute('data-user-name');
             if (userName.includes(term)) {
                 row.classList.remove('d-none');
@@ -146,45 +184,45 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // 2. Al abrir el Offcanvas: Limpiar búsqueda y poner foco
+    offcanvas?.addEventListener('show.bs.offcanvas', cargarUsuarios);
     offcanvas?.addEventListener('shown.bs.offcanvas', () => {
         searchInput.value = '';
-        userRows.forEach(r => r.classList.remove('d-none'));
+        getUserRows().forEach(r => r.classList.remove('d-none'));
         noResults.classList.add('d-none');
         searchInput.focus();
     });
 
-    // 3. Al hacer clic en un usuario (AJAX)
-    userRows.forEach(row => {
-        row.addEventListener('click', function() {
-            const userId = this.getAttribute('data-user-id');
-            if(!userId) return;
+    // 3. Al hacer clic en un usuario (AJAX) — delegado porque las filas llegan después
+    userList?.addEventListener('click', function(event) {
+        const row = event.target.closest('.user-row');
+        const userId = row?.getAttribute('data-user-id');
+        if(!userId) return;
 
-            loader.classList.remove('d-none'); // Mostrar bloqueo de carga
+        loader.classList.remove('d-none'); // Mostrar bloqueo de carga
 
-            fetch("{{ route('interactions.conversations.startPrivate') }}", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                },
-                body: JSON.stringify({ target_user_id: userId })
-            })
-            .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url; // Redirigir si el controlador lo pide
-                } else {
-                    return response.json();
-                }
-            })
-            .then(data => {
-                // Si llegamos aquí sin redirección, ocultar el loader para poder elegir otro
-                loader.classList.add('d-none');
-            })
-            .catch(error => {
-                console.error("Error:", error);
-                loader.classList.add('d-none');
-                alert("Ocurrió un error al intentar abrir el chat.");
-            });
+        fetch("{{ route('interactions.conversations.startPrivate') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ target_user_id: userId })
+        })
+        .then(response => {
+            if (response.redirected) {
+                window.location.href = response.url; // Redirigir si el controlador lo pide
+            } else {
+                return response.json();
+            }
+        })
+        .then(data => {
+            // Si llegamos aquí sin redirección, ocultar el loader para poder elegir otro
+            loader.classList.add('d-none');
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            loader.classList.add('d-none');
+            alert("Ocurrió un error al intentar abrir el chat.");
         });
     });
 });

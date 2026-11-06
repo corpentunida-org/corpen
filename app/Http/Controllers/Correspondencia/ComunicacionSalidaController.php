@@ -50,8 +50,8 @@ class ComunicacionSalidaController extends Controller
     public function create()
     {
         // Solo cargamos radicados que NO tengan una salida registrada
-        $correspondencias = Correspondencia::whereDoesntHave('comunicacionSalida')->get();
-        
+        $correspondencias = Correspondencia::with('remitente:cod_ter,nom_ter')->whereDoesntHave('comunicacionSalida')->get();
+
         $plantillas = Plantilla::all();
         $usuarios = User::orderBy('name', 'asc')->get();
         
