@@ -3881,6 +3881,12 @@
                 { tipoForm: 'input', col: 'col-12 col-md-4', label: 'Inicio de Pagos', type: 'date', dataLlave: 'fecha_inicio_pagos' },
                 { tipoForm: 'checkbox', col: 'col-12 col-md-12', label: 'Incluir espacio para Firma de Esposa', dataLlave: 'requiere_firma_esposa', id: 'firmaEsposa7' }
             ]},
+            '8': { meta: { codigo: '08_cobro', titulo: 'Cobro', colorHex: '#dc3545', colorClass: 'danger' }, campos: [
+                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Saldo Capital', icon: 'fas fa-wallet', iconColor: 'text-primary', type: 'number', step: '0.01', dataLlave: 'saldo_capital', classes: 'bg-white fw-bold text-primary shadow-sm', placeholder: '0.00' },
+                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Intereses Vencidos', icon: 'fas fa-chart-line', iconColor: 'text-danger', type: 'number', step: '0.01', dataLlave: 'intereses_vencidos', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0.00' },
+                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'N° Cuotas Vencidas', icon: 'fas fa-receipt', iconColor: 'text-danger', type: 'number', dataLlave: 'cuotas_vencidas', classes: 'bg-white fw-bold text-danger shadow-sm', placeholder: '0' },
+                { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Fecha de Corte', icon: 'fas fa-calendar-day', iconColor: 'text-primary', type: 'date', dataLlave: 'fecha_corte' }
+            ]},
             'default': { meta: { codigo: 'default', titulo: 'Operación Genérica', colorHex: '#333333', colorClass: 'dark' }, campos: [
                 { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Intereses', type: 'number', step: '0.01', dataLlave: 'intereses', classes: 'bg-white fw-bold text-primary shadow-sm', placeholder: '0.00' },
                 { tipoForm: 'input', col: 'col-12 col-md-3', label: 'Capital', type: 'number', step: '0.01', dataLlave: 'capital', classes: 'bg-white fw-bold text-success shadow-sm', placeholder: '0.00' },
