@@ -310,10 +310,10 @@ class OperacionController extends Controller
             $tipos = CarSiaTipo::all();
             $tiposAlerta = CarSiaTipoAlerta::all();
             // Tipos para el modal de Certificados Generales (#modalTipo)
-            $tiposCertificados = $tipos->whereIn('id', [1,3,4]); //Asigancion Tipo de Certificados del Show
+            $tiposCertificados = $tipos->whereIn('id', [1,3,4,8]); //Asigancion Tipo de Certificados del Show
             // Tipos independientes para el modal de Certificados de Gestión (#modalSeleccionTipo)
             // Cambia los números dentro del array [2, 5, 6] por los IDs reales que deseas mostrar en este modal
-            $tiposGestion = $tipos->whereIn('id', [1,3,4,  2,5,6,7]);
+            $tiposGestion = $tipos->whereIn('id', [1,3,4,  2,5,6,7,8]);
 
             // ==============================================================================
             // CONSULTAR CATÁLOGO DE LÍNEAS PARA EL MODAL CERTIFICADOS DE GESTIÓN (#modalSeleccionTipo)
@@ -1152,10 +1152,11 @@ class OperacionController extends Controller
                     1 => 'certificados.pdf.01_postulacion', //Color gris
                     2 => 'certificados.pdf.02_paz_y_salvo', //Color rojo
                     3 => 'certificados.pdf.03_compromisos_activo', //Color rojo
-                    4 => 'certificados.pdf.04_estado_cuenta', //Color rojo
+                    4 => 'certificados.pdf.04_estado_cuenta', //Color rojo - Certificado Detallado
                     5 => 'certificados.pdf.05_acuerdos_pago', //Color naranja
                     6 => 'certificados.pdf.06_cuenta_credito', //Color naranja
                     7 => 'certificados.pdf.07_refinanciacion', //Color naranja
+                    8 => 'certificados.pdf.08_cobro', //Color naranja
                     // Antes apuntaba a 'certificados.pdf.paz_y_salvo' (sin el prefijo "02_"),
                     // un archivo que no existe — si algún día llega un tipo fuera de 1-7, esto
                     // se caía con un ViewNotFoundException en vez de mostrar el genérico.
