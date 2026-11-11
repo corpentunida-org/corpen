@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head> 
     <meta charset="UTF-8">
     <title>Comprobante de Reserva #{{ $reserva->codigo_reserva ?? 'RSV-0000' }}</title>
     <style>
