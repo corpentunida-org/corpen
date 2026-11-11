@@ -1,17 +1,29 @@
 <x-base-layout>
     @section('titlepage', 'Mi Portal - Sistema RSV')
 
+    {{-- Formateador Global de Moneda (Solo visual, es seguro dejarlo aquí) --}}
+    @php
+        $fmtMoney = function ($n) {
+            if ($n === null || $n === 0) return '—';
+            if ($n >= 1000000) return '$' . number_format($n / 1000000, 1) . 'M';
+            if ($n >= 1000)    return '$' . number_format($n / 1000, 1) . 'k';
+            return '$' . number_format((float) $n, 0);
+        };
+    @endphp
+
     {{-- ========================================================= --}}
     {{-- NOTIFICACIONES DEL SISTEMA                                --}}
     {{-- ========================================================= --}}
     @include('rsv.components.alert')
 
     {{-- ============================================================================== --}}
-    {{-- ESTILOS DE FUSIÓN (idénticos al Panel Admin · simetría padre-hijo)             --}}
+    {{-- ESTILOS DE FUSIÓN (PADRE - HIJO) --}}
+    {{-- Mantiene el efecto "solapado" verde usando la paleta nativa de Bootstrap 5 --}}
     {{-- ============================================================================== --}}
     <style>
         /* 1. Contenedor de las pestañas principales (Padre) */
         .nav-fusion { border-bottom: 1px solid #badbcc !important; }
+
         /* 2. Pestañas en estado normal */
         .nav-fusion .nav-link {
             color: #6c757d; font-weight: 600; border: 1px solid transparent;
@@ -19,22 +31,26 @@
             margin-bottom: -1px;
             transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
         }
-        /* 3. Hover */
+
+        /* 3. Hover en las pestañas */
         .nav-fusion .nav-link:hover { color: #198754; border-color: #e9ecef #e9ecef #badbcc; }
-        /* 4. Activa */
+
+        /* 4. Pestaña ACTIVA */
         .nav-fusion .nav-link.active {
             color: #0f5132 !important; background-color: #d1e7dd !important;
             border-color: #badbcc #badbcc #d1e7dd #badbcc !important;
         }
-        /* 5. Submenú (Hijo) */
+
+        /* 5. Barra del Submenú (Hijo) */
         .subnav-fusion {
             background-color: #d1e7dd; border-bottom: 1px solid #badbcc; border-top: none;
             border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
             padding: 0.6rem 1rem; margin-bottom: 1.5rem;
         }
-        /* 6. Píldoras del submenú */
+
+        /* 6. Botones (Píldoras) dentro del submenú */
         .sub-pills .nav-link {
-            color: #146c43; background-color: rgba(255,255,255,0.65);
+            color: #146c43; background-color: rgba(255, 255, 255, 0.65);
             font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem;
             border-radius: 0.375rem; border: 1px solid transparent; transition: all 0.2s;
         }
@@ -43,25 +59,17 @@
             background-color: #198754 !important; color: #fff !important;
             border-color: #198754 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         /* 7. Hover minimalista KPI */
         .kpi-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
         .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.05) !important; }
 
-        /* 8. Formateador de moneda compacto (estilo admin) */
+        /* 8. Formateador de moneda compacto */
         .kpi-money { font-variant-numeric: tabular-nums; }
     </style>
 
     @php
-        /* ── Formateador de moneda (simétrico al admin) ── */
-        $fmtMoney = function ($n) {
-            if ($n === null || $n === 0) return '—';
-            if ($n >= 1000000) return '$' . number_format($n / 1000000, 1) . 'M';
-            if ($n >= 1000)    return '$' . number_format($n / 1000, 1) . 'k';
-            return '$' . number_format((float) $n, 0);
-        };
-
-        /* ── KPIs del cliente con valores por defecto (la vista nunca explota
-              aunque aún no exista el controlador que los inyecta) ── */
+        /* ── KPIs del cliente con valores por defecto ── */
         $cliProximo    = $kpiProximo    ?? null;   // Carbon|null
         $cliActivas    = $kpiActivas    ?? 0;
         $cliTotal      = $kpiTotal      ?? 0;
@@ -75,12 +83,11 @@
     <div class="container-fluid py-4">
 
         {{-- ======================================================================= --}}
-        {{-- 1. CARD MAESTRO DE BIENVENIDA (simétrico al "Selector Maestro" admin)   --}}
+        {{-- 1. CARD MAESTRO DE BIENVENIDA                                           --}}
         {{-- ======================================================================= --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body p-3">
                 <div class="row align-items-center g-3">
-
                     <div class="col-12 col-lg-7 text-center text-lg-start">
                         <span class="text-uppercase text-secondary fw-semibold small d-block mb-1" style="letter-spacing: 1px;">
                             Portal del Huésped RSV
@@ -90,7 +97,6 @@
                             Explora propiedades, gestiona tus reservas, pagos y soporte desde un solo lugar.
                         </p>
                     </div>
-
                     <div class="col-12 col-lg-5 d-flex justify-content-center justify-content-lg-end">
                         <span class="badge bg-light text-secondary border rounded-pill fw-normal py-2 px-3 d-inline-flex align-items-center gap-2 shadow-sm">
                             <i class="bi bi-calendar3 small text-muted"></i>
@@ -100,16 +106,14 @@
                             <span style="font-size: 0.8rem;">Cuenta #{{ auth()->id() }}</span>
                         </span>
                     </div>
-
                 </div>
             </div>
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- 2. PANEL DE KPIs DEL CLIENTE (simétrico al panel de KPIs del admin)     --}}
+        {{-- 2. PANEL DE KPIs DEL CLIENTE                                            --}}
         {{-- ======================================================================= --}}
         <div class="row g-2 mb-4">
-
             <div class="col-6 col-md-3">
                 <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
@@ -197,16 +201,16 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- 3. CARD ÚNICA CON PESTAÑAS PADRE/HIJO (idéntico patrón al admin)        --}}
+        {{-- 3. CARD ÚNICA CON PESTAÑAS PADRE/HIJO                                   --}}
         {{-- ======================================================================= --}}
         <div class="card shadow-sm border-0 bg-white">
+
+            {{-- NAVEGACIÓN PRINCIPAL (PADRES) --}}
             <div class="card-header bg-white p-0 border-0">
                 <ul class="nav nav-tabs nav-fusion px-2 pt-2 tab-memory-parent" id="clienteTabs" role="tablist">
-
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cli-nueva" type="button" role="tab">
                             <i class="bi bi-search me-1"></i> Nueva Reserva
@@ -232,43 +236,48 @@
                             <i class="bi bi-wallet2 me-1"></i> Pagos y Reseñas <span class="badge bg-light text-secondary ms-1">{{ $fmtMoney($cliAbonado) }}</span>
                         </button>
                     </li>
-
                 </ul>
             </div>
 
             <div class="card-body p-0">
                 <div class="tab-content" id="clienteTabsContent">
 
-                    {{-- ─────────── CLIENTE · TAB 1: NUEVA RESERVA ─────────── --}}
+                    {{-- ─────────── TAB 1: NUEVA RESERVA ─────────── --}}
                     <div class="tab-pane fade show active" id="cli-nueva" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Búsqueda:
                             </div>
                             <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="nuevaReservaSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#nr-sub-buscador" type="button" role="tab"><i class="bi bi-search me-1"></i> Buscador</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#nr-sub-checkout" type="button" role="tab"><i class="bi bi-cart-check me-1"></i> Checkout</button></li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#nr-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#nr-sub-buscador" type="button" role="tab">
+                                        <i class="bi bi-search me-1"></i> Buscador
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#nr-sub-checkout" type="button" role="tab">
+                                        <i class="bi bi-cart-check me-1"></i> Checkout
+                                    </button>
+                                </li>
                             </ul>
                         </div>
+
+                        {{-- Contenedor donde se cargan los fragmentos de la Vitrina, Buscador y Checkout --}}
                         <div class="tab-content p-4" id="nuevaReservaSubContent">
-                            <div class="tab-pane fade show active" id="nr-sub-buscador" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.nueva-reserva.buscador'))
-                                    @include('rsv.cliente.partials.nueva-reserva.buscador')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Buscador (Próximamente)</p>
-                                @endif
-                            </div>
-                            <div class="tab-pane fade" id="nr-sub-checkout" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.nueva-reserva.checkout'))
-                                    @include('rsv.cliente.partials.nueva-reserva.checkout')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Checkout (Próximamente)</p>
-                                @endif
-                            </div>
+                            @if(view()->exists('rsv.cliente.partials.nueva-reserva-tab'))
+                                @include('rsv.cliente.partials.nueva-reserva-tab')
+                            @else
+                                <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Módulo Nueva Reserva (Próximamente)</p>
+                            @endif
                         </div>
                     </div>
 
-                    {{-- ─────────── CLIENTE · TAB 2: MIS RESERVAS ─────────── --}}
+                    {{-- ─────────── TAB 2: MIS RESERVAS ─────────── --}}
                     <div class="tab-pane fade" id="cli-reservas" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -282,30 +291,18 @@
                         </div>
                         <div class="tab-content p-4" id="misReservasSubContent">
                             <div class="tab-pane fade show active" id="mr-sub-activas" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.activas-pasadas'))
-                                    @include('rsv.cliente.partials.mis-reservas.activas-pasadas')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Activas y Pasadas (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.activas-pasadas')) @include('rsv.cliente.partials.mis-reservas.activas-pasadas') @endif
                             </div>
                             <div class="tab-pane fade" id="mr-sub-itinerario" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.itinerario'))
-                                    @include('rsv.cliente.partials.mis-reservas.itinerario')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Itinerario (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.itinerario')) @include('rsv.cliente.partials.mis-reservas.itinerario') @endif
                             </div>
                             <div class="tab-pane fade" id="mr-sub-huespedes" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.huespedes'))
-                                    @include('rsv.cliente.partials.mis-reservas.huespedes')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Huéspedes (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.huespedes')) @include('rsv.cliente.partials.mis-reservas.huespedes') @endif
                             </div>
                         </div>
                     </div>
 
-                    {{-- ─────────── CLIENTE · TAB 3: HISTORIAL ─────────── --}}
+                    {{-- ─────────── TAB 3: HISTORIAL ─────────── --}}
                     <div class="tab-pane fade" id="cli-historial" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -318,23 +315,15 @@
                         </div>
                         <div class="tab-content p-4" id="historialSubContent">
                             <div class="tab-pane fade show active" id="hi-sub-estados" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.estados'))
-                                    @include('rsv.cliente.partials.historial.estados')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Historial de Estados (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.historial.estados')) @include('rsv.cliente.partials.historial.estados') @endif
                             </div>
                             <div class="tab-pane fade" id="hi-sub-endosos" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.endosos'))
-                                    @include('rsv.cliente.partials.historial.endosos')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Historial de Endosos (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.historial.endosos')) @include('rsv.cliente.partials.historial.endosos') @endif
                             </div>
                         </div>
                     </div>
 
-                    {{-- ─────────── CLIENTE · TAB 4: SOPORTE / CHAT ─────────── --}}
+                    {{-- ─────────── TAB 4: SOPORTE / CHAT ─────────── --}}
                     <div class="tab-pane fade" id="cli-chat" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -347,23 +336,15 @@
                         </div>
                         <div class="tab-content p-4" id="chatSubContent">
                             <div class="tab-pane fade show active" id="ch-sub-mensajes" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.chat.mensajes'))
-                                    @include('rsv.cliente.partials.chat.mensajes')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Centro de Mensajes (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.chat.mensajes')) @include('rsv.cliente.partials.chat.mensajes') @endif
                             </div>
                             <div class="tab-pane fade" id="ch-sub-receptores" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.chat.receptores'))
-                                    @include('rsv.cliente.partials.chat.receptores')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Tipos de Receptor (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.chat.receptores')) @include('rsv.cliente.partials.chat.receptores') @endif
                             </div>
                         </div>
                     </div>
 
-                    {{-- ─────────── CLIENTE · TAB 5: PAGOS Y RESEÑAS ─────────── --}}
+                    {{-- ─────────── TAB 5: PAGOS Y RESEÑAS ─────────── --}}
                     <div class="tab-pane fade" id="cli-pagos" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
@@ -377,25 +358,13 @@
                         </div>
                         <div class="tab-content p-4" id="pagosSubContent">
                             <div class="tab-pane fade show active" id="pg-sub-transacciones" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.transacciones'))
-                                    @include('rsv.cliente.partials.pagos.transacciones')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Mis Transacciones (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.pagos.transacciones')) @include('rsv.cliente.partials.pagos.transacciones') @endif
                             </div>
                             <div class="tab-pane fade" id="pg-sub-pasarelas" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.pasarelas'))
-                                    @include('rsv.cliente.partials.pagos.pasarelas')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Pasarelas Disponibles (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.pagos.pasarelas')) @include('rsv.cliente.partials.pagos.pasarelas') @endif
                             </div>
                             <div class="tab-pane fade" id="pg-sub-reviews" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.reviews'))
-                                    @include('rsv.cliente.partials.pagos.reviews')
-                                @else
-                                    <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Mis Reseñas (Próximamente)</p>
-                                @endif
+                                @if(view()->exists('rsv.cliente.partials.pagos.reviews')) @include('rsv.cliente.partials.pagos.reviews') @endif
                             </div>
                         </div>
                     </div>
@@ -406,4 +375,151 @@
 
     </div>
 
+    {{-- ======================================================================= --}}
+    {{-- SCRIPT: GESTOR DE MEMORIA DE PESTAÑAS                                   --}}
+    {{-- ======================================================================= --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const parentKey  = 'rsv_cliente_panel_parent';
+            const childKey   = 'rsv_cliente_panel_child';
+
+            // Pestañas Padres
+            const parentTabs = document.querySelectorAll('.tab-memory-parent .nav-link');
+            parentTabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem(parentKey, event.target.getAttribute('data-bs-target'));
+                });
+            });
+
+            // Pestañas Hijos
+            const childTabs = document.querySelectorAll('.tab-memory-child .nav-link');
+            childTabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem(childKey, event.target.getAttribute('data-bs-target'));
+                });
+            });
+
+            // Restauración al recargar la página
+            const savedParent = localStorage.getItem(parentKey);
+            const savedChild  = localStorage.getItem(childKey);
+
+            if (savedParent) {
+                const parentBtn = document.querySelector(`.tab-memory-parent .nav-link[data-bs-target="${savedParent}"]`);
+                if (parentBtn) {
+                    const bsParentTab = new bootstrap.Tab(parentBtn);
+                    bsParentTab.show();
+                }
+            }
+            if (savedChild) {
+                const childBtn = document.querySelector(`.tab-memory-child .nav-link[data-bs-target="${savedChild}"]`);
+                if (childBtn) {
+                    const bsChildTab = new bootstrap.Tab(childBtn);
+                    bsChildTab.show();
+                }
+            }
+        });
+    </script>
+
+    {{-- ======================================================================= --}}
+    {{-- NEUTRALIZADOR MAESTRO v2 (Anti Modales fantasmas de Livewire/Ajax)      --}}
+    {{-- ======================================================================= --}}
+    <style>
+        #preloader, .preloader, [id*="preloader"], [class*="preloader"],
+        #loader, #loader-overlay, .loader-overlay,
+        #loading, .loading, .loading-overlay, .loading-screen,
+        #cargando, .cargando, .cargando-overlay,
+        .page-loader, #page-loader, .page-loading,
+        .spinner-overlay, .overlay-spinner, .spinner-container,
+        .pace .pace-activity, .pace-active, #nprogress
+        {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+            z-index: -1 !important;
+        }
+    </style>
+
+    <script>
+    (function () {
+        'use strict';
+        var MODAL = '#modalCargando, .modal-cargando, [wire\\:loading]';
+        var SECCION = ''; // Aplica globalmente al portal del cliente
+
+        try {
+            if (window.NProgress) { window.NProgress.remove(); }
+            if (window.Pace && window.Pace.stop)  { window.Pace.stop(); }
+        } catch (e) {}
+
+        function esRuedita(el) {
+            if (!el || el.nodeType !== 1) return false;
+            var marca = ((el.id || '') + ' ' + (el.className || '')).toLowerCase();
+            return /preloader|loader|loading|cargando|spinner/.test(marca);
+        }
+
+        function limpiarRuedita() {
+            document.querySelectorAll('body > *').forEach(function (el) {
+                if (esRuedita(el) && !(el.matches && el.matches(MODAL))) el.remove();
+            });
+            ['html', 'body'].forEach(function (tag) {
+                var n = document[tag];
+                n.classList.remove('loading', 'is-loading', 'js-loading', 'page-is-loading', 'preloader-active');
+            });
+        }
+        limpiarRuedita();
+        new MutationObserver(function () { limpiarRuedita(); }).observe(document.body, { childList: true });
+
+        // Detener Livewire auto-polling visual si interfiere
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Livewire !== 'undefined') {
+                Livewire.hook('message.sent', (message, component) => {
+                    limpiarRestosModal();
+                });
+            }
+        });
+
+        if (!SECCION) {
+            var t = document.createElement('style');
+            t.textContent = MODAL + '{display:none!important;opacity:0!important;visibility:hidden!important;pointer-events:none!important;}';
+            document.head.appendChild(t);
+        }
+
+        document.addEventListener('show.bs.modal', function (e) {
+            var el = e.target;
+            if (!el || el.nodeType !== 1 || !(el.matches && el.matches(MODAL))) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+        }, true);
+
+        function limpiarRestosModal() {
+            document.querySelectorAll(MODAL).forEach(function (m) {
+                if (m.classList.contains('show') || m.style.display === 'block') {
+                    m.classList.remove('show');
+                    m.style.display = 'none';
+                    m.setAttribute('aria-hidden', 'true');
+                }
+            });
+            if (!document.querySelector('.modal.show')) {
+                document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('padding-right');
+            }
+        }
+
+        function vigilarModal() {
+            document.querySelectorAll(MODAL).forEach(function (m) {
+                if (m.__vigilado) return;
+                m.__vigilado = true;
+                new MutationObserver(function () {
+                    if (m.classList.contains('show') || m.style.display === 'block') {
+                        limpiarRestosModal();
+                    }
+                }).observe(m, { attributes: true, attributeFilter: ['class', 'style'] });
+            });
+        }
+        vigilarModal();
+        new MutationObserver(function () { vigilarModal(); }).observe(document.body, { childList: true, subtree: true });
+
+    })();
+    </script>
 </x-base-layout>

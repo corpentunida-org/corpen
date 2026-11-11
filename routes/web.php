@@ -694,6 +694,34 @@ Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinS
 
 // =========================================================================
 // INICIO MÓDULO DE RESERVAS (RSV)
+// -------------------------------------------------------------------------
+// ARQUITECTURA · 3 NIVELES DE CARGA
+//   NIVEL 1 → Página completa (dashboard / portal, con KPIs)
+//   NIVEL 2 → Fragmento AJAX por PESTAÑA (tab)      · partials/tab-*.blade.php
+//   NIVEL 3 → MICRO-FRAGMENTO dentro de la pestaña  · partials/<dominio>/*.blade.php
+//
+// MAPA DEL ARCHIVO
+//   1. DASHBOARDS Y PORTALES PRINCIPALES (NIVEL 1) .......... admin + cliente
+//   2. PETICIONES AJAX Y FRAGMENTOS
+//      · Dispatcher genérico del Portal Cliente (?tab=...)
+//      · TAB 0 · INICIO (admin) .................................. NIVEL 2
+//      · TAB 1 · INMUEBLES (admin) · 4 micro-fragmentos ....... NIVEL 2 + 3
+//      · TAB 2 · RESERVAS (admin) · 5 micro + 1 auxiliar ...... NIVEL 2 + 3
+//      · TAB 3 · CALENDARIO (admin) · 1 micro-fragmento ....... NIVEL 2 + 3
+//      · TAB 4 · FINANZAS (admin) · 2 micro-fragmentos ........ NIVEL 2 + 3
+//      · TAB 5 · AUDITORÍA (admin) · 1 micro-fragmento ........ NIVEL 2 + 3
+//      · PORTAL CLIENTE · 5 TABS (NIVEL 2) + 12 MICRO (NIVEL 3)
+//   3. RUTAS ESPECÍFICAS DE ACCIÓN (acciones puntuales PATCH/POST/PUT/GET)
+//   4. RUTAS CRUD (Resources) POR DOMINIO:
+//      A. Inmuebles · B. Núcleo Transaccional · C. Finanzas
+//      D. Comunicación y Reputación · E. Parámetros Base y Auditoría
+//
+// NOTAS
+//   · URIs y NOMBRES de rutas intactos: no rompe ningún JS ni {{ route() }}.
+//   · El bloque del PORTAL CLIENTE quedó CONSOLIDADO dentro de la sección 2
+//     (antes estaba duplicado al final del grupo; el name 'cliente.fragmento'
+//     repetido haría fallar `php artisan route:cache`).
+//   · Patrón de nombres: rsv.admin.<tab>.fragmento / rsv.cliente.<dominio>.fragmento
 // =========================================================================
 Route::middleware(['auth'])
     ->prefix('rsv')
@@ -701,12 +729,12 @@ Route::middleware(['auth'])
     ->group(function () {
 
         // =====================================================================
-        // INICIO 1. DASHBOARDS Y PORTALES PRINCIPALES
+        // INICIO 1. DASHBOARDS Y PORTALES PRINCIPALES (NIVEL 1)
         // =====================================================================
-        // Panel de control general para administradores
+        // Panel de control general para administradores (dashboard completo)
         Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
-        // Panel de autogestión para clientes
+        // Panel de autogestión para clientes (portal completo con KPIs del cliente)
         Route::get('/cliente', [ClientePortalController::class, 'index'])->name('cliente.portal');
         // =====================================================================
         // FIN 1. DASHBOARDS Y PORTALES PRINCIPALES
@@ -715,22 +743,28 @@ Route::middleware(['auth'])
 
         // =====================================================================
         // INICIO 2. PETICIONES AJAX Y FRAGMENTOS (Sin recarga de página)
+        // Carga parcial de vistas Blade agrupadas por pestaña (NIVEL 2) y sus
+        // respectivos micro-fragmentos (NIVEL 3).
         // =====================================================================
 
-        // --- Portal Cliente ---
+        // ---------------------------------------------------------------------
+        // Dispatcher genérico del PORTAL CLIENTE (compatibilidad histórica):
+        // ?tab=<clave> delega a los métodos dedicados del ClientePortalController;
+        // si el dedicado falla, sirve la vista whitelisted sin datos (contrato viejo).
+        // ---------------------------------------------------------------------
         Route::get('cliente-fragmento', [ClientePortalController::class, 'fragmento'])->name('cliente.fragmento');
 
-        // --- Dashboard Administrativo ---
-        // Carga parcial de vistas Blade (sin recargar la página) agrupadas por pestaña
-        // y sus respectivos micro-fragmentos (submódulos Nivel 3).
+        // ---------------------------------------------------------------------
+        // DASHBOARD ADMINISTRATIVO · TABS Y MICRO-FRAGMENTOS
+        // ---------------------------------------------------------------------
 
-        // --- INICIO 0. TAB INICIO / RESUMEN GENERAL ---
+        // --- INICIO 0. TAB INICIO / RESUMEN GENERAL (admin) ---
         Route::get('inicio-fragmento', [AdminDashboardController::class, 'inicioFragmento'])
-            ->name('admin.inicio.fragmento');
+            ->name('admin.inicio.fragmento'); // partials/tab-inicio.blade.php · NIVEL 2
         // --- FIN 0. TAB INICIO ---
 
         // --- INICIO 1. TAB INMUEBLES (SECCIÓN 1/5) ---
-        // Contenedor principal de la pestaña (partials/tab-inmuebles.blade.php) - NIVEL 2
+        // Contenedor principal de la pestaña (partials/tab-inmuebles.blade.php) · NIVEL 2
         Route::get('inmuebles-fragmento', [AdminDashboardController::class, 'inmueblesFragmento'])
             ->name('admin.inmuebles.fragmento');
 
@@ -749,7 +783,7 @@ Route::middleware(['auth'])
         // --- FIN 1. TAB INMUEBLES ---
 
         // --- INICIO 2. TAB RESERVAS (SECCIÓN 2/5) ---
-        // Contenedor principal de la pestaña (partials/tab-reservas.blade.php) - NIVEL 2
+        // Contenedor principal de la pestaña (partials/tab-reservas.blade.php) · NIVEL 2
         Route::get('reservas-fragmento', [AdminDashboardController::class, 'reservasFragmento'])
             ->name('admin.reservas.fragmento');
 
@@ -775,7 +809,7 @@ Route::middleware(['auth'])
         // --- FIN 2. TAB RESERVAS ---
 
         // --- INICIO 3. TAB CALENDARIO (SECCIÓN 3/5) ---
-        // Contenedor principal de la pestaña (partials/tab-calendario.blade.php) - NIVEL 2
+        // Contenedor principal de la pestaña (partials/tab-calendario.blade.php) · NIVEL 2
         Route::get('calendario-fragmento', [AdminDashboardController::class, 'calendarioFragmento'])
             ->name('admin.calendario.fragmento');
 
@@ -785,7 +819,7 @@ Route::middleware(['auth'])
         // --- FIN 3. TAB CALENDARIO ---
 
         // --- INICIO 4. TAB FINANZAS (SECCIÓN 4/5) ---
-        // Contenedor principal de la pestaña (partials/tab-finanzas.blade.php) - NIVEL 2
+        // Contenedor principal de la pestaña (partials/tab-finanzas.blade.php) · NIVEL 2
         Route::get('finanzas-fragmento', [AdminDashboardController::class, 'finanzasFragmento'])
             ->name('admin.finanzas.fragmento');
 
@@ -798,7 +832,7 @@ Route::middleware(['auth'])
         // --- FIN 4. TAB FINANZAS ---
 
         // --- INICIO 5. TAB AUDITORÍA (SECCIÓN 5/5) ---
-        // Contenedor principal de la pestaña (partials/auditoria-tab.blade.php) - NIVEL 2
+        // Contenedor principal de la pestaña (partials/auditoria-tab.blade.php) · NIVEL 2
         Route::get('auditoria-fragmento', [AdminDashboardController::class, 'auditoriaFragmento'])
             ->name('admin.auditoria.fragmento');
 
@@ -807,6 +841,77 @@ Route::middleware(['auth'])
             ->name('admin.auditoria.informes.fragmento'); // partials/auditorias/informes.blade.php
         // --- FIN 5. TAB AUDITORÍA ---
 
+        // ---------------------------------------------------------------------
+        // PORTAL CLIENTE · TABS (NIVEL 2 · SECCIÓN 1-5/5)
+        // Contenedores AJAX de cada pestaña del portal (partials/*-tab.blade.php)
+        // ---------------------------------------------------------------------
+
+        // TAB 1/5 · Nueva reserva
+        Route::get('cliente-nueva-reserva-fragmento', [ClientePortalController::class, 'nuevaReservaFragmento'])
+            ->name('cliente.nueva-reserva.fragmento'); // partials/nueva-reserva-tab.blade.php
+
+        // TAB 2/5 · Mis reservas
+        Route::get('cliente-mis-reservas-fragmento', [ClientePortalController::class, 'misReservasFragmento'])
+            ->name('cliente.mis-reservas.fragmento'); // partials/mis-reservas-tab.blade.php
+
+        // TAB 3/5 · Historial
+        Route::get('cliente-historial-fragmento', [ClientePortalController::class, 'historialFragmento'])
+            ->name('cliente.historial.fragmento'); // partials/historial-tab.blade.php
+
+        // TAB 4/5 · Chat
+        Route::get('cliente-chat-fragmento', [ClientePortalController::class, 'chatFragmento'])
+            ->name('cliente.chat.fragmento'); // partials/chat-tab.blade.php
+
+        // TAB 5/5 · Pagos
+        Route::get('cliente-pagos-fragmento', [ClientePortalController::class, 'pagosFragmento'])
+            ->name('cliente.pagos.fragmento'); // partials/pagos-tab.blade.php
+
+        // ---------------------------------------------------------------------
+        // PORTAL CLIENTE · MICRO-FRAGMENTOS (NIVEL 3)
+        // Submódulos dentro de cada tab · partials/<dominio>/<submodulo>.blade.php
+        // ---------------------------------------------------------------------
+
+        // Nueva reserva (SECCIÓN 1/5)
+        Route::get('cliente-nueva-buscador-fragmento', [ClientePortalController::class, 'nuevaReservaBuscadorFragmento'])
+            ->name('cliente.nueva.buscador.fragmento'); // partials/nueva-reserva/buscador.blade.php
+
+        Route::get('cliente-nueva-checkout-fragmento', [ClientePortalController::class, 'nuevaReservaCheckoutFragmento'])
+            ->name('cliente.nueva.checkout.fragmento'); // partials/nueva-reserva/checkout.blade.php
+
+        // Mis reservas (SECCIÓN 2/5)
+        Route::get('cliente-mis-activas-fragmento', [ClientePortalController::class, 'misReservasActivasFragmento'])
+            ->name('cliente.mis.activas.fragmento'); // partials/mis-reservas/activas-pasadas.blade.php
+
+        Route::get('cliente-mis-itinerario-fragmento', [ClientePortalController::class, 'misReservasItinerarioFragmento'])
+            ->name('cliente.mis.itinerario.fragmento'); // partials/mis-reservas/itinerario.blade.php
+
+        Route::get('cliente-mis-huespedes-fragmento', [ClientePortalController::class, 'misReservasHuespedesFragmento'])
+            ->name('cliente.mis.huespedes.fragmento'); // partials/mis-reservas/huespedes.blade.php
+
+        // Historial (SECCIÓN 3/5)
+        Route::get('cliente-historial-estados-fragmento', [ClientePortalController::class, 'historialEstadosFragmento'])
+            ->name('cliente.historial.estados.fragmento'); // partials/historial/estados.blade.php
+
+        Route::get('cliente-historial-endosos-fragmento', [ClientePortalController::class, 'historialEndososFragmento'])
+            ->name('cliente.historial.endosos.fragmento'); // partials/historial/endosos.blade.php
+
+        // Chat (SECCIÓN 4/5)
+        Route::get('cliente-chat-mensajes-fragmento', [ClientePortalController::class, 'chatMensajesFragmento'])
+            ->name('cliente.chat.mensajes.fragmento'); // partials/chat/mensajes.blade.php
+
+        Route::get('cliente-chat-receptores-fragmento', [ClientePortalController::class, 'chatReceptoresFragmento'])
+            ->name('cliente.chat.receptores.fragmento'); // partials/chat/receptores.blade.php
+
+        // Pagos (SECCIÓN 5/5)
+        Route::get('cliente-pagos-transacciones-fragmento', [ClientePortalController::class, 'pagosTransaccionesFragmento'])
+            ->name('cliente.pagos.transacciones.fragmento'); // partials/pagos/transacciones.blade.php
+
+        Route::get('cliente-pagos-pasarelas-fragmento', [ClientePortalController::class, 'pagosPasarelasFragmento'])
+            ->name('cliente.pagos.pasarelas.fragmento'); // partials/pagos/pasarelas.blade.php
+
+        Route::get('cliente-pagos-reviews-fragmento', [ClientePortalController::class, 'pagosReviewsFragmento'])
+            ->name('cliente.pagos.reviews.fragmento'); // partials/pagos/reviews.blade.php
+
         // =====================================================================
         // FIN 2. PETICIONES AJAX Y FRAGMENTOS
         // =====================================================================
@@ -814,18 +919,28 @@ Route::middleware(['auth'])
 
         // =====================================================================
         // INICIO 3. RUTAS ESPECÍFICAS DE ACCIÓN (Previas a los Resources)
+        // Acciones puntuales que NO son CRUD completo.
         // =====================================================================
+
         // Acciones de Inmuebles
         Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
 
-        // Acciones de Reservas
+        // Acciones de Reservas (Administrador)
         Route::get('reservas/fechas-ocupadas/{inmueble}', [ReservaController::class, 'fechasOcupadasAjax'])->name('reservas.fechas-ocupadas');
         Route::post('reservas/store-ajax', [ReservaController::class, 'storeAjax'])->name('reservas.store-ajax');
         Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
+
         // [REQ check] Cambiar SOLO la clasificación (tipo) de una propiedad · la usa partials/inmuebles/tipo.blade.php
         Route::put('inmuebles/{id}/tipo', [TipoInmuebleController::class, 'asignarTipo'])->name('inmuebles.tipo.asignar');
 
         Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
+
+        // ---------------------------------------------------------------------
+        // NUEVA RUTA: API CLIENTE (Consulta disponibilidad en tiempo real)
+        // ---------------------------------------------------------------------
+        Route::get('cliente-api-disponibilidad/{id}', [ClientePortalController::class, 'getDisponibilidadInmueble'])
+            ->name('cliente.api.disponibilidad');
+
         // =====================================================================
         // FIN 3. RUTAS ESPECÍFICAS DE ACCIÓN
         // =====================================================================
@@ -833,6 +948,7 @@ Route::middleware(['auth'])
 
         // =====================================================================
         // INICIO 4. RUTAS CRUD (Resources) ORGANIZADAS POR DOMINIO
+        // Cada resource genera index/create/store/show/edit/update/destroy.
         // =====================================================================
 
         // --- A. Catálogo y Configuración de Inmuebles ---
