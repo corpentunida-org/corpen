@@ -279,29 +279,85 @@
 
                     {{-- ─────────── TAB 2: MIS RESERVAS ─────────── --}}
                     <div class="tab-pane fade" id="cli-reservas" role="tabpanel">
+
+                        {{-- Menú de Sub-pestañas --}}
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Mis Reservas:
                             </div>
+
                             <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="misReservasSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#mr-sub-activas" type="button" role="tab"><i class="bi bi-calendar2-check me-1"></i> Activas y Pasadas</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-itinerario" type="button" role="tab"><i class="bi bi-list-check me-1"></i> Itinerario</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-huespedes" type="button" role="tab"><i class="bi bi-people me-1"></i> Huéspedes</button></li>
+                                {{-- 1. Inicio (Activo por defecto) --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#mr-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+
+                                {{-- 2. Activas y Pasadas --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-activas" type="button" role="tab">
+                                        <i class="bi bi-calendar2-check me-1"></i> Activas y Pasadas
+                                    </button>
+                                </li>
+
+                                {{-- 3. Itinerario --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-itinerario" type="button" role="tab">
+                                        <i class="bi bi-geo-alt me-1"></i> Itinerario
+                                    </button>
+                                </li>
+
+                                {{-- 4. Huéspedes --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-huespedes" type="button" role="tab">
+                                        <i class="bi bi-people me-1"></i> Huéspedes
+                                    </button>
+                                </li>
                             </ul>
                         </div>
-                        <div class="tab-content p-4" id="misReservasSubContent">
-                            <div class="tab-pane fade show active" id="mr-sub-activas" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.activas-pasadas')) @include('rsv.cliente.partials.mis-reservas.activas-pasadas') @endif
+
+                        {{-- Contenedor de las Sub-vistas (Rutas) --}}
+                        <div class="tab-content p-4 reservas-soft border mt-2 bg-white rounded-3" id="misReservasSubContent" style="border-color:#f1f5f9 !important;">
+
+                            {{-- 1. INICIO (Ruta al Dashboard Central) --}}
+                            <div class="tab-pane fade show active" id="mr-sub-inicio" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas-tab'))
+                                    @include('rsv.cliente.partials.mis-reservas-tab')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Inicio" no encontrada.</div>
+                                @endif
                             </div>
+
+                            {{-- 2. ACTIVAS Y PASADAS --}}
+                            <div class="tab-pane fade" id="mr-sub-activas" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.activas-pasadas'))
+                                    @include('rsv.cliente.partials.mis-reservas.activas-pasadas')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Activas y Pasadas" no encontrada.</div>
+                                @endif
+                            </div>
+
+                            {{-- 3. ITINERARIO --}}
                             <div class="tab-pane fade" id="mr-sub-itinerario" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.itinerario')) @include('rsv.cliente.partials.mis-reservas.itinerario') @endif
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.itinerario'))
+                                    @include('rsv.cliente.partials.mis-reservas.itinerario')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Itinerario" no encontrada.</div>
+                                @endif
                             </div>
+
+                            {{-- 4. HUÉSPEDES --}}
                             <div class="tab-pane fade" id="mr-sub-huespedes" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.mis-reservas.huespedes')) @include('rsv.cliente.partials.mis-reservas.huespedes') @endif
+                                @if(view()->exists('rsv.cliente.partials.mis-reservas.huespedes'))
+                                    @include('rsv.cliente.partials.mis-reservas.huespedes')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Huéspedes" no encontrada.</div>
+                                @endif
                             </div>
+
                         </div>
                     </div>
-
                     {{-- ─────────── TAB 3: HISTORIAL ─────────── --}}
                     <div class="tab-pane fade" id="cli-historial" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
