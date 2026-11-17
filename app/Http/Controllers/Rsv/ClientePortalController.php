@@ -114,6 +114,10 @@ class ClientePortalController extends Controller
             $kpiTotal = $misReservas->count();
 
             foreach ($misReservas as $r) {
+                if ($this->reservaEstaCancelada($r)) {
+                    continue;
+                }
+
                 [$fi, $ff] = $this->fechasDeReserva($r);
 
                 if ($fi && $ff && ($hoy->betweenIncluded($fi, $ff) || $fi->gte($hoy))) { $kpiActivas++; }
@@ -274,22 +278,37 @@ class ClientePortalController extends Controller
             }
             if ($noches > 0 && is_numeric($precioNoche)) { $estimadoTotal = (float) $precioNoche * $noches; }
 
-            // Disponibilidad y Bloqueos
+            // Disponibilidad y Bloqueos (excluyendo reservas canceladas/anuladas/rechazadas)
             $colFi  = $this->colReservaFechaInicio();
             $colFf  = $this->colReservaFechaFin();
             $colInm = $this->colReservaInmueble();
 
-            $reservasOcupan = Reserva::query()->where($colInm, $inmueble->id)
-                ->when($fInicio && $fFin, fn($q) => $q->where($colFi, '<', $fFin)->where($colFf, '>', $fInicio))
-                ->orderBy($colFi)->limit(50)->get();
+            $reservasOcupan = Reserva::query()
+                ->with($this->conRelaciones(Reserva::class, ['status']))
+                ->where($colInm, $inmueble->id)
+                ->when($fInicio && $fFin, fn ($q) => $q->where($colFi, '<', $fFin)->where($colFf, '>', $fInicio))
+                ->orderBy($colFi)
+                ->limit(50)
+                ->get()
+                ->reject(fn ($r) => $this->reservaEstaCancelada($r))
+                ->values();
 
-            $colBloqInm = $this->colTabla((new BloqueoCalendario)->getTable(), ['id_rsv_catalogo_inmueble', 'inmueble_id', 'id_inmueble'], 'id_rsv_catalogo_inmueble');
-            $colBloqFi  = $this->colTabla((new BloqueoCalendario)->getTable(), ['fecha_inicio', 'inicio', 'desde'], 'fecha_inicio');
-            $colBloqFf  = $this->colTabla((new BloqueoCalendario)->getTable(), ['fecha_fin', 'fin', 'hasta'], 'fecha_fin');
+            $tablaBloq  = (new BloqueoCalendario)->getTable();
+            $colBloqInm = $this->colTabla($tablaBloq, ['id_rsv_catalogo_inmueble', 'inmueble_id', 'id_inmueble'], 'id_rsv_catalogo_inmueble');
+            $colBloqFi  = $this->colTabla($tablaBloq, ['fecha_inicio', 'inicio', 'desde'], 'fecha_inicio');
+            $colBloqFf  = $this->colTabla($tablaBloq, ['fecha_fin', 'fin', 'hasta'], 'fecha_fin');
 
-            $bloqueos = BloqueoCalendario::query()->where($colBloqInm, $inmueble->id)
-                ->when($fInicio && $fFin, fn($q) => $q->where($colBloqFi, '<', $fFin)->where($colBloqFf, '>', $fInicio))
-                ->orderBy($colBloqFi)->get();
+            $qBloqueos = BloqueoCalendario::query()
+                ->where($colBloqInm, $inmueble->id)
+                ->when($fInicio && $fFin, fn ($q) => $q->where($colBloqFi, '<', $fFin)->where($colBloqFf, '>', $fInicio))
+                ->orderBy($colBloqFi);
+
+            $colBloqActivo = $this->colTabla($tablaBloq, ['activo', 'active', 'estado'], null);
+            if ($colBloqActivo && $colBloqActivo !== 'estado') {
+                $qBloqueos->where($colBloqActivo, 1);
+            }
+
+            $bloqueos = $qBloqueos->get();
 
             $pasarelas = $this->pasarelasActivas();
             $cliente   = Auth::user();
@@ -317,17 +336,23 @@ class ClientePortalController extends Controller
             $finMes    = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
             $fechasOcupadas = [];
 
-            // Reservas
+            // Reservas (excluir canceladas, anuladas y rechazadas)
             $colFi  = $this->colReservaFechaInicio();
             $colFf  = $this->colReservaFechaFin();
-            $reservas = Reserva::query()->where($this->colReservaInmueble(), $id)
-                ->where(function($query) use ($inicioMes, $finMes, $colFi, $colFf) {
+            $reservas = Reserva::query()
+                ->with($this->conRelaciones(Reserva::class, ['status']))
+                ->where($this->colReservaInmueble(), $id)
+                ->where(function ($query) use ($inicioMes, $finMes, $colFi, $colFf) {
                     $query->whereBetween($colFi, [$inicioMes, $finMes])
                           ->orWhereBetween($colFf, [$inicioMes, $finMes])
-                          ->orWhere(fn($q) => $q->where($colFi, '<', $inicioMes)->where($colFf, '>', $finMes));
-                })->get();
+                          ->orWhere(fn ($q) => $q->where($colFi, '<', $inicioMes)->where($colFf, '>', $finMes));
+                })
+                ->get();
 
             foreach ($reservas as $res) {
+                if ($this->reservaEstaCancelada($res)) {
+                    continue;
+                }
                 $fiCarbon = Carbon::parse($res->{$colFi})->startOfDay();
                 $ffCarbon = Carbon::parse($res->{$colFf})->startOfDay();
                 for ($d = $fiCarbon->copy(); $d->lte($ffCarbon); $d->addDay()) {
@@ -335,17 +360,46 @@ class ClientePortalController extends Controller
                 }
             }
 
-            // Bloqueos
-            $colBFi = $this->colTabla((new BloqueoCalendario)->getTable(), ['fecha_inicio', 'inicio'], 'fecha_inicio');
-            $colBFf = $this->colTabla((new BloqueoCalendario)->getTable(), ['fecha_fin', 'fin'], 'fecha_fin');
-            $bloqueos = BloqueoCalendario::query()->where($this->colTabla((new BloqueoCalendario)->getTable(), ['id_rsv_catalogo_inmueble', 'inmueble_id'], 'id_rsv_catalogo_inmueble'), $id)
-                ->where(function($query) use ($inicioMes, $finMes, $colBFi, $colBFf) {
+            // Bloqueos (ignorar inactivos o vinculados a reservas ya canceladas)
+            $tablaBloq  = (new BloqueoCalendario)->getTable();
+            $colBInm    = $this->colTabla($tablaBloq, ['id_rsv_catalogo_inmueble', 'inmueble_id'], 'id_rsv_catalogo_inmueble');
+            $colBFi     = $this->colTabla($tablaBloq, ['fecha_inicio', 'inicio'], 'fecha_inicio');
+            $colBFf     = $this->colTabla($tablaBloq, ['fecha_fin', 'fin'], 'fecha_fin');
+            $colBActivo = $this->colTabla($tablaBloq, ['activo', 'active'], null);
+            $colBResFk  = $this->colTabla($tablaBloq, ['id_rsv_reservas', 'id_rsv_reserva', 'reserva_id'], null);
+
+            $qBloqueos = BloqueoCalendario::query()
+                ->where($colBInm, $id)
+                ->where(function ($query) use ($inicioMes, $finMes, $colBFi, $colBFf) {
                     $query->whereBetween($colBFi, [$inicioMes, $finMes])
                           ->orWhereBetween($colBFf, [$inicioMes, $finMes])
-                          ->orWhere(fn($q) => $q->where($colBFi, '<', $inicioMes)->where($colBFf, '>', $finMes));
-                })->get();
+                          ->orWhere(fn ($q) => $q->where($colBFi, '<', $inicioMes)->where($colBFf, '>', $finMes));
+                });
+
+            if ($colBActivo) {
+                $qBloqueos->where($colBActivo, 1);
+            }
+
+            $bloqueos = $qBloqueos->get();
+
+            // Si el bloqueo tiene FK a una reserva, verificamos que esa reserva no esté cancelada
+            $idsResBloq = $colBResFk ? $bloqueos->pluck($colBResFk)->filter()->unique()->all() : [];
+            $reservasBloqMap = [];
+            if (!empty($idsResBloq)) {
+                $reservasBloqMap = Reserva::query()
+                    ->with($this->conRelaciones(Reserva::class, ['status']))
+                    ->whereIn('id', $idsResBloq)
+                    ->get()
+                    ->keyBy('id');
+            }
 
             foreach ($bloqueos as $blq) {
+                if ($colBResFk && !empty($blq->{$colBResFk})) {
+                    $resVinculada = $reservasBloqMap[$blq->{$colBResFk}] ?? null;
+                    if ($resVinculada && $this->reservaEstaCancelada($resVinculada)) {
+                        continue;
+                    }
+                }
                 $fiCarbon = Carbon::parse($blq->{$colBFi})->startOfDay();
                 $ffCarbon = Carbon::parse($blq->{$colBFf})->startOfDay();
                 for ($d = $fiCarbon->copy(); $d->lte($ffCarbon); $d->addDay()) {
@@ -353,10 +407,15 @@ class ClientePortalController extends Controller
                 }
             }
 
-            return response()->json([
-                'success' => true, 'inmueble_id' => $id, 'mes' => $mes, 'anio' => $anio,
-                'ocupadas' => array_values(array_unique($fechasOcupadas))
-            ]);
+            return response()
+                ->json([
+                    'success'     => true,
+                    'inmueble_id' => $id,
+                    'mes'         => $mes,
+                    'anio'        => $anio,
+                    'ocupadas'    => array_values(array_unique($fechasOcupadas)),
+                ])
+                ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('getDisponibilidadInmueble: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => 'Error al consultar disponibilidad'], 500);
@@ -548,10 +607,10 @@ class ClientePortalController extends Controller
     public function chatFragmento(Request $request)
     {
         try {
-            $mensajes      = $this->mensajesDelCliente();
-            $tiposReceptor = $this->tiposReceptorActivos();
-            [$todas]       = $this->reservasDelCliente();
-            $misReservas   = $this->reservasComoOpciones($todas);
+            $mensajes       = $this->mensajesDelCliente();
+            $tiposReceptor  = $this->tiposReceptorActivos();
+            [$todas]        = $this->reservasDelCliente();
+            $misReservas    = $this->reservasComoOpciones($todas);
 
             $vista = $this->primeraVista([
                 'rsv.cliente.partials.chat-tab',
@@ -573,8 +632,8 @@ class ClientePortalController extends Controller
     public function chatMensajesFragmento(Request $request)
     {
         try {
-            $mensajes      = $this->mensajesDelCliente();
-            $tiposReceptor = $this->tiposReceptorActivos();
+            $mensajes       = $this->mensajesDelCliente();
+            $tiposReceptor  = $this->tiposReceptorActivos();
             $vista = $this->primeraVista(['rsv.cliente.partials.chat.mensajes']);
             if (!$vista) { throw new \RuntimeException('No existe partials/chat/mensajes.blade.php'); }
 
@@ -591,9 +650,9 @@ class ClientePortalController extends Controller
     public function chatReceptoresFragmento(Request $request)
     {
         try {
-            $tiposReceptor = $this->tiposReceptorActivos();
-            [$todas]       = $this->reservasDelCliente();
-            $misReservas   = $this->reservasComoOpciones($todas);
+            $tiposReceptor  = $this->tiposReceptorActivos();
+            [$todas]        = $this->reservasDelCliente();
+            $misReservas    = $this->reservasComoOpciones($todas);
             $vista = $this->primeraVista(['rsv.cliente.partials.chat.receptores']);
             if (!$vista) { throw new \RuntimeException('No existe partials/chat/receptores.blade.php'); }
 
@@ -962,8 +1021,28 @@ class ClientePortalController extends Controller
 
     private function reservaActiva($reserva, $hoy): bool
     {
+        if ($this->reservaEstaCancelada($reserva)) {
+            return false;
+        }
         [$fi, $ff] = $this->fechasDeReserva($reserva);
         return $fi && $ff && ($hoy->betweenIncluded($fi, $ff) || $fi->gte($hoy));
+    }
+
+    private function reservaEstaCancelada($reserva): bool
+    {
+        try {
+            $estado = mb_strtolower((string) (
+                optional($reserva->status)->name
+                ?? optional($reserva->status)->nombre
+                ?? $reserva->estado
+                ?? ''
+            ));
+            return str_contains($estado, 'cancela')
+                || str_contains($estado, 'anula')
+                || str_contains($estado, 'rechaza');
+        } catch (Throwable $e) {
+            return false;
+        }
     }
 
     private function fechasDeReserva($reserva): array

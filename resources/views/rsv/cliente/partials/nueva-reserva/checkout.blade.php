@@ -1,13 +1,13 @@
-{{-- partials/nueva-reserva/checkout.blade.php · Cliente · Carrito de Compras Reactivo (CHK-v2-DBG) --}}
+{{-- partials/nueva-reserva/checkout.blade.php · Cliente · Carrito de Compras Reactivo (CHK-v2.4-DBG) --}}
 <div id="sheet-checkout-cliente">
 
-    {{-- CHK-v2-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="chkDbgToggle" title="Debug Checkout (CHK-v2-DBG)">
+    {{-- CHK-v2.4-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="chkDbgToggle" title="Debug Checkout (CHK-v2.4-DBG)">
         <span class="chk-dbg-led" id="chkDbgLed"></span>DBG<span class="chk-dbg-badge" id="chkDbgBadge">0</span>
     </div>
     <div id="chkDbgPanel" role="dialog" aria-label="Panel de debug del Checkout">
         <div class="chk-dbg-header" id="chkDbgHeader">
-            <span>DEBUG · Checkout Cliente · CHK-v2-DBG</span>
+            <span>DEBUG · Checkout Cliente · CHK-v2.4-DBG</span>
             <span class="chk-dbg-controls">
                 <button type="button" class="chk-dbg-btn" id="chkDbgRefresh" title="Refrescar fragmento">↻ Frag</button>
                 <button type="button" class="chk-dbg-btn" id="chkDbgCopy">Copiar</button>
@@ -41,6 +41,14 @@
             ? route('rsv.reservas.store-ajax')
             : (\Illuminate\Support\Facades\Route::has('rsv.reservas.store') ? route('rsv.reservas.store') : '');
 
+        $rutaStoreHuesped = '';
+        foreach (['rsv.reserva-huespedes.store', 'rsv.huespedes.store-ajax', 'rsv.huespedes.store', 'rsv.cliente.huespedes.store', 'huespedes.store'] as $rn) {
+            if (\Illuminate\Support\Facades\Route::has($rn)) { $rutaStoreHuesped = route($rn); break; }
+        }
+        if (!$rutaStoreHuesped) {
+            $rutaStoreHuesped = url('/rsv/reserva-huespedes');
+        }
+
         $rutaFragmento = '';
         foreach (['rsv.cliente.nueva-reserva.checkout.fragmento', 'rsv.cliente.fragmento'] as $rn) {
             if (\Illuminate\Support\Facades\Route::has($rn)) {
@@ -49,17 +57,69 @@
             }
         }
 
+        // ── URL limpia de la vista principal del Portal del Cliente (NUNCA la ruta /fragmento) ──
+        $rutaPortalCliente = '';
+        foreach (['rsv.cliente.dashboard', 'rsv.cliente.index', 'rsv.cliente.portal', 'cliente.dashboard'] as $rnPortal) {
+            if (\Illuminate\Support\Facades\Route::has($rnPortal)) {
+                $rutaPortalCliente = route($rnPortal);
+                break;
+            }
+        }
+        if (!$rutaPortalCliente) {
+            // Si estamos en una petición AJAX al fragmento, quitar "/fragmento..." de la ruta actual
+            $pathActual = request()->path();
+            $pathLimpio = preg_replace('#/fragmento.*$#i', '', $pathActual);
+            $rutaPortalCliente = url('/' . ltrim($pathLimpio, '/'));
+        }
+
         $statusPendienteId = class_exists(\App\Models\Rsv\Status::class)
             ? (\App\Models\Rsv\Status::whereRaw('LOWER(name) LIKE ?', ['%pendien%'])->first()->id ?? 1) : 1;
         $origenDefectoId = class_exists(\App\Models\Rsv\OrigenReserva::class)
             ? (\App\Models\Rsv\OrigenReserva::first()->id ?? 1) : 1;
+
+        // ── Datos del usuario autenticado desde columnas exactas: name y nit ──
+        $authUser = \Illuminate\Support\Facades\Auth::user();
+        $selfNombre = '';
+        $selfApellidos = '';
+        $selfTipoDoc = 'CC';
+        $selfNumDoc = '';
+
+        if ($authUser) {
+            $partesNombre = preg_split('/\s+/', trim((string) ($authUser->name ?? '')), -1, PREG_SPLIT_NO_EMPTY);
+            $cnt = count($partesNombre);
+            if ($cnt === 1) {
+                $selfNombre = $partesNombre[0];
+            } elseif ($cnt === 2) {
+                $selfNombre = $partesNombre[0];
+                $selfApellidos = $partesNombre[1];
+            } elseif ($cnt >= 3) {
+                $selfNombre = implode(' ', array_slice($partesNombre, 0, $cnt - 2));
+                $selfApellidos = implode(' ', array_slice($partesNombre, -2));
+            }
+
+            $rawTipo = strtoupper(trim((string) ($authUser->tipo_documento ?? 'CC')));
+            $selfTipoDoc = in_array($rawTipo, ['CC', 'CE', 'PAS']) ? $rawTipo : 'CC';
+            $selfNumDoc = trim((string) ($authUser->nit ?? ''));
+        }
+
+        $selfGuestData = [
+            'nombre' => $selfNombre,
+            'apellidos' => $selfApellidos,
+            'tipo_documento' => $selfTipoDoc,
+            'numero_documento' => $selfNumDoc,
+        ];
     @endphp
 
     <div class="reservas-soft p-3 bg-white rounded-3 border" id="cliCheckoutRoot"
-         data-redirect="{{ request()->fullUrlWithoutQuery(['inmueble_id', 'fi', 'ff']) }}"
+         data-redirect="{{ $rutaPortalCliente }}"
          data-frag="{{ $rutaFragmento ?: route('rsv.cliente.fragmento') }}"
          data-fragkey="nueva-checkout"
          data-inmueble-id="{{ $inmId ?? '' }}"
+         data-max-guests="{{ $capMaxima }}"
+         data-csrf="{{ csrf_token() }}"
+         data-store-huesped="{{ $rutaStoreHuesped }}"
+         data-user-id="{{ $authUser?->id ?? '' }}"
+         data-self-guest='@json($selfGuestData)'
          style="border-color:#f1f5f9 !important;">
 
         <style>
@@ -73,6 +133,10 @@
 
             .reservas-soft .btn-outline { background:#fff; color:var(--ink-3); border:1px solid var(--grid-2); font-size:9px; font-weight:600; padding:6px 16px; border-radius:4px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:4px; }
             .reservas-soft .btn-outline:hover { background:var(--head); color:var(--ink-2); border-color:var(--ink-4); }
+
+            .reservas-soft .btn-self-quick { background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent-bd); font-size:7.5px; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:4px; }
+            .reservas-soft .btn-self-quick:hover { background:#e3f1e9; color:#2e5c43; border-color:#b8d8c5; }
+            .reservas-soft .btn-self-quick.is-applied { background:var(--accent); color:#fff; border-color:var(--accent); }
 
             .reservas-soft .btn-outline-dashed { background:transparent; color:var(--ink-3); border:1px dashed var(--ink-4); font-size:8.5px; font-weight:600; padding:6px 12px; border-radius:4px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:4px; width:100%;}
             .reservas-soft .btn-outline-dashed:hover { background:var(--head); color:var(--accent); border-color:var(--accent-bd); }
@@ -105,8 +169,9 @@
             .reservas-soft .resume-total-box { background: var(--head); padding: 16px; border-radius: 6px; border: 1px solid var(--grid-2); }
             .reservas-soft .resume-total { font-size: 15px; color: var(--accent); font-weight: 800; letter-spacing:-0.5px;}
 
-            .xls-input { font-size: 8.5px; color: var(--ink-2); border: 1px solid var(--grid-2); border-radius: 4px; padding: 4px 8px; outline: 0; box-shadow: none !important;}
+            .xls-input { font-size: 8.5px; color: var(--ink-2); border: 1px solid var(--grid-2); border-radius: 4px; padding: 4px 8px; outline: 0; box-shadow: none !important; transition: background-color 0.25s, border-color 0.25s;}
             .xls-input:focus { border-color: var(--accent-bd); background: #fafcfe; }
+            .xls-input.self-filled { background: #f0f7f2 !important; border-color: #b8d8c5 !important; }
             .guest-box { transition: all 0.2s; }
             .guest-box:hover { border-color: var(--accent-bd) !important; }
 
@@ -248,13 +313,21 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <h6 class="val mb-1"><i class="bi bi-people-fill me-1" style="color:var(--accent);"></i> Registro de Huéspedes</h6>
-                                    <div class="sub mb-3" style="font-size:7.5px;">Ingresa tus datos y los de tus acompañantes (puedes completarlos luego). Capacidad: <b>{{ $capMaxima }}</b> personas.</div>
+                                    <div class="d-flex justify-content-between align-items-center gap-2 mb-1 flex-wrap">
+                                        <h6 class="val mb-0"><i class="bi bi-people-fill me-1" style="color:var(--accent);"></i> Registro de Huéspedes</h6>
+                                        @if($authUser)
+                                            <button type="button" class="btn-self-quick" id="btnFillSelfGuest" title="Cargar mis datos personales ({{ $authUser->name }} - {{ $authUser->nit }}) como titular">
+                                                <i class="bi bi-person-badge-fill"></i> <span class="self-btn-txt">Usar mis datos</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                    <div class="sub mb-3" style="font-size:7.5px;">Asegura tu cupo cargando tus datos ahora y registra a tus acompañantes después desde <b>Mis Reservas</b>. Capacidad: <b>{{ $capMaxima }}</b> personas.</div>
 
                                     <div id="guestListContainer">
-                                        <div class="guest-box mb-2 p-2 border rounded" style="background:var(--head);">
+                                        <div class="guest-box mb-2 p-2 border rounded" style="background:var(--head);" id="titularGuestBox">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <span class="val" style="font-size:8.5px; color:var(--accent);">Huésped 1 (Titular)</span>
+                                                <span class="sub" id="titularSelfBadge" style="display:none; color:var(--accent); font-weight:700;"><i class="bi bi-check-circle-fill"></i> Mis datos</span>
                                             </div>
                                             <div class="row g-2">
                                                 <input type="hidden" name="huespedes[0][es_titular]" value="1">
@@ -273,7 +346,7 @@
                                     </div>
 
                                     <button type="button" class="btn-outline-dashed mt-1" id="btnAddGuest">
-                                        <i class="bi bi-person-plus"></i> Añadir Acompañante
+                                        <i class="bi bi-person-plus"></i> Añadir Acompañante (opcional ahora)
                                     </button>
                                 </div>
 
@@ -307,10 +380,8 @@
 <script>
 (function () {
     'use strict';
-    if (window.__jsCheckoutClienteListo) return;
-    window.__jsCheckoutClienteListo = true;
 
-    /* ═══ PANEL DE DEBUG LOCAL CHK-v2-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL CHK-v2.4-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.ChkDbg && window.ChkDbg.alive && window.ChkDbg.alive())
         ? window.ChkDbg
         : (function () {
@@ -320,7 +391,7 @@
                 var rootDbg = document.querySelector('#sheet-checkout-cliente') || document.body;
                 if (!$('chkDbgToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'chkDbgToggle'; t.title = 'Debug Checkout (CHK-v2-DBG)';
+                    t.id = 'chkDbgToggle'; t.title = 'Debug Checkout (CHK-v2.4-DBG)';
                     t.innerHTML = '<span class="chk-dbg-led" id="chkDbgLed"></span>DBG<span class="chk-dbg-badge" id="chkDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -328,7 +399,7 @@
                     var p = document.createElement('div');
                     p.id = 'chkDbgPanel';
                     p.innerHTML = '<div class="chk-dbg-header" id="chkDbgHeader">' +
-                        '<span>DEBUG · Checkout Cliente · CHK-v2-DBG</span>' +
+                        '<span>DEBUG · Checkout Cliente · CHK-v2.4-DBG</span>' +
                         '<span class="chk-dbg-controls">' +
                         '<button type="button" class="chk-dbg-btn" id="chkDbgRefresh" title="Refrescar fragmento">↻ Frag</button>' +
                         '<button type="button" class="chk-dbg-btn" id="chkDbgCopy">Copiar</button>' +
@@ -387,7 +458,7 @@
                 clear: function () { var b = $('chkDbgBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('chkDbgBody'); if (!b) return;
-                    var txt = '=== DEBUG Checkout CHK-v2-DBG ===\n';
+                    var txt = '=== DEBUG Checkout CHK-v2.4-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -447,6 +518,7 @@
             if (nuevoRoot) {
                 root.replaceWith(nuevoRoot);
                 limpiarDbgDuplicados();
+                window.__chkGuestIndex = 1;
                 chkdbg('Checkout actualizado asíncronamente (' + res.ms + 'ms)', 'ok');
             } else {
                 chkdbg('Respuesta recibida (' + res.ms + 'ms), pero sin #cliCheckoutRoot', 'warn');
@@ -457,12 +529,76 @@
         });
     };
 
-    if (!window.__jsCheckoutClienteV2Listo) {
-        window.__jsCheckoutClienteV2Listo = true;
+    /* ═══ GUARDAR HUÉSPEDES EN rsv.reserva-huespedes.store TRAS CREAR RESERVA ═══ */
+    function registrarHuespedesEnReserva(root, form, reservaId, CSRF) {
+        var storeHuespedUrl = root ? (root.getAttribute('data-store-huesped') || '') : '';
+        var userId = root ? (root.getAttribute('data-user-id') || '') : '';
+        if (!storeHuespedUrl || !reservaId) return Promise.resolve();
+
+        var boxes = form.querySelectorAll('#guestListContainer .guest-box');
+        var promesas = [];
+
+        boxes.forEach(function (box, idx) {
+            var nombre = (box.querySelector('input[name$="[nombre]"]')?.value || '').trim();
+            var apellidos = (box.querySelector('input[name$="[apellidos]"]')?.value || '').trim();
+            var tipoDoc = (box.querySelector('select[name$="[tipo_documento]"]')?.value || 'CC').trim();
+            var numDoc = (box.querySelector('input[name$="[numero_documento]"]')?.value || '').trim();
+            var esTitular = (box.querySelector('input[name$="[es_titular]"]')?.value || (idx === 0 ? '1' : '0'));
+
+            if (!nombre || !numDoc) return;
+
+            var hFd = new FormData();
+            hFd.append('_token', CSRF);
+            hFd.append('_ajax', '1');
+            hFd.append('id_rsv_reservas', reservaId);
+            hFd.append('id_rsv_reserva', reservaId);
+            hFd.append('reserva_id', reservaId);
+            if (userId) {
+                hFd.append('id_user_registrador', userId);
+                hFd.append('id_user', userId);
+            }
+            hFd.append('es_titular', esTitular);
+            hFd.append('nombre', nombre);
+            hFd.append('apellidos', apellidos || 'Titular');
+            hFd.append('tipo_documento', tipoDoc);
+            hFd.append('numero_documento', numDoc);
+
+            chkdbg('POST Huésped #' + (idx + 1) + ' (' + nombre + ' · NIT/Doc: ' + numDoc + ') → ' + storeHuespedUrl, 'net');
+
+            promesas.push(
+                fetch(storeHuespedUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': CSRF,
+                        'Accept': 'application/json, text/html'
+                    },
+                    body: hFd
+                }).then(function (hr) {
+                    if (hr.ok) {
+                        chkdbg('Huésped #' + (idx + 1) + ' guardado OK (HTTP ' + hr.status + ')', 'ok');
+                    } else {
+                        chkdbg('Advertencia al guardar huésped #' + (idx + 1) + ' (HTTP ' + hr.status + ')', 'warn');
+                    }
+                }).catch(function (herr) {
+                    chkdbg('Error red guardando huésped #' + (idx + 1) + ': ' + (herr.message || ''), 'warn');
+                })
+            );
+        });
+
+        return Promise.all(promesas);
+    }
+
+    /* ═══ DELEGACIÓN GLOBAL DE CLICS Y ENVÍOS (sobrevive a swaps AJAX) ═══ */
+    window.__chkGuestIndex = window.__chkGuestIndex || 1;
+
+    if (!window.__jsCheckoutClienteV4Listo) {
+        window.__jsCheckoutClienteV4Listo = true;
 
         document.addEventListener('click', function (e) {
             var t = e.target; if (!t || !t.closest) return;
 
+            // Controles Debug
             if (t.closest('#chkDbgToggle'))  { DBG.togglePanel(); return; }
             if (t.closest('#chkDbgClose'))   { e.stopPropagation(); DBG.close(); return; }
             if (t.closest('#chkDbgClear'))   { e.stopPropagation(); DBG.clear(); return; }
@@ -472,21 +608,59 @@
                 window.chkReloadFragment('manual-btn-dbg');
                 return;
             }
-        });
-    }
 
-    /* ═══ LÓGICA DE HUÉSPEDES Y ENVÍO DE RESERVA ═══ */
-    document.addEventListener("DOMContentLoaded", function () {
-        var root = document.getElementById('cliCheckoutRoot');
-        if (!root) return;
+            var root = document.getElementById('cliCheckoutRoot');
+            if (!root) return;
 
-        var btnAddGuest = document.getElementById('btnAddGuest');
-        var guestList = document.getElementById('guestListContainer');
-        var maxGuests = {{ $capMaxima }};
-        var guestIndex = 1;
+            // ── ACCIÓN RÁPIDA: AGREGARME A MÍ COMO TITULAR (name + nit) ──
+            var btnSelf = t.closest('#btnFillSelfGuest');
+            if (btnSelf) {
+                e.preventDefault();
+                var rawSelf = root.getAttribute('data-self-guest') || '{}';
+                var selfData = {};
+                try { selfData = JSON.parse(rawSelf); } catch (err) {}
 
-        if (btnAddGuest && guestList) {
-            btnAddGuest.addEventListener('click', function() {
+                var inpNombre = root.querySelector('input[name="huespedes[0][nombre]"]');
+                var inpApellidos = root.querySelector('input[name="huespedes[0][apellidos]"]');
+                var selTipo = root.querySelector('select[name="huespedes[0][tipo_documento]"]');
+                var inpDoc = root.querySelector('input[name="huespedes[0][numero_documento]"]');
+
+                if (inpNombre && selfData.nombre) inpNombre.value = selfData.nombre;
+                if (inpApellidos && selfData.apellidos) inpApellidos.value = selfData.apellidos;
+                if (selTipo && selfData.tipo_documento) selTipo.value = selfData.tipo_documento;
+                if (inpDoc && selfData.numero_documento) inpDoc.value = selfData.numero_documento;
+
+                [inpNombre, inpApellidos, selTipo, inpDoc].forEach(function (el) {
+                    if (!el) return;
+                    el.classList.add('self-filled');
+                    setTimeout(function () { el.classList.remove('self-filled'); }, 1400);
+                });
+
+                btnSelf.classList.add('is-applied');
+                var txtSpan = btnSelf.querySelector('.self-btn-txt');
+                if (txtSpan) txtSpan.textContent = '¡Datos cargados!';
+
+                var badge = document.getElementById('titularSelfBadge');
+                if (badge) badge.style.display = 'inline';
+
+                chkdbg('Autocompletado rápido Titular: ' + (selfData.nombre || '') + ' ' + (selfData.apellidos || '') + ' · NIT: ' + (selfData.numero_documento || 'vacío'), 'ok');
+
+                if (inpNombre && !inpNombre.value.trim()) { inpNombre.focus(); }
+                else if (inpApellidos && !inpApellidos.value.trim()) { inpApellidos.focus(); }
+                else if (inpDoc && !inpDoc.value.trim()) {
+                    inpDoc.focus();
+                    chkdbg('La columna nit de este usuario está vacía; complétala manualmente', 'warn');
+                }
+                return;
+            }
+
+            // ── AÑADIR ACOMPAÑANTE ──
+            if (t.closest('#btnAddGuest')) {
+                e.preventDefault();
+                var guestList = document.getElementById('guestListContainer');
+                if (!guestList) return;
+
+                var maxGuests = parseInt(root.getAttribute('data-max-guests') || '6', 10);
                 var currentCount = guestList.children.length;
                 if (currentCount >= maxGuests) {
                     alert('Has alcanzado la capacidad máxima del inmueble (' + maxGuests + ' personas).');
@@ -494,39 +668,36 @@
                     return;
                 }
 
-                var idx = guestIndex++;
+                var idx = window.__chkGuestIndex++;
                 var gBox = document.createElement('div');
                 gBox.className = 'guest-box mb-2 p-2 border rounded bg-white';
-                gBox.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="val" style="font-size:8.5px; color:var(--ink-3);">Acompañante ${currentCount + 1}</span>
-                        <button type="button" class="btn-close" style="font-size:6px;" onclick="this.closest('.guest-box').remove()"></button>
-                    </div>
-                    <div class="row g-2">
-                        <input type="hidden" name="huespedes[${idx}][es_titular]" value="0">
-                        <div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[${idx}][nombre]" placeholder="Nombres" required></div>
-                        <div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[${idx}][apellidos]" placeholder="Apellidos" required></div>
-                        <div class="col-5">
-                            <select class="form-select form-select-sm xls-input" name="huespedes[${idx}][tipo_documento]" required>
-                                <option value="CC">CC</option>
-                                <option value="TI">TI</option>
-                                <option value="RC">RC</option>
-                                <option value="CE">CE</option>
-                                <option value="PAS">PAS</option>
-                            </select>
-                        </div>
-                        <div class="col-7"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[${idx}][numero_documento]" placeholder="N° Documento" required></div>
-                    </div>
-                `;
+                gBox.innerHTML =
+                    '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                        '<span class="val" style="font-size:8.5px; color:var(--ink-3);">Acompañante ' + (currentCount + 1) + '</span>' +
+                        '<button type="button" class="btn-close" style="font-size:6px;" onclick="this.closest(\'.guest-box\').remove()"></button>' +
+                    '</div>' +
+                    '<div class="row g-2">' +
+                        '<input type="hidden" name="huespedes[' + idx + '][es_titular]" value="0">' +
+                        '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][nombre]" placeholder="Nombres" required></div>' +
+                        '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][apellidos]" placeholder="Apellidos" required></div>' +
+                        '<div class="col-5">' +
+                            '<select class="form-select form-select-sm xls-input" name="huespedes[' + idx + '][tipo_documento]" required>' +
+                                '<option value="CC">CC</option>' +
+                                '<option value="TI">TI</option>' +
+                                '<option value="RC">RC</option>' +
+                                '<option value="CE">CE</option>' +
+                                '<option value="PAS">PAS</option>' +
+                            '</select>' +
+                        '</div>' +
+                        '<div class="col-7"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][numero_documento]" placeholder="N° Documento" required></div>' +
+                    '</div>';
                 guestList.appendChild(gBox);
                 chkdbg('Formulario para acompañante añadido (total ' + (currentCount + 1) + ')', 'debug');
-            });
-        }
+                return;
+            }
 
-        // Cancelar (Limpia mediante fragmento asíncrono sin recargar navegador)
-        var btnCancelar = document.getElementById('btnCancelarCheckout');
-        if (btnCancelar) {
-            btnCancelar.addEventListener('click', function(e) {
+            // ── CANCELAR CHECKOUT ──
+            if (t.closest('#btnCancelarCheckout')) {
                 e.preventDefault();
                 chkdbg('Se inició cancelación del checkout', 'info');
                 var cleanUrl = root.getAttribute('data-redirect');
@@ -537,43 +708,47 @@
                     var inicioTab = document.querySelector('[data-bs-target="#nr-sub-inicio"]');
                     if (inicioTab) inicioTab.click();
                 });
-            });
-        }
+                return;
+            }
+        });
 
-        // Procesar Reserva (AJAX Submit)
-        var form = document.getElementById('cliCheckoutForm');
-        if (!form) return;
-
-        var errorAlert = document.getElementById('checkoutAlertError');
-        var CSRF = '{{ csrf_token() }}';
-
-        form.addEventListener('submit', function (e) {
+        // ── PROCESAR RESERVA + REGISTRAR HUÉSPEDES (AJAX SUBMIT DELEGADO) ──
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form || form.id !== 'cliCheckoutForm') return;
             e.preventDefault();
 
+            var root = document.getElementById('cliCheckoutRoot');
+            var guestList = document.getElementById('guestListContainer');
+            var errorAlert = document.getElementById('checkoutAlertError');
+            var CSRF = root ? (root.getAttribute('data-csrf') || '') : '';
+
             var terms = document.getElementById('termsCheck');
-            if (!terms.checked) {
+            if (terms && !terms.checked) {
                 alert('Debes aceptar los lineamientos y condiciones antes de confirmar.');
                 chkdbg('Intento de reserva bloqueado: faltó check de términos', 'warn');
                 return;
             }
 
-            chkdbg('Iniciando confirmación de reserva (incluyendo ' + guestList.children.length + ' huéspedes)...', 'info');
+            var totalHuespedes = guestList ? guestList.children.length : 1;
+            chkdbg('Iniciando confirmación de reserva (incluyendo ' + totalHuespedes + ' huésped(es))...', 'info');
+
             var btn = document.getElementById('btnConfirmarReserva');
             var btnTxt = btn ? btn.querySelector('.btn-txt') : null;
             var originalTxt = btnTxt ? btnTxt.innerHTML : 'Confirmar Reserva Segura';
 
             if (btn) {
                 btn.disabled = true;
-                if(btnTxt) btnTxt.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style="width:8px; height:8px; border-width:1px;"></span> Guardando...';
+                if (btnTxt) btnTxt.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true" style="width:8px; height:8px; border-width:1px;"></span> Guardando...';
             }
 
-            if(errorAlert) errorAlert.classList.add('d-none');
+            if (errorAlert) errorAlert.classList.add('d-none');
 
             var fd = new FormData(form);
-            fd.append('_token', CSRF);
+            if (CSRF) fd.set('_token', CSRF);
 
             var submitUrl = form.getAttribute('data-store');
-            chkdbg('POST a ' + submitUrl, 'net');
+            chkdbg('POST Reserva → ' + submitUrl, 'net');
 
             fetch(submitUrl, {
                 method: 'POST',
@@ -587,15 +762,31 @@
                     return { ok: resp.ok, status: resp.status, json: { message: 'Respuesta no válida del servidor (HTTP ' + resp.status + ')' } };
                 });
             })
-            .then(function(r) {
+            .then(function (r) {
                 var j = r.json || {};
 
-                if (r.ok && (j.ok || j.success || j.reserva)) {
-                    chkdbg('Reserva procesada con ÉXITO. Redirigiendo a Mis Reservas...', 'ok');
-                    alert('¡Reserva confirmada con éxito!');
-                    localStorage.setItem('rsv_cliente_panel_parent', '#cli-reservas');
-                    window.location.href = root.getAttribute('data-redirect');
-                    return;
+                if (r.ok && (j.ok || j.success || j.reserva || j.id)) {
+                    var reservaCreadaId = (j.reserva && j.reserva.id) || j.reserva_id || j.id || null;
+                    var yaGuardoHuespedes = !!(j.huespedes_guardados || (j.reserva && Array.isArray(j.reserva.huespedes) && j.reserva.huespedes.length > 0));
+
+                    var pasoHuespedes = (!yaGuardoHuespedes && reservaCreadaId)
+                        ? registrarHuespedesEnReserva(root, form, reservaCreadaId, CSRF)
+                        : Promise.resolve();
+
+                    return pasoHuespedes.then(function () {
+                        chkdbg('Reserva y huéspedes procesados con ÉXITO. Redirigiendo a Mis Reservas...', 'ok');
+                        alert('¡Reserva confirmada con éxito!');
+                        localStorage.setItem('rsv_cliente_panel_parent', '#cli-reservas');
+                        localStorage.setItem('rsv_cliente_panel_child', '#mr-sub-inicio');
+
+                        // Redirigir siempre a la URL completa del Portal (evitando endpoints /fragmento)
+                        var destino = (root && root.getAttribute('data-redirect')) || window.location.origin + window.location.pathname;
+                        destino = destino.replace(/\/fragmento.*$/i, '').split('?')[0];
+                        if (reservaCreadaId) {
+                            destino += '?reserva_id=' + encodeURIComponent(reservaCreadaId);
+                        }
+                        window.location.href = destino;
+                    });
                 }
 
                 chkdbg('Error del servidor: ' + (j.message || 'Sin detalles'), 'err');
@@ -604,9 +795,9 @@
 
                 if (j.errors) {
                     errorMsg += '<ul style="margin:2px 0 0 0; padding-left:14px;">';
-                    Object.values(j.errors).forEach(function(errArray) {
+                    Object.values(j.errors).forEach(function (errArray) {
                         var msgs = Array.isArray(errArray) ? errArray : [errArray];
-                        msgs.forEach(function(m) {
+                        msgs.forEach(function (m) {
                             errorMsg += '<li>' + m + '</li>';
                             chkdbg('Detalle error: ' + m, 'err');
                         });
@@ -614,26 +805,26 @@
                     errorMsg += '</ul>';
                 }
 
-                if(errorAlert) {
+                if (errorAlert) {
                     errorAlert.innerHTML = errorMsg;
                     errorAlert.classList.remove('d-none');
                 } else {
                     alert('Error:\n' + (j.message || 'Fallo al procesar.'));
                 }
 
-                if (btn) { btn.disabled = false; if(btnTxt) btnTxt.innerHTML = originalTxt; }
+                if (btn) { btn.disabled = false; if (btnTxt) btnTxt.innerHTML = originalTxt; }
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 chkdbg('Fallo de Red AJAX (No hay conexión)', 'err');
-                if(errorAlert) {
+                if (errorAlert) {
                     errorAlert.innerHTML = '<i class="bi bi-wifi-off me-1"></i> Fallo de red. Verifica tu conexión a internet.';
                     errorAlert.classList.remove('d-none');
                 }
-                if (btn) { btn.disabled = false; if(btnTxt) btnTxt.innerHTML = originalTxt; }
+                if (btn) { btn.disabled = false; if (btnTxt) btnTxt.innerHTML = originalTxt; }
             });
         });
-    });
+    }
 
-    chkdbg('Módulo Checkout cargado y activo (CHK-v2-DBG)', 'ok');
+    chkdbg('Módulo Checkout cargado y activo (CHK-v2.4-DBG · Redirección limpia al portal)', 'ok');
 })();
 </script>

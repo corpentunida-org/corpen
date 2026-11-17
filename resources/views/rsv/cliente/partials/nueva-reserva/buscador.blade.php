@@ -1,13 +1,10 @@
-{{-- partials/nueva-reserva/buscador.blade.php · Cliente · Motor de Búsqueda Reactivo sin Reload (RV-v3-DBG) --}}
+{{-- partials/nueva-reserva/buscador.blade.php · Cliente · Motor de Búsqueda Reactivo sin Reload (RV-v3.1-DBG) --}}
 {{-- ══════════════════════════════════════════════════════════════════════
-    NOVEDADES v27-CLI (REACTIVIDAD TOTAL SIN RECARGAR PÁGINA):
-    · Cuadrícula responsiva adaptada al micro-diseño (tarjetas compactas).
-    · Carrusel cuadrado integrado respetando tamaños y radios (3px/4px).
-    · Calendario en Floating Popover minimalista con consulta API asíncrona.
-    · Transición a Checkout 100% AJAX (actualiza URL, sincroniza #cliCheckoutRoot y cambia de pestaña sin recargar el navegador).
-    · MODAL DE MAPA PREMIUM (Responsive, Aspect Ratio 4:3, Botones Waze/GMaps).
-    · MODAL DE DETALLES INTEGRADO (Hero, Features, Gallery, Condiciones).
-    · PANEL DE DEBUG RV-v3-DBG PERSISTENTE Y NORMALIZADO (Diseño TIP-v1.3)
+    NOVEDADES v3.1-DBG:
+    · Recarga fresca (no-store + _t) de disponibilidad cada vez que se abre el popover "Fechas".
+    · Exclusión automática de reservas/bloqueos con estado cancelado o anulado si la API envía objetos detallados.
+    · Limpieza automática de selección previa si alguna fecha cambió de estado.
+    · Escucha eventos globales (rsv:reserva-cancelada / rsv:disponibilidad-actualizada) para invalidar caché al instante.
    ══════════════════════════════════════════════════════════════════════ --}}
 
 @php
@@ -57,13 +54,13 @@
 
 <div id="sheet-buscador-cliente">
 
-    {{-- RV-v3-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="rvDebugToggle" title="Debug Buscador (RV-v3-DBG)">
+    {{-- RV-v3.1-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="rvDebugToggle" title="Debug Buscador (RV-v3.1-DBG)">
         <span class="rv-dbg-led" id="rvDbgLed"></span>DBG<span class="rv-dbg-badge" id="rvDbgBadge">0</span>
     </div>
     <div id="rvDebugPanel" role="dialog" aria-label="Panel de debug del Buscador">
         <div class="rv-dbg-header" id="rvDbgHeader">
-            <span>DEBUG · Buscador Cliente · RV-v3-DBG</span>
+            <span>DEBUG · Buscador Cliente · RV-v3.1-DBG</span>
             <span class="rv-dbg-controls">
                 <button type="button" class="rv-dbg-btn" id="rvDbgRefresh" title="Refrescar fragmento">↻ Frag</button>
                 <button type="button" class="rv-dbg-btn" id="rvDbgCopy">Copiar</button>
@@ -502,7 +499,7 @@
 (function () {
     'use strict';
 
-    /* ═══ PANEL DE DEBUG LOCAL RV-v3-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL RV-v3.1-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.RvDbg && window.RvDbg.alive && window.RvDbg.alive())
         ? window.RvDbg
         : (function () {
@@ -512,7 +509,7 @@
                 var rootDbg = document.querySelector('#sheet-buscador-cliente') || document.body;
                 if (!$('rvDebugToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'rvDebugToggle'; t.title = 'Debug Buscador (RV-v3-DBG)';
+                    t.id = 'rvDebugToggle'; t.title = 'Debug Buscador (RV-v3.1-DBG)';
                     t.innerHTML = '<span class="rv-dbg-led" id="rvDbgLed"></span>DBG<span class="rv-dbg-badge" id="rvDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -520,7 +517,7 @@
                     var p = document.createElement('div');
                     p.id = 'rvDebugPanel';
                     p.innerHTML = '<div class="rv-dbg-header" id="rvDbgHeader">' +
-                        '<span>DEBUG · Buscador Cliente · RV-v3-DBG</span>' +
+                        '<span>DEBUG · Buscador Cliente · RV-v3.1-DBG</span>' +
                         '<span class="rv-dbg-controls">' +
                         '<button type="button" class="rv-dbg-btn" id="rvDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="rv-dbg-btn" id="rvDbgCopy">Copiar</button>' +
@@ -579,7 +576,7 @@
                 clear: function () { var b = $('rvDebugBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('rvDebugBody'); if (!b) return;
-                    var txt = '=== DEBUG Buscador RV-v3-DBG ===\n';
+                    var txt = '=== DEBUG Buscador RV-v3.1-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -657,6 +654,7 @@
         if (t.closest('#rvDbgCopy')) { e.stopPropagation(); DBG.copy(); rvdbg('Bitácora copiada al portapapeles', 'info'); return; }
         if (t.closest('#rvDbgRefresh')) {
             e.stopPropagation();
+            Object.keys(RSV_CAL).forEach(function (k) { delete RSV_CAL[k]; });
             window.rvReloadFragment('manual-btn-dbg');
             return;
         }
@@ -699,6 +697,48 @@
 
     function calFmt(d) { return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2); }
 
+    function esEstadoCancelado(statusTexto) {
+        if (!statusTexto) return false;
+        var st = String(statusTexto).toLowerCase();
+        return st.indexOf('cancela') !== -1 || st.indexOf('anula') !== -1 || st.indexOf('rechaza') !== -1 || st.indexOf('liber') !== -1;
+    }
+
+    // Normaliza la respuesta de la API y descarta fechas que vengan marcadas como canceladas/anuladas
+    function normalizarOcupadas(data) {
+        var raw = data.ocupadas || [];
+        var setFechas = new Set();
+
+        raw.forEach(function (item) {
+            if (typeof item === 'string') {
+                setFechas.add(item.slice(0, 10));
+            } else if (item && typeof item === 'object') {
+                var estado = item.status || item.estado || item.status_name || (item.status_obj && item.status_obj.name) || '';
+                if (esEstadoCancelado(estado) || item.deleted_at) {
+                    return; // Ignorar reservas canceladas o eliminadas
+                }
+                if (item.fecha) {
+                    setFechas.add(String(item.fecha).slice(0, 10));
+                } else if (item.fecha_inicio && item.fecha_fin) {
+                    var cur = new Date(String(item.fecha_inicio).slice(0, 10) + 'T00:00:00');
+                    var fin = new Date(String(item.fecha_fin).slice(0, 10) + 'T00:00:00');
+                    while (cur <= fin) {
+                        setFechas.add(calFmt(cur));
+                        cur.setDate(cur.getDate() + 1);
+                    }
+                }
+            }
+        });
+
+        // Si el backend envía una lista explícita de fechas liberadas por cancelación, las restamos
+        if (Array.isArray(data.canceladas)) {
+            data.canceladas.forEach(function (f) {
+                if (typeof f === 'string') setFechas.delete(f.slice(0, 10));
+            });
+        }
+
+        return Array.from(setFechas);
+    }
+
     function closePopovers() {
         document.querySelectorAll('.rsv-popover').forEach(el => el.style.display = 'none');
     }
@@ -718,26 +758,51 @@
             var hoy = new Date();
             RSV_CAL[id] = { year: hoy.getFullYear(), month: hoy.getMonth(), start: null, end: null, occupied: [] };
             rvdbg('Inicializando calendario flotante para inmueble ID: ' + id, 'info');
-            fetchOccupied(id);
         } else {
-            rvdbg('Reabriendo calendario flotante inmueble ID: ' + id, 'ev');
-            pintarCalendario(id);
+            rvdbg('Reabriendo calendario inmueble ID: ' + id + ' (sincronizando disponibilidad fresca)', 'ev');
+            pintarCalendario(id); // Pintado inmediato mientras llega la respuesta fresca
         }
+        // Siempre consultar disponibilidad fresca al abrir (evita bloqueos fantasma tras cancelar una reserva)
+        fetchOccupied(id);
     }
 
     function fetchOccupied(id) {
         var state = RSV_CAL[id];
-        var url = ENDPOINT_BASE.replace('__INM__', id) + '?year=' + state.year + '&month=' + (state.month + 1);
+        if (!state) return;
+        var url = ENDPOINT_BASE.replace('__INM__', id)
+            + '?year=' + state.year
+            + '&month=' + (state.month + 1)
+            + '&solo_activas=1'
+            + '&_t=' + Date.now();
         var t0 = performance.now();
-        rvdbg('Consultando disponibilidad API: ' + url, 'net');
+        rvdbg('Consultando disponibilidad API (sin caché): ' + url, 'net');
 
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+        fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' },
+            cache: 'no-store'
+        })
             .then(r => r.json())
             .then(data => {
                 var ms = Math.round(performance.now() - t0);
                 if (data.success) {
-                    state.occupied = data.ocupadas || [];
-                    rvdbg('Disponibilidad cargada (inmueble #' + id + ' · ' + ms + 'ms). Días ocupados: ' + state.occupied.length, 'ok');
+                    state.occupied = normalizarOcupadas(data);
+
+                    // Si el usuario tenía un rango seleccionado y alguna fecha ahora está ocupada, limpiar selección
+                    if (state.start) {
+                        var finCheck = state.end || state.start;
+                        var cur = new Date(state.start.getTime());
+                        var invalido = false;
+                        while (cur <= finCheck) {
+                            if (state.occupied.includes(calFmt(cur))) { invalido = true; break; }
+                            cur.setDate(cur.getDate() + 1);
+                        }
+                        if (invalido) {
+                            state.start = null;
+                            state.end = null;
+                        }
+                    }
+
+                    rvdbg('Disponibilidad actualizada (inmueble #' + id + ' · ' + ms + 'ms). Días bloqueados activos: ' + state.occupied.length, 'ok');
                     pintarCalendario(id);
                 } else {
                     rvdbg('Error en API de disponibilidad para inmueble #' + id + ' (' + ms + 'ms)', 'err');
@@ -746,6 +811,18 @@
                 rvdbg('Error de red al consultar disponibilidad: ' + e.message, 'err');
             });
     }
+
+    // Invalidar caché si otro módulo avisa que se canceló o modificó una reserva
+    ['rsv:reserva-cancelada', 'rsv:disponibilidad-actualizada'].forEach(function (evName) {
+        window.addEventListener(evName, function (ev) {
+            var inmId = ev && ev.detail && ev.detail.inmueble_id;
+            if (inmId && RSV_CAL[inmId]) {
+                fetchOccupied(inmId);
+            } else {
+                Object.keys(RSV_CAL).forEach(function (k) { fetchOccupied(k); });
+            }
+        });
+    });
 
     function cambiarMes(direccion, id) {
         let state = RSV_CAL[id];
@@ -944,6 +1021,6 @@
         }
     } catch (e) {}
 
-    rvdbg('Buscador RV-v3-DBG inicializado correctamente · inmuebles=' + {{ $inmuebles->count() }}, 'ok');
+    rvdbg('Buscador RV-v3.1-DBG inicializado correctamente · inmuebles=' + {{ $inmuebles->count() }}, 'ok');
 })();
 </script>
