@@ -1,13 +1,13 @@
-{{-- partials/mis-reservas/itinerario.blade.php · Cliente · Guía de Viaje Reactiva sin Reload (IT-v2-DBG) --}}
+{{-- partials/mis-reservas/itinerario.blade.php · Cliente · Guía de Viaje Reactiva sin Reload (IT-v2.1-DBG) --}}
 <div id="sheet-itinerario-cliente">
 
-    {{-- IT-v2-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="itDbgToggle" title="Debug Itinerario (IT-v2-DBG)">
+    {{-- IT-v2.1-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="itDbgToggle" title="Debug Itinerario (IT-v2.1-DBG)">
         <span class="it-dbg-led" id="itDbgLed"></span>DBG<span class="it-dbg-badge" id="itDbgBadge">0</span>
     </div>
     <div id="itDbgPanel" role="dialog" aria-label="Panel de debug de Itinerario">
         <div class="it-dbg-header" id="itDbgHeader">
-            <span>DEBUG · Itinerario Cliente · IT-v2-DBG</span>
+            <span>DEBUG · Itinerario Cliente · IT-v2.1-DBG</span>
             <span class="it-dbg-controls">
                 <button type="button" class="it-dbg-btn" id="itDbgRefresh" title="Refrescar fragmento desde ClientePortalController">↻ Frag</button>
                 <button type="button" class="it-dbg-btn" id="itDbgCopy">Copiar</button>
@@ -24,7 +24,7 @@
         $misReservas = collect();
         $itErrores = [];
 
-        // 1. Cargamos el listado ligero de reservas del cliente para el selector superior
+        // 1. Cargamos el listado de reservas del cliente para el selector superior
         if ($uid) {
             try {
                 $misReservas = \App\Models\Rsv\Reserva::with([
@@ -38,7 +38,6 @@
                     ])
                     ->where('id_user', $uid)
                     ->orderByDesc('fecha_inicio')
-                    ->limit(25)
                     ->get();
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('cli.itin.list: '.$e->getMessage());
@@ -57,7 +56,7 @@
         if (!$reservaActual && $misReservas->isNotEmpty()) {
             $reservaActual = $misReservas->first(function ($r) {
                 $stName = mb_strtolower(optional($r->status)->name ?? '');
-                return !str_contains($stName, 'cancela') && !str_contains($stName, 'anula');
+                return !str_contains($stName, 'cancela') && !str_contains($stName, 'anula') && !str_contains($stName, 'rechaz');
             }) ?? $misReservas->first();
         }
 
@@ -99,29 +98,33 @@
 
         $pillSt = function ($name) {
             $s = mb_strtolower((string) $name);
-            if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
-            if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
-            if (str_contains($s, 'cancela') || str_contains($s, 'anula')) return 'danger';
+            if (str_contains($s, 'cancela') || str_contains($s, 'anula') || str_contains($s, 'rechaz')) return 'danger';
             if (str_contains($s, 'final') || str_contains($s, 'complet')) return 'primary';
+            if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
+            if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
             return 'secondary';
         };
 
         $inm = $reservaActual?->inmueble;
         $huespedesCnt = ($reservaActual && $reservaActual->relationLoaded('huespedes')) ? $reservaActual->huespedes->count() : 0;
         $capMax = (int) ($inm->capacidad_maxima ?? 6);
+        $stActual = $reservaActual ? (optional($reservaActual->status)->name ?? 'Pendiente') : null;
+        $stGroupActual = $stActual ? $pillSt($stActual) : 'secondary';
 
         $itDbgData = [
-            'version'     => 'IT-v2-DBG',
-            'controlador' => 'ClientePortalController@misReservasItinerarioFragmento',
-            'vista'       => 'partials/mis-reservas/itinerario.blade.php',
-            'total_res'   => $misReservas->count(),
-            'reserva_id'  => $reservaActual ? $reservaActual->id : null,
-            'reserva_cod' => $reservaActual ? $reservaActual->codigo_reserva : null,
-            'inmueble'    => $inm ? $inm->name : null,
-            'eventos_bd'  => $eventosList->count(),
-            'huespedes'   => $huespedesCnt . '/' . $capMax,
-            'frag_url'    => $rutaFragmento ?: 'fallback location',
-            'errores'     => $itErrores,
+            'version'      => 'IT-v2.1-DBG',
+            'controlador'  => 'ClientePortalController@misReservasItinerarioFragmento',
+            'vista'        => 'partials/mis-reservas/itinerario.blade.php',
+            'total_res'    => $misReservas->count(),
+            'reserva_id'   => $reservaActual ? $reservaActual->id : null,
+            'reserva_cod'  => $reservaActual ? $reservaActual->codigo_reserva : null,
+            'estado'       => $stActual,
+            'estado_grupo' => $stGroupActual,
+            'inmueble'     => $inm ? $inm->name : null,
+            'eventos_bd'   => $eventosList->count(),
+            'huespedes'    => $huespedesCnt . '/' . $capMax,
+            'frag_url'     => $rutaFragmento ?: 'fallback location',
+            'errores'      => $itErrores,
         ];
     @endphp
 
@@ -130,6 +133,8 @@
          data-fragkey="reservas-itinerario"
          data-reserva-id="{{ $reservaActual ? $reservaActual->id : '' }}"
          data-reserva-cod="{{ $reservaActual ? $reservaActual->codigo_reserva : '' }}"
+         data-estado="{{ $stActual ?? '' }}"
+         data-estado-grupo="{{ $stGroupActual }}"
          data-inmueble="{{ $inm ? $inm->name : '' }}"
          data-eventos="{{ $eventosList->count() }}"
          data-cupo="{{ $huespedesCnt }}/{{ $capMax }}"
@@ -149,9 +154,21 @@
             .it-select-res {
                 font-size:9px; font-weight:600; color:var(--ink-2); background:var(--head);
                 border:1px solid var(--grid-2); border-radius:6px; padding:4px 10px;
-                outline:0; cursor:pointer; max-width:260px;
+                outline:0; cursor:pointer; max-width:320px;
             }
             .it-select-res:focus { border-color:var(--accent-bd); background:#fff; }
+
+            /* ── BANNER VALIDACIÓN DE ESTADO DE RESERVA SELECCIONADA ── */
+            .it-status-banner {
+                border-radius:8px; padding:10px 14px; margin-bottom:12px;
+                display:flex; align-items:center; justify-content:space-between;
+                flex-wrap:wrap; gap:10px; border:1px solid;
+            }
+            .it-status-banner.st-success { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+            .it-status-banner.st-warning { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+            .it-status-banner.st-danger  { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+            .it-status-banner.st-primary { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+            .it-status-banner.st-secondary { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
 
             /* ── CABECERA DE VIAJE (HERO COMPACTO) ── */
             .it-summary-card {
@@ -213,6 +230,7 @@
             .it-ev-dot.dot-checkin  { background:#10b981; border-color:#dcfce7; }
             .it-ev-dot.dot-event    { background:#3b82f6; border-color:#dbeafe; }
             .it-ev-dot.dot-checkout { background:#64748b; border-color:#e2e8f0; }
+            .it-ev-dot.dot-danger   { background:#ef4444; border-color:#fee2e2; }
 
             .it-ev-card {
                 background:#fff; border:1px solid var(--grid); border-radius:8px;
@@ -249,14 +267,16 @@
             .it-dbg-info { color:#93c5fd; } .it-dbg-ok { color:#86efac; } .it-dbg-warn { color:#fde68a; } .it-dbg-err { color:#fca5a5; } .it-dbg-net { color:#c4b5fd; } .it-dbg-ev { color:#f9a8d4; }
         </style>
 
-        {{-- BARRA SUPERIOR: TÍTULO + SELECTOR REACTIVO DE RESERVA (SIN RELOAD) --}}
+        {{-- BARRA SUPERIOR: TÍTULO + SELECTOR REACTIVO DE RESERVA CON ESTADO (SIN RELOAD) --}}
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap" style="gap:8px; border-color:var(--grid) !important;">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="val" style="font-size:11px;">
                     <i class="bi bi-compass text-success me-1"></i> Guía de Viaje e Itinerario
                 </span>
-                @if($reservaActual && !$rid)
-                    <span class="sub">(Mostrando última reserva activa)</span>
+                @if($reservaActual)
+                    <span class="pill pill-{{ $stGroupActual }}" id="itHeaderEstadoPill">
+                        Estado: {{ $stActual }}
+                    </span>
                 @endif
             </div>
 
@@ -267,11 +287,13 @@
                         @foreach($misReservas as $mr)
                             @php
                                 $mrFi = $mr->fecha_inicio ? \Carbon\Carbon::parse($mr->fecha_inicio)->format('d/m/y') : '—';
+                                $mrSt = optional($mr->status)->name ?? 'Pendiente';
                             @endphp
                             <option value="{{ $mr->id }}"
                                     data-cod="{{ $mr->codigo_reserva }}"
+                                    data-estado="{{ $mrSt }}"
                                     {{ ($reservaActual && $reservaActual->id === $mr->id) ? 'selected' : '' }}>
-                                #{{ $mr->codigo_reserva }} · {{ optional($mr->inmueble)->name ?? 'Inmueble' }} ({{ $mrFi }})
+                                #{{ $mr->codigo_reserva }} · {{ optional($mr->inmueble)->name ?? 'Inmueble' }} ({{ $mrFi }}) · [{{ $mrSt }}]
                             </option>
                         @endforeach
                     </select>
@@ -295,14 +317,63 @@
                 $fi = $reservaActual->fecha_inicio ? \Carbon\Carbon::parse($reservaActual->fecha_inicio) : null;
                 $ff = $reservaActual->fecha_fin ? \Carbon\Carbon::parse($reservaActual->fecha_fin) : null;
                 $noches = ($fi && $ff) ? max(1, (int) $fi->diffInDays($ff)) : 0;
-                $st = optional($reservaActual->status)->name ?? 'Pendiente';
-                $stGroup = $pillSt($st);
+                $st = $stActual;
+                $stGroup = $stGroupActual;
                 $mapQuery = urlencode($inm->ubicacion ?? $inm->city ?? $inm->name ?? 'Colombia');
                 $tarifa = $inm?->latestTarifa;
 
                 $hoy = \Carbon\Carbon::today();
                 $diasParaLlegada = $fi ? (int) $hoy->diffInDays($fi->copy()->startOfDay(), false) : null;
             @endphp
+
+            {{-- TARJETA DE VALIDACIÓN DE ESTADO DE LA RESERVA SELECCIONADA --}}
+            <div class="it-status-banner st-{{ $stGroup }}" id="itStatusBanner">
+                <div class="d-flex align-items-center gap-2" style="min-width:0; flex:1;">
+                    @if($stGroup === 'danger')
+                        <i class="bi bi-x-octagon-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva Cancelada (#{{ $reservaActual->codigo_reserva }})</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Esta reserva se encuentra en estado <b>{{ $st }}</b>; el itinerario ya no está vigente y las fechas fueron liberadas.
+                                @if(!empty($reservaActual->comentario_reserva))
+                                    <span class="d-block mt-1 fst-italic">Nota: "{{ $reservaActual->comentario_reserva }}"</span>
+                                @endif
+                            </div>
+                        </div>
+                    @elseif($stGroup === 'warning')
+                        <i class="bi bi-hourglass-split" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva en Estado: {{ $st }}</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Tu cupo está reservado provisionalmente. Recuerda validar tu pago dentro del plazo establecido para confirmar el check-in.
+                            </div>
+                        </div>
+                    @elseif($stGroup === 'success')
+                        <i class="bi bi-check-circle-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva {{ $st }} · Lista para tu viaje</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Tu estadía está habilitada. Revisa los horarios de ingreso y asegúrate de tener registrados a tus acompañantes.
+                            </div>
+                        </div>
+                    @elseif($stGroup === 'primary')
+                        <i class="bi bi-flag-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva {{ $st }}</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Esta estadía ya concluyó. Puedes consultar aquí el registro histórico de tu viaje.
+                            </div>
+                        </div>
+                    @else
+                        <i class="bi bi-info-circle-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Estado Actual: {{ $st }}</div>
+                            <div style="font-size:8px; opacity:.9;">Consulta los detalles operativos de la reserva #{{ $reservaActual->codigo_reserva }}.</div>
+                        </div>
+                    @endif
+                </div>
+                <span class="pill pill-{{ $stGroup }}">{{ $st }}</span>
+            </div>
 
             {{-- RESUMEN COMPACTO DE LA PROPIEDAD Y ACCESOS DISCRETOS --}}
             <div class="it-summary-card">
@@ -323,7 +394,9 @@
                         <div class="sub text-truncate mt-1">
                             <i class="bi bi-geo-alt text-danger me-1"></i>{{ $inm->city ?? $inm->ubicacion ?? 'Ubicación confirmada' }}
                             <span class="mx-1">·</span> {{ $huespedesCnt }}/{{ $capMax }} huéspedes
-                            @if(!is_null($diasParaLlegada))
+                            @if($stGroup === 'danger')
+                                <span class="mx-1">·</span> <b class="text-danger">Cancelada</b>
+                            @elseif(!is_null($diasParaLlegada))
                                 <span class="mx-1">·</span>
                                 @if($diasParaLlegada > 0)
                                     <b style="color:var(--accent);">Faltan {{ $diasParaLlegada }} día(s)</b>
@@ -386,7 +459,7 @@
             <div class="it-timeline">
                 {{-- Hito 1: Ingreso y Entrega de Llaves --}}
                 <div class="it-ev-item">
-                    <div class="it-ev-dot dot-checkin"></div>
+                    <div class="it-ev-dot {{ $stGroup === 'danger' ? 'dot-danger' : 'dot-checkin' }}"></div>
                     <div class="it-ev-card js-it-ev-toggle" data-ev-title="Check-in y Entrega de Llaves">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -437,7 +510,7 @@
 
                 {{-- Hito Final: Salida e Inventario --}}
                 <div class="it-ev-item">
-                    <div class="it-ev-dot dot-checkout"></div>
+                    <div class="it-ev-dot {{ $stGroup === 'danger' ? 'dot-danger' : 'dot-checkout' }}"></div>
                     <div class="it-ev-card js-it-ev-toggle" data-ev-title="Check-out y Devolución del Inmueble">
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
@@ -513,7 +586,7 @@
 (function () {
     'use strict';
 
-    /* ═══ PANEL DE DEBUG LOCAL IT-v2-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL IT-v2.1-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.ItDbg && window.ItDbg.alive && window.ItDbg.alive())
         ? window.ItDbg
         : (function () {
@@ -523,7 +596,7 @@
                 var rootDbg = document.querySelector('#sheet-itinerario-cliente') || document.body;
                 if (!$('itDbgToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'itDbgToggle'; t.title = 'Debug Itinerario (IT-v2-DBG)';
+                    t.id = 'itDbgToggle'; t.title = 'Debug Itinerario (IT-v2.1-DBG)';
                     t.innerHTML = '<span class="it-dbg-led" id="itDbgLed"></span>DBG<span class="it-dbg-badge" id="itDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -531,9 +604,9 @@
                     var p = document.createElement('div');
                     p.id = 'itDbgPanel';
                     p.innerHTML = '<div class="it-dbg-header" id="itDbgHeader">' +
-                        '<span>DEBUG · Itinerario Cliente · IT-v2-DBG</span>' +
+                        '<span>DEBUG · Itinerario Cliente · IT-v2.1-DBG</span>' +
                         '<span class="it-dbg-controls">' +
-                        '<button type="button" class="it-dbg-btn" id="itDbgRefresh">↻ Frag</button>' +
+                        '<button type="button" class="it-dbg-btn" id="itDbgRefresh" title="Refrescar fragmento desde ClientePortalController">↻ Frag</button>' +
                         '<button type="button" class="it-dbg-btn" id="itDbgCopy">Copiar</button>' +
                         '<button type="button" class="it-dbg-btn" id="itDbgClear">Limpiar</button>' +
                         '<button type="button" class="it-dbg-btn" id="itDbgClose">✕</button>' +
@@ -590,7 +663,7 @@
                 clear: function () { var b = $('itDbgBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('itDbgBody'); if (!b) return;
-                    var txt = '=== DEBUG Itinerario IT-v2-DBG ===\n';
+                    var txt = '=== DEBUG Itinerario IT-v2.1-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -664,10 +737,11 @@
                 root.replaceWith(nuevoRoot);
                 limpiarDbgDuplicados();
                 var cod = nuevoRoot.getAttribute('data-reserva-cod') || '?';
+                var est = nuevoRoot.getAttribute('data-estado') || '?';
                 var inm = nuevoRoot.getAttribute('data-inmueble') || '?';
                 var evs = nuevoRoot.getAttribute('data-eventos') || '0';
                 var cup = nuevoRoot.getAttribute('data-cupo') || '0/0';
-                itdbg('Fragmento actualizado (' + res.ms + 'ms) · reserva=#' + cod + ' · inmueble="' + inm + '" · eventos=' + evs + ' · cupo=' + cup, 'ok');
+                itdbg('Fragmento actualizado (' + res.ms + 'ms) · reserva=#' + cod + ' · estado=[' + est + '] · inmueble="' + inm + '" · eventos=' + evs + ' · cupo=' + cup, 'ok');
             } else {
                 itdbg('Respuesta recibida (' + res.ms + 'ms), pero sin nodo #cliItinRoot (posible alerta del controlador)', 'warn');
             }
@@ -749,7 +823,8 @@
 
             var opt = t.options[t.selectedIndex];
             var cod = opt ? opt.getAttribute('data-cod') : t.value;
-            itdbg('Selector: Cambio a reserva #' + cod + ' (id=' + t.value + ')', 'ev');
+            var est = opt ? opt.getAttribute('data-estado') : '';
+            itdbg('Selector: Cambio a reserva #' + cod + ' (id=' + t.value + ' · estado=[' + est + '])', 'ev');
 
             window.itReloadFragment(t.value, 'cambio-reserva');
 
@@ -761,7 +836,8 @@
     }
 
     var SRV = @json($itDbgData);
-    itdbg('IT-v2-DBG activo · reserva=' + (SRV && SRV.reserva_cod ? '#' + SRV.reserva_cod : 'ninguna') +
+    itdbg('IT-v2.1-DBG activo · reserva=' + (SRV && SRV.reserva_cod ? '#' + SRV.reserva_cod : 'ninguna') +
+          ' · estado=[' + (SRV && SRV.estado ? SRV.estado : '-') + ']' +
           ' · inmueble="' + (SRV && SRV.inmueble ? SRV.inmueble : '-') + '"' +
           ' · eventos BD=' + (SRV ? SRV.eventos_bd : 0) +
           ' · huéspedes=' + (SRV ? SRV.huespedes : '0/0'), 'ok');

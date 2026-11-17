@@ -1,13 +1,13 @@
-{{-- partials/mis-reservas/huespedes.blade.php · Cliente · Gestión Reactiva sin Reload (HU-v3-DBG) --}}
+{{-- partials/mis-reservas/huespedes.blade.php · Cliente · Gestión Reactiva sin Reload (HU-v3.1-DBG) --}}
 <div id="sheet-huespedes-cliente">
 
-    {{-- HU-v3-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="huDbgToggle" title="Debug Huéspedes (HU-v3-DBG)">
+    {{-- HU-v3.1-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="huDbgToggle" title="Debug Huéspedes (HU-v3.1-DBG)">
         <span class="hu-dbg-led" id="huDbgLed"></span>DBG<span class="hu-dbg-badge" id="huDbgBadge">0</span>
     </div>
     <div id="huDbgPanel" role="dialog" aria-label="Panel de debug de Huéspedes">
         <div class="hu-dbg-header" id="huDbgHeader">
-            <span>DEBUG · Huéspedes Cliente · HU-v3-DBG</span>
+            <span>DEBUG · Huéspedes Cliente · HU-v3.1-DBG</span>
             <span class="hu-dbg-controls">
                 <button type="button" class="hu-dbg-btn" id="huDbgRefresh" title="Refrescar fragmento desde ClientePortalController">↻ Frag</button>
                 <button type="button" class="hu-dbg-btn" id="huDbgCopy">Copiar</button>
@@ -24,13 +24,13 @@
         $rid = request('reserva_id') ?? request('id_reserva');
         $huErrores = [];
 
-        // Datos del Usuario para pre-llenar Paso 1 (Titular)
+        // Datos del Usuario para pre-llenar Paso 1 (Titular) usando columnas name y nit
         $userFullName  = trim((string) ($authUser->name ?? ''));
         $userFirstName = $authUser->nombres ?? $authUser->first_name ?? $authUser->nombre ?? '';
         $userLastName  = $authUser->apellidos ?? $authUser->last_name ?? $authUser->apellido ?? '';
 
         if (!$userFirstName && $userFullName !== '') {
-            $partes = preg_split('/\s+/', $userFullName);
+            $partes = preg_split('/\s+/', $userFullName, -1, PREG_SPLIT_NO_EMPTY);
             if (count($partes) === 1) {
                 $userFirstName = $partes[0];
                 $userLastName  = 'Titular';
@@ -46,8 +46,14 @@
             }
         }
 
-        $userTipoDoc = $authUser->tipo_documento ?? $authUser->document_type ?? 'CC';
-        $userNumDoc  = $authUser->numero_documento ?? $authUser->documento ?? $authUser->cedula ?? $authUser->identification ?? $authUser->dni ?? '';
+        $userTipoDoc = strtoupper(trim((string) ($authUser->tipo_documento ?? $authUser->document_type ?? 'CC')));
+        $userNumDoc  = trim((string) (
+            $authUser->nit
+            ?? $authUser->numero_documento
+            ?? $authUser->documento
+            ?? $authUser->cedula
+            ?? ''
+        ));
 
         // 1. Aprovechar las colecciones enviadas por ClientePortalController@misReservasHuespedesFragmento
         $colActivas = isset($activas) && $activas instanceof \Illuminate\Support\Collection ? $activas : collect();
@@ -60,7 +66,6 @@
                 $misReservas = \App\Models\Rsv\Reserva::with(['inmueble', 'status'])
                     ->where('id_user', $uid)
                     ->orderByDesc('fecha_inicio')
-                    ->limit(25)
                     ->get();
             } catch (\Throwable $e) {
                 $huErrores[] = 'Reserva query: ' . $e->getMessage();
@@ -83,11 +88,11 @@
         if (!$reserva && $misReservas->isNotEmpty()) {
             $reserva = $misReservas->first(function ($r) {
                 $stName = mb_strtolower(optional($r->status)->name ?? '');
-                return !str_contains($stName, 'cancela') && !str_contains($stName, 'anula');
+                return !str_contains($stName, 'cancela') && !str_contains($stName, 'anula') && !str_contains($stName, 'rechaz');
             }) ?? $misReservas->first();
         }
 
-        // 2. Filtrar los huéspedes de la reserva seleccionada (usando $huespedes del controlador o relación)
+        // 2. Filtrar los huéspedes de la reserva seleccionada
         $huespedesReserva = collect();
         if ($reserva) {
             if (isset($huespedes) && $huespedes instanceof \Illuminate\Support\Collection && $huespedes->isNotEmpty()) {
@@ -96,7 +101,6 @@
                     return (int) $fk === (int) $reserva->id;
                 })->sortByDesc('es_titular')->values();
             }
-            // Consultamos siempre la relación fresca de esa reserva para garantizar exactitud tras insertar
             try {
                 $huespedesReserva = $reserva->huespedes()
                     ->with('registrador:id,name')
@@ -140,22 +144,36 @@
             if (\Illuminate\Support\Facades\Route::has($rn)) { $nombreRutaDestroy = $rn; break; }
         }
 
+        $pillSt = function ($name) {
+            $s = mb_strtolower((string) $name);
+            if (str_contains($s, 'cancela') || str_contains($s, 'anula') || str_contains($s, 'rechaz')) return 'danger';
+            if (str_contains($s, 'final') || str_contains($s, 'complet')) return 'primary';
+            if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
+            if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
+            return 'secondary';
+        };
+
         $inm = $reserva?->inmueble;
         $capMaxima   = (int) ($inm->capacidad_maxima ?? 6);
         $ocupados    = $huespedesReserva->count();
         $disponibles = max(0, $capMaxima - $ocupados);
         $pctCupo     = $capMaxima > 0 ? min(100, round(($ocupados / $capMaxima) * 100)) : 0;
 
-        $stNombre = optional($reserva?->status)->name ?? 'Pendiente';
-        $stLower  = mb_strtolower($stNombre);
-        $bloqueadaPorEstado = str_contains($stLower, 'cancela') || str_contains($stLower, 'anula') || str_contains($stLower, 'final');
+        $stNombre  = optional($reserva?->status)->name ?? 'Pendiente';
+        $stGroup   = $pillSt($stNombre);
+        $esCancelada  = ($stGroup === 'danger');
+        $esFinalizada = ($stGroup === 'primary');
+        $bloqueadaPorEstado = $esCancelada || $esFinalizada;
 
         $huDbgData = [
-            'version'       => 'HU-v3-DBG',
+            'version'       => 'HU-v3.1-DBG',
             'controlador'   => 'ClientePortalController@misReservasHuespedesFragmento',
             'vista'         => 'partials/mis-reservas/huespedes.blade.php',
             'reserva_id'    => $reserva ? $reserva->id : null,
             'reserva_cod'   => $reserva ? $reserva->codigo_reserva : null,
+            'estado'        => $reserva ? $stNombre : null,
+            'estado_grupo'  => $stGroup,
+            'bloqueada'     => $bloqueadaPorEstado,
             'tiene_titular' => $tieneTitular,
             'ocupados'      => $ocupados,
             'cap_maxima'    => $capMaxima,
@@ -171,6 +189,8 @@
          data-fragkey="reservas-huespedes"
          data-reserva-id="{{ $reserva ? $reserva->id : '' }}"
          data-reserva-cod="{{ $reserva ? $reserva->codigo_reserva : '' }}"
+         data-estado="{{ $reserva ? $stNombre : '' }}"
+         data-estado-grupo="{{ $stGroup }}"
          data-titular="{{ $tieneTitular ? 'SI' : 'PENDIENTE' }}"
          data-cupo="{{ $ocupados }}/{{ $capMaxima }}"
          style="border-color:#f1f5f9 !important;">
@@ -188,9 +208,21 @@
             .hu-select-res {
                 font-size:9px; font-weight:600; color:var(--ink-2); background:var(--head);
                 border:1px solid var(--grid-2); border-radius:6px; padding:4px 10px;
-                outline:0; cursor:pointer; max-width:260px;
+                outline:0; cursor:pointer; max-width:320px;
             }
             .hu-select-res:focus { border-color:var(--accent-bd); background:#fff; }
+
+            /* ── BANNER VALIDACIÓN DE ESTADO DE RESERVA SELECCIONADA ── */
+            .hu-status-banner {
+                border-radius:8px; padding:10px 14px; margin-bottom:12px;
+                display:flex; align-items:center; justify-content:space-between;
+                flex-wrap:wrap; gap:10px; border:1px solid;
+            }
+            .hu-status-banner.st-success   { background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+            .hu-status-banner.st-warning   { background:#fffbeb; border-color:#fde68a; color:#92400e; }
+            .hu-status-banner.st-danger    { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
+            .hu-status-banner.st-primary   { background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+            .hu-status-banner.st-secondary { background:#f8fafc; border-color:#e2e8f0; color:#475569; }
 
             .hu-quota-card {
                 background:#fff; border:1px solid var(--grid-2); border-radius:10px;
@@ -261,8 +293,10 @@
                 border-radius:12px; font-size:7.5px; font-weight:700; border:1px solid;
                 text-transform:uppercase; letter-spacing:.3px;
             }
-            .reservas-soft .pill-success { color:#15803d; background:#f0fdf4; border-color:#dcfce7; }
-            .reservas-soft .pill-warning { color:#b45309; background:#fffbeb; border-color:#fef3c7; }
+            .reservas-soft .pill-success   { color:#15803d; background:#f0fdf4; border-color:#dcfce7; }
+            .reservas-soft .pill-warning   { color:#b45309; background:#fffbeb; border-color:#fef3c7; }
+            .reservas-soft .pill-danger    { color:#b91c1c; background:#fef2f2; border-color:#fee2e2; }
+            .reservas-soft .pill-primary   { color:#1d4ed8; background:#eff6ff; border-color:#dbeafe; }
             .reservas-soft .pill-secondary { color:#64748b; background:#f8fafc; border-color:#e2e8f0; }
 
             .hu-alert-err { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:6px; padding:8px 10px; font-size:8.5px; margin-bottom:10px; }
@@ -286,15 +320,18 @@
             .hu-dbg-info { color:#93c5fd; } .hu-dbg-ok { color:#86efac; } .hu-dbg-warn { color:#fde68a; } .hu-dbg-err { color:#fca5a5; } .hu-dbg-net { color:#c4b5fd; } .hu-dbg-ev { color:#f9a8d4; }
         </style>
 
-        {{-- BARRA SUPERIOR: TÍTULO + SELECTOR REACTIVO DE RESERVA --}}
+        {{-- BARRA SUPERIOR: TÍTULO + ESTADO + SELECTOR REACTIVO DE RESERVA --}}
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap" style="gap:8px; border-color:var(--grid) !important;">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="val" style="font-size:11px;">
                     <i class="bi bi-people-fill text-success me-1"></i> Gestión de Huéspedes y Cupos
                 </span>
+                @if($reserva)
+                    <span class="pill pill-{{ $stGroup }}">Estado: {{ $stNombre }}</span>
+                @endif
                 @if($tieneTitular)
                     <span class="pill pill-success"><i class="bi bi-person-check-fill me-1"></i>Titular incluido</span>
-                @elseif($reserva)
+                @elseif($reserva && !$bloqueadaPorEstado)
                     <span class="pill pill-warning"><i class="bi bi-exclamation-circle me-1"></i>Falta incluir Titular</span>
                 @endif
             </div>
@@ -304,11 +341,15 @@
                     <span class="sub d-none d-sm-inline">Reserva:</span>
                     <select class="hu-select-res" id="huSelectReserva">
                         @foreach($misReservas as $mr)
-                            @php $mrFi = $mr->fecha_inicio ? \Carbon\Carbon::parse($mr->fecha_inicio)->format('d/m/y') : '—'; @endphp
+                            @php
+                                $mrFi = $mr->fecha_inicio ? \Carbon\Carbon::parse($mr->fecha_inicio)->format('d/m/y') : '—';
+                                $mrSt = optional($mr->status)->name ?? 'Pendiente';
+                            @endphp
                             <option value="{{ $mr->id }}"
                                     data-cod="{{ $mr->codigo_reserva }}"
+                                    data-estado="{{ $mrSt }}"
                                     {{ ($reserva && $reserva->id === $mr->id) ? 'selected' : '' }}>
-                                #{{ $mr->codigo_reserva }} · {{ optional($mr->inmueble)->name ?? 'Inmueble' }} ({{ $mrFi }})
+                                #{{ $mr->codigo_reserva }} · {{ optional($mr->inmueble)->name ?? 'Inmueble' }} ({{ $mrFi }}) · [{{ $mrSt }}]
                             </option>
                         @endforeach
                     </select>
@@ -328,6 +369,46 @@
         @else
 
             <div id="huMainAlert" class="d-none"></div>
+
+            {{-- BANNER DE VALIDACIÓN DE ESTADO DE LA RESERVA SELECCIONADA --}}
+            <div class="hu-status-banner st-{{ $stGroup }}">
+                <div class="d-flex align-items-center gap-2" style="min-width:0; flex:1;">
+                    @if($esCancelada)
+                        <i class="bi bi-x-octagon-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva Cancelada (#{{ $reserva->codigo_reserva }})</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Esta reserva se encuentra en estado <b>{{ $stNombre }}</b>. No se permite agregar ni modificar huéspedes.
+                            </div>
+                        </div>
+                    @elseif($esFinalizada)
+                        <i class="bi bi-flag-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva {{ $stNombre }} (#{{ $reserva->codigo_reserva }})</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Esta estadía ya concluyó. El listado de huéspedes se muestra únicamente en modo consulta.
+                            </div>
+                        </div>
+                    @elseif($stGroup === 'warning')
+                        <i class="bi bi-hourglass-split" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva en Estado: {{ $stNombre }}</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Puedes registrar al titular y tus acompañantes ahora mientras completas la validación o soporte de pago.
+                            </div>
+                        </div>
+                    @else
+                        <i class="bi bi-check-circle-fill" style="font-size:15px;"></i>
+                        <div>
+                            <div style="font-size:9.5px; font-weight:800;">Reserva {{ $stNombre }} · Gestión de cupos habilitada</div>
+                            <div style="font-size:8px; opacity:.9;">
+                                Puedes agregar, editar o retirar acompañantes antes del ingreso al inmueble.
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                <span class="pill pill-{{ $stGroup }}">{{ $stNombre }}</span>
+            </div>
 
             {{-- ==================================================================== --}}
             {{-- PASO 1 OBLIGATORIO: INCLUIR PRIMERO AL USUARIO TITULAR DE LA RESERVA --}}
@@ -395,18 +476,22 @@
                     <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
                         <span class="val" style="font-size:11.5px;">{{ $inm->name ?? 'Propiedad' }}</span>
                         <span class="sub">#{{ $reserva->codigo_reserva }}</span>
-                        <span class="pill {{ $disponibles > 0 ? 'pill-success' : 'pill-warning' }}">
+                        <span class="pill {{ $bloqueadaPorEstado ? 'pill-' . $stGroup : ($disponibles > 0 ? 'pill-success' : 'pill-warning') }}">
                             Ocupados: {{ $ocupados }} de {{ $capMaxima }} cupos
                         </span>
-                        @if($disponibles > 0)
+                        @if(!$bloqueadaPorEstado && $disponibles > 0)
                             <span class="pill pill-secondary">Faltan {{ $disponibles }} por completar</span>
                         @endif
                     </div>
                     <div class="progress my-1" style="height:5px; max-width:300px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ $pctCupo }}%;"></div>
+                        <div class="progress-bar {{ $esCancelada ? 'bg-danger' : 'bg-success' }}" role="progressbar" style="width: {{ $pctCupo }}%;"></div>
                     </div>
                     <span class="sub">
-                        @if(!$tieneTitular)
+                        @if($esCancelada)
+                            <i class="bi bi-x-circle text-danger me-1"></i> Esta reserva fue cancelada; los cupos ya no se encuentran activos.
+                        @elseif($esFinalizada)
+                            <i class="bi bi-check2-all text-primary me-1"></i> Estadía finalizada. Registro histórico de asistentes.
+                        @elseif(!$tieneTitular)
                             <i class="bi bi-lock-fill text-warning me-1"></i> Confirma primero tu registro como <b>Titular</b> arriba para desbloquear los acompañantes.
                         @elseif($disponibles > 0)
                             Ya estás incluido como Titular. Puedes agregar los <b>{{ $disponibles }}</b> acompañantes restantes ahora o el día de la reserva.
@@ -509,7 +594,7 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2">
-                            <span class="sub d-none d-sm-inline">Actualizar</span>
+                            <span class="sub d-none d-sm-inline">{{ $bloqueadaPorEstado ? 'Ver' : 'Actualizar' }}</span>
                             <i class="bi bi-chevron-right hu-chevron"></i>
                         </div>
                     </div>
@@ -566,13 +651,17 @@
                                 </div>
                             </form>
                         @else
-                            <div class="sub">Esta reserva no permite modificaciones adicionales.</div>
+                            <div class="sub">Esta reserva se encuentra en estado <b>{{ $stNombre }}</b> y no permite modificaciones adicionales.</div>
                         @endif
                     </div>
                 </div>
             @empty
                 <div class="text-center py-4 bg-light border rounded-3" style="border-style:dashed !important;">
-                    <span class="sub d-block">Oprime arriba <b>"Incluirme como Titular"</b> para registrar el primer cupo de esta reserva.</span>
+                    @if($bloqueadaPorEstado)
+                        <span class="sub d-block">No se registraron huéspedes en esta reserva ({{ $stNombre }}).</span>
+                    @else
+                        <span class="sub d-block">Oprime arriba <b>"Incluirme como Titular"</b> para registrar el primer cupo de esta reserva.</span>
+                    @endif
                 </div>
             @endforelse
 
@@ -585,7 +674,7 @@
 (function () {
     'use strict';
 
-    /* ═══ PANEL DE DEBUG LOCAL HU-v3-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL HU-v3.1-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.HuDbg && window.HuDbg.alive && window.HuDbg.alive())
         ? window.HuDbg
         : (function () {
@@ -595,7 +684,7 @@
                 var rootDbg = document.querySelector('#sheet-huespedes-cliente') || document.body;
                 if (!$('huDbgToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'huDbgToggle'; t.title = 'Debug Huéspedes (HU-v3-DBG)';
+                    t.id = 'huDbgToggle'; t.title = 'Debug Huéspedes (HU-v3.1-DBG)';
                     t.innerHTML = '<span class="hu-dbg-led" id="huDbgLed"></span>DBG<span class="hu-dbg-badge" id="huDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -603,7 +692,7 @@
                     var p = document.createElement('div');
                     p.id = 'huDbgPanel';
                     p.innerHTML = '<div class="hu-dbg-header" id="huDbgHeader">' +
-                        '<span>DEBUG · Huéspedes Cliente · HU-v3-DBG</span>' +
+                        '<span>DEBUG · Huéspedes Cliente · HU-v3.1-DBG</span>' +
                         '<span class="hu-dbg-controls">' +
                         '<button type="button" class="hu-dbg-btn" id="huDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="hu-dbg-btn" id="huDbgCopy">Copiar</button>' +
@@ -662,7 +751,7 @@
                 clear: function () { var b = $('huDbgBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('huDbgBody'); if (!b) return;
-                    var txt = '=== DEBUG Huéspedes HU-v3-DBG ===\n';
+                    var txt = '=== DEBUG Huéspedes HU-v3.1-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -731,9 +820,10 @@
                 root.replaceWith(nuevoRoot);
                 limpiarDbgDuplicados();
                 var cod  = nuevoRoot.getAttribute('data-reserva-cod') || '?';
+                var est  = nuevoRoot.getAttribute('data-estado') || '?';
                 var tit  = nuevoRoot.getAttribute('data-titular') || '?';
                 var cupo = nuevoRoot.getAttribute('data-cupo') || '0/0';
-                hudbg('Fragmento actualizado (' + res.ms + 'ms) · reserva=#' + cod + ' · titular=' + tit + ' · cupo=' + cupo, 'ok');
+                hudbg('Fragmento actualizado (' + res.ms + 'ms) · reserva=#' + cod + ' · estado=[' + est + '] · titular=' + tit + ' · cupo=' + cupo, 'ok');
             } else {
                 hudbg('Respuesta recibida (' + res.ms + 'ms), pero no contenía #cliHuesRoot', 'warn');
             }
@@ -844,7 +934,8 @@
             if (t.id === 'huSelectReserva') {
                 var opt = t.options[t.selectedIndex];
                 var cod = opt ? opt.getAttribute('data-cod') : t.value;
-                hudbg('Selector: Cambio a reserva #' + cod + ' (id=' + t.value + ')', 'ev');
+                var est = opt ? opt.getAttribute('data-estado') : '';
+                hudbg('Selector: Cambio a reserva #' + cod + ' (id=' + t.value + ' · estado=[' + est + '])', 'ev');
                 window.huReloadFragment(t.value, 'cambio-reserva');
                 return;
             }
@@ -942,7 +1033,8 @@
     }
 
     var SRV = @json($huDbgData);
-    hudbg('HU-v3-DBG activo · reserva=' + (SRV && SRV.reserva_cod ? '#' + SRV.reserva_cod : 'ninguna') +
+    hudbg('HU-v3.1-DBG activo · reserva=' + (SRV && SRV.reserva_cod ? '#' + SRV.reserva_cod : 'ninguna') +
+          ' · estado=[' + (SRV && SRV.estado ? SRV.estado : '-') + ']' +
           ' · titular=' + (SRV && SRV.tiene_titular ? 'SÍ' : 'PENDIENTE') +
           ' · cupo=' + (SRV ? SRV.ocupados + '/' + SRV.cap_maxima : '0/0') +
           ' · disp=' + (SRV ? SRV.disponibles : 0), 'ok');

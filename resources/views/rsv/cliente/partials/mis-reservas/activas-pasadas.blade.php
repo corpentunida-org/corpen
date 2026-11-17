@@ -1,13 +1,13 @@
-{{-- partials/mis-reservas/activas-pasadas.blade.php · Cliente · Minimalista 360° Reactivo sin Reload (AP-v4-DBG) --}}
+{{-- partials/mis-reservas/activas-pasadas.blade.php · Cliente · Minimalista 360° Reactivo sin Reload (AP-v4.1-DBG) --}}
 <div id="sheet-activas-pasadas-cliente">
 
-    {{-- AP-v4-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="apDbgToggle" title="Debug Activas y Pasadas (AP-v4-DBG)">
+    {{-- AP-v4.1-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="apDbgToggle" title="Debug Activas y Pasadas (AP-v4.1-DBG)">
         <span class="ap-dbg-led" id="apDbgLed"></span>DBG<span class="ap-dbg-badge" id="apDbgBadge">0</span>
     </div>
     <div id="apDbgPanel" role="dialog" aria-label="Panel de debug de Activas y Pasadas">
         <div class="ap-dbg-header" id="apDbgHeader">
-            <span>DEBUG · Activas y Pasadas · AP-v4-DBG</span>
+            <span>DEBUG · Activas y Pasadas · AP-v4.1-DBG</span>
             <span class="ap-dbg-controls">
                 <button type="button" class="ap-dbg-btn" id="apDbgRefresh" title="Refrescar fragmento desde ClientePortalController">↻ Frag</button>
                 <button type="button" class="ap-dbg-btn" id="apDbgCopy">Copiar</button>
@@ -38,7 +38,6 @@
             if ($mis->isEmpty() && $uid) {
                 $mis = \App\Models\Rsv\Reserva::where('id_user', $uid)
                     ->orderByDesc('created_at')
-                    ->limit(30)
                     ->get();
             }
 
@@ -102,21 +101,40 @@
 
         $pillSt = function ($name) {
             $s = mb_strtolower((string) $name);
-            if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
-            if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
             if (str_contains($s, 'cancela') || str_contains($s, 'anula') || str_contains($s, 'rechaz')) return 'danger';
             if (str_contains($s, 'final') || str_contains($s, 'complet')) return 'primary';
+            if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
+            if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
             return 'secondary';
         };
 
-        $cntActivas   = isset($activas) && $activas instanceof \Illuminate\Support\Collection ? $activas->count() : null;
-        $cntPasadas   = isset($pasadas) && $pasadas instanceof \Illuminate\Support\Collection ? $pasadas->count() : null;
+        // Conteo exacto por categoría para los chips de filtro
+        $conteosCategorias = [
+            'all'       => $mis->count(),
+            'success'   => 0,
+            'warning'   => 0,
+            'primary'   => 0,
+            'danger'    => 0,
+            'secondary' => 0,
+        ];
+
+        foreach ($mis as $rItem) {
+            $stNameItem = optional($rItem->status)->name ?? 'Pendiente';
+            $grpItem = $pillSt($stNameItem);
+            if (isset($conteosCategorias[$grpItem])) {
+                $conteosCategorias[$grpItem]++;
+            }
+        }
+
+        $cntActivas = isset($activas) && $activas instanceof \Illuminate\Support\Collection ? $activas->count() : null;
+        $cntPasadas = isset($pasadas) && $pasadas instanceof \Illuminate\Support\Collection ? $pasadas->count() : null;
 
         $apDbgData = [
-            'version'     => 'AP-v4-DBG',
+            'version'     => 'AP-v4.1-DBG',
             'controlador' => 'ClientePortalController@misReservasActivasFragmento',
             'vista'       => 'partials/mis-reservas/activas-pasadas.blade.php',
             'reservas'    => $mis->count(),
+            'conteos'     => $conteosCategorias,
             'activas_ctl' => $cntActivas,
             'pasadas_ctl' => $cntPasadas,
             'reserva_sel' => $ridSel,
@@ -147,17 +165,43 @@
             .reservas-soft .val { font-size:10.5px; color:var(--ink-2); font-weight:700; letter-spacing:-0.2px; }
             .reservas-soft .sub { font-size:8.5px; color:var(--ink-3); line-height:1.4; }
 
-            /* ── FILTROS MINIMALISTAS ── */
+            /* ── FILTROS MINIMALISTAS CON CONTADORES ── */
             .ap-filter-bar { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
             .ap-filter-chip {
                 border:1px solid transparent; background:transparent; color:var(--ink-3);
                 font-size:8.5px; font-weight:600; padding:3px 9px; border-radius:6px;
-                cursor:pointer; transition:all .15s ease;
+                cursor:pointer; transition:all .15s ease; display:inline-flex; align-items:center; gap:5px;
             }
             .ap-filter-chip:hover { color:var(--ink-2); background:var(--head); }
             .ap-filter-chip.active {
                 background:var(--accent-bg); color:var(--accent); border-color:var(--accent-bd); font-weight:700;
             }
+            .ap-chip-count {
+                font-size:7.5px; font-weight:700; padding:0 5px; border-radius:999px;
+                background:var(--grid); color:var(--ink); line-height:14px;
+            }
+            .ap-filter-chip.active .ap-chip-count {
+                background:var(--accent); color:#fff;
+            }
+            .ap-filter-chip[data-filter="danger"].active {
+                background:#fef2f2; color:#b91c1c; border-color:#fee2e2;
+            }
+            .ap-filter-chip[data-filter="danger"].active .ap-chip-count {
+                background:#b91c1c; color:#fff;
+            }
+            .ap-filter-chip[data-filter="warning"].active {
+                background:#fffbeb; color:#b45309; border-color:#fef3c7;
+            }
+            .ap-filter-chip[data-filter="warning"].active .ap-chip-count {
+                background:#b45309; color:#fff;
+            }
+            .ap-filter-chip[data-filter="primary"].active {
+                background:#eff6ff; color:#1d4ed8; border-color:#dbeafe;
+            }
+            .ap-filter-chip[data-filter="primary"].active .ap-chip-count {
+                background:#1d4ed8; color:#fff;
+            }
+
             .ap-search-input {
                 font-size:8.5px; color:var(--ink-2); background:var(--head); border:1px solid var(--grid-2);
                 border-radius:6px; padding:4px 10px; outline:0; width:170px; transition:all .15s;
@@ -273,22 +317,32 @@
             .ap-dbg-info { color:#93c5fd; } .ap-dbg-ok { color:#86efac; } .ap-dbg-warn { color:#fde68a; } .ap-dbg-err { color:#fca5a5; } .ap-dbg-net { color:#c4b5fd; } .ap-dbg-ev { color:#f9a8d4; }
         </style>
 
-        {{-- CABECERA MINIMALISTA + BUSCADOR Y FILTROS EN UNA SOLA LÍNEA --}}
+        {{-- CABECERA MINIMALISTA + BUSCADOR Y FILTROS CON CONTEO REAL --}}
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap" style="gap:8px; border-color:var(--grid) !important;">
             <div class="ap-filter-bar">
                 <span class="val me-2" style="font-size:11px;">
                     <i class="bi bi-calendar2-check text-success me-1"></i> Mis Reservas
                 </span>
-                <button type="button" class="ap-filter-chip active" data-filter="all">Todas ({{ $mis->count() }})</button>
-                <button type="button" class="ap-filter-chip" data-filter="success">Activas</button>
-                <button type="button" class="ap-filter-chip" data-filter="warning">Pendientes</button>
-                <button type="button" class="ap-filter-chip" data-filter="primary">Finalizadas</button>
-                <button type="button" class="ap-filter-chip" data-filter="danger">Canceladas</button>
+                <button type="button" class="ap-filter-chip active" data-filter="all">
+                    Todas <span class="ap-chip-count" id="apCntAll">{{ $conteosCategorias['all'] }}</span>
+                </button>
+                <button type="button" class="ap-filter-chip" data-filter="success">
+                    Activas <span class="ap-chip-count" id="apCntSuccess">{{ $conteosCategorias['success'] }}</span>
+                </button>
+                <button type="button" class="ap-filter-chip" data-filter="warning">
+                    Pendientes <span class="ap-chip-count" id="apCntWarning">{{ $conteosCategorias['warning'] }}</span>
+                </button>
+                <button type="button" class="ap-filter-chip" data-filter="primary">
+                    Finalizadas <span class="ap-chip-count" id="apCntPrimary">{{ $conteosCategorias['primary'] }}</span>
+                </button>
+                <button type="button" class="ap-filter-chip" data-filter="danger">
+                    Canceladas <span class="ap-chip-count" id="apCntDanger">{{ $conteosCategorias['danger'] }}</span>
+                </button>
             </div>
             <input type="text" id="apSearchInput" class="ap-search-input" placeholder="Buscar reserva…">
         </div>
 
-        {{-- LISTA MINIMALISTA (CLIC EN CUALQUIER PARTE ABRE EL MODAL) --}}
+        {{-- LISTA MINIMALISTA (MUESTRA TODAS LAS RESERVAS DEL CLIENTE SIN LÍMITE DE 1) --}}
         <div id="apReservasList">
         @forelse($mis as $r)
             @php
@@ -410,7 +464,9 @@
                             ${{ number_format($montoTotal, 0) }}
                         </div>
                         <div class="sub" style="font-size:7.5px;">
-                            @if($saldoPendiente > 0)
+                            @if($stGroup === 'danger')
+                                <span style="color:#b91c1c;">Cancelada</span>
+                            @elseif($saldoPendiente > 0)
                                 <span style="color:#d97706;">Pendiente</span>
                             @else
                                 <span style="color:var(--accent);">Al día</span>
@@ -771,6 +827,12 @@
                 </button>
             </div>
         @endforelse
+
+        @if($mis->isNotEmpty())
+            <div id="apEmptyFilterMsg" class="text-center py-4 bg-light border rounded-3 d-none" style="border-style:dashed !important;">
+                <span class="sub d-block">No hay reservas en esta categoría o que coincidan con tu búsqueda.</span>
+            </div>
+        @endif
         </div>
 
     </div>
@@ -780,7 +842,7 @@
 (function () {
     'use strict';
 
-    /* ═══ PANEL DE DEBUG LOCAL AP-v4-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL AP-v4.1-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.ApDbg && window.ApDbg.alive && window.ApDbg.alive())
         ? window.ApDbg
         : (function () {
@@ -790,7 +852,7 @@
                 var rootDbg = document.querySelector('#sheet-activas-pasadas-cliente') || document.body;
                 if (!$('apDbgToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'apDbgToggle'; t.title = 'Debug Activas y Pasadas (AP-v4-DBG)';
+                    t.id = 'apDbgToggle'; t.title = 'Debug Activas y Pasadas (AP-v4.1-DBG)';
                     t.innerHTML = '<span class="ap-dbg-led" id="apDbgLed"></span>DBG<span class="ap-dbg-badge" id="apDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -798,7 +860,7 @@
                     var p = document.createElement('div');
                     p.id = 'apDbgPanel';
                     p.innerHTML = '<div class="ap-dbg-header" id="apDbgHeader">' +
-                        '<span>DEBUG · Activas y Pasadas · AP-v4-DBG</span>' +
+                        '<span>DEBUG · Activas y Pasadas · AP-v4.1-DBG</span>' +
                         '<span class="ap-dbg-controls">' +
                         '<button type="button" class="ap-dbg-btn" id="apDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="ap-dbg-btn" id="apDbgCopy">Copiar</button>' +
@@ -857,7 +919,7 @@
                 clear: function () { var b = $('apDbgBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('apDbgBody'); if (!b) return;
-                    var txt = '=== DEBUG Activas y Pasadas AP-v4-DBG ===\n';
+                    var txt = '=== DEBUG Activas y Pasadas AP-v4.1-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -894,6 +956,28 @@
         document.body.classList.remove('modal-open');
         document.body.style.removeProperty('overflow');
         document.body.style.removeProperty('padding-right');
+    }
+
+    function actualizarContadoresChips() {
+        var rows = document.querySelectorAll('#apReservasList .ap-res-row');
+        var counts = { all: rows.length, success: 0, warning: 0, primary: 0, danger: 0 };
+        rows.forEach(function (r) {
+            var grp = r.getAttribute('data-st-group') || '';
+            if (Object.prototype.hasOwnProperty.call(counts, grp)) {
+                counts[grp]++;
+            }
+        });
+        var mapIds = {
+            all: 'apCntAll',
+            success: 'apCntSuccess',
+            warning: 'apCntWarning',
+            primary: 'apCntPrimary',
+            danger: 'apCntDanger'
+        };
+        Object.keys(mapIds).forEach(function (k) {
+            var el = document.getElementById(mapIds[k]);
+            if (el) el.textContent = counts[k];
+        });
     }
 
     // ═══ RECARGA DEL FRAGMENTO VÍA ClientePortalController@misReservasActivasFragmento (SIN RECARGAR PÁGINA) ═══
@@ -941,6 +1025,7 @@
                 limpiarModalesAbiertos();
                 root.replaceWith(nuevoRoot);
                 limpiarDbgDuplicados();
+                actualizarContadoresChips();
                 var tot = nuevoRoot.getAttribute('data-total') || '0';
                 var sel = nuevoRoot.getAttribute('data-reserva-sel') || 'ninguna';
                 apdbg('Fragmento actualizado (' + res.ms + 'ms) · total=' + tot + ' · fijada=' + sel, 'ok');
@@ -980,6 +1065,11 @@
             row.style.display = mostrar ? '' : 'none';
             if (mostrar) visibles++;
         });
+
+        var emptyMsg = document.getElementById('apEmptyFilterMsg');
+        if (emptyMsg) {
+            emptyMsg.classList.toggle('d-none', visibles > 0);
+        }
 
         if (logAccion) {
             apdbg('Filtro aplicado · grupo="' + grupo + '" · q="' + q + '" · visibles=' + visibles, 'info');
@@ -1207,9 +1297,11 @@
         });
     }
 
+    actualizarContadoresChips();
+
     var SRV = @json($apDbgData);
-    apdbg('AP-v4-DBG activo · reservas=' + (SRV ? SRV.reservas : 0) +
-          (SRV && SRV.activas_ctl !== null ? ' (activas=' + SRV.activas_ctl + ', pasadas=' + SRV.pasadas_ctl + ')' : '') +
+    apdbg('AP-v4.1-DBG activo · reservas=' + (SRV ? SRV.reservas : 0) +
+          (SRV && SRV.conteos ? ' [act=' + SRV.conteos.success + ', pend=' + SRV.conteos.warning + ', fin=' + SRV.conteos.primary + ', canc=' + SRV.conteos.danger + ']' : '') +
           ' · fijada=' + (SRV && SRV.reserva_sel ? '#' + SRV.reserva_sel : 'ninguna'), 'ok');
     if (SRV && SRV.errores && SRV.errores.length) {
         SRV.errores.forEach(function (er) { apdbg('SQL/PHP: ' + er, 'err'); });

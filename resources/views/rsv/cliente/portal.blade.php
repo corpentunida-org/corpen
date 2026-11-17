@@ -365,16 +365,44 @@
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Historial:
                             </div>
                             <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="historialSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#hi-sub-estados" type="button" role="tab"><i class="bi bi-flag me-1"></i> Estados</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#hi-sub-endosos" type="button" role="tab"><i class="bi bi-arrow-left-right me-1"></i> Endosos</button></li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#hi-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#hi-sub-estados" type="button" role="tab">
+                                        <i class="bi bi-flag me-1"></i> Estados
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#hi-sub-endosos" type="button" role="tab">
+                                        <i class="bi bi-arrow-left-right me-1"></i> Endosos
+                                    </button>
+                                </li>
                             </ul>
                         </div>
-                        <div class="tab-content p-4" id="historialSubContent">
-                            <div class="tab-pane fade show active" id="hi-sub-estados" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.estados')) @include('rsv.cliente.partials.historial.estados') @endif
+                        <div class="tab-content p-4 reservas-soft border mt-2 bg-white rounded-3" id="historialSubContent" style="border-color:#f1f5f9 !important;">
+                            <div class="tab-pane fade show active" id="hi-sub-inicio" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.historial-tab'))
+                                    @include('rsv.cliente.partials.historial-tab')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Inicio" de historial no encontrada.</div>
+                                @endif
+                            </div>
+                            <div class="tab-pane fade" id="hi-sub-estados" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.historial.estados'))
+                                    @include('rsv.cliente.partials.historial.estados')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Estados" no encontrada.</div>
+                                @endif
                             </div>
                             <div class="tab-pane fade" id="hi-sub-endosos" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.endosos')) @include('rsv.cliente.partials.historial.endosos') @endif
+                                @if(view()->exists('rsv.cliente.partials.historial.endosos'))
+                                    @include('rsv.cliente.partials.historial.endosos')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Endosos" no encontrada.</div>
+                                @endif
                             </div>
                         </div>
                     </div>
