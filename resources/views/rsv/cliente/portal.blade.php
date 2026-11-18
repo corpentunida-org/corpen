@@ -1,14 +1,29 @@
+{{-- resources/views/rsv/cliente/portal.blade.php · Portal Maestro del Asociado / Huésped (PORTAL-CLI-v3-DBG) --}}
 <x-base-layout>
     @section('titlepage', 'Mi Portal - Sistema RSV')
 
-    {{-- Formateador Global de Moneda (Solo visual, es seguro dejarlo aquí) --}}
     @php
         $fmtMoney = function ($n) {
-            if ($n === null || $n === 0) return '—';
-            if ($n >= 1000000) return '$' . number_format($n / 1000000, 1) . 'M';
-            if ($n >= 1000)    return '$' . number_format($n / 1000, 1) . 'k';
-            return '$' . number_format((float) $n, 0);
+            $val = (float) ($n ?? 0);
+            if ($val <= 0) return '$0';
+            if ($val >= 1000000) return '$' . number_format($val / 1000000, 1) . 'M';
+            if ($val >= 1000)    return '$' . number_format($val / 1000, 0) . 'k';
+            return '$' . number_format($val, 0);
         };
+
+        $authUser     = auth()->user();
+        $userName     = $authUser->name ?? 'Asociado';
+        $userNit      = $authUser->nit ?? null;
+
+        /* ── KPIs del cliente con valores por defecto ── */
+        $cliProximo   = $kpiProximo   ?? null; // Carbon|null
+        $cliActivas   = (int) ($kpiActivas   ?? 0);
+        $cliTotal     = (int) ($kpiTotal     ?? 0);
+        $cliAbonado   = (float) ($kpiAbonado ?? 0);
+        $cliSaldo     = (float) ($kpiSaldo   ?? 0);
+        $cliMensajes  = (int) ($kpiMensajes  ?? 0);
+        $cliReviews   = (int) ($kpiReviews   ?? 0);
+        $cliHistorial = (int) ($kpiHistorial ?? $cliTotal);
     @endphp
 
     {{-- ========================================================= --}}
@@ -16,94 +31,126 @@
     {{-- ========================================================= --}}
     @include('rsv.components.alert')
 
+    @if(!empty($error))
+        <div class="alert alert-warning border-0 shadow-sm mx-3 mt-3 mb-0 d-flex align-items-center gap-2" style="font-size: 0.82rem;">
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            <span>{{ $error }}</span>
+        </div>
+    @endif
+
     {{-- ============================================================================== --}}
-    {{-- ESTILOS DE FUSIÓN (PADRE - HIJO) --}}
-    {{-- Mantiene el efecto "solapado" verde usando la paleta nativa de Bootstrap 5 --}}
+    {{-- ESTILOS DE FUSIÓN (PADRE - HIJO) + KPIs INTERACTIVOS                           --}}
     {{-- ============================================================================== --}}
     <style>
         /* 1. Contenedor de las pestañas principales (Padre) */
-        .nav-fusion { border-bottom: 1px solid #badbcc !important; }
+        .nav-fusion { border-bottom: 1px solid #badbcc !important; gap: 2px; }
 
         /* 2. Pestañas en estado normal */
         .nav-fusion .nav-link {
-            color: #6c757d; font-weight: 600; border: 1px solid transparent;
-            border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem;
+            color: #64748b; font-weight: 600; font-size: 0.82rem;
+            border: 1px solid transparent;
+            border-top-left-radius: 0.4rem; border-top-right-radius: 0.4rem;
+            padding: 0.55rem 0.95rem;
             margin-bottom: -1px;
             transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
         }
 
         /* 3. Hover en las pestañas */
-        .nav-fusion .nav-link:hover { color: #198754; border-color: #e9ecef #e9ecef #badbcc; }
+        .nav-fusion .nav-link:hover {
+            color: #198754;
+            border-color: #e9ecef #e9ecef #badbcc;
+            background-color: #f8;
+        }
 
         /* 4. Pestaña ACTIVA */
         .nav-fusion .nav-link.active {
-            color: #0f5132 !important; background-color: #d1e7dd !important;
+            color: #0f5132 !important;
+            background-color: #d1e7dd !important;
             border-color: #badbcc #badbcc #d1e7dd #badbcc !important;
+            font-weight: 700;
         }
 
         /* 5. Barra del Submenú (Hijo) */
         .subnav-fusion {
-            background-color: #d1e7dd; border-bottom: 1px solid #badbcc; border-top: none;
-            border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem;
-            padding: 0.6rem 1rem; margin-bottom: 1.5rem;
+            background-color: #d1e7dd;
+            border-bottom: 1px solid #badbcc;
+            border-top: none;
+            border-bottom-left-radius: 0.4rem;
+            border-bottom-right-radius: 0.4rem;
+            padding: 0.55rem 1rem;
+            margin-bottom: 0.75rem;
         }
 
         /* 6. Botones (Píldoras) dentro del submenú */
         .sub-pills .nav-link {
-            color: #146c43; background-color: rgba(255, 255, 255, 0.65);
-            font-size: 0.8rem; font-weight: 600; padding: 0.35rem 0.8rem;
-            border-radius: 0.375rem; border: 1px solid transparent; transition: all 0.2s;
+            color: #146c43;
+            background-color: rgba(255, 255, 255, 0.7);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 0.32rem 0.8rem;
+            border-radius: 0.375rem;
+            border: 1px solid transparent;
+            transition: all 0.18s ease;
         }
-        .sub-pills .nav-link:hover { background-color: #fff; color: #0f5132; border-color: #badbcc; }
+        .sub-pills .nav-link:hover {
+            background-color: #fff;
+            color: #0f5132;
+            border-color: #badbcc;
+        }
         .sub-pills .nav-link.active {
-            background-color: #198754 !important; color: #fff !important;
-            border-color: #198754 !important; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background-color: #198754 !important;
+            color: #fff !important;
+            border-color: #198754 !important;
+            box-shadow: 0 2px 5px rgba(25, 135, 84, 0.22);
         }
 
-        /* 7. Hover minimalista KPI */
-        .kpi-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-        .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.05) !important; }
+        /* 7. Tarjetas KPI Interactivas */
+        .kpi-card {
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            cursor: pointer;
+            border-color: #eef2f6 !important;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.35rem 0.85rem rgba(15, 23, 42, 0.06) !important;
+            border-color: #badbcc !important;
+        }
 
         /* 8. Formateador de moneda compacto */
         .kpi-money { font-variant-numeric: tabular-nums; }
     </style>
 
-    @php
-        /* ── KPIs del cliente con valores por defecto ── */
-        $cliProximo    = $kpiProximo    ?? null;   // Carbon|null
-        $cliActivas    = $kpiActivas    ?? 0;
-        $cliTotal      = $kpiTotal      ?? 0;
-        $cliAbonado    = $kpiAbonado    ?? 0;
-        $cliSaldo      = $kpiSaldo      ?? 0;
-        $cliMensajes   = $kpiMensajes   ?? 0;
-        $cliReviews    = $kpiReviews    ?? 0;
-        $cliHistorial  = $kpiHistorial  ?? 0;
-    @endphp
-
-    <div class="container-fluid py-4">
+    <div class="container-fluid py-3">
 
         {{-- ======================================================================= --}}
         {{-- 1. CARD MAESTRO DE BIENVENIDA                                           --}}
         {{-- ======================================================================= --}}
-        <div class="card shadow-sm border-0 mb-4">
+        <div class="card shadow-sm border-0 mb-3">
             <div class="card-body p-3">
-                <div class="row align-items-center g-3">
+                <div class="row align-items-center g-2">
                     <div class="col-12 col-lg-7 text-center text-lg-start">
-                        <span class="text-uppercase text-secondary fw-semibold small d-block mb-1" style="letter-spacing: 1px;">
-                            Portal del Huésped RSV
-                        </span>
-                        <h6 class="fw-bold mb-1 text-dark">Hola, {{ auth()->user()->name ?? 'Huésped' }}</h6>
-                        <p class="mb-0 text-muted small">
-                            Explora propiedades, gestiona tus reservas, pagos y soporte desde un solo lugar.
+                        <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-2 mb-1">
+                            <span class="text-uppercase text-success fw-bold" style="font-size: 0.68rem; letter-spacing: 0.8px;">
+                                <i class="bi bi-shield-check me-1"></i>Portal de Autogestión RSV
+                            </span>
+                            @if($userNit)
+                                <span class="badge bg-light text-secondary border" style="font-size: 0.68rem;">
+                                    Doc: {{ $userNit }}
+                                </span>
+                            @endif
+                        </div>
+                        <h6 class="fw-bold mb-1 text-dark">Hola, {{ $userName }}</h6>
+                        <p class="mb-0 text-muted" style="font-size: 0.78rem;">
+                            Explora propiedades, gestiona tus reservas, acompañantes, comprobantes de pago y soporte en tiempo real.
                         </p>
                     </div>
-                    <div class="col-12 col-lg-5 d-flex justify-content-center justify-content-lg-end">
+                    <div class="col-12 col-lg-5 d-flex justify-content-center justify-content-lg-end align-items-center gap-2 flex-wrap">
                         <span class="badge bg-light text-secondary border rounded-pill fw-normal py-2 px-3 d-inline-flex align-items-center gap-2 shadow-sm">
-                            <i class="bi bi-calendar3 small text-muted"></i>
-                            <span style="font-size: 0.8rem;">{{ now()->format('d/m/Y h:i A') }}</span>
+                            <i class="bi bi-calendar3 small text-success"></i>
+                            <span style="font-size: 0.76rem;">{{ now()->format('d/m/Y h:i A') }}</span>
                             <span class="vr mx-1"></span>
-                            <i class="bi bi-person-badge small text-muted"></i>
-                            <span style="font-size: 0.8rem;">Cuenta #{{ auth()->id() }}</span>
+                            <i class="bi bi-person-badge small text-secondary"></i>
+                            <span style="font-size: 0.76rem;">ID #{{ auth()->id() }}</span>
                         </span>
                     </div>
                 </div>
@@ -111,91 +158,111 @@
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- 2. PANEL DE KPIs DEL CLIENTE                                            --}}
+        {{-- 2. PANEL DE 6 KPIs DEL CLIENTE (1 FILA SIMÉTRICA + ACCESO DIRECTO)      --}}
         {{-- ======================================================================= --}}
-        <div class="row g-2 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+        <div class="row g-2 mb-3">
+            {{-- KPI 1: Próximo Viaje --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-reservas" data-child="#mr-sub-itinerario"
+                     title="Ir al Itinerario de tu próximo viaje">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Próximo Viaje</span>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Próximo Viaje</span>
                             <i class="bi bi-airplane text-primary opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
                             <h5 class="fw-bold text-dark mb-0 lh-1">{{ $cliProximo?->format('d/m') ?? '—' }}</h5>
-                            <span class="text-muted" style="font-size: 0.65rem;">{{ $cliProximo?->translatedFormat('M') ?? 'sin reservas' }}</span>
+                            <span class="text-muted" style="font-size: 0.65rem;">{{ $cliProximo?->translatedFormat('M Y') ?? 'sin fecha' }}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+            {{-- KPI 2: Reservas Activas --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-reservas" data-child="#mr-sub-activas"
+                     title="Ver mis reservas activas y pasadas">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Reservas Activas</span>
-                            <i class="bi bi-journal-check text-danger opacity-75"></i>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Reservas Activas</span>
+                            <i class="bi bi-journal-check text-success opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
-                            <h5 class="fw-bold text-dark mb-0 lh-1">{{ $cliActivas }}</h5>
-                            <span class="text-muted" style="font-size: 0.65rem;">de {{ $cliTotal }} total</span>
+                            <h5 class="fw-bold text-dark mb-0 lh-1" id="portalKpiActivas">{{ $cliActivas }}</h5>
+                            <span class="text-muted" style="font-size: 0.65rem;">de <span id="portalKpiTotal">{{ $cliTotal }}</span> total</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+            {{-- KPI 3: Abonado --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-pagos" data-child="#pg-sub-transacciones"
+                     title="Ver mis pagos y comprobantes">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Abonado</span>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Abonado</span>
                             <i class="bi bi-cash-stack text-success opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
-                            <h5 class="fw-bold text-success mb-0 lh-1 kpi-money">{{ $fmtMoney($cliAbonado) }}</h5>
+                            <h5 class="fw-bold text-success mb-0 lh-1 kpi-money" id="portalKpiAbonado">{{ $fmtMoney($cliAbonado) }}</h5>
+                            <span class="text-muted" style="font-size: 0.63rem;">aprobado</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+            {{-- KPI 4: Saldo Pendiente --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-pagos" data-child="#pg-sub-transacciones"
+                     title="Registrar soporte de pago">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Saldo</span>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Saldo</span>
                             <i class="bi bi-wallet2 {{ $cliSaldo > 0 ? 'text-danger' : 'text-success' }} opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
-                            <h5 class="fw-bold {{ $cliSaldo > 0 ? 'text-danger' : 'text-success' }} mb-0 lh-1 kpi-money">{{ $fmtMoney($cliSaldo) }}</h5>
+                            <h5 class="fw-bold {{ $cliSaldo > 0 ? 'text-danger' : 'text-success' }} mb-0 lh-1 kpi-money" id="portalKpiSaldo">{{ $fmtMoney($cliSaldo) }}</h5>
+                            <span class="text-muted" style="font-size: 0.63rem;">{{ $cliSaldo > 0 ? 'pendiente' : 'al día' }}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+            {{-- KPI 5: Mensajes Soporte --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-chat" data-child="#ch-sub-mensajes"
+                     title="Abrir bandeja de mensajes de soporte">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Mensajes</span>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Mensajes</span>
                             <i class="bi bi-chat-dots text-info opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
-                            <h5 class="fw-bold text-dark mb-0 lh-1">{{ $cliMensajes }}</h5>
+                            <h5 class="fw-bold text-dark mb-0 lh-1" id="portalKpiMensajes">{{ $cliMensajes }}</h5>
                             <span class="text-muted" style="font-size: 0.65rem;">en soporte</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="card kpi-card border border-light shadow-sm h-100 bg-white">
+            {{-- KPI 6: Mis Reseñas --}}
+            <div class="col-6 col-md-4 col-xl-2">
+                <div class="card kpi-card border shadow-sm h-100 bg-white js-portal-kpi-nav"
+                     data-parent="#cli-pagos" data-child="#pg-sub-reviews"
+                     title="Ver y publicar reseñas de mis estadías">
                     <div class="card-body p-2 px-3 d-flex flex-column justify-content-center">
                         <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.65rem; letter-spacing: 0.5px;">Mis Reseñas</span>
+                            <span class="text-uppercase text-muted fw-semibold" style="font-size: 0.63rem; letter-spacing: 0.5px;">Mis Reseñas</span>
                             <i class="bi bi-star-fill text-warning opacity-75"></i>
                         </div>
                         <div class="d-flex align-items-baseline gap-1">
-                            <h5 class="fw-bold text-dark mb-0 lh-1">{{ $cliReviews }}</h5>
+                            <h5 class="fw-bold text-dark mb-0 lh-1" id="portalKpiReviews">{{ $cliReviews }}</h5>
                             <span class="text-muted" style="font-size: 0.65rem;">publicadas</span>
                         </div>
                     </div>
@@ -204,7 +271,7 @@
         </div>
 
         {{-- ======================================================================= --}}
-        {{-- 3. CARD ÚNICA CON PESTAÑAS PADRE/HIJO                                   --}}
+        {{-- 3. CARD ÚNICA CON PESTAÑAS PADRE / HIJO                                 --}}
         {{-- ======================================================================= --}}
         <div class="card shadow-sm border-0 bg-white">
 
@@ -213,27 +280,31 @@
                 <ul class="nav nav-tabs nav-fusion px-2 pt-2 tab-memory-parent" id="clienteTabs" role="tablist">
                     <li class="nav-item" role="presentation">
                         <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cli-nueva" type="button" role="tab">
-                            <i class="bi bi-search me-1"></i> Nueva Reserva
+                            <i class="bi bi-compass me-1"></i> Nueva Reserva
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-reservas" type="button" role="tab">
-                            <i class="bi bi-calendar2-check me-1"></i> Mis Reservas <span class="badge bg-light text-secondary ms-1">{{ $cliTotal }}</span>
+                            <i class="bi bi-calendar2-check me-1"></i> Mis Reservas
+                            <span class="badge bg-light text-secondary border ms-1" id="portalBadgeReservas">{{ $cliTotal }}</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-historial" type="button" role="tab">
-                            <i class="bi bi-clock-history me-1"></i> Historial <span class="badge bg-light text-secondary ms-1">{{ $cliHistorial }}</span>
+                            <i class="bi bi-clock-history me-1"></i> Historial
+                            <span class="badge bg-light text-secondary border ms-1" id="portalBadgeHistorial">{{ $cliHistorial }}</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-chat" type="button" role="tab">
-                            <i class="bi bi-chat-dots me-1"></i> Soporte <span class="badge bg-light text-secondary ms-1">{{ $cliMensajes }}</span>
+                            <i class="bi bi-chat-dots me-1"></i> Soporte
+                            <span class="badge bg-light text-secondary border ms-1" id="portalBadgeMensajes">{{ $cliMensajes }}</span>
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-pagos" type="button" role="tab">
-                            <i class="bi bi-wallet2 me-1"></i> Pagos y Reseñas <span class="badge bg-light text-secondary ms-1">{{ $fmtMoney($cliAbonado) }}</span>
+                            <i class="bi bi-wallet2 me-1"></i> Pagos y Reseñas
+                            <span class="badge bg-light text-secondary border ms-1" id="portalBadgeAbonado">{{ $fmtMoney($cliAbonado) }}</span>
                         </button>
                     </li>
                 </ul>
@@ -248,7 +319,7 @@
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Búsqueda:
                             </div>
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="nuevaReservaSubTabs" role="tablist">
+                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-nueva" id="nuevaReservaSubTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#nr-sub-inicio" type="button" role="tab">
                                         <i class="bi bi-house-door me-1"></i> Inicio
@@ -267,48 +338,37 @@
                             </ul>
                         </div>
 
-                        {{-- Contenedor donde se cargan los fragmentos de la Vitrina, Buscador y Checkout --}}
-                        <div class="tab-content p-4" id="nuevaReservaSubContent">
+                        <div class="p-3">
                             @if(view()->exists('rsv.cliente.partials.nueva-reserva-tab'))
                                 @include('rsv.cliente.partials.nueva-reserva-tab')
                             @else
-                                <p class="text-muted small mb-0"><i class="bi bi-hourglass-split me-1"></i> Módulo Nueva Reserva (Próximamente)</p>
+                                <div class="text-center py-4 text-muted">Módulo Nueva Reserva no disponible.</div>
                             @endif
                         </div>
                     </div>
 
                     {{-- ─────────── TAB 2: MIS RESERVAS ─────────── --}}
                     <div class="tab-pane fade" id="cli-reservas" role="tabpanel">
-
-                        {{-- Menú de Sub-pestañas --}}
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Mis Reservas:
                             </div>
-
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="misReservasSubTabs" role="tablist">
-                                {{-- 1. Inicio (Activo por defecto) --}}
+                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-reservas" id="misReservasSubTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#mr-sub-inicio" type="button" role="tab">
                                         <i class="bi bi-house-door me-1"></i> Inicio
                                     </button>
                                 </li>
-
-                                {{-- 2. Activas y Pasadas --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-activas" type="button" role="tab">
                                         <i class="bi bi-calendar2-check me-1"></i> Activas y Pasadas
                                     </button>
                                 </li>
-
-                                {{-- 3. Itinerario --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-itinerario" type="button" role="tab">
                                         <i class="bi bi-geo-alt me-1"></i> Itinerario
                                     </button>
                                 </li>
-
-                                {{-- 4. Huéspedes --}}
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#mr-sub-huespedes" type="button" role="tab">
                                         <i class="bi bi-people me-1"></i> Huéspedes
@@ -317,10 +377,7 @@
                             </ul>
                         </div>
 
-                        {{-- Contenedor de las Sub-vistas (Rutas) --}}
-                        <div class="tab-content p-4 reservas-soft border mt-2 bg-white rounded-3" id="misReservasSubContent" style="border-color:#f1f5f9 !important;">
-
-                            {{-- 1. INICIO (Ruta al Dashboard Central) --}}
+                        <div class="tab-content p-3 reservas-soft" id="misReservasSubContent">
                             <div class="tab-pane fade show active" id="mr-sub-inicio" role="tabpanel">
                                 @if(view()->exists('rsv.cliente.partials.mis-reservas-tab'))
                                     @include('rsv.cliente.partials.mis-reservas-tab')
@@ -328,8 +385,6 @@
                                     <div class="text-center py-4 text-muted">Vista "Inicio" no encontrada.</div>
                                 @endif
                             </div>
-
-                            {{-- 2. ACTIVAS Y PASADAS --}}
                             <div class="tab-pane fade" id="mr-sub-activas" role="tabpanel">
                                 @if(view()->exists('rsv.cliente.partials.mis-reservas.activas-pasadas'))
                                     @include('rsv.cliente.partials.mis-reservas.activas-pasadas')
@@ -337,8 +392,6 @@
                                     <div class="text-center py-4 text-muted">Vista "Activas y Pasadas" no encontrada.</div>
                                 @endif
                             </div>
-
-                            {{-- 3. ITINERARIO --}}
                             <div class="tab-pane fade" id="mr-sub-itinerario" role="tabpanel">
                                 @if(view()->exists('rsv.cliente.partials.mis-reservas.itinerario'))
                                     @include('rsv.cliente.partials.mis-reservas.itinerario')
@@ -346,8 +399,6 @@
                                     <div class="text-center py-4 text-muted">Vista "Itinerario" no encontrada.</div>
                                 @endif
                             </div>
-
-                            {{-- 4. HUÉSPEDES --}}
                             <div class="tab-pane fade" id="mr-sub-huespedes" role="tabpanel">
                                 @if(view()->exists('rsv.cliente.partials.mis-reservas.huespedes'))
                                     @include('rsv.cliente.partials.mis-reservas.huespedes')
@@ -355,16 +406,16 @@
                                     <div class="text-center py-4 text-muted">Vista "Huéspedes" no encontrada.</div>
                                 @endif
                             </div>
-
                         </div>
                     </div>
+
                     {{-- ─────────── TAB 3: HISTORIAL ─────────── --}}
                     <div class="tab-pane fade" id="cli-historial" role="tabpanel">
                         <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Historial:
                             </div>
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="historialSubTabs" role="tablist">
+                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-historial" id="historialSubTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#hi-sub-inicio" type="button" role="tab">
                                         <i class="bi bi-house-door me-1"></i> Inicio
@@ -382,7 +433,8 @@
                                 </li>
                             </ul>
                         </div>
-                        <div class="tab-content p-4 reservas-soft border mt-2 bg-white rounded-3" id="historialSubContent" style="border-color:#f1f5f9 !important;">
+
+                        <div class="tab-content p-3 reservas-soft" id="historialSubContent">
                             <div class="tab-pane fade show active" id="hi-sub-inicio" role="tabpanel">
                                 @if(view()->exists('rsv.cliente.partials.historial-tab'))
                                     @include('rsv.cliente.partials.historial-tab')
@@ -413,17 +465,46 @@
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema de Soporte:
                             </div>
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="chatSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#ch-sub-mensajes" type="button" role="tab"><i class="bi bi-chat-dots me-1"></i> Mensajes</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#ch-sub-receptores" type="button" role="tab"><i class="bi bi-person-badge me-1"></i> Receptores</button></li>
+                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-chat" id="chatSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#ch-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#ch-sub-mensajes" type="button" role="tab">
+                                        <i class="bi bi-chat-dots me-1"></i> Mensajes
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#ch-sub-receptores" type="button" role="tab">
+                                        <i class="bi bi-person-badge me-1"></i> Receptores
+                                    </button>
+                                </li>
                             </ul>
                         </div>
-                        <div class="tab-content p-4" id="chatSubContent">
-                            <div class="tab-pane fade show active" id="ch-sub-mensajes" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.chat.mensajes')) @include('rsv.cliente.partials.chat.mensajes') @endif
+
+                        <div class="tab-content p-3 reservas-soft" id="chatSubContent">
+                            <div class="tab-pane fade show active" id="ch-sub-inicio" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.chat-tab'))
+                                    @include('rsv.cliente.partials.chat-tab')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Inicio" de soporte no encontrada.</div>
+                                @endif
+                            </div>
+                            <div class="tab-pane fade" id="ch-sub-mensajes" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.chat.mensajes'))
+                                    @include('rsv.cliente.partials.chat.mensajes')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Mensajes" no encontrada.</div>
+                                @endif
                             </div>
                             <div class="tab-pane fade" id="ch-sub-receptores" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.chat.receptores')) @include('rsv.cliente.partials.chat.receptores') @endif
+                                @if(view()->exists('rsv.cliente.partials.chat.receptores'))
+                                    @include('rsv.cliente.partials.chat.receptores')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Receptores" no encontrada.</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -434,21 +515,58 @@
                             <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
                                 <i class="bi bi-diagram-3-fill"></i> Ecosistema Financiero:
                             </div>
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" id="pagosSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pg-sub-transacciones" type="button" role="tab"><i class="bi bi-receipt me-1"></i> Transacciones</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pg-sub-pasarelas" type="button" role="tab"><i class="bi bi-credit-card me-1"></i> Pasarelas</button></li>
-                                <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#pg-sub-reviews" type="button" role="tab"><i class="bi bi-star-fill me-1"></i> Reseñas</button></li>
+                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-pagos" id="pagosSubTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#pg-sub-inicio" type="button" role="tab">
+                                        <i class="bi bi-house-door me-1"></i> Inicio
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pg-sub-transacciones" type="button" role="tab">
+                                        <i class="bi bi-receipt me-1"></i> Transacciones
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pg-sub-pasarelas" type="button" role="tab">
+                                        <i class="bi bi-credit-card me-1"></i> Pasarelas
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#pg-sub-reviews" type="button" role="tab">
+                                        <i class="bi bi-star-fill me-1"></i> Reseñas
+                                    </button>
+                                </li>
                             </ul>
                         </div>
-                        <div class="tab-content p-4" id="pagosSubContent">
-                            <div class="tab-pane fade show active" id="pg-sub-transacciones" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.transacciones')) @include('rsv.cliente.partials.pagos.transacciones') @endif
+
+                        <div class="tab-content p-3 reservas-soft" id="pagosSubContent">
+                            <div class="tab-pane fade show active" id="pg-sub-inicio" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.pagos-tab'))
+                                    @include('rsv.cliente.partials.pagos-tab')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Inicio" de pagos no encontrada.</div>
+                                @endif
+                            </div>
+                            <div class="tab-pane fade" id="pg-sub-transacciones" role="tabpanel">
+                                @if(view()->exists('rsv.cliente.partials.pagos.transacciones'))
+                                    @include('rsv.cliente.partials.pagos.transacciones')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Transacciones" no encontrada.</div>
+                                @endif
                             </div>
                             <div class="tab-pane fade" id="pg-sub-pasarelas" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.pasarelas')) @include('rsv.cliente.partials.pagos.pasarelas') @endif
+                                @if(view()->exists('rsv.cliente.partials.pagos.pasarelas'))
+                                    @include('rsv.cliente.partials.pagos.pasarelas')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Pasarelas" no encontrada.</div>
+                                @endif
                             </div>
                             <div class="tab-pane fade" id="pg-sub-reviews" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.pagos.reviews')) @include('rsv.cliente.partials.pagos.reviews') @endif
+                                @if(view()->exists('rsv.cliente.partials.pagos.reviews'))
+                                    @include('rsv.cliente.partials.pagos.reviews')
+                                @else
+                                    <div class="text-center py-4 text-muted">Vista "Reseñas" no encontrada.</div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -460,48 +578,114 @@
     </div>
 
     {{-- ======================================================================= --}}
-    {{-- SCRIPT: GESTOR DE MEMORIA DE PESTAÑAS                                   --}}
+    {{-- SCRIPT: ORQUESTADOR DE NAVEGACIÓN Y MEMORIA INDEPENDIENTE PADRE/HIJO    --}}
     {{-- ======================================================================= --}}
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const parentKey  = 'rsv_cliente_panel_parent';
-            const childKey   = 'rsv_cliente_panel_child';
+        (function () {
+            'use strict';
 
-            // Pestañas Padres
-            const parentTabs = document.querySelectorAll('.tab-memory-parent .nav-link');
-            parentTabs.forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function (event) {
-                    localStorage.setItem(parentKey, event.target.getAttribute('data-bs-target'));
-                });
-            });
+            var PARENT_KEY = 'rsv_cliente_panel_parent_v3';
+            var CHILD_PREFIX = 'rsv_cliente_panel_child_v3_';
 
-            // Pestañas Hijos
-            const childTabs = document.querySelectorAll('.tab-memory-child .nav-link');
-            childTabs.forEach(tab => {
-                tab.addEventListener('shown.bs.tab', function (event) {
-                    localStorage.setItem(childKey, event.target.getAttribute('data-bs-target'));
-                });
-            });
-
-            // Restauración al recargar la página
-            const savedParent = localStorage.getItem(parentKey);
-            const savedChild  = localStorage.getItem(childKey);
-
-            if (savedParent) {
-                const parentBtn = document.querySelector(`.tab-memory-parent .nav-link[data-bs-target="${savedParent}"]`);
-                if (parentBtn) {
-                    const bsParentTab = new bootstrap.Tab(parentBtn);
-                    bsParentTab.show();
+            function showTabBySelector(selector) {
+                if (!selector) return false;
+                var btn = document.querySelector('[data-bs-target="' + selector + '"]');
+                if (!btn) return false;
+                if (window.bootstrap && window.bootstrap.Tab) {
+                    window.bootstrap.Tab.getOrCreateInstance(btn).show();
+                } else {
+                    btn.click();
                 }
+                return true;
             }
-            if (savedChild) {
-                const childBtn = document.querySelector(`.tab-memory-child .nav-link[data-bs-target="${savedChild}"]`);
-                if (childBtn) {
-                    const bsChildTab = new bootstrap.Tab(childBtn);
-                    bsChildTab.show();
+
+            // API pública para saltar entre pestañas Padre e Hijo desde KPIs o fragmentos
+            window.RsvPortal = {
+                go: function (parentSelector, childSelector) {
+                    if (parentSelector) showTabBySelector(parentSelector);
+                    if (childSelector) {
+                        setTimeout(function () {
+                            showTabBySelector(childSelector);
+                        }, 60);
+                    }
                 }
-            }
-        });
+            };
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // 1. Guardar memoria de Pestaña Padre
+                document.querySelectorAll('.tab-memory-parent .nav-link').forEach(function (tab) {
+                    tab.addEventListener('shown.bs.tab', function (event) {
+                        var targetParent = event.target.getAttribute('data-bs-target');
+                        if (!targetParent) return;
+                        localStorage.setItem(PARENT_KEY, targetParent);
+
+                        // Restaurar la sub-pestaña específica de este padre
+                        var savedChildForParent = localStorage.getItem(CHILD_PREFIX + targetParent);
+                        if (savedChildForParent) {
+                            showTabBySelector(savedChildForParent);
+                        }
+                    });
+                });
+
+                // 2. Guardar memoria de Sub-pestaña asociada a su Padre correspondiente
+                document.querySelectorAll('.tab-memory-child').forEach(function (ul) {
+                    var parentId = ul.getAttribute('data-parent-tab') || '';
+                    ul.querySelectorAll('.nav-link').forEach(function (tab) {
+                        tab.addEventListener('shown.bs.tab', function (event) {
+                            var targetChild = event.target.getAttribute('data-bs-target');
+                            if (parentId && targetChild) {
+                                localStorage.setItem(CHILD_PREFIX + parentId, targetChild);
+                            }
+                        });
+                    });
+                });
+
+                // 3. Clic en cualquiera de las 6 tarjetas KPI superiores → Navegación directa
+                document.addEventListener('click', function (e) {
+                    var kpi = e.target && e.target.closest ? e.target.closest('.js-portal-kpi-nav') : null;
+                    if (!kpi) return;
+                    var p = kpi.getAttribute('data-parent');
+                    var c = kpi.getAttribute('data-child');
+                    window.RsvPortal.go(p, c);
+                });
+
+                // 4. Restaurar pestaña inicial (priorizando parámetros de URL si existen)
+                var urlParams = new URLSearchParams(window.location.search);
+                var tabParam  = urlParams.get('tab') || '';
+                var mapUrlToTabs = {
+                    'nueva-reserva':       ['#cli-nueva', '#nr-sub-inicio'],
+                    'nueva-buscador':      ['#cli-nueva', '#nr-sub-buscador'],
+                    'nueva-checkout':      ['#cli-nueva', '#nr-sub-checkout'],
+                    'mis-reservas':        ['#cli-reservas', '#mr-sub-inicio'],
+                    'reservas-activas':    ['#cli-reservas', '#mr-sub-activas'],
+                    'reservas-itinerario': ['#cli-reservas', '#mr-sub-itinerario'],
+                    'reservas-huespedes':  ['#cli-reservas', '#mr-sub-huespedes'],
+                    'historial':           ['#cli-historial', '#hi-sub-inicio'],
+                    'historial-estados':   ['#cli-historial', '#hi-sub-estados'],
+                    'historial-endosos':   ['#cli-historial', '#hi-sub-endosos'],
+                    'chat':                ['#cli-chat', '#ch-sub-inicio'],
+                    'chat-mensajes':       ['#cli-chat', '#ch-sub-mensajes'],
+                    'chat-receptores':     ['#cli-chat', '#ch-sub-receptores'],
+                    'pagos':               ['#cli-pagos', '#pg-sub-inicio'],
+                    'pagos-transacciones': ['#cli-pagos', '#pg-sub-transacciones'],
+                    'pagos-pasarelas':     ['#cli-pagos', '#pg-sub-pasarelas'],
+                    'pagos-reviews':       ['#cli-pagos', '#pg-sub-reviews']
+                };
+
+                if (tabParam && mapUrlToTabs[tabParam]) {
+                    window.RsvPortal.go(mapUrlToTabs[tabParam][0], mapUrlToTabs[tabParam][1]);
+                } else {
+                    var savedParent = localStorage.getItem(PARENT_KEY);
+                    if (savedParent) {
+                        showTabBySelector(savedParent);
+                        var savedChild = localStorage.getItem(CHILD_PREFIX + savedParent);
+                        if (savedChild) {
+                            showTabBySelector(savedChild);
+                        }
+                    }
+                }
+            });
+        })();
     </script>
 
     {{-- ======================================================================= --}}
@@ -528,11 +712,11 @@
     (function () {
         'use strict';
         var MODAL = '#modalCargando, .modal-cargando, [wire\\:loading]';
-        var SECCION = ''; // Aplica globalmente al portal del cliente
+        var SECCION = '';
 
         try {
             if (window.NProgress) { window.NProgress.remove(); }
-            if (window.Pace && window.Pace.stop)  { window.Pace.stop(); }
+            if (window.Pace && window.Pace.stop) { window.Pace.stop(); }
         } catch (e) {}
 
         function esRuedita(el) {
@@ -547,16 +731,15 @@
             });
             ['html', 'body'].forEach(function (tag) {
                 var n = document[tag];
-                n.classList.remove('loading', 'is-loading', 'js-loading', 'page-is-loading', 'preloader-active');
+                if (n) n.classList.remove('loading', 'is-loading', 'js-loading', 'page-is-loading', 'preloader-active');
             });
         }
         limpiarRuedita();
         new MutationObserver(function () { limpiarRuedita(); }).observe(document.body, { childList: true });
 
-        // Detener Livewire auto-polling visual si interfiere
         document.addEventListener('DOMContentLoaded', function () {
             if (typeof Livewire !== 'undefined') {
-                Livewire.hook('message.sent', (message, component) => {
+                Livewire.hook('message.sent', function () {
                     limpiarRestosModal();
                 });
             }
@@ -603,7 +786,6 @@
         }
         vigilarModal();
         new MutationObserver(function () { vigilarModal(); }).observe(document.body, { childList: true, subtree: true });
-
     })();
     </script>
 </x-base-layout>
