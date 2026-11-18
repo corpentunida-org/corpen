@@ -1,164 +1,270 @@
 {{-- ============================================================================
-     RSV · ADMIN · AUDITORÍAS · INFORMES · INF-v1-3
+     RSV · ADMIN · AUDITORÍAS · INFORMES · INF-v2.0-DBG
      Parcial: resources/views/rsv/admin/partials/auditorias/informes.blade.php
-
-     · REENTREGA DEFINITIVA (INF-v1-3): reconstruida con el patrón EXACTO
-       del ejemplo canónico BLQ-v1-2 (partials/calendario/bloqueos.blade.php
-       · diseño TIP-v1.3-DBG). Correcciones frente a INF-v1-DBG:
-         1) El LOG de debug vuelve a viajar DENTRO del fragmento: el toggle
-            y el panel son los PRIMEROS hijos de #sheet-informes (nacen y
-            mueren con cada copia del refresco AJAX, igual que en
-            pasarelas) · unicarDbg() deja UN solo toggle/panel por página ·
-            nada se cuelga de document.body.
-         2) El bloque de script vive FUERA del root (igual que el ejemplo) y el
-            guard usa la convención de la familia window.__jsInformesListo
-            (delegación en document con removeEventListener + re-add).
-         3) TABLA 100% Blade: las filas se renderizan EN SERVIDOR con el
-            bucle de la familia (funciona incluso sin JavaScript; antes la
-            tabla quedaba "Cargando eventos…" si el script no llegaba).
-            Los filtros, KPIs y el CSV se resuelven EN CLIENTE sobre esas
-            filas (igual que el buscador de pasarelas).
-         4) (INF-v1-3) COMPATIBILIDAD DE DATOS: además de $informes, ahora
-            acepta $auditoria (la variable que ya carga el controlador para
-            la pestaña Audit Logs) antes de caer a la autoconsulta.
-     · INFORME DE BITÁCORA (solo lectura · rsv_audit_logs es inmutable):
-         - AUTOABASTECIDA: si el controlador no pasa $informes (ni
-           $auditoria ni $auditorias ni $logs), consulta sola la bitácora
-           (últimos 500 eventos) detectando las columnas reales con el
-           listador de columnas del esquema (sirve con modelos Eloquent,
-           filas de DB::table y arrays).
-         - KPIs: eventos del filtro · eventos de hoy · acciones de
-           escritura (altas·cambios·bajas) · usuarios distintos.
-         - Filtros: búsqueda libre, tipo de acción (crear/actualizar/
-           eliminar/sesiones/otros) y rango de fechas desde/hasta.
-         - Tabla: fecha/hora, usuario, acción con badge por tipo, módulo,
-           IP y detalle (truncado con tooltip).
-         - Exportar CSV: filas del filtro actual, BOM UTF-8 y separador
-           ";" (abre directo en Excel es-ES). Cero rutas nuevas.
-         - Refrescar: SOLO si existe la ruta de fragmento (se prueban
-           rsv.admin.auditorias.informes.fragmento y
-           rsv.admin.auditorias.fragmento); reemplaza TODAS las copias de
-           #sheet-informes y re-aplica filtros.
-     · PANEL DE DEBUG (diseño TIP-v1.3 aprobado): pestaña terminal "DBG" de
-       16px fija SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0,
-       radius 3px solo superior-izquierdo) con LED de estado (verde = ok ·
-       rojo pulsante + conteo = errores) y panel cajón de 380px alineado al
-       mismo borde. La regla exacta de distancias está documentada como
-       "SPEC DE DISTANCIAS" dentro del CSS, y el panel esquiva a los toggles
-       hermanos de las otras vistas midiendo píxeles reales
-       (getBoundingClientRect · bottom = max(20, vecino + 4)).
-       Telemetría que reporta: eventos cargados, tabla usada, autoconsulta,
-       rango temporal, ruta de fragmento, filtros aplicados, exportación
-       CSV, refresco del fragmento y errores de red/servidor.
-     · ESTÉTICA: sistema "reservas-soft" idéntico a la familia (variables
-       CSS, tipografía, tabla, btn-mini/btn-green, count-badge, xls-search).
-     · NOTA: los comentarios nombran las directivas de Blade SIN arroba
-       (p.ej. "la directiva json de Blade"): Blade compila a nivel de texto
-       aunque estén dentro de comentarios y una arroba pelada rompe la
-       compilación (lección BLQ-v1-2).
      ============================================================================ --}}
 
 @php
-    /* ── Datos: solo se autoconsulta si el controlador NO pasó las variables ── */
     $infErrores    = [];
     $infAutoLogs   = false;
-    $infTablaUsada = null;
+    $infTablaUsada = 'rsv_audit_logs';
+    $inmIdActual   = $inmuebleId ?? request('inmueble_id', 'todos') ?: 'todos';
 
-    if (!isset($informes) || $informes === null) {
-        $informes = isset($auditoria) ? $auditoria : (isset($auditorias) ? $auditorias : (isset($logs) ? $logs : collect()));
-    }
-    if (count($informes) === 0) {
-        foreach (['rsv_audit_logs', 'audit_logs'] as $infTabla) {
-            try {
-                if (!\Illuminate\Support\Facades\Schema::hasTable($infTabla)) { continue; }
-                $infCols = \Illuminate\Support\Facades\Schema::getColumnListing($infTabla);
-                $infQ = \Illuminate\Support\Facades\DB::table($infTabla);
-                if (in_array('id', $infCols)) { $infQ->orderByDesc('id'); }
-                elseif (in_array('created_at', $infCols)) { $infQ->orderByDesc('created_at'); }
-                $informes = $infQ->limit(500)->get();
+    // 1. Obtener hasta 500 registros reales de rsv_audit_logs con relación user
+    $coleccionCruda = collect();
+
+    if (isset($informes) && $informes instanceof \Illuminate\Support\Collection && $informes->count() > 15) {
+        $coleccionCruda = $informes;
+    } else {
+        try {
+            if (class_exists(\App\Models\Rsv\AuditLog::class) && \Illuminate\Support\Facades\Schema::hasTable('rsv_audit_logs')) {
+                $coleccionCruda = \App\Models\Rsv\AuditLog::with('user')
+                    ->orderByDesc('id')
+                    ->limit(500)
+                    ->get();
                 $infAutoLogs   = true;
-                $infTablaUsada = $infTabla;
-                break; // la consulta funcionó: tabla válida
-            } catch (\Throwable $infE) {
-                $infErrores[] = $infTabla . ': ' . $infE->getMessage();
+                $infTablaUsada = 'rsv_audit_logs (Eloquent + user)';
+            } else {
+                foreach (['rsv_audit_logs', 'audit_logs'] as $tTry) {
+                    if (\Illuminate\Support\Facades\Schema::hasTable($tTry)) {
+                        $coleccionCruda = collect(\Illuminate\Support\Facades\DB::table($tTry)->orderByDesc('id')->limit(500)->get());
+                        $infAutoLogs   = true;
+                        $infTablaUsada = $tTry . ' (DB::table)';
+                        break;
+                    }
+                }
+            }
+        } catch (\Throwable $infE) {
+            $infErrores[] = 'Consulta AuditLog: ' . $infE->getMessage();
+            if (isset($auditoria)) {
+                $coleccionCruda = ($auditoria instanceof \Illuminate\Pagination\AbstractPaginator)
+                    ? collect($auditoria->items())
+                    : collect($auditoria);
             }
         }
     }
 
-    /* ── Getter tolerante (sirve con objetos Eloquent, stdClass y arrays) ── */
-    $infG = function ($infR, array $infKeys) {
-        foreach ($infKeys as $infK) {
-            if (is_object($infR) && isset($infR->{$infK})) { return $infR->{$infK}; }
-            if (is_array($infR) && array_key_exists($infK, $infR)) { return $infR[$infK]; }
+    // Mapa auxiliar de usuarios por si alguna fila viene de DB::table sin eager loading
+    $mapaUsuarios = [];
+    try {
+        $idsUsr = $coleccionCruda->map(function ($r) {
+            return is_object($r) ? ($r->id_user ?? $r->user_id ?? null) : ($r['id_user'] ?? $r['user_id'] ?? null);
+        })->filter()->unique()->values()->all();
+
+        if (!empty($idsUsr) && class_exists(\App\Models\User::class)) {
+            $tieneNit = \Illuminate\Support\Facades\Schema::hasColumn('users', 'nit');
+            $colsU = $tieneNit ? ['id', 'name', 'nit', 'email'] : ['id', 'name', 'email'];
+            foreach (\App\Models\User::whereIn('id', $idsUsr)->get($colsU) as $uObj) {
+                $mapaUsuarios[$uObj->id] = $uObj;
+            }
         }
-        return null;
+    } catch (\Throwable $eU) {}
+
+    // Clasificador canónico de acción
+    $infClasificarAccion = function (string $accRaw): string {
+        $a = mb_strtolower(trim($accRaw));
+        if (preg_match('/crea|regis|alta|nuev|store|insert/', $a)) return 'crear';
+        if (preg_match('/actu|edi|modi|updat|camb/', $a)) return 'actualizar';
+        if (preg_match('/elim|borr|baja|delet|destroy/', $a)) return 'eliminar';
+        if (preg_match('/view|vist|frag|portal|dash|calend|ver/', $a)) return 'vista';
+        if (preg_match('/search|busc|filt/', $a)) return 'busqueda';
+        if (preg_match('/login|logout|sesi|auth|acces/', $a)) return 'login';
+        return 'otro';
     };
 
-    /* ── Normalización al shape uniforme de las filas Blade ── */
-    $infItems = collect($informes)->values()->map(function ($infR) use ($infG) {
-        $infF = $infG($infR, ['created_at', 'fecha', 'fecha_hora']);
-        try { $infC = $infF ? \Illuminate\Support\Carbon::parse($infF) : null; }
-        catch (\Throwable $infE) { $infC = null; }
+    // Clasificador de origen/canal (Cliente vs Admin vs Modelos BD)
+    $infClasificarCanal = function (string $tablaRaw, string $accRaw, array $nuevos): string {
+        $t = mb_strtolower(trim($tablaRaw));
+        $m = mb_strtolower((string) ($nuevos['modulo'] ?? $nuevos['_meta_url'] ?? ''));
+        if ($t === 'portal_cliente' || str_contains($m, 'cliente')) return 'cliente';
+        if ($t === 'panel_admin' || str_contains($m, 'admin')) return 'admin';
+        return 'bd';
+    };
+
+    // Normalización de cada fila de auditoría
+    $infItems = $coleccionCruda->values()->map(function ($r) use ($mapaUsuarios, $infClasificarAccion, $infClasificarCanal) {
+        $esObj = is_object($r);
+        $get = function (array $keys) use ($r, $esObj) {
+            foreach ($keys as $k) {
+                if ($esObj && isset($r->{$k})) return $r->{$k};
+                if (is_array($r) && array_key_exists($k, $r)) return $r[$k];
+            }
+            return null;
+        };
+
+        $id         = (string) ($get(['id']) ?? '');
+        $idUser     = $get(['id_user', 'user_id']);
+        $tabla      = (string) ($get(['tabla_afectada', 'modulo', 'module', 'tabla']) ?? 'sistema');
+        $regId      = $get(['registro_id', 'model_id']) ?? 0;
+        $accionRaw  = (string) ($get(['accion', 'action', 'evento']) ?? 'INFO');
+        $ip         = (string) ($get(['ip_address', 'ip']) ?? '127.0.0.1');
+        $rawCreated = $get(['created_at', 'fecha', 'fecha_hora']);
+
+        try {
+            $carb = $rawCreated ? \Illuminate\Support\Carbon::parse($rawCreated) : null;
+        } catch (\Throwable $eC) {
+            $carb = null;
+        }
+
+        $antRaw = $get(['datos_anteriores']);
+        $nueRaw = $get(['datos_nuevos']);
+        $arrAnt = is_array($antRaw) ? $antRaw : (is_string($antRaw) && $antRaw !== '' ? (json_decode($antRaw, true) ?: []) : []);
+        $arrNue = is_array($nueRaw) ? $nueRaw : (is_string($nueRaw) && $nueRaw !== '' ? (json_decode($nueRaw, true) ?: []) : []);
+
+        // Resolver nombre del usuario actor
+        $userRel = ($esObj && isset($r->user) && $r->user) ? $r->user : ($idUser && isset($mapaUsuarios[$idUser]) ? $mapaUsuarios[$idUser] : null);
+        if ($userRel) {
+            $usuarioNom = $userRel->name . (!empty($userRel->nit) ? ' (' . $userRel->nit . ')' : '');
+        } elseif (!empty($arrNue['_meta_actor'])) {
+            $usuarioNom = (string) $arrNue['_meta_actor'];
+        } elseif ($idUser) {
+            $usuarioNom = 'Usuario #' . $idUser;
+        } else {
+            $usuarioNom = (string) ($get(['user_name', 'usuario', 'name']) ?? 'Sistema');
+        }
+
+        // Construir resumen legible del detalle
+        $partesDetalle = [];
+        if (!empty($arrNue['modulo'])) {
+            $partesDetalle[] = $arrNue['modulo'];
+        }
+        if (!empty($arrNue['termino'])) {
+            $partesDetalle[] = 'Búsqueda: "' . $arrNue['termino'] . '"';
+        }
+
+        // Extraer campos de negocio sin las llaves internas _meta_*
+        $negocioNue = array_diff_key($arrNue, array_flip(['_meta_actor', '_meta_url', '_meta_metodo', '_meta_ajax', '_meta_agent', 'modulo', 'updated_at', 'created_at']));
+        $negocioAnt = array_diff_key($arrAnt, array_flip(['updated_at', 'created_at']));
+
+        if (!empty($negocioAnt) && !empty($negocioNue)) {
+            $diffs = [];
+            foreach ($negocioNue as $kCampo => $vNue) {
+                $vAnt = $negocioAnt[$kCampo] ?? '∅';
+                $strAnt = is_scalar($vAnt) ? (string) $vAnt : json_encode($vAnt, JSON_UNESCAPED_UNICODE);
+                $strNue = is_scalar($vNue) ? (string) $vNue : json_encode($vNue, JSON_UNESCAPED_UNICODE);
+                $diffs[] = $kCampo . ': ' . \Illuminate\Support\Str::limit($strAnt, 24) . ' → ' . \Illuminate\Support\Str::limit($strNue, 28);
+                if (count($diffs) >= 4) break;
+            }
+            if (!empty($diffs)) {
+                $partesDetalle[] = implode(' | ', $diffs);
+            }
+        } elseif (!empty($negocioNue)) {
+            $ares = [];
+            foreach ($negocioNue as $kCampo => $vNue) {
+                if (is_null($vNue) || $vNue === '') continue;
+                $strNue = is_scalar($vNue) ? (string) $vNue : json_encode($vNue, JSON_UNESCAPED_UNICODE);
+                $ares[] = $kCampo . '=' . \Illuminate\Support\Str::limit($strNue, 28);
+                if (count($ares) >= 4) break;
+            }
+            if (!empty($ares)) {
+                $partesDetalle[] = implode(' · ', $ares);
+            }
+        }
+
+        $detalleTexto = !empty($partesDetalle)
+            ? implode(' — ', $partesDetalle)
+            : trim((string) ($get(['descripcion', 'description', 'detalles', 'detalle']) ?? 'Registro de auditoría #' . $id));
+
+        $tipoAcc = $infClasificarAccion($accionRaw);
+        $canal   = $infClasificarCanal($tabla, $accionRaw, $arrNue);
+
         return [
-            'id'      => (string) ($infG($infR, ['id']) ?? ''),
-            'fecha'   => $infC ? $infC->format('Y-m-d') : '',
-            'cuando'  => $infC ? $infC->format('d/m/Y H:i') : '—',
-            'usuario' => (string) ($infG($infR, ['user_name', 'usuario', 'name', 'user_id']) ?? 'sistema'),
-            'accion'  => (string) ($infG($infR, ['accion', 'action', 'evento']) ?? 'otro'),
-            'modulo'  => (string) ($infG($infR, ['modulo', 'module', 'modelo', 'model_type', 'tabla']) ?? '—'),
-            'ip'      => (string) ($infG($infR, ['ip', 'ip_address']) ?? '—'),
-            'detalle' => trim((string) ($infG($infR, ['descripcion', 'description', 'detalles', 'detalle', 'data']) ?? '')),
+            'id'           => $id,
+            'fecha'        => $carb ? $carb->format('Y-m-d') : '',
+            'cuando'       => $carb ? $carb->format('d/m/Y H:i:s') : '—',
+            'usuario'      => $usuarioNom,
+            'id_user'      => $idUser ? (string) $idUser : '',
+            'accion_raw'   => mb_strtoupper($accionRaw),
+            'accion_tipo'  => $tipoAcc,
+            'canal'        => $canal,
+            'modulo'       => $tabla,
+            'registro_id'  => (int) $regId,
+            'ip'           => $ip,
+            'detalle'      => $detalleTexto,
+            'json_ant'     => !empty($arrAnt) ? json_encode($arrAnt, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '',
+            'json_nue'     => !empty($arrNue) ? json_encode($arrNue, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : '',
+            'tiene_json'   => (!empty($arrAnt) || !empty($arrNue)),
         ];
     });
 
-    /* ── Clasificación de la acción (badge por tipo) ── */
-    $infTipo = function ($infA) {
-        $infA = strtolower(trim((string) $infA));
-        if (preg_match('/crea|regis|alta|nuev|store|insert/', $infA)) { return 'crear'; }
-        if (preg_match('/actu|edi|modi|updat|camb/', $infA)) { return 'actualizar'; }
-        if (preg_match('/elim|borr|baja|delet|destroy/', $infA)) { return 'eliminar'; }
-        if (preg_match('/login|logout|sesi|auth|acces/', $infA)) { return 'login'; }
-        return 'otro';
-    };
-    $infClase = ['crear' => 'inf-b-crear', 'actualizar' => 'inf-b-actualizar', 'eliminar' => 'inf-b-eliminar', 'login' => 'inf-b-login', 'otro' => ''];
-    $infTexto = ['crear' => 'Crear', 'actualizar' => 'Actualizar', 'eliminar' => 'Eliminar', 'login' => 'Sesión', 'otro' => 'Otro'];
+    $infClase = [
+        'crear'      => 'inf-b-crear',
+        'actualizar' => 'inf-b-actualizar',
+        'eliminar'   => 'inf-b-eliminar',
+        'vista'      => 'inf-b-vista',
+        'busqueda'   => 'inf-b-busqueda',
+        'login'      => 'inf-b-login',
+        'otro'       => '',
+    ];
+    $infTexto = [
+        'crear'      => 'CREAR',
+        'actualizar' => 'EDITAR',
+        'eliminar'   => 'ELIMINAR',
+        'vista'      => 'VISTA',
+        'busqueda'   => 'BÚSQUEDA',
+        'login'      => 'SESIÓN',
+        'otro'       => 'EVENTO',
+    ];
 
-    /* ── KPIs iniciales (servidor · el cliente los re-calcula al filtrar) ── */
-    $infHoy    = now()->format('Y-m-d');
-    $infKTotal = $infItems->count();
-    $infKHoy   = $infItems->where('fecha', $infHoy)->count();
-    $infKEsc   = $infItems->whereIn('accion', ['crear', 'actualizar', 'eliminar'])->count();
-    $infKUsr   = $infItems->pluck('usuario')->unique()->count();
+    // KPIs iniciales
+    $infHoy      = now()->format('Y-m-d');
+    $infKTotal   = $infItems->count();
+    $infKHoy     = $infItems->where('fecha', $infHoy)->count();
+    $infKEsc     = $infItems->whereIn('accion_tipo', ['crear', 'actualizar', 'eliminar'])->count();
+    $infKVistas  = $infItems->whereIn('accion_tipo', ['vista', 'busqueda'])->count();
+    $infKUsr     = $infItems->pluck('usuario')->unique()->count();
 
-    /* ── Rutas con route() (null si no existen: la acción se deshabilita sola) ── */
-    $infFragmento = \Illuminate\Support\Facades\Route::has('rsv.admin.auditorias.informes.fragmento')
-        ? route('rsv.admin.auditorias.informes.fragmento')
-        : (\Illuminate\Support\Facades\Route::has('rsv.admin.auditorias.fragmento') ? route('rsv.admin.auditorias.fragmento') : null);
+    $cntCanalAll     = $infKTotal;
+    $cntCanalCliente = $infItems->where('canal', 'cliente')->count();
+    $cntCanalAdmin   = $infItems->where('canal', 'admin')->count();
+    $cntCanalBd      = $infItems->where('canal', 'bd')->count();
 
-    /* ── Colector del panel de debug (INF-v1-3) · via al panel vía la directiva json de Blade ── */
+    // Ruta de refresco AJAX (con fallback al dashboard sin recargar navegador)
+    $infFragmento = '';
+    foreach ([
+        'rsv.admin.auditorias.informes.fragmento',
+        'rsv.admin.auditoria.informes.fragmento',
+        'rsv.admin.auditorias.fragmento',
+        'rsv.admin.dashboard',
+    ] as $rn) {
+        if (\Illuminate\Support\Facades\Route::has($rn)) {
+            $infFragmento = route($rn, ['inmueble_id' => $inmIdActual]);
+            break;
+        }
+    }
+
     $infFechas = $infItems->pluck('fecha')->filter();
     $infDbg = [
-        'version'       => 'INF-v1-3',
+        'version'       => 'INF-v2.0-DBG',
         'vista'         => 'partials/auditorias/informes.blade.php',
         'render'        => now()->format('H:i:s'),
         'auto_consulta' => $infAutoLogs,
-        'tabla'         => $infTablaUsada ?: 'NO detectada',
+        'tabla'         => $infTablaUsada,
         'eventos'       => $infKTotal,
+        'hoy'           => $infKHoy,
+        'crud'          => $infKEsc,
+        'vistas'        => $infKVistas,
         'usuarios'      => $infKUsr,
+        'canales'       => ['cliente' => $cntCanalCliente, 'admin' => $cntCanalAdmin, 'bd' => $cntCanalBd],
         'rango'         => ($infFechas->count() ? ($infFechas->min() . ' → ' . $infFechas->max()) : '—'),
-        'rutas'         => ['fragmento' => $infFragmento ?: 'NO definida'],
+        'rutas'         => ['fragmento' => $infFragmento ?: 'fallback URL actual'],
         'errores'       => $infErrores,
     ];
 @endphp
 
-<div id="sheet-informes">
+<div id="sheet-informes"
+     data-frag="{{ $infFragmento }}"
+     data-inmueble-id="{{ $inmIdActual }}"
+     data-total="{{ $infKTotal }}">
 
-    {{-- INF-v1-3 · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3 · vive y muere con esta copia · unicarDbg deja un solo par por página) --}}
-    <div id="infDbgToggle" title="Debug Informes (INF-v1-3)"><span class="inf-dbg-led" id="infDbgLed"></span>DBG<span class="inf-dbg-badge" id="infDbgBadge">0</span></div>
+    {{-- INF-v2.0-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3) --}}
+    <div id="infDbgToggle" title="Debug Informes (INF-v2.0-DBG)">
+        <span class="inf-dbg-led" id="infDbgLed"></span>DBG<span class="inf-dbg-badge" id="infDbgBadge">0</span>
+    </div>
     <div id="infDbgPanel" role="dialog" aria-label="Panel de debug de Informes de Auditoría">
         <div class="inf-dbg-header" id="infDbgHeader">
-            <span>DEBUG · Informes de Auditoría · INF-v1-3</span>
+            <span>DEBUG · Informes de Auditoría · INF-v2.0-DBG</span>
             <span class="inf-dbg-controls">
+                <button type="button" class="inf-dbg-btn" id="infDbgRefresh" title="Refrescar bitácora sin recargar">↻ Frag</button>
                 <button type="button" class="inf-dbg-btn" id="infDbgCopy">Copiar</button>
                 <button type="button" class="inf-dbg-btn" id="infDbgClear">Limpiar</button>
                 <button type="button" class="inf-dbg-btn" id="infDbgClose">✕</button>
@@ -170,63 +276,71 @@
     <div class="reservas-soft p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
         <style>
-            .reservas-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
-            .reservas-soft .table > :not(caption) > * > * { padding: 2px 7px; height: 20px; line-height: 1.1; vertical-align: middle; }
-            .reservas-soft .table thead th { font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); background-color: var(--head); border-bottom: 1px solid var(--grid) !important; }
-            .reservas-soft .table tbody td { font-size: 8px; color: var(--ink); border-bottom: 1px solid var(--grid); border-top: 0; white-space: nowrap; }
-            .reservas-soft .table tbody tr:hover > * { background-color: #fafcfe; --bs-table-accent-bg: transparent; }
+            .reservas-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#334155; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
+            .reservas-soft .table > :not(caption) > * > * { padding: 4px 8px; line-height: 1.25; vertical-align: middle; }
+            .reservas-soft .table thead th { font-size: 8.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); background-color: var(--head); border-bottom: 1px solid var(--grid-2) !important; }
+            .reservas-soft .table tbody td { font-size: 8.5px; color: var(--ink); border-bottom: 1px solid var(--grid); border-top: 0; white-space: nowrap; }
+            .reservas-soft .table tbody tr:hover > * { background-color: #f8fafc; --bs-table-accent-bg: transparent; }
             .reservas-soft .table tfoot > tr > td { font-size: 8.5px; font-weight: 700; color: var(--ink-2); background-color: var(--head); border-top: 2px solid var(--grid-2) !important; border-bottom: 0; white-space: nowrap; }
             .reservas-soft .table tfoot .st-total-label { color: var(--accent); letter-spacing: .03em; }
-            .reservas-soft .strong { color: var(--ink-2); font-weight: 600; }
-            .reservas-soft .sub { font-size: 7.5px; color: var(--ink-4); }
-            .reservas-soft .btn-mini { border: 1px solid var(--grid-2); background: #fff; color: var(--ink-3); font-family: inherit; font-size: 8.5px; font-weight: 500; padding: 1px 8px; border-radius: 3px; cursor: pointer; }
-            .reservas-soft .btn-mini:hover { color: var(--ink-2); border-color: #d7dee6; background: #fafcfe; }
-            .reservas-soft .btn-green { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-bd); font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 10px; border-radius: 3px; }
-            .reservas-soft .xls-search { font-size: 9px; color: var(--ink-2); background: #fff; border: 1px solid var(--grid-2); border-radius: 3px; padding: 2px 8px; box-shadow: none !important; outline: 0; min-width: 200px; }
-            .reservas-soft .xls-search:focus { border-color: #c8d6cd; }
-            .reservas-soft .count-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 600; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 8px; padding: 1px 8px; white-space: nowrap; }
+            .reservas-soft .strong { color: var(--ink-2); font-weight: 700; }
+            .reservas-soft .sub { font-size: 8px; color: var(--ink-3); }
+            .reservas-soft .btn-mini { border: 1px solid var(--grid-2); background: #fff; color: var(--ink-2); font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 8px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all .15s; }
+            .reservas-soft .btn-mini:hover { color: var(--accent); border-color: var(--accent-bd); background: var(--accent-bg); }
+            .reservas-soft .btn-green { background: var(--accent); color: #fff; border: 1px solid var(--accent); font-family: inherit; font-size: 8.5px; font-weight: 700; padding: 3px 10px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+            .reservas-soft .btn-green:hover { background: #2e5c43; border-color: #2e5c43; }
+            .reservas-soft .xls-search { font-size: 8.5px; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 5px; padding: 3px 9px; box-shadow: none !important; outline: 0; min-width: 210px; }
+            .reservas-soft .xls-search:focus { background: #fff; border-color: var(--accent-bd); }
+            .reservas-soft .count-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 700; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 8px; padding: 2px 9px; white-space: nowrap; }
             .reservas-soft .count-badge b { color: var(--accent); }
 
-            /* ── Extras inf- (KPIs, filtros, badges de acción, detalle) ── */
-            .reservas-soft .inf-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
-            @media (max-width: 575px) { .reservas-soft .inf-kpis { grid-template-columns: repeat(2, 1fr); } }
-            .reservas-soft .inf-kpi { border: 1px solid var(--grid-2); border-radius: 5px; padding: 7px 10px; background: #fff; }
-            .reservas-soft .inf-kpi b { display: block; font-size: 15px; line-height: 1.2; color: var(--ink-2); }
-            .reservas-soft .inf-kpi span { display: block; font-size: 7.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin-top: 2px; }
-            .reservas-soft .inf-kpi.inf-k-hoy b { color: var(--accent); }
-            .reservas-soft .inf-kpi.inf-k-esc b { color: #b36b64; }
-            .reservas-soft .inf-kpi.inf-k-usr b { color: #4a6fa5; }
-            .reservas-soft .inf-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 8px; }
-            .reservas-soft .inf-sel { font-size: 9px; color: var(--ink-2); background: #fff; border: 1px solid var(--grid-2); border-radius: 3px; padding: 2px 6px; box-shadow: none !important; outline: 0; font-family: inherit; }
-            .reservas-soft .inf-sel:focus { border-color: #c8d6cd; }
-            .reservas-soft .inf-badge { display: inline-block; font-size: 7.5px; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; border-radius: 8px; border: 1px solid var(--grid-2); background: var(--head); color: var(--ink-2); }
-            .reservas-soft .inf-b-crear      { background: var(--accent-bg); border-color: var(--accent-bd); color: var(--accent); }
-            .reservas-soft .inf-b-actualizar { background: #fbf8ee; border-color: #eee5cd; color: #8f7a45; }
-            .reservas-soft .inf-b-eliminar   { background: #fdf5f4; border-color: #f0dcd8; color: #b36b64; }
-            .reservas-soft .inf-b-login      { background: #f0f4fa; border-color: #d8e2ee; color: #4a6fa5; }
-            .reservas-soft .inf-detalle { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+            /* ── CHIPS DE CANAL (CLIENTE / ADMIN / BD) ── */
+            .inf-chip-bar { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+            .inf-canal-chip {
+                border: 1px solid var(--grid-2); background: #fff; color: var(--ink);
+                font-size: 8px; font-weight: 600; padding: 2px 8px; border-radius: 6px;
+                cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: all .15s;
+            }
+            .inf-canal-chip:hover { border-color: var(--accent-bd); color: var(--ink-2); }
+            .inf-canal-chip.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-bd); font-weight: 700; }
+            .inf-canal-cnt { font-size: 7px; font-weight: 700; padding: 0 5px; border-radius: 99px; background: var(--grid); color: var(--ink-2); }
+            .inf-canal-chip.active .inf-canal-cnt { background: var(--accent); color: #fff; }
 
-            /* ═════════ SPEC DE DISTANCIAS · INF-v1-3 (tab terminal TIP-v1.3) ═════════
-               TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
-                           inferior-derecha (nunca sube: con 16px de alto cabe bajo
-                           cualquier otro toggle sin tocarlo)
-                         · altura fija 16px · padding lateral 8px
-                         · radius 3px solo sup-izq · borde 1px arriba/izq
-                         · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
-               PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
-                           reales con getBoundingClientRect (los toggles ocultos 0×0
-                           no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
-                         · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
-               UNICIDAD  · este parcial puede renderizarse 2+ veces en la página: los
-                           nodos nacen y mueren con cada copia y unicarDbg() deja UN
-                           solo toggle/panel (los duplicados se eliminan al vuelo). */
-            #infDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
-            #infDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
+            /* ── KPIs ── */
+            .reservas-soft .inf-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 10px; }
+            @media (max-width: 767px) { .reservas-soft .inf-kpis { grid-template-columns: repeat(2, 1fr); } }
+            .reservas-soft .inf-kpi { border: 1px solid var(--grid-2); border-radius: 7px; padding: 8px 11px; background: #fff; }
+            .reservas-soft .inf-kpi b { display: block; font-size: 15px; line-height: 1.2; color: var(--ink-2); }
+            .reservas-soft .inf-kpi span { display: block; font-size: 7.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin-top: 2px; }
+            .reservas-soft .inf-kpi.inf-k-hoy b { color: var(--accent); }
+            .reservas-soft .inf-kpi.inf-k-esc b { color: #d97706; }
+            .reservas-soft .inf-kpi.inf-k-vis b { color: #2563eb; }
+            .reservas-soft .inf-kpi.inf-k-usr b { color: #7c3aed; }
+
+            .reservas-soft .inf-filtros { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--grid); }
+            .reservas-soft .inf-sel { font-size: 8.5px; color: var(--ink-2); background: var(--head); border: 1px solid var(--grid-2); border-radius: 5px; padding: 3px 7px; outline: 0; font-family: inherit; }
+            .reservas-soft .inf-sel:focus { border-color: var(--accent-bd); background: #fff; }
+
+            /* ── BADGES DE ACCIÓN ── */
+            .reservas-soft .inf-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 7px; font-weight: 800; letter-spacing: .04em; padding: 2px 7px; border-radius: 10px; border: 1px solid var(--grid-2); background: var(--head); color: var(--ink-2); text-transform: uppercase; }
+            .reservas-soft .inf-b-crear      { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+            .reservas-soft .inf-b-actualizar { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+            .reservas-soft .inf-b-eliminar   { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+            .reservas-soft .inf-b-vista      { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+            .reservas-soft .inf-b-busqueda   { background: #f5f3ff; border-color: #ddd6fe; color: #6d28d9; }
+            .reservas-soft .inf-b-login      { background: #ecfeff; border-color: #a5f3fc; color: #0e7490; }
+
+            .reservas-soft .inf-detalle { max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
+            .inf-json-pre { background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 10px 12px; font-family: ui-monospace, monospace; font-size: 9px; max-height: 320px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 0; }
+
+            /* ── PANEL DEBUG (TIP-v1.3) ── */
+            #infDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; transition: color .15s ease, background .15s ease; }
+            #infDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); }
             .inf-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
             .inf-dbg-led.err { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,.85); animation: infDbgBlink 1s steps(2,start) infinite; }
             @keyframes infDbgBlink { 50% { opacity: .35; } }
-            .inf-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; letter-spacing: 0; }
-            #infDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 380px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+            .inf-dbg-badge { display: none; color: #f87171; font-size: 8px; font-weight: 700; line-height: 1; }
+            #infDbgPanel { position: fixed; right: 0; bottom: 20px; z-index: 1091; width: 390px; max-width: calc(100vw - 16px); max-height: 60vh; display: none; flex-direction: column; background: rgba(2,6,23,.97); color: #e2e8f0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; box-shadow: 0 12px 32px rgba(0,0,0,.55); overflow: hidden; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
             .inf-dbg-header { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding: 5px 8px; background: #0b1220; border-bottom: 1px solid #1e293b; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: #38bdf8; cursor: pointer; }
             .inf-dbg-controls { display: flex; gap: 4px; }
             .inf-dbg-btn { background: #334155; color: #e2e8f0; border: 0; border-radius: 4px; font-size: 9px; padding: 2px 7px; cursor: pointer; font-family: inherit; }
@@ -240,94 +354,210 @@
         </style>
 
         <!-- HEADER -->
-        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 8px;">
-            <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
-                <i class="bi bi-file-earmark-bar-graph me-1" style="font-size: 8px; color: #5d8a70;"></i> Informes de Auditoría
-                <span class="badge rounded-pill ms-1" id="infChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">INF-v1-3</span>
-            </h6>
-            <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-                <span class="count-badge" title="Eventos cargados (máximo 500)">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: 8px;">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <h6 class="fw-bold mb-0" style="font-size: 11px; color: #334155;">
+                    <i class="bi bi-shield-lock-fill text-success me-1"></i> Bitácora General e Informes de Auditoría
+                </h6>
+                <span class="badge rounded-pill" id="infChipVer" style="font-size: 7px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; font-family: ui-monospace, monospace;">
+                    INF-v2.0-DBG
+                </span>
+                <span class="count-badge" title="Eventos cargados en memoria (máximo 500)">
                     <b id="infCount">{{ $infKTotal }}</b> evento(s)
                 </span>
-                <input type="text" id="infSearch" class="xls-search" placeholder="Buscar usuario, acción, módulo, detalle…" autocomplete="off" style="width: 190px;">
-                @if($infFragmento)
-                    <button type="button" class="btn-mini" id="infBtnRefrescar">
-                        <i class="bi bi-arrow-clockwise" style="font-size: 8px;"></i> Refrescar
-                    </button>
-                @endif
-                <button type="button" class="btn-green" id="infBtnCsv">
-                    <i class="bi bi-download" style="font-size: 8px;"></i> Exportar CSV
+            </div>
+
+            <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+                <input type="text" id="infSearch" class="xls-search" placeholder="Buscar usuario, doc, tabla, acción, IP o cambio…" autocomplete="off">
+                <button type="button" class="btn-mini" id="infBtnRefrescar" title="Sincronizar últimos eventos sin recargar página">
+                    <i class="bi bi-arrow-clockwise"></i> Refrescar
+                </button>
+                <button type="button" class="btn-green" id="infBtnCsv" title="Exportar vista filtrada a Excel CSV">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
                 </button>
             </div>
         </div>
 
-        <!-- KPIs (conjunto FILTRADO · valores iniciales del servidor) -->
+        <!-- 5 KPIs DINÁMICOS (SE RECALCULAN AL FILTRAR) -->
         <div class="inf-kpis">
-            <div class="inf-kpi"><b id="infKpiTotal">{{ $infKTotal }}</b><span>Eventos (filtro)</span></div>
-            <div class="inf-kpi inf-k-hoy"><b id="infKpiHoy">{{ $infKHoy }}</b><span>Eventos de hoy</span></div>
-            <div class="inf-kpi inf-k-esc"><b id="infKpiEsc">{{ $infKEsc }}</b><span>Escritura (altas·cambios·bajas)</span></div>
-            <div class="inf-kpi inf-k-usr"><b id="infKpiUsr">{{ $infKUsr }}</b><span>Usuarios distintos</span></div>
+            <div class="inf-kpi">
+                <b id="infKpiTotal">{{ $infKTotal }}</b>
+                <span>Eventos (Filtro)</span>
+            </div>
+            <div class="inf-kpi inf-k-hoy">
+                <b id="infKpiHoy">{{ $infKHoy }}</b>
+                <span>Eventos de Hoy</span>
+            </div>
+            <div class="inf-kpi inf-k-esc">
+                <b id="infKpiEsc">{{ $infKEsc }}</b>
+                <span>Mutaciones CRUD</span>
+            </div>
+            <div class="inf-kpi inf-k-vis">
+                <b id="infKpiVis">{{ $infKVistas }}</b>
+                <span>Accesos y Vistas</span>
+            </div>
+            <div class="inf-kpi inf-k-usr">
+                <b id="infKpiUsr">{{ $infKUsr }}</b>
+                <span>Usuarios Distintos</span>
+            </div>
         </div>
 
-        <!-- FILTROS -->
+        <!-- BARRA DE FILTROS: CHIPS DE CANAL + TIPO DE ACCIÓN + RANGO DE FECHAS -->
         <div class="inf-filtros">
-            <select id="infFiltroTipo" class="inf-sel" title="Tipo de acción">
-                <option value="">Todas las acciones</option>
-                <option value="crear">Crear</option>
-                <option value="actualizar">Actualizar</option>
-                <option value="eliminar">Eliminar</option>
-                <option value="login">Sesiones</option>
-                <option value="otro">Otros</option>
-            </select>
-            <input type="date" id="infDesde" class="inf-sel" title="Desde">
-            <input type="date" id="infHasta" class="inf-sel" title="Hasta">
-            <button type="button" class="btn-mini" id="infBtnLimpiar">Limpiar filtros</button>
+            <div class="inf-chip-bar">
+                <button type="button" class="inf-canal-chip active" data-canal="">
+                    Todos <span class="inf-canal-cnt" id="infCntAll">{{ $cntCanalAll }}</span>
+                </button>
+                <button type="button" class="inf-canal-chip" data-canal="cliente">
+                    <i class="bi bi-person-badge text-success"></i> Portal Cliente <span class="inf-canal-cnt" id="infCntCli">{{ $cntCanalCliente }}</span>
+                </button>
+                <button type="button" class="inf-canal-chip" data-canal="admin">
+                    <i class="bi bi-sliders text-primary"></i> Panel Admin <span class="inf-canal-cnt" id="infCntAdm">{{ $cntCanalAdmin }}</span>
+                </button>
+                <button type="button" class="inf-canal-chip" data-canal="bd">
+                    <i class="bi bi-database text-warning"></i> Tablas BD (CRUD) <span class="inf-canal-cnt" id="infCntBd">{{ $cntCanalBd }}</span>
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <select id="infFiltroTipo" class="inf-sel" title="Filtrar por tipo de operación">
+                    <option value="">Todas las acciones</option>
+                    <option value="crear">Crear (Altas / Store)</option>
+                    <option value="actualizar">Editar (Cambios / Update)</option>
+                    <option value="eliminar">Eliminar (Bajas / Delete)</option>
+                    <option value="vista">Visualización (Ingresos / Fragmentos)</option>
+                    <option value="busqueda">Búsquedas</option>
+                    <option value="login">Sesiones</option>
+                </select>
+                <input type="date" id="infDesde" class="inf-sel" title="Fecha inicial">
+                <input type="date" id="infHasta" class="inf-sel" title="Fecha final">
+                <button type="button" class="btn-mini" id="infBtnLimpiar">
+                    <i class="bi bi-eraser"></i> Limpiar
+                </button>
+            </div>
         </div>
 
-        <!-- TABLA (filas renderizadas en servidor: funciona incluso sin JS) -->
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0" style="min-width: 720px;">
-                <thead>
+        <!-- TABLA DE AUDITORÍA -->
+        <div class="table-responsive" style="max-height: 490px; overflow-y: auto;">
+            <table class="table table-sm table-hover align-middle mb-0" style="min-width: 820px;">
+                <thead style="position: sticky; top: 0; z-index: 2;">
                     <tr>
-                        <th style="width: 112px;">Fecha / Hora</th>
-                        <th>Usuario</th>
-                        <th style="width: 86px;">Acción</th>
-                        <th>Módulo</th>
-                        <th style="width: 100px;">IP</th>
-                        <th>Detalle</th>
+                        <th style="width: 65px;">#ID</th>
+                        <th style="width: 125px;">Fecha / Hora</th>
+                        <th style="width: 185px;">Usuario / Actor</th>
+                        <th style="width: 110px;">Acción</th>
+                        <th style="width: 165px;">Tabla / Módulo</th>
+                        <th style="width: 95px;">IP</th>
+                        <th>Detalle / Cambios Registrados</th>
+                        <th style="width: 55px;" class="text-end">JSON</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($infItems as $inf)
                         @php
-                            $infT = $infTipo($inf['accion']);
-                            $infHay = mb_strtolower(preg_replace('/\s+/', ' ', $inf['usuario'] . ' ' . $inf['accion'] . ' ' . $inf['modulo'] . ' ' . $inf['detalle']));
+                            $tAcc = $inf['accion_tipo'];
+                            $haystack = mb_strtolower(preg_replace('/\s+/', ' ',
+                                $inf['id'] . ' ' .
+                                $inf['usuario'] . ' ' .
+                                $inf['accion_raw'] . ' ' .
+                                $inf['modulo'] . ' ' .
+                                $inf['registro_id'] . ' ' .
+                                $inf['ip'] . ' ' .
+                                $inf['detalle']
+                            ));
                         @endphp
-                        <tr data-inf-search="{{ $infHay }}" data-accion="{{ $infT }}" data-fecha="{{ $inf['fecha'] }}" data-usuario="{{ mb_strtolower($inf['usuario']) }}">
+                        <tr data-inf-search="{{ $haystack }}"
+                            data-accion="{{ $tAcc }}"
+                            data-canal="{{ $inf['canal'] }}"
+                            data-fecha="{{ $inf['fecha'] }}"
+                            data-usuario="{{ mb_strtolower($inf['usuario']) }}"
+                            data-id="{{ $inf['id'] }}"
+                            data-ant="{{ $inf['json_ant'] }}"
+                            data-nue="{{ $inf['json_nue'] }}">
+                            <td class="sub fw-bold">#{{ $inf['id'] }}</td>
                             <td class="strong">{{ $inf['cuando'] }}</td>
-                            <td>{{ $inf['usuario'] }}</td>
-                            <td><span class="inf-badge {{ $infClase[$infT] }}">{{ $infTexto[$infT] }}</span></td>
-                            <td class="sub">{{ $inf['modulo'] }}</td>
+                            <td>
+                                <span class="strong d-block text-truncate" style="max-width: 180px;" title="{{ $inf['usuario'] }}">
+                                    {{ $inf['usuario'] }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="inf-badge {{ $infClase[$tAcc] ?? '' }}" title="{{ $inf['accion_raw'] }}">
+                                    {{ $inf['accion_raw'] ?: ($infTexto[$tAcc] ?? 'EVENTO') }}
+                                </span>
+                            </td>
+                            <td>
+                                <code style="font-size: 8px; color: var(--ink-2);">{{ $inf['modulo'] }}</code>
+                                @if($inf['registro_id'] > 0)
+                                    <span class="sub ms-1">#{{ $inf['registro_id'] }}</span>
+                                @endif
+                            </td>
                             <td class="sub">{{ $inf['ip'] }}</td>
-                            <td class="sub"><div class="inf-detalle" title="{{ $inf['detalle'] }}">{{ $inf['detalle'] !== '' ? $inf['detalle'] : '—' }}</div></td>
+                            <td>
+                                <div class="inf-detalle" title="{{ $inf['detalle'] }}">
+                                    {{ $inf['detalle'] !== '' ? $inf['detalle'] : '—' }}
+                                </div>
+                            </td>
+                            <td class="text-end">
+                                @if($inf['tiene_json'])
+                                    <button type="button"
+                                            class="btn-mini js-inf-ver-json"
+                                            title="Inspeccionar datos anteriores y nuevos (#{{ $inf['id'] }})">
+                                        <i class="bi bi-code-square text-primary"></i>
+                                    </button>
+                                @else
+                                    <span class="sub">—</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-3" style="font-size: 8.5px; color: #b3bcc7;">
-                                <i class="bi bi-journal-text me-1"></i> Sin eventos de auditoría registrados todavía.
+                            <td colspan="8" class="text-center py-4" style="font-size: 9px; color: #94a3b8;">
+                                <i class="bi bi-journal-text d-block mb-1" style="font-size: 18px;"></i>
+                                Sin eventos de auditoría registrados todavía.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td class="st-total-label">
-                            <i class="bi bi-calculator me-1" style="font-size: 8px;"></i> TOTAL · {{ $infKTotal }} evento(s)
+                        <td colspan="8" class="st-total-label">
+                            <i class="bi bi-shield-check me-1"></i>
+                            MOSTRANDO <span id="infFootVisible">{{ $infKTotal }}</span> DE {{ $infKTotal }} EVENTO(S) EN BITÁCORA INMUTABLE
                         </td>
-                        <td></td><td></td><td></td><td></td><td></td>
                     </tr>
                 </tfoot>
             </table>
+        </div>
+
+        {{-- MODAL INSPECTOR DE PAYLOAD JSON (ANTES VS DESPUÉS) --}}
+        <div class="modal fade" id="infModalJson" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content reservas-soft" style="border:0; border-radius:10px; overflow:hidden;">
+                    <div class="modal-header bg-dark text-white py-2 px-3">
+                        <span class="fw-bold" style="font-size: 10.5px;" id="infModalJsonTitle">
+                            <i class="bi bi-code-slash text-warning me-1"></i> Inspector de Evento de Auditoría
+                        </span>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="font-size:9px;"></button>
+                    </div>
+                    <div class="modal-body p-3 bg-light">
+                        <div class="row g-2">
+                            <div class="col-12 col-md-6">
+                                <div class="strong mb-1" style="font-size: 8.5px; text-transform: uppercase; color: #b91c1c;">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i> Datos Anteriores (Original)
+                                </div>
+                                <pre class="inf-json-pre" id="infModalJsonAnt">Sin estado previo (Creación o Vista)</pre>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="strong mb-1" style="font-size: 8.5px; text-transform: uppercase; color: #15803d;">
+                                    <i class="bi bi-check2-circle me-1"></i> Datos Nuevos / Contexto
+                                </div>
+                                <pre class="inf-json-pre" id="infModalJsonNue">{}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -337,32 +567,27 @@
 <script>
 (function () {
     'use strict';
-    if (window.__jsInformesListo) return;
-    window.__jsInformesListo = true;
 
-    var URL_FRAGMENTO = '{{ $infFragmento ?? "" }}';
-
-    /* ═══ 0) PANEL DE DEBUG LOCAL INF-v1-3 (diseño TIP-v1.3 aprobado) ═══
-       IIFE propia con $ por id: no toca el resto del script.
-       Exclusiva de este fragmento: los nodos son HTML de la hoja (viven
-       DENTRO de #sheet-informes y renacen con cada refresco) y el respaldo
-       solo re-crea DENTRO de la primera hoja. Cero document.body.
-       Con copias múltiples del parcial, unicarDbg() deja un solo par. */
+    /* ═══ PANEL DE DEBUG LOCAL INF-v2.0-DBG (diseño TIP-v1.3) ═══ */
     var DBG = (window.InfDbg && window.InfDbg.alive && window.InfDbg.alive())
         ? window.InfDbg
         : (function () {
             var MAX = 250, numErr = 0;
             function $(id) { return document.getElementById(id); }
+            function unicarDbg() {
+                var ts = document.querySelectorAll('#infDbgToggle');
+                for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
+                var ps = document.querySelectorAll('#infDbgPanel');
+                for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
+            }
             function asegurarNodos() {
-                /* Respaldo: si un swap externo borrara los nodos (normalmente
-                   viven dentro de la primera #sheet-informes y renacen con el
-                   HTML del refresco), se re-crean DENTRO de esa hoja. */
+                unicarDbg();
                 var rootDbg = document.querySelector('#sheet-informes');
-                if (!rootDbg) { return; } // sin vista montada → cero nodos
+                if (!rootDbg) { return; }
                 if (!$('infDbgToggle')) {
                     var t = document.createElement('div');
                     t.id = 'infDbgToggle';
-                    t.title = 'Debug Informes (INF-v1-3)';
+                    t.title = 'Debug Informes (INF-v2.0-DBG)';
                     t.innerHTML = '<span class="inf-dbg-led" id="infDbgLed"></span>DBG<span class="inf-dbg-badge" id="infDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -370,8 +595,9 @@
                     var p = document.createElement('div');
                     p.id = 'infDbgPanel';
                     p.innerHTML = '<div class="inf-dbg-header" id="infDbgHeader">' +
-                        '<span>DEBUG · Informes de Auditoría · INF-v1-3</span>' +
+                        '<span>DEBUG · Informes de Auditoría · INF-v2.0-DBG</span>' +
                         '<span class="inf-dbg-controls">' +
+                        '<button type="button" class="inf-dbg-btn" id="infDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="inf-dbg-btn" id="infDbgCopy">Copiar</button>' +
                         '<button type="button" class="inf-dbg-btn" id="infDbgClear">Limpiar</button>' +
                         '<button type="button" class="inf-dbg-btn" id="infDbgClose">✕</button>' +
@@ -380,24 +606,20 @@
                 }
                 apilar();
             }
-            /* INF-v1-3: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
-               apila: con 16px de alto cabe bajo cualquier otro toggle sin
-               tocarlo). Solo el PANEL esquiva a los vecinos de las otras
-               vistas: bottom = max(20, vecino + 4) en píxeles reales. */
             function apilar() {
-                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle']; // serie completa de hermanos
+                var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle'];
                 var ocupado = 0;
                 for (var i = 0; i < ids.length; i++) {
                     var el = $(ids[i]);
                     if (!el) { continue; }
                     var r = el.getBoundingClientRect();
-                    if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
-                    var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                    if (!r.width && !r.height) { continue; }
+                    var desdeAbajo = window.innerHeight - r.top;
                     if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
                 }
                 var t = $('infDbgToggle'), p = $('infDbgPanel');
-                if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
-                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+                if (t) { t.style.bottom = '0px'; }
+                if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; }
             }
             function hora() {
                 var d = new Date();
@@ -444,69 +666,35 @@
                 clear: function () { var b = $('infDbgBody'); if (b) { b.innerHTML = ''; } },
                 copy: function () {
                     var b = $('infDbgBody'); if (!b) { return; }
-                    var txt = '=== DEBUG informes INF-v1-3 · ' + new Date().toISOString() + ' ===\n';
+                    var txt = '=== DEBUG informes INF-v2.0-DBG · ' + new Date().toISOString() + ' ===\n';
                     for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(txt).then(function () {
                             api.log('log copiado al portapapeles', 'ok');
-                        }).catch(function () {
-                            api.log('no se pudo copiar (permisos del navegador)', 'warn');
                         });
-                    } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                    }
                 },
+                unicar: unicarDbg,
                 ensure: function () { asegurarNodos(); },
                 alive: function () { return !!$('infDbgToggle'); }
             };
             window.InfDbg = api;
             return api;
         })();
-    if (!DBG) { return; }
-    DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+
+    DBG.ensure();
     var infdbg = function (txt, nivel) { if (DBG && DBG.log) { DBG.log(txt, nivel); } };
-
-    function unicarDbg() {
-        /* INF-v1-3: el parcial puede renderizarse 2+ veces; el HTML de cada
-           copia trae sus propios nodos DBG → se conservan los de la primera
-           hoja y se eliminan los duplicados (un solo toggle/panel por página). */
-        var ts = document.querySelectorAll('#infDbgToggle');
-        for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
-        var ps = document.querySelectorAll('#infDbgPanel');
-        for (var j = 1; j < ps.length; j++) { if (ps[j] && ps[j].remove) { ps[j].remove(); } }
-    }
-
-    /* ═══ 0b) BOOT · contexto del servidor (SRVDBG · JSON inyectado por Blade) ═══ */
-    var SRVDBG = @json($infDbg ?? null);
-    infdbg('INF-v1-3 activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · nodos nacen y mueren con el fragmento', 'ok');
-    infdbg('init · eventos=' + (SRVDBG ? SRVDBG.eventos : '?') + ' · usuarios=' + (SRVDBG ? SRVDBG.usuarios : '?') +
-        ' · autoconsulta=' + (SRVDBG ? (SRVDBG.auto_consulta ? 'sí (el controlador no pasó datos)' : 'no (datos del controlador)') : '?') +
-        ' · tabla=' + (SRVDBG ? SRVDBG.tabla : '?'), 'info');
-    if (SRVDBG && SRVDBG.rango && SRVDBG.rango !== '—') {
-        infdbg('rango temporal del dataset · ' + SRVDBG.rango, 'debug');
-    }
-    if (SRVDBG && SRVDBG.rutas) {
-        var _rk = Object.keys(SRVDBG.rutas);
-        for (var _ri = 0; _ri < _rk.length; _ri++) {
-            if (SRVDBG.rutas[_rk[_ri]] === 'NO definida') {
-                infdbg('ruta no definida: rsv.admin.auditorias…' + _rk[_ri] + ' (el botón Refrescar se oculta solo)', 'warn');
-            }
-        }
-        infdbg('Rutas · fragmento=' + SRVDBG.rutas.fragmento, 'debug');
-    }
-    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
-        for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
-            infdbg('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
-        }
-    }
 
     /* ═══ 1) KPIs · re-calculados sobre las filas VISIBLES del filtro ═══ */
     function actualizarKpis(filas) {
         var hoy = new Date();
         var hoyStr = hoy.getFullYear() + '-' + ('0' + (hoy.getMonth() + 1)).slice(-2) + '-' + ('0' + hoy.getDate()).slice(-2);
-        var total = 0, esc = 0, hoyN = 0, usrs = {};
+        var total = 0, esc = 0, vis = 0, hoyN = 0, usrs = {};
         filas.forEach(function (tr) {
             total++;
             var acc = tr.getAttribute('data-accion') || '';
             if (acc === 'crear' || acc === 'actualizar' || acc === 'eliminar') { esc++; }
+            if (acc === 'vista' || acc === 'busqueda') { vis++; }
             if ((tr.getAttribute('data-fecha') || '') === hoyStr) { hoyN++; }
             var u = tr.getAttribute('data-usuario') || '';
             if (u) { usrs[u] = 1; }
@@ -515,34 +703,48 @@
         fijar('infKpiTotal', total);
         fijar('infKpiHoy', hoyN);
         fijar('infKpiEsc', esc);
+        fijar('infKpiVis', vis);
         fijar('infKpiUsr', Object.keys(usrs).length);
         fijar('infCount', total);
+        fijar('infFootVisible', total);
     }
 
-    /* ═══ 2) FILTROS (búsqueda + tipo + rango de fechas) sobre filas Blade ═══ */
+    /* ═══ 2) FILTROS (canal + búsqueda + tipo de acción + rango de fechas) ═══ */
     function aplicarFiltro(origen) {
         var s = document.getElementById('infSearch');
         var t = document.getElementById('infFiltroTipo');
         var d = document.getElementById('infDesde');
         var h = document.getElementById('infHasta');
-        var q = (s && s.value ? s.value : '').toLowerCase().trim();
-        var tipo = (t && t.value) || '';
+        var chipActivo = document.querySelector('#sheet-informes .inf-canal-chip.active');
+
+        var q     = (s && s.value ? s.value : '').toLowerCase().trim();
+        var tipo  = (t && t.value) || '';
+        var canal = chipActivo ? (chipActivo.getAttribute('data-canal') || '') : '';
         var desde = (d && d.value) || '';
         var hasta = (h && h.value) || '';
+
         var filas = [];
         document.querySelectorAll('#sheet-informes tbody tr[data-inf-search]').forEach(function (tr) {
             var hay = tr.getAttribute('data-inf-search') || '';
-            var f = tr.getAttribute('data-fecha') || '';
-            var ok = (!q || hay.indexOf(q) !== -1) && (!tipo || tr.getAttribute('data-accion') === tipo);
-            if (ok && (desde || hasta) && !f) { ok = false; } // filas sin fecha fuera del rango
+            var f   = tr.getAttribute('data-fecha') || '';
+            var c   = tr.getAttribute('data-canal') || '';
+            var a   = tr.getAttribute('data-accion') || '';
+
+            var ok = (!q || hay.indexOf(q) !== -1)
+                  && (!tipo || a === tipo)
+                  && (!canal || c === canal);
+
+            if (ok && (desde || hasta) && !f) { ok = false; }
             if (ok && desde && f < desde) { ok = false; }
             if (ok && hasta && f > hasta) { ok = false; }
+
             tr.style.display = ok ? '' : 'none';
             if (ok) { filas.push(tr); }
         });
+
         actualizarKpis(filas);
         if (origen) {
-            infdbg('filtro (' + origen + ') · "' + q + '" · tipo=' + (tipo || 'todas') + ' · desde=' + (desde || '—') + ' · hasta=' + (hasta || '—') + ' · ' + filas.length + ' fila(s) visibles', 'debug');
+            infdbg('filtro (' + origen + ') · canal=' + (canal || 'todos') + ' · tipo=' + (tipo || 'todas') + ' · q="' + q + '" · visibles=' + filas.length, 'debug');
         }
     }
 
@@ -555,101 +757,196 @@
         if (t) { t.value = ''; }
         if (d) { d.value = ''; }
         if (h) { h.value = ''; }
+        document.querySelectorAll('#sheet-informes .inf-canal-chip').forEach(function (c, idx) {
+            c.classList.toggle('active', idx === 0);
+        });
         aplicarFiltro('limpiar');
     }
 
-    /* ═══ 3) EXPORTAR CSV (filas del filtro actual · BOM UTF-8 · separador ;) ═══ */
+    /* ═══ 3) EXPORTAR CSV (filas visibles del filtro actual · BOM UTF-8 · separador ;) ═══ */
     function exportarCsv() {
         var filas = [];
         document.querySelectorAll('#sheet-informes tbody tr[data-inf-search]').forEach(function (tr) {
             if (tr.style.display !== 'none') { filas.push(tr); }
         });
-        if (!filas.length) { infdbg('exportar CSV cancelado · 0 fila(s) en el filtro', 'warn'); return; }
+        if (!filas.length) {
+            infdbg('exportar CSV cancelado · 0 fila(s) en el filtro', 'warn');
+            return;
+        }
         var esc = function (v) {
-            var s2 = String(v == null ? '' : v);
-            return (s2.indexOf(';') !== -1 || s2.indexOf('"') !== -1 || s2.indexOf('\n') !== -1) ? '"' + s2.replace(/"/g, '""') + '"' : s2;
+            var s2 = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+            return (s2.indexOf(';') !== -1 || s2.indexOf('"') !== -1 || s2.indexOf('\n') !== -1)
+                ? '"' + s2.replace(/"/g, '""') + '"'
+                : s2;
         };
-        var lineas = ['Fecha/Hora;Usuario;Accion;Modulo;IP;Detalle'];
+        var lineas = ['ID;Fecha/Hora;Usuario;Accion;Tabla/Modulo;IP;Detalle'];
         filas.forEach(function (tr) {
             var tds = tr.querySelectorAll('td');
             var fila = [];
-            for (var i = 0; i < tds.length; i++) { fila.push(esc(tds[i].textContent.trim())); }
+            for (var i = 0; i < 7 && i < tds.length; i++) {
+                fila.push(esc(tds[i].textContent));
+            }
             lineas.push(fila.join(';'));
         });
         var blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'informe-auditoria-' + new Date().toISOString().slice(0, 10) + '.csv';
+        a.download = 'informe-auditoria-rsv-' + new Date().toISOString().slice(0, 10) + '.csv';
         document.body.appendChild(a);
         a.click();
         if (a.remove) { a.remove(); }
-        infdbg('CSV exportado · ' + filas.length + ' fila(s) del filtro actual · BOM UTF-8 · separador ;', 'ok');
+        infdbg('CSV exportado · ' + filas.length + ' fila(s) · BOM UTF-8 · separador ;', 'ok');
     }
 
-    /* ═══ 4) REFRESCAR el fragmento (solo si la ruta existe) ═══ */
-    function refrescar() {
-        if (!URL_FRAGMENTO) { infdbg('sin ruta de fragmento · fallback reload()', 'warn'); window.location.reload(); return; }
-        infdbg('refrescando fragmento · ' + URL_FRAGMENTO, 'net');
-        fetch(URL_FRAGMENTO, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, cache: 'no-store' })
-            .then(function (r) { if (!r.ok) { throw new Error('fragmento'); } return r.text(); })
-            .then(function (html) {
-                var temp = document.createElement('div');
-                temp.innerHTML = html;
-                var nuevo = temp.querySelector('#sheet-informes');
-                var copias = document.querySelectorAll('#sheet-informes');
-                if (!nuevo || copias.length === 0) { infdbg('respuesta sin #sheet-informes · fallback reload()', 'warn'); window.location.reload(); return; }
-                copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
-                unicarDbg(); aplicarFiltro();
-                if (window.InfDbg && window.InfDbg.ensure) { window.InfDbg.ensure(); }
-                infdbg('fragmento refrescado · copias=' + copias.length + ' · dataset releído del servidor', 'net');
-            })
-            .catch(function () { infdbg('fallo al refrescar el fragmento · fallback reload()', 'err'); window.location.reload(); });
+    /* ═══ 4) REFRESCAR EL FRAGMENTO 100% AJAX (SIN RECARGAR NAVEGADOR) ═══ */
+    window.infReloadFragment = function (motivo) {
+        var root = document.getElementById('sheet-informes');
+        if (!root) return Promise.resolve();
+
+        var fragUrl = root.getAttribute('data-frag') || window.location.pathname;
+        var inmId   = root.getAttribute('data-inmueble-id') || 'todos';
+
+        var urlObj = new URL(fragUrl, window.location.origin);
+        urlObj.searchParams.set('inmueble_id', inmId);
+        urlObj.searchParams.set('_t', Date.now());
+
+        var t0 = performance.now();
+        infdbg('GET Fragmento (' + (motivo || 'manual') + ') → ' + urlObj.pathname + urlObj.search, 'net');
+
+        return fetch(urlObj.toString(), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+            cache: 'no-store'
+        })
+        .then(function (r) {
+            return r.text().then(function (html) {
+                return { ok: r.ok, status: r.status, html: html, ms: Math.round(performance.now() - t0) };
+            });
+        })
+        .then(function (res) {
+            if (!res.ok) {
+                infdbg('Error HTTP ' + res.status + ' al refrescar Informes (' + res.ms + 'ms)', 'err');
+                return;
+            }
+            var doc = new DOMParser().parseFromString(res.html, 'text/html');
+            var nuevo = doc.getElementById('sheet-informes');
+            var copias = document.querySelectorAll('#sheet-informes');
+            if (!nuevo || !copias.length) {
+                infdbg('Respuesta sin #sheet-informes (' + res.ms + 'ms)', 'warn');
+                return;
+            }
+            copias.forEach(function (actual) {
+                actual.replaceWith(nuevo.cloneNode(true));
+            });
+            DBG.ensure();
+            aplicarFiltro();
+            infdbg('Bitácora de Informes actualizada (' + res.ms + 'ms) · eventos=' + (nuevo.getAttribute('data-total') || '?'), 'ok');
+        })
+        .catch(function (err) {
+            infdbg('Excepción al refrescar Informes: ' + (err && err.message ? err.message : 'red'), 'err');
+        });
+    };
+
+    /* ═══ 5) ABRIR INSPECTOR MODAL JSON (ANTES VS DESPUÉS) ═══ */
+    function abrirModalJsonDeFila(tr) {
+        if (!tr) return;
+        var id  = tr.getAttribute('data-id') || '?';
+        var ant = tr.getAttribute('data-ant') || '';
+        var nue = tr.getAttribute('data-nue') || '';
+
+        var elTitle = document.getElementById('infModalJsonTitle');
+        var elAnt   = document.getElementById('infModalJsonAnt');
+        var elNue   = document.getElementById('infModalJsonNue');
+        var modalEl = document.getElementById('infModalJson');
+
+        if (elTitle) elTitle.innerHTML = '<i class="bi bi-code-slash text-warning me-1"></i> Inspector de Evento #' + id;
+        if (elAnt)   elAnt.textContent   = ant || '— Sin datos anteriores (Creación o Visualización) —';
+        if (elNue)   elNue.textContent   = nue || '— Sin datos nuevos —';
+
+        if (modalEl && window.bootstrap && window.bootstrap.Modal) {
+            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        }
+        infdbg('Inspeccionando JSON del evento #' + id, 'info');
     }
 
-    /* Botones del panel + acciones de la vista por DELEGACIÓN en document
-       (el guard __jsInformesListo garantiza que se registran UNA sola vez;
-       sobreviven a los swaps) */
-    if (window.__infDbgDocHandler) { document.removeEventListener('click', window.__infDbgDocHandler); }
-    window.__infDbgDocHandler = function (e) {
-        var t = e.target;
-        if (!t || !t.closest) { return; }
-        if (t.closest('#infDbgToggle')) { DBG.togglePanel(); return; }
-        if (t.closest('#infDbgClose')) { e.stopPropagation(); DBG.close(); return; }
-        if (t.closest('#infDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
-        if (t.closest('#infDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
-        if (t.closest('#infBtnLimpiar')) { limpiarFiltros(); return; }
-        if (t.closest('#infBtnCsv')) { exportarCsv(); return; }
-        if (t.closest('#infBtnRefrescar')) { refrescar(); return; }
-    };
-    document.addEventListener('click', window.__infDbgDocHandler);
-    if (window.__infDbgDblHandler) { document.removeEventListener('dblclick', window.__infDbgDblHandler); }
-    window.__infDbgDblHandler = function (e) {
-        if (e.target && e.target.closest && e.target.closest('#infDbgHeader')) { DBG.close(); }
-    };
-    document.addEventListener('dblclick', window.__infDbgDblHandler);
+    if (!window.__jsInformesV2Listo) {
+        window.__jsInformesV2Listo = true;
 
-    /* Filtros por DELEGACIÓN (input para texto y fechas, change para el select) */
-    if (window.__infDocHandler) { document.removeEventListener('input', window.__infDocHandler); document.removeEventListener('change', window.__infDocHandler); }
-    window.__infDocHandler = function (e) {
-        var t = e.target;
-        if (!t || !t.id) { return; }
-        if (t.id === 'infSearch' || t.id === 'infDesde' || t.id === 'infHasta') { aplicarFiltro(); }
-        else if (t.id === 'infFiltroTipo') { aplicarFiltro(); }
-    };
-    document.addEventListener('input', window.__infDocHandler);
-    document.addEventListener('change', window.__infDocHandler);
+        document.addEventListener('click', function (e) {
+            var t = e.target;
+            if (!t || !t.closest) { return; }
 
-    /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
-       toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
-    document.addEventListener('shown.bs.tab', function () {
-        if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
-    });
+            if (t.closest('#infDbgToggle'))  { DBG.togglePanel(); return; }
+            if (t.closest('#infDbgClose'))   { e.stopPropagation(); DBG.close(); return; }
+            if (t.closest('#infDbgClear'))   { e.stopPropagation(); DBG.clear(); return; }
+            if (t.closest('#infDbgCopy'))    { e.stopPropagation(); DBG.copy(); return; }
+            if (t.closest('#infDbgRefresh') || t.closest('#infBtnRefrescar')) {
+                e.stopPropagation();
+                window.infReloadFragment('btn-refrescar');
+                return;
+            }
+            if (t.closest('#infBtnLimpiar')) { limpiarFiltros(); return; }
+            if (t.closest('#infBtnCsv'))     { exportarCsv(); return; }
 
-    function iniciar() {
-        unicarDbg(); aplicarFiltro();
-        if (window.InfDbg && window.InfDbg.ensure) { window.InfDbg.ensure(); }
-        infdbg('informes listos · KPIs y filtros operativos · exportación CSV activa', 'ok');
+            // Filtro por chip de canal (Todos / Portal Cliente / Panel Admin / Tablas BD)
+            var chip = t.closest('.inf-canal-chip');
+            if (chip && chip.closest('#sheet-informes')) {
+                document.querySelectorAll('#sheet-informes .inf-canal-chip').forEach(function (c) { c.classList.remove('active'); });
+                chip.classList.add('active');
+                aplicarFiltro('canal');
+                return;
+            }
+
+            // Abrir modal JSON
+            var btnJson = t.closest('.js-inf-ver-json');
+            if (btnJson) {
+                e.preventDefault();
+                abrirModalJsonDeFila(btnJson.closest('tr'));
+            }
+        });
+
+        document.addEventListener('dblclick', function (e) {
+            if (e.target && e.target.closest && e.target.closest('#infDbgHeader')) {
+                DBG.close();
+            }
+        });
+
+        document.addEventListener('input', function (e) {
+            var t = e.target;
+            if (!t || !t.id) return;
+            if (t.id === 'infSearch' || t.id === 'infDesde' || t.id === 'infHasta') {
+                aplicarFiltro('input');
+            }
+        });
+
+        document.addEventListener('change', function (e) {
+            var t = e.target;
+            if (!t || !t.id) return;
+            if (t.id === 'infFiltroTipo' || t.id === 'infDesde' || t.id === 'infHasta') {
+                aplicarFiltro('select');
+            }
+        });
+
+        document.addEventListener('shown.bs.tab', function (e) {
+            if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
+            var target = e.target ? (e.target.getAttribute('data-bs-target') || '') : '';
+            if (target === '#aud-sub-logs' || target === '#single-aud-sub-logs') {
+                window.infReloadFragment('tab-focus-logs');
+            }
+        });
     }
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', iniciar); } else { iniciar(); }
+
+    var SRVDBG = @json($infDbg ?? null);
+    infdbg('INF-v2.0-DBG activo · eventos=' + (SRVDBG ? SRVDBG.eventos : 0) +
+           ' · hoy=' + (SRVDBG ? SRVDBG.hoy : 0) +
+           ' · CRUD=' + (SRVDBG ? SRVDBG.crud : 0) +
+           ' · vistas=' + (SRVDBG ? SRVDBG.vistas : 0) +
+           ' · usuarios=' + (SRVDBG ? SRVDBG.usuarios : 0), 'ok');
+    if (SRVDBG && SRVDBG.canales) {
+        infdbg('Desglose por canal · Portal Cliente=' + SRVDBG.canales.cliente + ' · Panel Admin=' + SRVDBG.canales.admin + ' · Tablas BD=' + SRVDBG.canales.bd, 'info');
+    }
+    if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
+        SRVDBG.errores.forEach(function (er) { infdbg('⚠ SERVIDOR: ' + er, 'err'); });
+    }
 })();
 </script>

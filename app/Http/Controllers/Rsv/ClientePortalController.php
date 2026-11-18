@@ -33,16 +33,23 @@ use App\Models\Rsv\TransaccionFinanciera;
 
 /**
  * Controlador Maestro del Portal de Autogestión del Cliente (Orquestador).
- * Gestiona la carga principal del portal, cálculo de KPIs y fragmentos AJAX
- * (NIVEL 2 = tabs · NIVEL 3 = micro-fragmentos).
+ * Gestiona la carga principal del portal, cálculo de KPIs, auditoría de navegación
+ * y fragmentos AJAX (NIVEL 2 = tabs de inicio · NIVEL 3 = micro-fragmentos).
  *
- * Diferencia clave con AdminDashboardController: TODA consulta queda
- * SCOPEADA al usuario autenticado (id_user). El cliente jamás ve datos ajenos.
+ * TODA consulta queda SCOPEADA al usuario autenticado (id_user).
  */
 class ClientePortalController extends Controller
 {
-    /** Mapa whitelisted de fragmentos AJAX (tab => vista). CONTRATO HISTÓRICO INTACTO. */
+    /** Mapa whitelisted de fragmentos AJAX (tab => vista) incluyendo NIVEL 2 y NIVEL 3. */
     private const FRAGMENTOS = [
+        // NIVEL 2 · Vistas de Inicio de cada ecosistema
+        'nueva-reserva'        => 'rsv.cliente.partials.nueva-reserva-tab',
+        'mis-reservas'         => 'rsv.cliente.partials.mis-reservas-tab',
+        'historial'            => 'rsv.cliente.partials.historial-tab',
+        'chat'                 => 'rsv.cliente.partials.chat-tab',
+        'pagos'                => 'rsv.cliente.partials.pagos-tab',
+
+        // NIVEL 3 · Micro-fragmentos operativos
         'nueva-buscador'       => 'rsv.cliente.partials.nueva-reserva.buscador',
         'nueva-checkout'       => 'rsv.cliente.partials.nueva-reserva.checkout',
         'reservas-activas'     => 'rsv.cliente.partials.mis-reservas.activas-pasadas',
@@ -83,27 +90,25 @@ class ClientePortalController extends Controller
     /** Cache en-memoria de sondeos de columnas. */
     private static array $cacheColumnas = [];
 
+    /** Bandera por request para evitar doble log cuando `fragmento()` delega en un método `*Fragmento()`. */
+    private bool $auditadoEnDispatcher = false;
+
 
     // =========================================================================
     // NIVEL 1: PORTAL PRINCIPAL (Carga completa inicial + KPIs)
     // =========================================================================
 
-    /**
-     * Renderiza la vista principal del cliente (KPIs).
-     */
     public function index(Request $request): View
     {
         $userId = Auth::id();
         $hoy    = Carbon::today()->startOfDay();
 
-        // 1. Inicialización de ecosistema de variables
         $kpiTotal = $kpiActivas = $kpiAbonado = $kpiSaldo = 0;
         $kpiMensajes = $kpiReviews = $kpiHistorial = 0;
         $kpiProximo  = null;
         $misReservas = collect();
         $error       = null;
 
-        // 2. Lógica y KPIs Scopeados
         try {
             $misReservas = Reserva::query()
                 ->with($this->conRelaciones(Reserva::class, ['inmueble', 'status', 'transacciones']))
@@ -120,15 +125,21 @@ class ClientePortalController extends Controller
 
                 [$fi, $ff] = $this->fechasDeReserva($r);
 
-                if ($fi && $ff && ($hoy->betweenIncluded($fi, $ff) || $fi->gte($hoy))) { $kpiActivas++; }
-                if ($fi && $fi->gte($hoy) && (!$kpiProximo || $fi->lt($kpiProximo)))  { $kpiProximo = $fi; }
+                if ($fi && $ff && ($hoy->betweenIncluded($fi, $ff) || $fi->gte($hoy))) {
+                    $kpiActivas++;
+                }
+                if ($fi && $fi->gte($hoy) && (!$kpiProximo || $fi->lt($kpiProximo))) {
+                    $kpiProximo = $fi;
+                }
 
                 $kpiSaldo += $this->montoDeReserva($r);
 
                 foreach ($this->transaccionesDeReserva($r) as $tx) {
                     $edo = mb_strtolower($this->estadoDeTransaccion($tx));
-                    if (str_contains($edo, 'anulad')) { continue; }
-                    if (str_contains($edo, 'complet') || str_contains($edo, 'aprob') || str_contains($edo, 'pagad')) {
+                    if (str_contains($edo, 'anulad') || str_contains($edo, 'rechaz') || str_contains($edo, 'cancel')) {
+                        continue;
+                    }
+                    if (str_contains($edo, 'complet') || str_contains($edo, 'aprob') || str_contains($edo, 'pagad') || str_contains($edo, 'ok')) {
                         $kpiAbonado += $this->montoDeTransaccion($tx);
                     }
                 }
@@ -141,13 +152,17 @@ class ClientePortalController extends Controller
                 $kpiMensajes = (class_exists(Mensaje::class) && !empty($idsReservas))
                     ? Mensaje::whereIn($this->colFkReserva(Mensaje::class), $idsReservas)->count()
                     : 0;
-            } catch (Throwable $e) { Log::warning('index: KPI mensajes falló → ' . $e->getMessage()); }
+            } catch (Throwable $e) {
+                Log::warning('index: KPI mensajes falló → ' . $e->getMessage());
+            }
 
             try {
                 $kpiReviews = class_exists(Review::class)
                     ? Review::where($this->colResenaAutor(), $userId)->count()
                     : 0;
-            } catch (Throwable $e) { Log::warning('index: KPI reviews falló → ' . $e->getMessage()); }
+            } catch (Throwable $e) {
+                Log::warning('index: KPI reviews falló → ' . $e->getMessage());
+            }
 
             $kpiHistorial = $kpiTotal;
 
@@ -158,6 +173,24 @@ class ClientePortalController extends Controller
             ]);
         }
 
+        // AUDITORÍA: Ingreso del cliente a su portal principal
+        if (class_exists(AuditLogController::class)) {
+            AuditLogController::registrar(
+                'portal_cliente',
+                'VIEW_PORTAL',
+                (int) ($userId ?? 0),
+                null,
+                [
+                    'modulo'         => 'Ingreso al Portal del Cliente',
+                    'total_reservas' => $kpiTotal,
+                    'activas'        => $kpiActivas,
+                    'abonado'        => $kpiAbonado,
+                    'saldo'          => $kpiSaldo,
+                ],
+                15
+            );
+        }
+
         return view('rsv.cliente.portal', compact(
             'kpiTotal', 'kpiActivas', 'kpiProximo', 'kpiAbonado', 'kpiSaldo',
             'kpiMensajes', 'kpiReviews', 'kpiHistorial', 'misReservas', 'error'
@@ -166,10 +199,15 @@ class ClientePortalController extends Controller
 
     /**
      * Dispatcher AJAX (Orquestador de fragmentos).
+     * Acepta tanto ?tab=... como ?fragmento=...
      */
     public function fragmento(Request $request)
     {
-        $key = (string) $request->query('tab', '');
+        $key = (string) ($request->query('tab') ?: $request->query('fragmento', ''));
+
+        // AUDITORÍA: Visualización/recarga de pestaña o fragmento por parte del cliente
+        $this->auditarVistaCliente($request, $key ?: 'fragmento-general');
+        $this->auditadoEnDispatcher = true;
 
         // RED 1: delegación a métodos dedicados
         $metodo = self::FRAGMENTOS_METODOS[$key] ?? null;
@@ -184,7 +222,7 @@ class ClientePortalController extends Controller
             }
         }
 
-        // RED 2: modo legacy (sin datos)
+        // RED 2: renderizado directo de la vista (aprovechando que todas las vistas tienen fallback @php autocontenido)
         try {
             if (isset(self::FRAGMENTOS[$key]) && view()->exists(self::FRAGMENTOS[$key])) {
                 return response()
@@ -195,28 +233,31 @@ class ClientePortalController extends Controller
             Log::error('fragmento (legacy): ' . $e->getMessage());
         }
 
-        return response('<div class="alert alert-warning m-3">Fragmento no disponible.</div>', 200);
+        return response('<div class="alert alert-warning m-3">Fragmento no disponible.</div>', 200)
+            ->header('Cache-Control', 'no-store, max-age=0');
     }
 
 
     // =========================================================================
-    // SECCIÓN 1/5: NUEVA RESERVA (Buscador público + Checkout)
+    // SECCIÓN 1/5: NUEVA RESERVA (Inicio + Buscador + Checkout)
     // =========================================================================
 
-    /** [NIVEL 2] - TAB NUEVA RESERVA */
+    /** [NIVEL 2] - TAB NUEVA RESERVA (partials/nueva-reserva-tab.blade.php) */
     public function nuevaReservaFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'nueva-reserva');
+        $candidatas = [
+            'rsv.cliente.partials.nueva-reserva-tab',
+            'rsv.cliente.partials.nueva_reserva-tab',
+            'rsv.cliente.partials.nueva-reserva.tab',
+        ];
         try {
             $inmuebles = $this->inmueblesActivos();
             $destinos  = $this->destinosDisponibles($inmuebles);
             $tipos     = $this->tiposInmuebleActivos();
             $filtros   = $this->filtrosBusqueda($request);
 
-            $vista = $this->primeraVista([
-                'rsv.cliente.partials.nueva-reserva-tab',
-                'rsv.cliente.partials.nueva_reserva-tab',
-                'rsv.cliente.partials.nueva-reserva.tab',
-            ]);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/nueva-reserva-tab.blade.php'); }
 
             return response()
@@ -224,20 +265,22 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('nuevaReservaFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/nueva-reserva/buscador.blade.php */
     public function nuevaReservaBuscadorFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'nueva-buscador');
+        $candidatas = ['rsv.cliente.partials.nueva-reserva.buscador'];
         try {
             $inmuebles = $this->inmueblesActivos();
             $destinos  = $this->destinosDisponibles($inmuebles);
             $tipos     = $this->tiposInmuebleActivos();
             $filtros   = $this->filtrosBusqueda($request);
 
-            $vista = $this->primeraVista(['rsv.cliente.partials.nueva-reserva.buscador']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/nueva-reserva/buscador.blade.php'); }
 
             return response()
@@ -245,18 +288,19 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('nuevaReservaBuscadorFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/nueva-reserva/checkout.blade.php */
     public function nuevaReservaCheckoutFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'nueva-checkout');
+        $candidatas = ['rsv.cliente.partials.nueva-reserva.checkout'];
         try {
             $inmuebleId = $request->query('inmueble_id') ?? $request->query('id_inmueble');
             if (!$inmuebleId || !is_numeric($inmuebleId)) {
-                return response('<div class="alert alert-warning m-3">Selecciona un inmueble del buscador para continuar.</div>', 200)
-                    ->header('Cache-Control', 'no-store, max-age=0');
+                return $this->respuestaFallbackVista($candidatas);
             }
 
             $inmueble = CatalogoInmueble::with([
@@ -278,7 +322,6 @@ class ClientePortalController extends Controller
             }
             if ($noches > 0 && is_numeric($precioNoche)) { $estimadoTotal = (float) $precioNoche * $noches; }
 
-            // Disponibilidad y Bloqueos (excluyendo reservas canceladas/anuladas/rechazadas)
             $colFi  = $this->colReservaFechaInicio();
             $colFf  = $this->colReservaFechaFin();
             $colInm = $this->colReservaInmueble();
@@ -308,12 +351,11 @@ class ClientePortalController extends Controller
                 $qBloqueos->where($colBloqActivo, 1);
             }
 
-            $bloqueos = $qBloqueos->get();
-
+            $bloqueos  = $qBloqueos->get();
             $pasarelas = $this->pasarelasActivas();
             $cliente   = Auth::user();
 
-            $vista = $this->primeraVista(['rsv.cliente.partials.nueva-reserva.checkout']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/nueva-reserva/checkout.blade.php'); }
 
             return response()
@@ -321,7 +363,7 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('nuevaReservaCheckoutFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
@@ -332,13 +374,28 @@ class ClientePortalController extends Controller
             $mes  = $request->query('month', Carbon::now()->month);
             $anio = $request->query('year', Carbon::now()->year);
 
+            if (class_exists(AuditLogController::class)) {
+                AuditLogController::registrar(
+                    'portal_cliente',
+                    'VIEW_CALENDARIO',
+                    is_numeric($id) ? (int) $id : 0,
+                    null,
+                    [
+                        'modulo'      => 'Consulta de disponibilidad en calendario de inmueble #' . $id,
+                        'inmueble_id' => $id,
+                        'mes'         => $mes,
+                        'anio'        => $anio,
+                    ],
+                    10
+                );
+            }
+
             $inicioMes = Carbon::createFromDate($anio, $mes, 1)->startOfMonth();
             $finMes    = Carbon::createFromDate($anio, $mes, 1)->endOfMonth();
             $fechasOcupadas = [];
 
-            // Reservas (excluir canceladas, anuladas y rechazadas)
-            $colFi  = $this->colReservaFechaInicio();
-            $colFf  = $this->colReservaFechaFin();
+            $colFi = $this->colReservaFechaInicio();
+            $colFf = $this->colReservaFechaFin();
             $reservas = Reserva::query()
                 ->with($this->conRelaciones(Reserva::class, ['status']))
                 ->where($this->colReservaInmueble(), $id)
@@ -360,7 +417,6 @@ class ClientePortalController extends Controller
                 }
             }
 
-            // Bloqueos (ignorar inactivos o vinculados a reservas ya canceladas)
             $tablaBloq  = (new BloqueoCalendario)->getTable();
             $colBInm    = $this->colTabla($tablaBloq, ['id_rsv_catalogo_inmueble', 'inmueble_id'], 'id_rsv_catalogo_inmueble');
             $colBFi     = $this->colTabla($tablaBloq, ['fecha_inicio', 'inicio'], 'fecha_inicio');
@@ -382,7 +438,6 @@ class ClientePortalController extends Controller
 
             $bloqueos = $qBloqueos->get();
 
-            // Si el bloqueo tiene FK a una reserva, verificamos que esa reserva no esté cancelada
             $idsResBloq = $colBResFk ? $bloqueos->pluck($colBResFk)->filter()->unique()->all() : [];
             $reservasBloqMap = [];
             if (!empty($idsResBloq)) {
@@ -427,16 +482,18 @@ class ClientePortalController extends Controller
     // SECCIÓN 2/5: MIS RESERVAS
     // =========================================================================
 
-    /** [NIVEL 2] - TAB MIS RESERVAS */
+    /** [NIVEL 2] - TAB MIS RESERVAS (partials/mis-reservas-tab.blade.php) */
     public function misReservasFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'mis-reservas');
+        $candidatas = [
+            'rsv.cliente.partials.mis-reservas-tab',
+            'rsv.cliente.partials.mis_reservas-tab',
+            'rsv.cliente.partials.mis-reservas.tab',
+        ];
         try {
             [$todas, $activas, $pasadas] = $this->reservasDelCliente();
-            $vista = $this->primeraVista([
-                'rsv.cliente.partials.mis-reservas-tab',
-                'rsv.cliente.partials.mis_reservas-tab',
-                'rsv.cliente.partials.mis-reservas.tab',
-            ]);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/mis-reservas-tab.blade.php'); }
 
             return response()
@@ -444,16 +501,18 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('misReservasFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/mis-reservas/activas-pasadas.blade.php */
     public function misReservasActivasFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'reservas-activas');
+        $candidatas = ['rsv.cliente.partials.mis-reservas.activas-pasadas'];
         try {
             [$todas, $activas, $pasadas] = $this->reservasDelCliente();
-            $vista = $this->primeraVista(['rsv.cliente.partials.mis-reservas.activas-pasadas']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/mis-reservas/activas-pasadas.blade.php'); }
 
             return response()
@@ -461,55 +520,58 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('misReservasActivasFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/mis-reservas/itinerario.blade.php */
     public function misReservasItinerarioFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'reservas-itinerario');
+        $candidatas = ['rsv.cliente.partials.mis-reservas.itinerario'];
         try {
+            [$todas, $activas, $pasadas] = $this->reservasDelCliente();
             $reservaId = $request->query('reserva_id') ?? $request->query('id_reserva');
-            if (!$reservaId || !is_numeric($reservaId)) {
-                return response('<div class="alert alert-warning m-3">Selecciona una reserva para ver su itinerario.</div>', 200)
-                    ->header('Cache-Control', 'no-store, max-age=0');
-            }
 
-            $reserva = Reserva::query()
-                ->with($this->conRelaciones(Reserva::class, ['inmueble', 'status', 'transacciones']))
-                ->where($this->colReservaUser(), Auth::id())
-                ->findOrFail($reservaId);
+            $reserva = null;
+            if ($reservaId && is_numeric($reservaId)) {
+                $reserva = $todas->firstWhere('id', (int) $reservaId);
+            }
+            if (!$reserva) {
+                $reserva = $activas->first() ?? $todas->first();
+            }
 
             $eventos = collect();
-            if (method_exists($reserva, 'itinerarioEventos')) {
-                try { $eventos = $reserva->itinerarioEventos()->get(); }
-                catch (Throwable $e) { Log::warning('itinerario: relación falló → ' . $e->getMessage()); }
-            } elseif (class_exists(ItinerarioEvento::class)) {
-                try {
-                    $colEvRes   = $this->colFkReserva(ItinerarioEvento::class);
-                    $colEvOrden = $this->colTabla((new ItinerarioEvento)->getTable(), ['fecha_evento', 'fecha', 'fecha_inicio', 'created_at'], 'fecha_evento');
-                    $eventos    = ItinerarioEvento::query()->where($colEvRes, $reserva->id)->orderBy($colEvOrden)->get();
-                } catch (Throwable $e) { }
+            if ($reserva) {
+                if (method_exists($reserva, 'itinerarioEventos')) {
+                    try { $eventos = $reserva->itinerarioEventos()->get(); }
+                    catch (Throwable $e) { Log::warning('itinerario: relación falló → ' . $e->getMessage()); }
+                } elseif (class_exists(ItinerarioEvento::class)) {
+                    try {
+                        $colEvRes   = $this->colFkReserva(ItinerarioEvento::class);
+                        $colEvOrden = $this->colTabla((new ItinerarioEvento)->getTable(), ['fecha_evento', 'fecha', 'fecha_inicio', 'created_at'], 'fecha_evento');
+                        $eventos    = ItinerarioEvento::query()->where($colEvRes, $reserva->id)->orderBy($colEvOrden)->get();
+                    } catch (Throwable $e) {}
+                }
             }
 
-            $vista = $this->primeraVista(['rsv.cliente.partials.mis-reservas.itinerario']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/mis-reservas/itinerario.blade.php'); }
 
             return response()
-                ->view($vista, compact('reserva', 'eventos'))
-                ->header('Cache-Control', 'no-store, max-age=0');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response('<div class="alert alert-danger m-3">La reserva solicitada no existe o no te pertenece.</div>', 200)
+                ->view($vista, compact('reserva', 'eventos', 'todas', 'activas', 'pasadas'))
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('misReservasItinerarioFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/mis-reservas/huespedes.blade.php */
     public function misReservasHuespedesFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'reservas-huespedes');
+        $candidatas = ['rsv.cliente.partials.mis-reservas.huespedes'];
         try {
             [$todas, $activas, $pasadas] = $this->reservasDelCliente();
             $ids = $todas->pluck('id')->all();
@@ -518,15 +580,16 @@ class ClientePortalController extends Controller
             if (!empty($ids) && class_exists(ReservaHuesped::class)) {
                 try {
                     $huespedes = ReservaHuesped::query()
-                        ->with($this->conRelaciones(ReservaHuesped::class, ['reserva.inmueble:id,name', 'registrador:id,name']))
+                        ->with($this->conRelaciones(ReservaHuesped::class, ['reserva.inmueble', 'registrador']))
                         ->whereIn($this->colFkReserva(ReservaHuesped::class), $ids)
-                        ->orderByDesc('created_at')
+                        ->orderByDesc('es_titular')
+                        ->orderBy('id')
                         ->get();
-                } catch (Throwable $e) { }
+                } catch (Throwable $e) {}
             }
 
             $reservasOpt = $todas->map(fn ($r) => ['id' => $r->id, 'cod' => $r->codigo_reserva ?? ('#' . $r->id)])->values();
-            $vista = $this->primeraVista(['rsv.cliente.partials.mis-reservas.huespedes']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/mis-reservas/huespedes.blade.php'); }
 
             return response()
@@ -534,25 +597,27 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('misReservasHuespedesFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
 
     // =========================================================================
-    // SECCIÓN 3/5: HISTORIAL
+    // SECCIÓN 3/5: HISTORIAL (Inicio + Estados + Endosos)
     // =========================================================================
 
-    /** [NIVEL 2] - TAB HISTORIAL */
+    /** [NIVEL 2] - TAB HISTORIAL (partials/historial-tab.blade.php) */
     public function historialFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'historial');
+        $candidatas = [
+            'rsv.cliente.partials.historial-tab',
+            'rsv.cliente.partials.historial_tab',
+            'rsv.cliente.partials.historial.tab',
+        ];
         try {
             [$historiales, $endosos] = $this->historialDelCliente();
-            $vista = $this->primeraVista([
-                'rsv.cliente.partials.historial-tab',
-                'rsv.cliente.partials.historial_tab',
-                'rsv.cliente.partials.historial.tab',
-            ]);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/historial-tab.blade.php'); }
 
             return response()
@@ -560,16 +625,18 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('historialFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/historial/estados.blade.php */
     public function historialEstadosFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'historial-estados');
+        $candidatas = ['rsv.cliente.partials.historial.estados'];
         try {
             [$historiales, $endosos] = $this->historialDelCliente();
-            $vista = $this->primeraVista(['rsv.cliente.partials.historial.estados']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/historial/estados.blade.php'); }
 
             return response()
@@ -577,16 +644,18 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('historialEstadosFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/historial/endosos.blade.php */
     public function historialEndososFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'historial-endosos');
+        $candidatas = ['rsv.cliente.partials.historial.endosos'];
         try {
             [$historiales, $endosos] = $this->historialDelCliente();
-            $vista = $this->primeraVista(['rsv.cliente.partials.historial.endosos']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/historial/endosos.blade.php'); }
 
             return response()
@@ -594,29 +663,30 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('historialEndososFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
 
     // =========================================================================
-    // SECCIÓN 4/5: CHAT
+    // SECCIÓN 4/5: SOPORTE / CHAT (Inicio + Mensajes + Receptores)
     // =========================================================================
 
-    /** [NIVEL 2] - TAB CHAT */
+    /** [NIVEL 2] - TAB CHAT (partials/chat-tab.blade.php) */
     public function chatFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'chat');
+        $candidatas = [
+            'rsv.cliente.partials.chat-tab',
+            'rsv.cliente.partials.chat_tab',
+        ];
         try {
-            $mensajes       = $this->mensajesDelCliente();
-            $tiposReceptor  = $this->tiposReceptorActivos();
-            [$todas]        = $this->reservasDelCliente();
-            $misReservas    = $this->reservasComoOpciones($todas);
+            $mensajes      = $this->mensajesDelCliente();
+            $tiposReceptor = $this->tiposReceptorActivos();
+            [$todas]       = $this->reservasDelCliente();
+            $misReservas   = $todas;
 
-            $vista = $this->primeraVista([
-                'rsv.cliente.partials.chat-tab',
-                'rsv.cliente.partials.chat-tab.blade',
-                'rsv.cliente.partials.chat_tab',
-            ]);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/chat-tab.blade.php'); }
 
             return response()
@@ -624,17 +694,19 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('chatFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/chat/mensajes.blade.php */
     public function chatMensajesFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'chat-mensajes');
+        $candidatas = ['rsv.cliente.partials.chat.mensajes'];
         try {
-            $mensajes       = $this->mensajesDelCliente();
-            $tiposReceptor  = $this->tiposReceptorActivos();
-            $vista = $this->primeraVista(['rsv.cliente.partials.chat.mensajes']);
+            $mensajes      = $this->mensajesDelCliente();
+            $tiposReceptor = $this->tiposReceptorActivos();
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/chat/mensajes.blade.php'); }
 
             return response()
@@ -642,18 +714,20 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('chatMensajesFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/chat/receptores.blade.php */
     public function chatReceptoresFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'chat-receptores');
+        $candidatas = ['rsv.cliente.partials.chat.receptores'];
         try {
-            $tiposReceptor  = $this->tiposReceptorActivos();
-            [$todas]        = $this->reservasDelCliente();
-            $misReservas    = $this->reservasComoOpciones($todas);
-            $vista = $this->primeraVista(['rsv.cliente.partials.chat.receptores']);
+            $tiposReceptor = $this->tiposReceptorActivos();
+            [$todas]       = $this->reservasDelCliente();
+            $misReservas   = $this->reservasComoOpciones($todas);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/chat/receptores.blade.php'); }
 
             return response()
@@ -661,28 +735,30 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('chatReceptoresFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
 
     // =========================================================================
-    // SECCIÓN 5/5: PAGOS
+    // SECCIÓN 5/5: PAGOS Y RESEÑAS (Inicio + Transacciones + Pasarelas + Reseñas)
     // =========================================================================
 
-    /** [NIVEL 2] - TAB PAGOS */
+    /** [NIVEL 2] - TAB PAGOS (partials/pagos-tab.blade.php) */
     public function pagosFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'pagos');
+        $candidatas = [
+            'rsv.cliente.partials.pagos-tab',
+            'rsv.cliente.partials.pagos_tab',
+            'rsv.cliente.partials.pagos.tab',
+        ];
         try {
-            $transacciones = $this->transaccionesDelCliente($request, true);
-            $resumen       = $this->resumenTransacciones($this->transaccionesDelCliente($request, false));
+            $transacciones = $this->transaccionesDelCliente($request, false);
+            $resumen       = $this->resumenTransacciones($transacciones);
             $pasarelas     = $this->pasarelasActivas();
 
-            $vista = $this->primeraVista([
-                'rsv.cliente.partials.pagos-tab',
-                'rsv.cliente.partials.pagos_tab',
-                'rsv.cliente.partials.pagos.tab',
-            ]);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/pagos-tab.blade.php'); }
 
             return response()
@@ -690,17 +766,19 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('pagosFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/pagos/transacciones.blade.php */
     public function pagosTransaccionesFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'pagos-transacciones');
+        $candidatas = ['rsv.cliente.partials.pagos.transacciones'];
         try {
-            $transacciones = $this->transaccionesDelCliente($request, true);
-            $resumen       = $this->resumenTransacciones($this->transaccionesDelCliente($request, false));
-            $vista = $this->primeraVista(['rsv.cliente.partials.pagos.transacciones']);
+            $transacciones = $this->transaccionesDelCliente($request, false);
+            $resumen       = $this->resumenTransacciones($transacciones);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/pagos/transacciones.blade.php'); }
 
             return response()
@@ -708,16 +786,18 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('pagosTransaccionesFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/pagos/pasarelas.blade.php */
     public function pagosPasarelasFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'pagos-pasarelas');
+        $candidatas = ['rsv.cliente.partials.pagos.pasarelas'];
         try {
             $pasarelas = $this->pasarelasActivas();
-            $vista = $this->primeraVista(['rsv.cliente.partials.pagos.pasarelas']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/pagos/pasarelas.blade.php'); }
 
             return response()
@@ -725,33 +805,38 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('pagosPasarelasFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
     /** [NIVEL 3] - partials/pagos/reviews.blade.php */
     public function pagosReviewsFragmento(Request $request)
     {
+        $this->auditarVistaCliente($request, 'pagos-reviews');
+        $candidatas = ['rsv.cliente.partials.pagos.reviews'];
         try {
             $reviews = collect();
             if (class_exists(Review::class)) {
                 try {
                     $reviews = Review::query()
-                        ->with($this->conRelaciones(Review::class, ['reserva', 'inmueble', 'user', 'autor']))
+                        ->with($this->conRelaciones(Review::class, ['reserva.inmueble', 'reserva.status', 'inmueble', 'tipoReceptor', 'user', 'autor']))
                         ->where($this->colResenaAutor(), Auth::id())
                         ->orderByDesc('created_at')
                         ->take(50)
                         ->get();
-                } catch (Throwable $e) { }
+                } catch (Throwable $e) {}
             }
 
             $colRevRes    = class_exists(Review::class) ? $this->colResenaReserva() : 'id_rsv_reservas';
             $idsResenadas = $reviews->pluck($colRevRes)->filter()->all();
 
-            [, $activas, $pasadas] = $this->reservasDelCliente();
-            $porResenar = $pasadas->reject(fn ($r) => in_array($r->id, $idsResenadas))->values();
+            [$todas] = $this->reservasDelCliente();
+            // Elegibles para reseñar: no reseñadas aún y NO canceladas/anuladas/rechazadas
+            $porResenar = $todas->reject(function ($r) use ($idsResenadas) {
+                return in_array($r->id, $idsResenadas) || $this->reservaEstaCancelada($r);
+            })->values();
 
-            $vista = $this->primeraVista(['rsv.cliente.partials.pagos.reviews']);
+            $vista = $this->primeraVista($candidatas);
             if (!$vista) { throw new \RuntimeException('No existe partials/pagos/reviews.blade.php'); }
 
             return response()
@@ -759,14 +844,68 @@ class ClientePortalController extends Controller
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (Throwable $e) {
             Log::error('pagosReviewsFragmento: ' . $e->getMessage());
-            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+            return $this->respuestaFallbackVista($candidatas);
         }
     }
 
 
     // =========================================================================
-    // HELPERS PRIVADOS (Lógica Defensiva de Columnas)
+    // HELPERS PRIVADOS (Auditoría, Lógica Defensiva de Columnas y Fallback Anti-500)
     // =========================================================================
+
+    /**
+     * Registra en rsv_audit_logs cada vez que el cliente visualiza una pestaña o fragmento,
+     * tanto si entra por el dispatcher general como si entra por la ruta dedicada.
+     */
+    private function auditarVistaCliente(Request $request, string $moduloKey): void
+    {
+        if ($this->auditadoEnDispatcher || !class_exists(AuditLogController::class)) {
+            return;
+        }
+        // Evitar llenar la tabla si es un auto-poll silencioso en segundo plano
+        if ($request->boolean('auto_poll')) {
+            return;
+        }
+
+        $resId = $request->query('reserva_id') ?? $request->query('id_reserva');
+        $inmId = $request->query('inmueble_id') ?? $request->query('id_inmueble');
+        $regId = is_numeric($resId) ? (int) $resId : (is_numeric($inmId) ? (int) $inmId : 0);
+
+        AuditLogController::registrar(
+            'portal_cliente',
+            'VIEW_FRAGMENT',
+            $regId,
+            null,
+            array_filter([
+                'modulo'      => 'Cliente visualizó módulo: ' . $moduloKey,
+                'tab'         => $moduloKey,
+                'reserva_id'  => is_numeric($resId) ? (int) $resId : null,
+                'inmueble_id' => is_numeric($inmId) ? (int) $inmId : null,
+                'ciudad'      => $request->query('ciudad') ?: null,
+            ], fn ($v) => !is_null($v)),
+            8
+        );
+    }
+
+    /**
+     * Si cualquier método de fragmento falla, intenta renderizar la vista directamente
+     * (aprovechando el bloque @php autocontenido de cada partial) con HTTP 200.
+     */
+    private function respuestaFallbackVista(array $candidatas)
+    {
+        try {
+            $vista = $this->primeraVista($candidatas);
+            if ($vista) {
+                return response()
+                    ->view($vista)
+                    ->header('Cache-Control', 'no-store, max-age=0');
+            }
+        } catch (Throwable $e) {
+            Log::error('respuestaFallbackVista: ' . $e->getMessage());
+        }
+        return response('<div class="alert alert-warning m-3">No se pudo cargar el fragmento solicitado.</div>', 200)
+            ->header('Cache-Control', 'no-store, max-age=0');
+    }
 
     private function colTabla(string $tabla, array $candidatas, ?string $defecto = null): ?string
     {
@@ -841,7 +980,10 @@ class ClientePortalController extends Controller
     {
         $validas = [];
         foreach ($deseadas as $rel) {
-            if (method_exists($modelo, explode('.', $rel)[0])) { $validas[] = $rel; }
+            $baseRel = explode(':', explode('.', $rel)[0])[0];
+            if (method_exists($modelo, $baseRel)) {
+                $validas[] = $rel;
+            }
         }
         return $validas;
     }
@@ -944,27 +1086,54 @@ class ClientePortalController extends Controller
 
     private function historialDelCliente(): array
     {
+        $uid = Auth::id();
         $ids = $this->idsReservasDelCliente();
 
         $historiales = collect();
         if (!empty($ids) && class_exists(HistorialEstado::class)) {
             try {
                 $historiales = HistorialEstado::query()
-                    ->with($this->conRelaciones(HistorialEstado::class, ['reserva.inmueble:id,name', 'statusNuevo', 'statusAnterior', 'status']))
+                    ->with($this->conRelaciones(HistorialEstado::class, [
+                        'reserva.inmueble', 'reserva.status',
+                        'estadoNuevo', 'estadoAnterior', 'statusNuevo', 'statusAnterior', 'status', 'user',
+                    ]))
                     ->whereIn($this->colFkReserva(HistorialEstado::class), $ids)
                     ->orderByDesc('created_at')
-                    ->take(100)->get();
+                    ->take(100)
+                    ->get();
             } catch (Throwable $e) {}
         }
 
         $endosos = collect();
-        if (!empty($ids) && class_exists(HistorialEndoso::class)) {
+        if ($uid && class_exists(HistorialEndoso::class)) {
             try {
-                $endosos = HistorialEndoso::query()
-                    ->with($this->conRelaciones(HistorialEndoso::class, ['reserva', 'usuarioAutor', 'user', 'autor']))
-                    ->whereIn($this->colFkReserva(HistorialEndoso::class), $ids)
-                    ->orderByDesc('created_at')
-                    ->take(100)->get();
+                $tablaEnd    = (new HistorialEndoso)->getTable();
+                $colFkRes    = $this->colFkReserva(HistorialEndoso::class);
+                $tieneColAnt = Schema::hasColumn($tablaEnd, 'id_user_anterior');
+                $tieneColNue = Schema::hasColumn($tablaEnd, 'id_user_nuevo');
+
+                if (!empty($ids) || $tieneColAnt || $tieneColNue) {
+                    $endosos = HistorialEndoso::query()
+                        ->with($this->conRelaciones(HistorialEndoso::class, [
+                            'reserva.inmueble', 'reserva.status',
+                            'usuarioAnterior', 'usuarioNuevo', 'userAnterior', 'userNuevo',
+                            'autorizadoPor', 'usuarioAutor', 'user', 'autor',
+                        ]))
+                        ->where(function ($sub) use ($ids, $uid, $colFkRes, $tieneColAnt, $tieneColNue) {
+                            if (!empty($ids)) {
+                                $sub->whereIn($colFkRes, $ids);
+                            }
+                            if ($tieneColAnt) {
+                                $sub->orWhere('id_user_anterior', $uid);
+                            }
+                            if ($tieneColNue) {
+                                $sub->orWhere('id_user_nuevo', $uid);
+                            }
+                        })
+                        ->orderByDesc('created_at')
+                        ->take(100)
+                        ->get();
+                }
             } catch (Throwable $e) {}
         }
 
@@ -978,33 +1147,36 @@ class ClientePortalController extends Controller
         if (!empty($ids) && class_exists(Mensaje::class)) {
             try {
                 $mensajes = Mensaje::query()
-                    ->with($this->conRelaciones(Mensaje::class, ['reserva.inmueble:id,name', 'receptor', 'tipoReceptor', 'user', 'emisor', 'autor']))
+                    ->with($this->conRelaciones(Mensaje::class, ['reserva.inmueble', 'reserva.status', 'receptor', 'tipoReceptor', 'remitente', 'user', 'emisor', 'autor']))
                     ->whereIn($this->colFkReserva(Mensaje::class), $ids)
                     ->orderByDesc('created_at')
-                    ->take(200)->get()->reverse()->values();
+                    ->take(200)
+                    ->get()
+                    ->reverse()
+                    ->values();
             } catch (Throwable $e) {}
         }
         return $mensajes;
     }
 
+    /**
+     * Consulta de transacciones del cliente sin `:id,name` en relación anidada (evita HTTP 500 en Eloquent).
+     */
     private function transaccionesDelCliente(Request $request, bool $paginada = false)
     {
-        $pagina  = max(1, (int) $request->query('page_pagos', 1));
-        $colUser = $this->colReservaUser();
-
-        $consulta = TransaccionFinanciera::query()
-            ->with($this->conRelaciones(TransaccionFinanciera::class, ['reserva.inmueble:id,name', 'pasarela']))
-            ->orderByDesc('created_at');
-
-        if (method_exists(TransaccionFinanciera::class, 'reserva')) {
-            $consulta->whereHas('reserva', fn ($q) => $q->where($colUser, Auth::id()));
-        } else {
-            $ids = $this->idsReservasDelCliente();
-            $consulta->whereIn($this->colFkReserva(TransaccionFinanciera::class), $ids);
+        $pagina = max(1, (int) $request->query('page_pagos', 1));
+        $ids    = $this->idsReservasDelCliente();
+        if (empty($ids)) {
+            return collect();
         }
 
+        $consulta = TransaccionFinanciera::query()
+            ->with($this->conRelaciones(TransaccionFinanciera::class, ['reserva.inmueble', 'reserva.status', 'pasarela']))
+            ->whereIn($this->colFkReserva(TransaccionFinanciera::class), $ids)
+            ->orderByDesc('created_at');
+
         if ($paginada) {
-            return $consulta->paginate(10, ['*'], 'page_pagos', $pagina)->appends($request->query());
+            return $consulta->paginate(20, ['*'], 'page_pagos', $pagina);
         }
         return $consulta->limit(100)->get();
     }
@@ -1085,12 +1257,16 @@ class ClientePortalController extends Controller
     {
         $resumen = ['pagado' => 0.0, 'pendiente' => 0.0, 'anulado' => 0.0];
         try {
-            foreach ($transacciones as $tx) {
+            $items = ($transacciones instanceof \Illuminate\Pagination\AbstractPaginator)
+                ? $transacciones->items()
+                : $transacciones;
+
+            foreach ($items as $tx) {
                 $edo   = mb_strtolower($this->estadoDeTransaccion($tx));
                 $monto = $this->montoDeTransaccion($tx);
                 if (str_contains($edo, 'anulad') || str_contains($edo, 'cancel') || str_contains($edo, 'fallid') || str_contains($edo, 'rechaz')) {
                     $resumen['anulado'] += $monto;
-                } elseif (str_contains($edo, 'complet') || str_contains($edo, 'aprob') || str_contains($edo, 'pagad')) {
+                } elseif (str_contains($edo, 'complet') || str_contains($edo, 'aprob') || str_contains($edo, 'pagad') || str_contains($edo, 'ok')) {
                     $resumen['pagado'] += $monto;
                 } else {
                     $resumen['pendiente'] += $monto;
