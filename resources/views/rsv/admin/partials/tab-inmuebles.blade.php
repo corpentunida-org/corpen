@@ -1,4 +1,4 @@
-{{-- resources/views/rsv/admin/partials/tab-inmuebles.blade.php · INM-v3.5-DBG · NIVEL 2 --}}
+{{-- resources/views/rsv/admin/partials/tab-inmuebles.blade.php · INM-v3.7-DBG · NIVEL 2 --}}
 {{-- ══════════════════════════════════════════════════════════════════════════ --}}
 {{-- INMUEBLES · CENTRO DE CONTROL Y VISIÓN GLOBAL (Modo Global e Individual)    --}}
 {{-- Diseño unificado idéntico a FIN-v2.0-DBG, CAL-v3.5-DBG y RV-v32-EXC-DBG.    --}}
@@ -41,30 +41,101 @@
         return $prop->tarifasTemporadas->sortByDesc('fecha_inicio')->first();
     };
 
-    $inmTotalCount    = $modoGlobal ? (method_exists($expedientes, 'total') ? $expedientes->total() : $expedientes->count()) : 1;
-    $inmActivosCnt    = $modoGlobal ? (is_iterable($expedientes) ? collect($expedientes)->where('active', 1)->count() : 0) : ($inmueble->active ? 1 : 0);
-    $inmTotalReservas = $modoGlobal ? (is_iterable($expedientes) ? collect($expedientes)->sum('reservas_count') : 0) : ($inmueble->reservas_count ?? 0);
-    $inmTotalBloqueos = $modoGlobal ? (is_iterable($expedientes) ? collect($expedientes)->sum('bloqueos_calendario_count') : 0) : ($inmueble->bloqueos_calendario_count ?? 0);
+    $esActivoProp = function ($prop): bool {
+        if (!is_object($prop)) return false;
+        if (isset($prop->active)) return (bool) $prop->active;
+        if (isset($prop->activo)) return (bool) $prop->activo;
+        return false;
+    };
+
+    // Cálculo robusto de KPIs (con respaldo directo en BD y detección multi-modelo de bloqueos)
+    if ($modoGlobal) {
+        $colItems = method_exists($expedientes, 'getCollection') ? $expedientes->getCollection() : collect($expedientes);
+
+        try {
+            $inmTotalCount = (int) \App\Models\Rsv\CatalogoInmueble::count();
+        } catch (\Throwable $e) {
+            $inmTotalCount = method_exists($expedientes, 'total') ? (int) $expedientes->total() : (int) $colItems->count();
+        }
+
+        try {
+            $tablaInm = (new \App\Models\Rsv\CatalogoInmueble)->getTable();
+            $colAct = \Illuminate\Support\Facades\Schema::hasColumn($tablaInm, 'active')
+                ? 'active'
+                : (\Illuminate\Support\Facades\Schema::hasColumn($tablaInm, 'activo') ? 'activo' : null);
+            $inmActivosCnt = $colAct
+                ? (int) \App\Models\Rsv\CatalogoInmueble::where($colAct, 1)->count()
+                : (int) $colItems->filter($esActivoProp)->count();
+        } catch (\Throwable $e) {
+            $inmActivosCnt = (int) $colItems->filter($esActivoProp)->count();
+        }
+
+        $inmInactivosCnt = max(0, $inmTotalCount - $inmActivosCnt);
+
+        try {
+            $inmTotalReservas = class_exists(\App\Models\Rsv\Reserva::class)
+                ? (int) \App\Models\Rsv\Reserva::count()
+                : (int) $colItems->sum('reservas_count');
+        } catch (\Throwable $e) {
+            $inmTotalReservas = (int) $colItems->sum('reservas_count');
+        }
+
+        $inmTotalBloqueos = 0;
+        foreach ([
+            '\App\Models\Rsv\BloqueoCalendario',
+            '\App\Models\Rsv\BloqueosCalendario',
+            '\App\Models\Rsv\CalendarioBloqueo',
+        ] as $clsBlqTry) {
+            if (class_exists($clsBlqTry)) {
+                try {
+                    $inmTotalBloqueos = (int) $clsBlqTry::count();
+                    break;
+                } catch (\Throwable $e) {}
+            }
+        }
+        if ($inmTotalBloqueos === 0) {
+            foreach (['rsv_bloqueos_calendario', 'bloqueos_calendario', 'rsv_bloqueos', 'bloqueos'] as $tblBlqTry) {
+                try {
+                    if (\Illuminate\Support\Facades\Schema::hasTable($tblBlqTry)) {
+                        $inmTotalBloqueos = (int) \Illuminate\Support\Facades\DB::table($tblBlqTry)->count();
+                        if ($inmTotalBloqueos > 0) break;
+                    }
+                } catch (\Throwable $e) {}
+            }
+        }
+        if ($inmTotalBloqueos === 0) {
+            $inmTotalBloqueos = (int) $colItems->sum('bloqueos_calendario_count');
+        }
+    } else {
+        $inmTotalCount    = 1;
+        $inmActivosCnt    = $esActivoProp($inmueble) ? 1 : 0;
+        $inmInactivosCnt  = $inmActivosCnt === 1 ? 0 : 1;
+        $inmTotalReservas = (int) ($inmueble->reservas_count ?? 0);
+        $inmTotalBloqueos = (int) ($inmueble->bloqueos_calendario_count ?? 0);
+    }
 
     $inmDbg = [
-        'marca'       => 'INM-v3.5-DBG',
+        'marca'       => 'INM-v3.7-DBG',
         'vista'       => 'rsv.admin.partials.tab-inmuebles',
         'url'         => url()->full(),
         'peticion'    => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
         'modoGlobal'  => $modoGlobal,
         'expedientes' => $inmTotalCount,
+        'activos'     => $inmActivosCnt,
+        'inactivos'   => $inmInactivosCnt,
+        'bloqueos'    => $inmTotalBloqueos,
         'inmuebleId'  => !$modoGlobal ? $inmueble->id : null,
         'errores'     => [],
     ];
 @endphp
 
-{{-- INM-v3.5-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps) --}}
-<div id="inmDbgToggle" title="Debug Inmuebles (INM-v3.5-DBG)">
+{{-- INM-v3.7-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps) --}}
+<div id="inmDbgToggle" title="Debug Inmuebles (INM-v3.7-DBG)">
     <span class="inm-dbg-led" id="inmDbgLed"></span>DBG<span class="inm-dbg-badge" id="inmDbgBadge">0</span>
 </div>
 <div id="inmDbgPanel" role="dialog" aria-label="Panel de debug de Inmuebles">
     <div class="inm-dbg-header" id="inmDbgHeader">
-        <span>DEBUG · Inmuebles (N2) · INM-v3.5-DBG</span>
+        <span>DEBUG · Inmuebles (N2) · INM-v3.7-DBG</span>
         <span class="inm-dbg-controls">
             <button type="button" class="inm-dbg-btn" id="inmDbgCopy">Copiar</button>
             <button type="button" class="inm-dbg-btn" id="inmDbgClear">Limpiar</button>
@@ -130,7 +201,7 @@
             align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid;
         }
 
-        /* ═══ TABLA GLOBAL: filas de 20px exactas ═══ */
+        /* ═══ TABLA GLOBAL: filas de 22px exactas ═══ */
         .show-soft .table > :not(caption) > * > * {
             padding: 3px 7px; height: 22px; line-height: 1.15; vertical-align: middle;
         }
@@ -329,7 +400,7 @@
         .show-soft .m1-chev { width: 10px; height: 10px; stroke: var(--ink-4); transition: transform .2s ease; }
         .show-soft [data-bs-toggle="collapse"][aria-expanded="false"] .m1-chev { transform: rotate(-90deg); }
 
-        /* ═════════ SPEC DE DISTANCIAS · INM-v3.5 (tab terminal TIP-v1.3) ═════════ */
+        /* ═════════ SPEC DE DISTANCIAS · INM-v3.7 (tab terminal TIP-v1.3) ═════════ */
         #inmDbgToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; transition: color .15s ease, background .15s ease; }
         #inmDbgToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); }
         .inm-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
@@ -349,19 +420,6 @@
         .inm-dbg-net { color: #c4b5fd; } .inm-dbg-debug { color: #94a3b8; }
     </style>
 
-    @php
-        $inmDbg = [
-            'marca'       => 'INM-v3.5-DBG',
-            'vista'       => 'rsv.admin.partials.tab-inmuebles',
-            'url'         => url()->full(),
-            'peticion'    => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
-            'modoGlobal'  => $modoGlobal,
-            'expedientes' => $modoGlobal ? $inmTotalCount : 1,
-            'inmuebleId'  => !$modoGlobal ? $inmueble->id : null,
-            'errores'     => [],
-        ];
-    @endphp
-
     @if($modoGlobal)
 
         {{-- 1. HERO BANNER INMUEBLES GLOBAL (ESTILO FIN-v2.0-DBG) --}}
@@ -374,7 +432,7 @@
                             <i class="bi bi-shield-check me-1"></i> Ecosistema Inmobiliario RSV
                         </span>
                         <span class="badge rounded-pill" style="font-size: 7px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #334155; font-family: ui-monospace, monospace;">
-                            INM-v3.5-DBG
+                            INM-v3.7-DBG
                         </span>
                     </div>
                     <h6 class="fw-bold text-white mb-1" style="font-size: 14px;">
@@ -396,7 +454,7 @@
                         {{ $inmActivosCnt }} <span style="font-size: 9px; color: #94a3b8;">/ {{ $inmTotalCount }}</span>
                     </div>
                     <div class="sub text-light opacity-75" style="font-size: 8px;">
-                        {{ $inmTotalReservas }} reservas · {{ $inmTotalBloqueos }} bloqueos totales
+                        {{ $inmInactivosCnt }} inactiva(s) · {{ $inmTotalBloqueos }} bloqueo(s)
                     </div>
                 </div>
             </div>
@@ -437,14 +495,14 @@
                 </div>
             </div>
 
-            <div class="inm-kpi-card" title="Total de bloqueos de mantenimiento registrados">
+            <div class="inm-kpi-card" title="Propiedades inactivas y bloqueos de mantenimiento registrados">
                 <div>
-                    <div class="lbl">Bloqueos / Mtto</div>
-                    <div class="val num" style="font-size: 13px; color: #7c3aed;">{{ $inmTotalBloqueos }}</div>
-                    <div class="sub">períodos inhabilitados</div>
+                    <div class="lbl">Inactivas / Bloqueos</div>
+                    <div class="val num" style="font-size: 13px; color: #7c3aed;">{{ $inmInactivosCnt }} <span style="font-size: 9px; color: #94a3b8;">inact.</span></div>
+                    <div class="sub"><b>{{ $inmTotalBloqueos }}</b> bloqueo(s) en calendario</div>
                 </div>
                 <div class="inm-kpi-icon" style="color:#7c3aed; background:#f5f3ff; border-color:#ddd6fe;">
-                    <i class="bi bi-calendar-x-fill"></i>
+                    <i class="bi bi-pause-circle-fill"></i>
                 </div>
             </div>
         </div>
@@ -488,6 +546,7 @@
                                 $nFotos  = $prop->multimedia->count();
                                 $nBloq   = $prop->bloqueos_calendario_count ?? 0;
                                 $nRes    = $prop->reservas_count ?? 0;
+                                $activoFila = $esActivoProp($prop);
                             @endphp
                             <tr>
                                 <td class="exp-num">{{ $loop->iteration }}</td>
@@ -552,7 +611,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if($prop->active)
+                                    @if($activoFila)
                                         <span class="sh-chip ok"><i class="bi bi-check-lg"></i>Activo</span>
                                     @else
                                         <span class="sh-chip off"><i class="bi bi-dash-lg"></i>Inactivo</span>
@@ -585,7 +644,7 @@
         <div class="sh-titlebar">
             <div>
                 <span class="sh-live mb-1"><span class="pulse"></span> EXPEDIENTE #{{ $inmueble->id }}</span>
-                <div class="strong">Panel de Gestión: {{ $inmueble->name }} <span class="badge rounded-pill ms-1" style="font-size:6px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">INM-v3.5-DBG</span></div>
+                <div class="strong">Panel de Gestión: {{ $inmueble->name }} <span class="badge rounded-pill ms-1" style="font-size:6px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">INM-v3.7-DBG</span></div>
                 <div class="sub">Vista informativa: identidad, tarifas y fotos del inmueble</div>
             </div>
             <a href="{{ route('rsv.admin.dashboard', ['inmueble_id' => 'todos']) }}" class="btn-soft">
@@ -643,7 +702,7 @@
                             <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
                                 <div class="strong text-truncate" title="{{ $inmueble->name }}">{{ $inmueble->name }}</div>
                                 <div class="d-flex align-items-center gap-1" style="flex-shrink: 0;">
-                                    @if($inmueble->active)
+                                    @if($esActivoProp($inmueble))
                                         <span class="sh-chip ok"><i class="bi bi-check-lg"></i>Activo</span>
                                     @else
                                         <span class="sh-chip off"><i class="bi bi-dash-lg"></i>Inactivo</span>
@@ -784,7 +843,7 @@
                             <div class="stat-cell">
                                 <span class="lbl"><i class="bi bi-eye"></i> Visibilidad</span>
                                 <div class="mt-1">
-                                    @if($inmueble->active)
+                                    @if($esActivoProp($inmueble))
                                         <span class="vis-pill vis-on"><span class="dotp"></span> En vivo</span>
                                     @else
                                         <span class="vis-pill vis-off"><span class="dotp"></span> Borrador</span>
@@ -865,7 +924,7 @@
                     if (!$('inmDbgToggle')) {
                         var t = document.createElement('div');
                         t.id = 'inmDbgToggle';
-                        t.title = 'Debug Inmuebles (INM-v3.5-DBG)';
+                        t.title = 'Debug Inmuebles (INM-v3.7-DBG)';
                         t.innerHTML = '<span class="inm-dbg-led" id="inmDbgLed"></span>DBG<span class="inm-dbg-badge" id="inmDbgBadge">0</span>';
                         document.body.appendChild(t);
                     }
@@ -873,7 +932,7 @@
                         var p = document.createElement('div');
                         p.id = 'inmDbgPanel';
                         p.innerHTML = '<div class="inm-dbg-header" id="inmDbgHeader">' +
-                            '<span>DEBUG · Inmuebles (N2) · INM-v3.5-DBG</span>' +
+                            '<span>DEBUG · Inmuebles (N2) · INM-v3.7-DBG</span>' +
                             '<span class="inm-dbg-controls">' +
                             '<button type="button" class="inm-dbg-btn" id="inmDbgCopy">Copiar</button>' +
                             '<button type="button" class="inm-dbg-btn" id="inmDbgClear">Limpiar</button>' +
@@ -952,8 +1011,10 @@
             })();
         if (!DBG) { return; }
 
-        DBG.log('INM-v3.5-DBG activo · modo=' + (SRVDBG && SRVDBG.modoGlobal ? 'GLOBAL' : 'INDIVIDUAL') +
-            ' · expedientes=' + (SRVDBG ? SRVDBG.expedientes : 0), 'ok');
+        DBG.log('INM-v3.7-DBG activo · modo=' + (SRVDBG && SRVDBG.modoGlobal ? 'GLOBAL' : 'INDIVIDUAL') +
+            ' · expedientes=' + (SRVDBG ? SRVDBG.expedientes : 0) +
+            ' · activos=' + (SRVDBG ? SRVDBG.activos : 0) +
+            ' · inactivos=' + (SRVDBG ? SRVDBG.inactivos : 0), 'ok');
 
         try {
             var __q = new URLSearchParams(window.location.search || '');
