@@ -310,4 +310,114 @@ class MensajeController extends Controller
             ], 500);
         }
     }
+
+/**
+     * Registra una respuesta escrita en plataforma y marca el mensaje como respondido.
+     */
+    public function responder(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'respuesta' => 'required|string',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $mensaje = Mensaje::find($id);
+
+            if (!$mensaje) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El mensaje de soporte solicitado no existe.',
+                ], 404);
+            }
+
+            $actualizacion = [
+                'leido' => true,
+            ];
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido')) {
+                $actualizacion['respondido'] = true;
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respuesta')) {
+                $actualizacion['respuesta'] = $validated['respuesta'];
+            }
+            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido_at')) {
+                $actualizacion['respondido_at'] = now();
+            }
+
+            $mensaje->update($actualizacion);
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Respuesta registrada en la plataforma.',
+                'data'    => $mensaje->fresh(),
+            ], 200);
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            Log::error('Error en MensajeController@responder: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al registrar la respuesta.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambia el estado de atención (respondido / sin responder) de un soporte.
+     */
+    public function cambiarEstado(Request $request, string $id): JsonResponse
+    {
+        DB::beginTransaction();
+
+        try {
+            $mensaje = Mensaje::find($id);
+
+            if (!$mensaje) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El mensaje de soporte solicitado no existe.',
+                ], 404);
+            }
+
+            $estadoSolicitado = $request->input('estado');
+            $marcarRespondido = !is_null($estadoSolicitado)
+                ? ($estadoSolicitado === 'respondido' || filter_var($estadoSolicitado, FILTER_VALIDATE_BOOLEAN))
+                : true;
+
+            $actualizacion = ['leido' => true];
+            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido')) {
+                $actualizacion['respondido'] = $marcarRespondido;
+            }
+
+            $mensaje->update($actualizacion);
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado de soporte actualizado.',
+                'data'    => $mensaje->fresh(),
+            ], 200);
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            Log::error('Error en MensajeController@cambiarEstado: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Ocurrió un error al actualizar el estado del soporte.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+
 }

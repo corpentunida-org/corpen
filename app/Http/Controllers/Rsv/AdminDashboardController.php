@@ -66,6 +66,11 @@ class AdminDashboardController extends Controller
             $tabFinanzas       = 0;
             $tabAuditoria      = 0;
 
+            // KPIs Soportes
+            $tabSoportesTotal        = 0;
+            $tabSoportesSinResponder = 0;
+            $tabSoportesRespondidos  = 0;
+
             // KPIs Específicos
             $kpiNoche          = null;
             $kpiMinReserva     = null;
@@ -81,10 +86,19 @@ class AdminDashboardController extends Controller
             $nochesOcupadas    = 0;
             $diasDelMes        = Carbon::today()->daysInMonth;
 
+            $soportesTotalInmueble        = 0;
+            $soportesSinResponderInmueble = 0;
+            $soportesRespondidosInmueble  = 0;
+
             // 3. Variables base
             $pasarelas = Pasarela::all();
             $auditoria = AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
             $inmuebleId = $request->input('inmueble_id', 'todos') ?: 'todos';
+
+            $metricasSop = $this->obtenerMetricasSoportes($inmuebleId === 'todos' ? null : (int) $inmuebleId);
+            $tabSoportesTotal        = $metricasSop['total'];
+            $tabSoportesSinResponder = $metricasSop['sin_responder'];
+            $tabSoportesRespondidos  = $metricasSop['respondidos'];
 
             // 4. Lógica de Filtrado (Global vs Específico)
             if ($inmuebleId === 'todos') {
@@ -136,6 +150,10 @@ class AdminDashboardController extends Controller
                     ])
                     ->withCount(['reservas', 'bloqueosCalendario'])
                     ->findOrFail($inmuebleId);
+
+                $soportesTotalInmueble        = $tabSoportesTotal;
+                $soportesSinResponderInmueble = $tabSoportesSinResponder;
+                $soportesRespondidosInmueble  = $tabSoportesRespondidos;
 
                 $reservas = Reserva::with(['user', 'status', 'inmueble'])
                     ->where('id_rsv_catalogo_inmueble', $inmuebleId)
@@ -244,8 +262,7 @@ class AdminDashboardController extends Controller
                 );
             }
 
-            // 5. Respuesta JSON (Solo cuando el cliente explícitamente solicita application/json,
-            //    así la RED 3 de reservasFragmento puede invocar index() por AJAX y obtener la View HTML)
+            // 5. Respuesta JSON
             if ($request->wantsJson() && !$request->routeIs('rsv.admin.reservas.fragmento')) {
                 return response()->json([
                     'success' => true,
@@ -268,6 +285,8 @@ class AdminDashboardController extends Controller
             return view('rsv.admin.dashboard', compact(
                 'listaInmuebles', 'inmueble', 'inmueblesGrid', 'reservas', 'transacciones', 'pasarelas', 'auditoria', 'inmuebleId',
                 'tabTotalInmuebles', 'tabReservas', 'tabBloqueos', 'tabFinanzas', 'tabAuditoria',
+                'tabSoportesTotal', 'tabSoportesSinResponder', 'tabSoportesRespondidos',
+                'soportesTotalInmueble', 'soportesSinResponderInmueble', 'soportesRespondidosInmueble',
                 'kpiNoche', 'kpiMinReserva', 'kpiProximas', 'kpiProximaEntrada', 'kpiOcupacion',
                 'kpiResenasCount', 'kpiRating', 'kpiFotos', 'kpiVideos', 'ingresosInmueble',
                 'auditoriaCount', 'nochesOcupadas', 'diasDelMes'
@@ -299,10 +318,6 @@ class AdminDashboardController extends Controller
     // TAB INICIO / RESUMEN
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB INICIO
-     * Refresca la vista resumen principal (partials/tab-inicio.blade.php).
-     */
     public function inicioFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inicio');
@@ -327,10 +342,6 @@ class AdminDashboardController extends Controller
     // SECCIÓN 1/5: INMUEBLES (Catálogo y Configuraciones)
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB INMUEBLES
-     * Refresca el contenedor principal de inmuebles (partials/tab-inmuebles.blade.php).
-     */
     public function inmueblesFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inmuebles-tab');
@@ -369,7 +380,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/inmuebles/catalogo.blade.php */
     public function inmueblesCatalogoFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inmuebles-catalogo');
@@ -397,7 +407,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/inmuebles/tarifa.blade.php */
     public function inmueblesTarifaFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inmuebles-tarifas');
@@ -419,7 +428,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/inmuebles/galeria.blade.php */
     public function inmueblesGaleriaFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inmuebles-galeria');
@@ -441,21 +449,17 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/inmuebles/tipo.blade.php */
     public function inmueblesTipoFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-inmuebles-tipos');
         try {
-            // AJUSTE TIP-v1.4 · consulta canónica (columna 'nombre' + relación 'catalogoInmuebles')
             try {
                 $tipos = \App\Models\Rsv\TipoInmueble::withCount('catalogoInmuebles')->orderBy('nombre', 'asc')->get();
             } catch (\Throwable $e1) {
-                // Respaldo: tu consulta original (alias 'name' / relación 'inmuebles')
                 $tipos = \App\Models\Rsv\TipoInmueble::withCount('inmuebles')->orderBy('name', 'asc')->get();
             }
 
             return response()
-                // La vista acepta $tipos (nuevo) y $tiposCollection (histórico)
                 ->view('rsv.admin.partials.inmuebles.tipo', ['tipos' => $tipos, 'tiposCollection' => $tipos])
                 ->header('Cache-Control', 'no-store, max-age=0');
         } catch (\Throwable $e) {
@@ -469,11 +473,6 @@ class AdminDashboardController extends Controller
     // SECCIÓN 2/5: RESERVAS (Núcleo Transaccional)
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB RESERVAS
-     * Refresca el contenedor principal de reservas (partials/tab-reservas.blade.php).
-     * (LÓGICA v16-FRAG DE 4 REDES 100% INTACTA)
-     */
     public function reservasFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-tab');
@@ -481,10 +480,8 @@ class AdminDashboardController extends Controller
             $probadas = [];
             $cortas   = [];
 
-            /* ── CIERRES-AYUDA (todo dentro del método: un solo bloque que pegar) ── */
             $extraerWrap = function ($html) {
                 if (!is_string($html) || $html === '') { return null; }
-                /* 🆕 v16-FRAG · copia sanitizada (mismo largo, offsets intactos) */
                 $limpio = preg_replace_callback(
                     '/<!--.*?-->|<script\b[^>]*>.*?<\/script\s*>|<style\b[^>]*>.*?<\/style\s*>/is',
                     function ($mS) { return str_repeat(' ', strlen($mS[0])); },
@@ -510,19 +507,16 @@ class AdminDashboardController extends Controller
                 return null;
             };
 
-            /* El candidato ya trae su wrap (comillas dobles o simples) */
             $traeWrap = function ($html) {
                 return is_string($html)
                     && (stripos($html, 'id="rvTabWrap"') !== false
                         || stripos($html, "id='rvTabWrap'") !== false);
             };
 
-            /* El candidato NO es el SHOW de una reserva */
             $noEsShow = function ($html) {
                 return is_string($html) && stripos($html, 'rsvShowRoot') === false;
             };
 
-            /* Respuesta 200 uniforme + rastro en el log para verificar */
             $servir = function ($htmlServir, $modo, $detalle) use ($request) {
                 Log::info('reservasFragmento: SERVIDO · modo=' . $modo . ' · ' . $detalle
                     . ' · bytes=' . strlen($htmlServir)
@@ -533,7 +527,6 @@ class AdminDashboardController extends Controller
                     ->header('Cache-Control', 'no-store, max-age=0');
             };
 
-            /* Prueba UNA vista con el contrato completo (RED 1 y RED 2). */
             $probarVista = function ($nombreVista, $origen) use ($extraerWrap, $traeWrap, $noEsShow, $servir, &$probadas, &$cortas) {
                 $corta = implode('.', array_slice(explode('.', $nombreVista), -2));
                 if (!view()->exists($nombreVista)) {
@@ -582,7 +575,6 @@ class AdminDashboardController extends Controller
                     . ' · preludio=' . ($esPagina ? '0 (solo bloque)' : strlen($preludio) . ' bytes'));
             };
 
-            /* ── RED 1 · CANDIDATAS EXPLÍCITAS ── */
             $candidatas1a = [
                 'rsv.admin.partials.tab-reservas',
                 'rsv.admin.partials.reservas.tab-reservas',
@@ -597,7 +589,6 @@ class AdminDashboardController extends Controller
                 if ($r !== null) { return $r; }
             }
 
-            /* ── RED 2 · HALLAZGO POR CONTENIDO ── */
             $base = str_replace('\\', '/', resource_path('views'));
             $hallados = [];
             try {
@@ -632,7 +623,6 @@ class AdminDashboardController extends Controller
                 }
             }
 
-            /* ── RED 3 · PLAN MAESTRO: el PROPIO método del dashboard ── */
             foreach (['index', 'dashboard'] as $metodoDash) {
                 if (!method_exists($this, $metodoDash)) {
                     $probadas[] = 'método ' . $metodoDash . '() no existe en este controlador';
@@ -682,7 +672,6 @@ class AdminDashboardController extends Controller
                     . ' · html=' . strlen($htmlDash) . ' bytes · bloque=' . strlen($bloqueDash) . ' bytes');
             }
 
-            /* ── RED 4 · MODO COMPATIBLE v10: envolver el parcial de lista ── */
             $candidatasWrap = [
                 'rsv.admin.partials.reservas.lista',
                 'rsv.admin.partials.reservas.listado',
@@ -747,10 +736,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [NIVEL 3] - Devuelve el fragmento de la vista de detalle/lista de reservas
-     * partials/reservas/reservas.blade.php
-     */
     public function reservasListaFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-lista');
@@ -770,7 +755,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/reservas/historial_estado.blade.php */
     public function historialEstadoFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-historial-estados');
@@ -793,7 +777,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/reservas/origen_reserva.blade.php */
     public function origenReservaFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-origenes');
@@ -813,7 +796,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/reservas/reserva_huespedt.blade.php */
     public function reservaHuespedesFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-huespedes');
@@ -822,7 +804,6 @@ class AdminDashboardController extends Controller
             $rhGlobal = empty($inmuebleId) || $inmuebleId === 'todos';
             $inmueble = (!$rhGlobal && is_numeric($inmuebleId)) ? CatalogoInmueble::find($inmuebleId) : null;
 
-            // Consulta idéntica a tu ReservaHuespedController (sin restringir columnas en relación anidada)
             $query = ReservaHuesped::query()
                 ->with(['reserva.inmueble', 'registrador']);
 
@@ -834,7 +815,6 @@ class AdminDashboardController extends Controller
 
             $huespedes = $query->orderBy('created_at', 'desc')->get();
 
-            // Opciones para el select del modal
             $rhReservasOpt = collect();
             if (class_exists(\App\Models\Rsv\Reserva::class)) {
                 $rq = \App\Models\Rsv\Reserva::query()->select('id', 'codigo_reserva');
@@ -852,7 +832,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /** [NIVEL 3] - partials/reservas/status.blade.php */
     public function statusFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-reservas-statuses');
@@ -881,10 +860,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [AUXILIAR RESERVAS] - Autocompletado de Usuarios
-     * Busca por cédula (nit / nid), nombre o email para el modal de nueva reserva o endoso.
-     */
     public function buscarUsuarios(Request $request)
     {
         try {
@@ -952,10 +927,6 @@ class AdminDashboardController extends Controller
     // SECCIÓN 3/5: CALENDARIO Y BLOQUEOS
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB CALENDARIO
-     * Refresca el contenedor principal del calendario (partials/tab-calendario.blade.php).
-     */
     public function calendarioFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-calendario-tab');
@@ -977,9 +948,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [NIVEL 3] - partials/calendario/bloqueos.blade.php
-     */
     public function bloqueosFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-calendario-bloqueos');
@@ -1010,10 +978,6 @@ class AdminDashboardController extends Controller
     // SECCIÓN 4/5: FINANZAS Y PAGOS
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB FINANZAS
-     * Refresca el contenedor principal de finanzas (partials/tab-finanzas.blade.php).
-     */
     public function finanzasFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-finanzas-tab');
@@ -1044,9 +1008,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [NIVEL 3] - partials/finanzas/transacciones.blade.php
-     */
     public function transaccionesFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-finanzas-transacciones');
@@ -1077,9 +1038,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [NIVEL 3] - partials/finanzas/pasarela.blade.php
-     */
     public function pasarelasFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-finanzas-pasarelas');
@@ -1104,10 +1062,6 @@ class AdminDashboardController extends Controller
     // SECCIÓN 5/5: AUDITORÍA Y LOGS
     // =========================================================================
 
-    /**
-     * [NIVEL 2] - TAB AUDITORÍA
-     * Refresca el contenedor principal de auditoría (partials/tab-auditoria.blade.php o auditoria-tab.blade.php).
-     */
     public function auditoriaFragmento(Request $request)
     {
         try {
@@ -1133,9 +1087,6 @@ class AdminDashboardController extends Controller
         }
     }
 
-    /**
-     * [NIVEL 3] - partials/auditorias/informes.blade.php
-     */
     public function auditoriaInformesFragmento(Request $request)
     {
         try {
@@ -1154,6 +1105,137 @@ class AdminDashboardController extends Controller
         } catch (\Throwable $e) {
             Log::error('auditoriaInformesFragmento: ' . $e->getMessage());
             return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+
+    // =========================================================================
+    // SECCIÓN 6/6: SOPORTES (Gestión Escrita Interna)
+    // =========================================================================
+
+    public function soportesFragmento(Request $request)
+    {
+        $this->auditarVistaAdmin($request, 'admin-soportes-tab');
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $inmueble   = ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId))
+                ? CatalogoInmueble::find($inmuebleId)
+                : null;
+
+            $soportes = $this->consultarSoportes($inmueble, null);
+
+            return response()
+                ->view('rsv.admin.partials.tab-soportes', compact('soportes', 'inmueble', 'inmuebleId'))
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('soportesFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    public function soportesSinResponderFragmento(Request $request)
+    {
+        $this->auditarVistaAdmin($request, 'admin-soportes-sin-responder');
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $inmueble   = ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId))
+                ? CatalogoInmueble::find($inmuebleId)
+                : null;
+
+            $soportes = $this->consultarSoportes($inmueble, 'sin_responder');
+
+            return response()
+                ->view('rsv.admin.partials.soportes.sin_responder', compact('soportes', 'inmueble', 'inmuebleId'))
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('soportesSinResponderFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    public function soportesRespondidosFragmento(Request $request)
+    {
+        $this->auditarVistaAdmin($request, 'admin-soportes-respondidos');
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $inmueble   = ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId))
+                ? CatalogoInmueble::find($inmuebleId)
+                : null;
+
+            $soportes = $this->consultarSoportes($inmueble, 'respondidos');
+
+            return response()
+                ->view('rsv.admin.partials.soportes.respondidos', compact('soportes', 'inmueble', 'inmuebleId'))
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('soportesRespondidosFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    public function soportesTodosFragmento(Request $request)
+    {
+        $this->auditarVistaAdmin($request, 'admin-soportes-todos');
+        try {
+            $inmuebleId = $request->query('inmueble_id');
+            $inmueble   = ($inmuebleId && $inmuebleId !== 'todos' && is_numeric($inmuebleId))
+                ? CatalogoInmueble::find($inmuebleId)
+                : null;
+
+            $soportes = $this->consultarSoportes($inmueble, 'todos');
+
+            return response()
+                ->view('rsv.admin.partials.soportes.todos', compact('soportes', 'inmueble', 'inmuebleId'))
+                ->header('Cache-Control', 'no-store, max-age=0');
+        } catch (Throwable $e) {
+            Log::error('soportesTodosFragmento: ' . $e->getMessage());
+            return response('error', 500)->header('Cache-Control', 'no-store, max-age=0');
+        }
+    }
+
+    private function consultarSoportes(?CatalogoInmueble $inmueble, ?string $filtro)
+    {
+        try {
+            $clsMensaje = 'App\\Models\\Rsv\\Mensaje';
+            if (!class_exists($clsMensaje)) {
+                return collect();
+            }
+            $q = $clsMensaje::query()->latest();
+            if ($inmueble && Schema::hasColumn((new $clsMensaje)->getTable(), 'id_rsv_catalogo_inmueble')) {
+                $q->where('id_rsv_catalogo_inmueble', $inmueble->id);
+            }
+            if ($filtro === 'sin_responder' && Schema::hasColumn((new $clsMensaje)->getTable(), 'respondido')) {
+                $q->where(fn($w) => $w->where('respondido', 0)->orWhereNull('respondido'));
+            } elseif ($filtro === 'respondidos' && Schema::hasColumn((new $clsMensaje)->getTable(), 'respondido')) {
+                $q->where('respondido', 1);
+            }
+            return $q->get();
+        } catch (Throwable $e) {
+            return collect();
+        }
+    }
+
+    private function obtenerMetricasSoportes(?int $inmuebleId): array
+    {
+        try {
+            $clsMensaje = 'App\\Models\\Rsv\\Mensaje';
+            if (!class_exists($clsMensaje)) {
+                return ['total' => 0, 'sin_responder' => 0, 'respondidos' => 0];
+            }
+            $tabla = (new $clsMensaje)->getTable();
+            $q = $clsMensaje::query();
+            if ($inmuebleId && Schema::hasColumn($tabla, 'id_rsv_catalogo_inmueble')) {
+                $q->where('id_rsv_catalogo_inmueble', $inmuebleId);
+            }
+            $total = (clone $q)->count();
+            if (Schema::hasColumn($tabla, 'respondido')) {
+                $resp    = (clone $q)->where('respondido', 1)->count();
+                $sinResp = max(0, $total - $resp);
+                return ['total' => $total, 'sin_responder' => $sinResp, 'respondidos' => $resp];
+            }
+            return ['total' => $total, 'sin_responder' => $total, 'respondidos' => 0];
+        } catch (Throwable $e) {
+            return ['total' => 0, 'sin_responder' => 0, 'respondidos' => 0];
         }
     }
 

@@ -1,41 +1,9 @@
-{{-- resources/views/rsv/admin/partials/inmuebles/tarifa.blade.php · TAR-v1.1-DBG · NIVEL 3 (tarifas y temporadas) --}}
-{{-- TAR-v1 · NOVEDADES · 1) FIX de contrato con el controlador: inmueblesTarifaFragmento() pasa --}}
-{{--    "tarifas" (colección ya filtrada por inmueble_id) e "inmuebleId" — la vista original los --}}
-{{--    IGNORABA (leía listaInmuebles/inmueble) → por AJAX en una ficha se veían TODAS las tarifas. --}}
-{{--    Ahora: si llega la colección del fragmento se usa tal cual; el modo se deduce de inmuebleId --}}
-{{--    (id específico = individual · 'todos' = global); las inclusiones antiguas siguen funcionando. --}}
-{{--    2) "Nueva Tarifa" y "Editar" por AJAX: errores de validación (422) DENTRO del modal y, al --}}
-{{--    guardar, la tabla se recarga sin recargar la página. 3) FIX script muerto: el llenado del --}}
-{{--    modal de edición estaba dentro de DOMContentLoaded (no corre si el fragmento llega por AJAX) --}}
-{{--    → ahora por DELEGACIÓN en document con guards re-registrables y agnósticos del UID. --}}
-{{--    4) Panel de Errores LOCAL (botón abajo-derecha + Copiar/Limpiar/✕): registra SOLO operaciones --}}
-{{--    de esta vista; el colector de contexto del servidor (marca TAR-v1) viaja al panel como JSON. --}}
-{{--    5) UID anti-congelamiento conservado para ids de modales/campos (por si el partial se incluye --}}
-{{--    dos veces); cada copia gestiona su propia raíz vía document.currentScript. --}}
-{{--    6) CAMBIO TAR-v1.1-1 · Toggle de debug rediseñado al estilo "terminal" aprobado --}}
-{{--    en TIP-v1.3: la pestaña deja el emoji y pasa a texto DBG en monospace 8px --}}
-{{--    con LED de estado (verde = ok · rojo pulsante + conteo = errores). 16px de --}}
-{{--    alto y FIJA SIEMPRE en right:0 · bottom:0 (nunca se apila hacia arriba). El --}}
-{{--    panel sí esquiva a los vecinos midiendo px reales (getBoundingClientRect): --}}
-{{--    bottom = max(20, vecino + 4). Exclusividad reforzada: el toggle/panel viajan --}}
-{{--    con el fragmento y su respaldo SOLO re-crea nodos dentro de #tarRoot --}}
-{{--    (nunca cuelga de document.body). SPEC DE DISTANCIAS documentada en el CSS. --}}
-{{-- Arquitectura (patrón probado en reservas v32 · INM-v2 · CAT-v2): raíz estable que envuelve TODO --}}
-{{-- incluido el script (renace con listeners tras cada swap) y el panel va ANTES de la raíz. Todos --}}
-{{-- los comentarios de este archivo son seguros (nada de directivas sueltas en comentarios HTML). --}}
-{{-- MODO GLOBAL = tabla de TODAS las tarifas (columna Inmueble) + selector de inmueble en el modal --}}
-{{-- MODO INDIVIDUAL = tarifas de UN inmueble (sin columna Inmueble; inmueble va oculto en el modal) --}}
-
+{{-- resources/views/rsv/admin/partials/inmuebles/tarifa.blade.php · TAR-v1.2-DBG · NIVEL 3 (tarifas y temporadas) --}}
 @php
-    // ── TAR-v1.1-DBG · contrato del controlador + compatibilidad con inclusiones antiguas ──
-    // El fragmento pasa: tarifas (ya filtradas y ordenadas) + inmuebleId ('todos' o id numérico).
-    // Las inclusiones antiguas pasan: listaInmuebles / inmueble / soloLectura.
     $soloLectura = !empty($soloLectura);
 
-    // Modo: individual si hay $inmueble (inclusión en ficha) O si el fragmento pidió un id específico
     $modoGlobal = (!isset($inmueble) || !$inmueble) && (empty($inmuebleId) || $inmuebleId === 'todos');
 
-    // Inmueble oculto para los formularios cuando no hay objeto $inmueble (vía fragmento)
     $tarInmHidden = (isset($inmueble) && $inmueble)
         ? $inmueble->id
         : ((isset($inmuebleId) && $inmuebleId && $inmuebleId !== 'todos') ? $inmuebleId : null);
@@ -43,10 +11,8 @@
     $tarifasMostrar = collect([]);
 
     if (isset($tarifas) && $tarifas) {
-        // ═══ Contrato del fragmento: ya viene filtrado y ordenado por el controlador ═══
-        $tarifasMostrar = $tarifas;
+        $tarifasMostrar = collect($tarifas);
     } elseif ($modoGlobal) {
-        // ═══ Inclusión global antigua: armar la tabla desde listaInmuebles ═══
         if (!isset($listaInmuebles)) {
             try {
                 $listaInmuebles = \App\Models\Rsv\CatalogoInmueble::with('tarifasTemporadas')->get();
@@ -54,27 +20,29 @@
                 $listaInmuebles = collect([]);
             }
         }
+        $tmpArr = [];
         foreach ($listaInmuebles as $prop) {
             if (isset($prop->tarifasTemporadas) && $prop->tarifasTemporadas) {
                 foreach ($prop->tarifasTemporadas as $t) {
                     $t->id_rsv_catalogo_inmueble = $prop->id;
                     $t->nombre_inmueble_padre = $prop->name ?? 'Inmueble';
-                    $tarifasMostrar[] = $t;
+                    $tmpArr[] = $t;
                 }
             }
         }
+        $tarifasMostrar = collect($tmpArr);
     } else {
-        // ═══ Inclusión individual antigua (ficha del tab N2) ═══
         if (isset($inmueble) && $inmueble && isset($inmueble->tarifasTemporadas)) {
+            $tmpArr = [];
             foreach ($inmueble->tarifasTemporadas as $t) {
                 $t->id_rsv_catalogo_inmueble = $inmueble->id;
                 $t->nombre_inmueble_padre = $inmueble->name ?? 'Inmueble';
-                $tarifasMostrar[] = $t;
+                $tmpArr[] = $t;
             }
+            $tarifasMostrar = collect($tmpArr);
         }
     }
 
-    // Nombres de inmuebles para la columna "Inmueble" en modo global (vía fragmento no vienen)
     $tarNombresInmuebles = collect([]);
     if ($modoGlobal) {
         try {
@@ -87,7 +55,6 @@
         }
     }
 
-    // Selector de inmuebles para el modal (solo modo global): consulta ligera id+name+city
     if ($modoGlobal && !isset($listaInmuebles)) {
         try {
             $listaInmuebles = \App\Models\Rsv\CatalogoInmueble::query()->orderBy('name')->get(['id', 'name', 'city']);
@@ -96,35 +63,39 @@
         }
     }
 
-    // ═══ FIX ANTI-CONGELAMIENTO (del original) · UID único por inclusión ═══
     $tzUid = $tzUid ?? ('tz' . substr(md5(uniqid('', true)), 0, 8));
 
-    // ── TAR-v1.1-DBG · colector de contexto del servidor (solo lectura, sin lógica de negocio) ──
+    $cntTarTotal   = $tarifasMostrar->count();
+    $cntTarActivas = $tarifasMostrar->filter(fn ($t) => !empty($t->active))->count();
+    $cntTarInact   = max(0, $cntTarTotal - $cntTarActivas);
+
     $tarDbg = [
-        'marca'       => 'TAR-v1.1-DBG',
+        'marca'       => 'TAR-v1.2-DBG',
         'vista'       => 'rsv.admin.partials.inmuebles.tarifa',
         'url'         => url()->full(),
         'peticion'    => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
         'modo'        => $modoGlobal ? 'global' : 'individual',
         'inmuebleId'  => (!$modoGlobal && isset($inmueble) && $inmueble) ? $inmueble->id : ($inmuebleId ?? null),
-        'total'       => $tarifasMostrar->count(),
+        'total'       => $cntTarTotal,
+        'activas'     => $cntTarActivas,
+        'inactivas'   => $cntTarInact,
         'selectorInm' => isset($listaInmuebles) && $listaInmuebles ? $listaInmuebles->count() : 0,
         'soloLectura' => $soloLectura,
         'uid'         => $tzUid,
-        'validacion'  => [],
+        'validacion'  => (isset($errors) && $errors->any()) ? $errors->all() : [],
         'errores'     => [],
     ];
-    if (isset($errors) && $errors->any()) {
-        $tarDbg['validacion'] = $errors->all();
-    }
 @endphp
 
-{{-- TAR-v1.1 · Tab DBG textual + LED + Panel LOCAL (fuera de la raíz: mueren con el fragmento · NO global) --}}
-<div id="tarDbgToggle" title="Debug Tarifas (TAR-v1.1-DBG)"><span class="tar-dbg-led" id="tarDbgLed"></span>DBG<span class="tar-dbg-badge" id="tarDbgBadge">0</span></div>
+{{-- TAR-v1.2 · Tab DBG textual + LED + Panel LOCAL (fuera de la raíz: mueren con el fragmento · NO global) --}}
+<div id="tarDbgToggle" title="Debug Tarifas (TAR-v1.2-DBG)">
+    <span class="tar-dbg-led" id="tarDbgLed"></span>DBG<span class="tar-dbg-badge" id="tarDbgBadge">0</span>
+</div>
 <div id="tarDbgPanel" role="dialog" aria-label="Panel de debug de Tarifas">
     <div class="tar-dbg-header" id="tarDbgHeader">
-        <span>DEBUG · Tarifas (N3) · TAR-v1.1-DBG</span>
+        <span>DEBUG · Tarifas (N3) · TAR-v1.2-DBG</span>
         <span class="tar-dbg-controls">
+            <button type="button" class="tar-dbg-btn" id="tarDbgRefresh" title="Refrescar fragmento de tarifas">↻ Frag</button>
             <button type="button" class="tar-dbg-btn" id="tarDbgCopy">Copiar</button>
             <button type="button" class="tar-dbg-btn" id="tarDbgClear">Limpiar</button>
             <button type="button" class="tar-dbg-btn" id="tarDbgClose">✕</button>
@@ -133,28 +104,104 @@
     <div id="tarDbgBody"></div>
 </div>
 
-<div id="tarRoot" class="tar-root" data-frag="{{ route('rsv.admin.inmuebles.tarifa.fragmento') }}">
+<div id="tarRoot" class="tar-root" data-frag="{{ route('rsv.admin.inmuebles.tarifa.fragmento') }}" data-inmueble-id="{{ $tarDbg['inmuebleId'] ?? 'todos' }}">
+
+    <style>
+        .tar-root .tar-filter-chip {
+            border: 1px solid #e9eef4;
+            background: #fff;
+            color: #64748b;
+            font-size: 7.5px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all .15s ease;
+            line-height: 1.3;
+        }
+        .tar-root .tar-filter-chip:hover { color: #334155; background: #f8fafc; }
+        .tar-root .tar-filter-chip.active {
+            background: #f0f7f2;
+            color: #3d7a5c;
+            border-color: #d5e7dc;
+            font-weight: 700;
+        }
+        .tar-root .tar-search-inp {
+            font-size: 8px;
+            color: #334155;
+            background: #fafbfd;
+            border: 1px solid #e9eef4;
+            border-radius: 4px;
+            padding: 2px 8px;
+            outline: 0;
+            width: 155px;
+            transition: all .15s ease;
+        }
+        .tar-root .tar-search-inp:focus {
+            background: #fff;
+            border-color: #d5e7dc;
+            width: 190px;
+        }
+        .tar-root .tar-vigencia-pill {
+            display: inline-block;
+            margin-top: 4px;
+            font-size: 7.5px;
+            font-weight: 700;
+            color: #3d7a5c;
+            background: #f0f7f2;
+            border: 1px solid #d5e7dc;
+            border-radius: 4px;
+            padding: 2px 7px;
+        }
+        .tar-root .tar-vigencia-pill.err {
+            color: #b45f5a;
+            background: #fdf5f4;
+            border-color: #f0dcd8;
+        }
+    </style>
 
     <div class="p-3 bg-white rounded-3 border" style="border-color: #f1f5f9 !important;">
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-2 border-bottom" style="border-color: #f1f5f9 !important;">
 
-            <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
-                <i class="bi bi-cash-coin me-1" style="font-size: 8px; color: #5d8a70;"></i>
-                {{ $modoGlobal ? 'Visión Global de Tarifas' : 'Tarifas y Temporadas del Inmueble' }}
-                <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">TAR-v1.1-DBG</span>
-            </h6>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
+                    <i class="bi bi-cash-coin me-1" style="font-size: 8px; color: #5d8a70;"></i>
+                    {{ $modoGlobal ? 'Visión Global de Tarifas' : 'Tarifas y Temporadas del Inmueble' }}
+                    <span class="badge rounded-pill ms-1" style="font-size:6.5px; background:#f0f7f2; color:#3d7a5c; border:1px solid #d5e7dc; vertical-align:middle;">TAR-v1.2-DBG</span>
+                </h6>
 
-            @if(empty($soloLectura))
-                <button type="button"
-                        class="btn btn-sm d-inline-flex align-items-center border"
-                        style="gap: 4px; background: #f0f7f2; color: #3d7a5c; border-color: #d5e7dc !important; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px; transition: all .15s ease;"
-                        onmouseover="this.style.background='#e3f1e9'; this.style.color='#34684e';"
-                        onmouseout="this.style.background='#f0f7f2'; this.style.color='#3d7a5c';"
-                        data-bs-toggle="modal" data-bs-target="#modalAddTarifa-{{ $tzUid }}">
-                    <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Tarifa
-                </button>
-            @endif
+                @if($cntTarTotal > 0)
+                    <div class="d-flex align-items-center gap-1">
+                        <button type="button" class="tar-filter-chip active" data-tar-filter="all">
+                            Todas ({{ $cntTarTotal }})
+                        </button>
+                        <button type="button" class="tar-filter-chip" data-tar-filter="1">
+                            Activas ({{ $cntTarActivas }})
+                        </button>
+                        <button type="button" class="tar-filter-chip" data-tar-filter="0">
+                            Inactivas ({{ $cntTarInact }})
+                        </button>
+                    </div>
+                @endif
+            </div>
+
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                @if($cntTarTotal > 0)
+                    <input type="text" class="tar-search-inp js-tar-search" placeholder="Buscar temporada{{ $modoGlobal ? ' o inmueble' : '' }}…">
+                @endif
+
+                @if(empty($soloLectura))
+                    <button type="button"
+                            class="btn btn-sm d-inline-flex align-items-center border"
+                            style="gap: 4px; background: #f0f7f2; color: #3d7a5c; border-color: #d5e7dc !important; font-family: inherit; font-size: 8.5px; font-weight: 600; padding: 2px 9px; border-radius: 3px; transition: all .15s ease;"
+                            onmouseover="this.style.background='#e3f1e9'; this.style.color='#34684e';"
+                            onmouseout="this.style.background='#f0f7f2'; this.style.color='#3d7a5c';"
+                            data-bs-toggle="modal" data-bs-target="#modalAddTarifa-{{ $tzUid }}">
+                        <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Tarifa
+                    </button>
+                @endif
+            </div>
 
         </div>
 
@@ -185,12 +232,17 @@
                     @if (!empty($tarifasMostrar) && count($tarifasMostrar) > 0)
 
                         @foreach ($tarifasMostrar as $tarifa)
+                            @php
+                                $nomPad = $tarifa->nombre_inmueble_padre ?? (($tarNombresInmuebles->isNotEmpty() && $tarifa->id_rsv_catalogo_inmueble && $tarNombresInmuebles->has($tarifa->id_rsv_catalogo_inmueble)) ? $tarNombresInmuebles[$tarifa->id_rsv_catalogo_inmueble] : 'N/A');
+                                $actTar = !empty($tarifa->active);
+                                $searchTar = mb_strtolower(($tarifa->nombre_temporada ?? '') . ' ' . $nomPad . ' ' . ($actTar ? 'activa' : 'inactiva'));
+                            @endphp
 
-                            <tr>
+                            <tr class="js-tar-row" data-tar-active="{{ $actTar ? '1' : '0' }}" data-tar-search="{{ $searchTar }}">
 
                                 @if ($modoGlobal)
                                     <td class="fw-semibold" style="font-size: 8px; color: #5d8a70; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
-                                        <i class="bi bi-building me-1" style="font-size: 7.5px; opacity: .7;"></i>{{ $tarifa->nombre_inmueble_padre ?? (($tarNombresInmuebles->isNotEmpty() && $tarifa->id_rsv_catalogo_inmueble && $tarNombresInmuebles->has($tarifa->id_rsv_catalogo_inmueble)) ? $tarNombresInmuebles[$tarifa->id_rsv_catalogo_inmueble] : 'N/A') }}
+                                        <i class="bi bi-building me-1" style="font-size: 7.5px; opacity: .7;"></i>{{ $nomPad }}
                                     </td>
                                 @endif
 
@@ -223,7 +275,7 @@
                                 </td>
 
                                 <td class="text-center" style="border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
-                                    @if(isset($tarifa->active) && $tarifa->active)
+                                    @if($actTar)
                                         <span class="d-inline-block border" style="font-size: 7.5px; font-weight: 600; padding: 0 7px; border-radius: 8px; line-height: 13px; color: #5d8a70; background: #f0f7f2; border-color: #d8e9de !important;">Activa</span>
                                     @else
                                         <span class="d-inline-block border" style="font-size: 7.5px; font-weight: 600; padding: 0 7px; border-radius: 8px; line-height: 13px; color: #9aa5b1; background: #fafbfd; border-color: #eef2f6 !important;">Inactiva</span>
@@ -249,7 +301,7 @@
                                                 data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
                                                 data-dias-maximos="{{ $tarifa->dias_maximos }}"
                                                 data-max-reservas="{{ $tarifa->max_reservas_anuales_cliente }}"
-                                                data-active="{{ $tarifa->active ? 1 : 0 }}">
+                                                data-active="{{ $actTar ? 1 : 0 }}">
                                             Editar
                                         </button>
                                     </td>
@@ -257,6 +309,12 @@
                             </tr>
 
                         @endforeach
+
+                        <tr class="js-tar-empty-filter" style="display:none;">
+                            <td colspan="{{ $modoGlobal ? 10 : 9 }}" class="text-center py-3" style="color: #94a3b8; font-size: 8px; border-bottom: 1px solid #f1f5f9;">
+                                <i class="bi bi-funnel me-1"></i> Ninguna tarifa coincide con el filtro seleccionado.
+                            </td>
+                        </tr>
 
                     @else
                         <tr>
@@ -274,7 +332,7 @@
     </div>
 
     {{-- ═══════════════════════════════════════════════════════════════ --}}
-    {{-- MODAL 2A · NUEVA TARIFA · TAR-v1.1-DBG: envío por AJAX (sin recargar) --}}
+    {{-- MODAL 2A · NUEVA TARIFA · TAR-v1.2-DBG                        --}}
     {{-- ═══════════════════════════════════════════════════════════════ --}}
     <div class="modal fade" id="modalAddTarifa-{{ $tzUid }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
@@ -296,7 +354,6 @@
 
                     <div class="modal-body" style="padding: 12px 14px;">
 
-                        {{-- Caja de errores de validación (la llena el panel TAR-v1.1-DBG con el 422) --}}
                         <div class="tar-form-err" style="display: none; background: #fdf5f4; color: #b45f5a; border: 1px solid #f0dcd8; border-radius: 4px; padding: 6px 9px; font-size: 8.5px; margin-bottom: 8px;"></div>
 
                         {{-- 1 · IDENTIFICACIÓN --}}
@@ -329,7 +386,6 @@
                             </div>
                         </div>
 
-
                         {{-- 2 · VIGENCIA --}}
                         <div class="p-2 mb-2 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
                             <div class="d-flex align-items-center mb-1 text-start" style="gap: 5px; font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">
@@ -340,19 +396,21 @@
                             <div class="row g-2 align-items-center">
                                 <div class="col-5">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Desde <span style="color: #c98a85;">*</span></label>
-                                    <input type="date" class="form-control form-control-sm shadow-none border" name="fecha_inicio" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <input type="date" class="form-control form-control-sm shadow-none border js-tar-fecha-ini" name="fecha_inicio" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                 </div>
                                 <div class="col-2 text-center pt-3">
                                     <i class="bi bi-arrow-right" style="color: #c3ccd6;"></i>
                                 </div>
                                 <div class="col-5">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Hasta <span style="color: #c98a85;">*</span></label>
-                                    <input type="date" class="form-control form-control-sm shadow-none border" name="fecha_fin" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <input type="date" class="form-control form-control-sm shadow-none border js-tar-fecha-fin" name="fecha_fin" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                 </div>
                             </div>
-                            <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Fuera de este rango el inmueble usa su precio base</div>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mt-1">
+                                <span style="font-size: 7px; color: #c3ccd6;">Fuera de este rango el inmueble usa su precio base</span>
+                                <span class="tar-vigencia-pill d-none js-tar-duracion"></span>
+                            </div>
                         </div>
-
 
                         {{-- 3 · PRECIOS --}}
                         <div class="p-2 mb-2 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
@@ -391,7 +449,6 @@
                             </div>
                         </div>
 
-
                         {{-- 4 · LÍMITES Y ESTADO --}}
                         <div class="p-2 mb-0 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
                             <div class="d-flex align-items-center mb-1 text-start" style="gap: 5px; font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">
@@ -420,6 +477,7 @@
                                             <div style="font-size: 7px; color: #b3bcc7; line-height: 1.1;">Aplica al cotizar</div>
                                         </div>
                                         <div class="form-check form-switch mb-0">
+                                            <input type="hidden" name="active" value="0">
                                             <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="addActive-{{ $tzUid }}" checked style="margin-left:-1.5em;">
                                         </div>
                                     </div>
@@ -445,8 +503,7 @@
 
 
     {{-- ═══════════════════════════════════════════════════════════════ --}}
-    {{-- MODAL 2B · EDITAR TARIFA · TAR-v1.1-DBG: los campos los llena el --}}
-    {{-- script por delegación (data del botón) y el envío es por AJAX --}}
+    {{-- MODAL 2B · EDITAR TARIFA · TAR-v1.2-DBG                        --}}
     {{-- ═══════════════════════════════════════════════════════════════ --}}
     <div class="modal fade" id="modalEditarTarifa-{{ $tzUid }}" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-md">
@@ -469,7 +526,6 @@
 
                     <div class="modal-body" style="padding: 12px 14px;">
 
-                        {{-- Caja de errores de validación (la llena el panel TAR-v1.1-DBG con el 422) --}}
                         <div class="tar-form-err" style="display: none; background: #fdf5f4; color: #b45f5a; border: 1px solid #f0dcd8; border-radius: 4px; padding: 6px 9px; font-size: 8.5px; margin-bottom: 8px;"></div>
 
                         {{-- 1 · IDENTIFICACIÓN --}}
@@ -501,7 +557,6 @@
                             </div>
                         </div>
 
-
                         {{-- 2 · VIGENCIA --}}
                         <div class="p-2 mb-2 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
                             <div class="d-flex align-items-center mb-1 text-start" style="gap: 5px; font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">
@@ -512,18 +567,20 @@
                             <div class="row g-2 align-items-center">
                                 <div class="col-5">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Desde <span style="color: #c98a85;">*</span></label>
-                                    <input type="date" class="form-control form-control-sm shadow-none border" id="edit_tarifa_inicio-{{ $tzUid }}" name="fecha_inicio" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <input type="date" class="form-control form-control-sm shadow-none border js-tar-fecha-ini" id="edit_tarifa_inicio-{{ $tzUid }}" name="fecha_inicio" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                 </div>
                                 <div class="col-2 text-center pt-3">
                                     <i class="bi bi-arrow-right" style="color: #c3ccd6;"></i>
                                 </div>
                                 <div class="col-5">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Hasta <span style="color: #c98a85;">*</span></label>
-                                    <input type="date" class="form-control form-control-sm shadow-none border" id="edit_tarifa_fin-{{ $tzUid }}" name="fecha_fin" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <input type="date" class="form-control form-control-sm shadow-none border js-tar-fecha-fin" id="edit_tarifa_fin-{{ $tzUid }}" name="fecha_fin" required style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
                                 </div>
                             </div>
+                            <div class="d-flex justify-content-end mt-1">
+                                <span class="tar-vigencia-pill d-none js-tar-duracion"></span>
+                            </div>
                         </div>
-
 
                         {{-- 3 · PRECIOS --}}
                         <div class="p-2 mb-2 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
@@ -559,7 +616,6 @@
                             </div>
                         </div>
 
-
                         {{-- 4 · LÍMITES Y ESTADO --}}
                         <div class="p-2 mb-0 rounded border" style="background-color: #fcfcfd; border-color: #e9eef4 !important;">
                             <div class="d-flex align-items-center mb-1 text-start" style="gap: 5px; font-size: 7px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: #b3bcc7;">
@@ -588,6 +644,7 @@
                                             <div style="font-size: 7px; color: #b3bcc7; line-height: 1.1;">Pausar sin borrar</div>
                                         </div>
                                         <div class="form-check form-switch mb-0">
+                                            <input type="hidden" name="active" value="0">
                                             <input class="form-check-input mt-0" type="checkbox" role="switch" name="active" value="1" id="edit_tarifa_active-{{ $tzUid }}" style="margin-left:-1.5em;">
                                         </div>
                                     </div>
@@ -612,13 +669,8 @@
     </div>
 
     <script>
-    /* ═══════════════ TAR-v1.1-DBG · tarifa · NIVEL 3 ═══════════════
-       Script LOCAL de esta vista: viaja DENTRO de la raíz, se re-ejecuta tras
-       cada swap AJAX y renace con sus listeners. Sin DOMContentLoaded: ese
-       patrón moría cuando el fragmento llegaba por AJAX (el evento ya había
-       disparado). NO captura fetch ni errores de otros módulos de la página.  */
+    /* ═══════════════ TAR-v1.2-DBG · tarifa · NIVEL 3 ═══════════════ */
     (function () {
-        /* Cada copia del partial gestiona SU propia raíz (soporta doble inclusión) */
         var root = (document.currentScript && document.currentScript.closest)
             ? document.currentScript.closest('.tar-root')
             : document.getElementById('tarRoot');
@@ -638,16 +690,6 @@
                     var st = document.createElement('style');
                     st.id = 'tarDbgStyle';
                     st.textContent = [
-                        /* ═════════ SPEC DE DISTANCIAS · TAR-v1.1 (tab terminal · portada de TIP-v1.3) ═════════
-                           TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la
-                                       esquina inferior-derecha (nunca sube: con
-                                       16px de alto cabe bajo cualquier otro toggle)
-                                     · altura fija 16px · padding lateral 8px
-                                     · radius 3px solo sup-izq · borde 1px arriba/izq
-                                     · monospace 8px · LED 5px (verde ok / rojo error)
-                           PANEL     · right:0px · bottom = max(20, vecino + 4px)
-                                       (20 = 16 de tab + 4 de aire mínimo)
-                                       · ancho 380px · radius 6px 0 0 0 (cajón pegado) */
                         '#tarDbgToggle{position:fixed;right:0;bottom:0;z-index:1090;height:16px;padding:0 8px;',
                         'border-radius:3px 0 0 0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
                         'background:rgba(2,6,23,.94);color:#64748b;',
@@ -690,16 +732,12 @@
                     document.head.appendChild(st);
                 }
                 function asegurarNodos() {
-                    /* PATRÓN TIP-v1.1-1: el toggle y el panel ya vienen como HTML del
-                       fragmento (fuera del root). Este respaldo solo los re-crea
-                       DENTRO de #tarRoot si un swap parcial los borrara;
-                       NUNCA se cuelga nada de document.body (exclusividad total). */
                     var rootDbg = document.getElementById('tarRoot');
-                    if (!rootDbg) { return; } /* sin vista montada → cero nodos */
+                    if (!rootDbg) { return; }
                     if (!$('tarDbgToggle')) {
                         var t = document.createElement('div');
                         t.id = 'tarDbgToggle';
-                        t.title = 'Debug Tarifas (TAR-v1.1-DBG)';
+                        t.title = 'Debug Tarifas (TAR-v1.2-DBG)';
                         t.innerHTML = '<span class="tar-dbg-led" id="tarDbgLed"></span>DBG<span class="tar-dbg-badge" id="tarDbgBadge">0</span>';
                         rootDbg.insertBefore(t, rootDbg.firstChild);
                     }
@@ -707,8 +745,9 @@
                         var p = document.createElement('div');
                         p.id = 'tarDbgPanel';
                         p.innerHTML = '<div class="tar-dbg-header" id="tarDbgHeader">' +
-                            '<span>DEBUG · Tarifas (N3) · TAR-v1.1-DBG</span>' +
+                            '<span>DEBUG · Tarifas (N3) · TAR-v1.2-DBG</span>' +
                             '<span class="tar-dbg-controls">' +
+                            '<button type="button" class="tar-dbg-btn" id="tarDbgRefresh">↻ Frag</button>' +
                             '<button type="button" class="tar-dbg-btn" id="tarDbgCopy">Copiar</button>' +
                             '<button type="button" class="tar-dbg-btn" id="tarDbgClear">Limpiar</button>' +
                             '<button type="button" class="tar-dbg-btn" id="tarDbgClose">✕</button>' +
@@ -717,23 +756,20 @@
                     }
                     apilar();
                 }
-                /* TAR-v1.1: la TAB se queda SIEMPRE abajo (bottom:0, nunca se apila:
-                   con 16px de alto cabe bajo cualquier otro toggle sin tocarlo).
-                   Solo el PANEL esquiva a los vecinos: bottom = max(20, vecino + 4). */
                 function apilar() {
-                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'gmDbgToggle', 'tipDbgToggle'];
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rhDbgToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'finDbgToggle', 'psDbgToggle', 'trxDbgToggle', 'audDbgToggle', 'infDbgToggle'];
                     var ocupado = 0;
                     for (var i = 0; i < ids.length; i++) {
                         var el = $(ids[i]);
                         if (!el) { continue; }
                         var r = el.getBoundingClientRect();
-                        if (!r.width && !r.height) { continue; } /* display:none no ocupa sitio */
-                        var desdeAbajo = window.innerHeight - r.top; /* cuánto sube ese vecino desde el fondo */
+                        if (!r.width && !r.height) { continue; }
+                        var desdeAbajo = window.innerHeight - r.top;
                         if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
                     }
                     var t = $('tarDbgToggle'), p = $('tarDbgPanel');
-                    if (t) { t.style.bottom = '0px'; } /* SI O SI pegada abajo */
-                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } /* 16 tab + 4 aire */
+                    if (t) { t.style.bottom = '0px'; }
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; }
                 }
                 function hora() {
                     var d = new Date();
@@ -780,15 +816,13 @@
                     clear: function () { var b = $('tarDbgBody'); if (b) { b.innerHTML = ''; } },
                     copy: function () {
                         var b = $('tarDbgBody'); if (!b) { return; }
-                        var txt = '=== DEBUG tarifa TAR-v1.1-DBG · ' + new Date().toISOString() + ' ===\n';
+                        var txt = '=== DEBUG tarifa TAR-v1.2-DBG · ' + new Date().toISOString() + ' ===\n';
                         for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                         if (navigator.clipboard && navigator.clipboard.writeText) {
                             navigator.clipboard.writeText(txt).then(function () {
                                 api.log('log copiado al portapapeles', 'ok');
-                            }).catch(function () {
-                                api.log('no se pudo copiar (permisos del navegador)', 'warn');
                             });
-                        } else { api.log('portapapeles no disponible en este navegador', 'warn'); }
+                        }
                     },
                     ensure: function () { asegurarNodos(); },
                     alive: function () { return !!$('tarDbgToggle'); }
@@ -799,15 +833,8 @@
                 return api;
             })();
         if (!DBG) { return; }
-        DBG.ensure(); /* re-apila y re-crea nodos si algún swap de nivel superior los reemplazó */
+        DBG.ensure();
 
-        /* ═══ 1b) EXCLUSIVIDAD DE LA TAB DBG (patrón TIP-v1.1-1, sin vigilante) ═══
-           La tab y el panel no se cuelgan de document.body: viajan como HTML
-           del propio fragmento. Al navegar a otra vista el contenedor se
-           intercambia y la tab muere SOLO con el fragmento; al volver a
-           Tarifas renace con él. Nada que vigilar, nada que limpiar. */
-
-        /* Botones del panel por DELEGACIÓN en document (sobreviven a cualquier swap) */
         if (window.__tarDbgDocHandler) { document.removeEventListener('click', window.__tarDbgDocHandler); }
         window.__tarDbgDocHandler = function (e) {
             var t = e.target;
@@ -816,39 +843,117 @@
             if (t.closest('#tarDbgClose')) { e.stopPropagation(); DBG.close(); return; }
             if (t.closest('#tarDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
             if (t.closest('#tarDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+            if (t.closest('#tarDbgRefresh')) {
+                e.stopPropagation();
+                recargarContexto('manual-btn-dbg');
+                return;
+            }
+
+            // Chips de filtro de estado (Todas / Activas / Inactivas)
+            var chip = t.closest('.tar-root .tar-filter-chip');
+            if (chip) {
+                var sc = chip.closest('.tar-root');
+                if (sc) {
+                    sc.querySelectorAll('.tar-filter-chip').forEach(function (c) { c.classList.remove('active'); });
+                    chip.classList.add('active');
+                    aplicarFiltroTarifas(sc, true);
+                }
+            }
         };
         document.addEventListener('click', window.__tarDbgDocHandler);
+
         if (window.__tarDbgDblHandler) { document.removeEventListener('dblclick', window.__tarDbgDblHandler); }
         window.__tarDbgDblHandler = function (e) {
             if (e.target && e.target.closest && e.target.closest('#tarDbgHeader')) { DBG.close(); }
         };
         document.addEventListener('dblclick', window.__tarDbgDblHandler);
 
-        /* ═══ 2) BOOT · contexto del servidor (como el Panel de Huéspedes) ═══ */
-        DBG.log('TAR-v1.1-DBG activo · tab DBG fija en esquina (0,0) · LED de estado · exclusiva (muere con el fragmento)', 'ok');
-        if (window.__tarEverBooted) { DBG.log('script re-ejecutado tras swap AJAX (el panel LOCAL continúa)', 'debug'); }
-        window.__tarEverBooted = true;
-        DBG.log('init · modo=' + (SRVDBG ? SRVDBG.modo : '?') +
+        DBG.log('TAR-v1.2-DBG activo · modo=' + (SRVDBG ? SRVDBG.modo : '?') +
             ' · tarifas=' + (SRVDBG ? SRVDBG.total : '?') +
-            (SRVDBG && SRVDBG.inmuebleId ? ' · inmuebleSel=' + SRVDBG.inmuebleId : '') +
-            (SRVDBG && SRVDBG.soloLectura ? ' · SOLO LECTURA' : '') +
-            (SRVDBG && SRVDBG.uid ? ' · uid=' + SRVDBG.uid : ''), 'info');
-        DBG.log('SRV · peticion=' + ((SRVDBG && SRVDBG.peticion) ? SRVDBG.peticion : '?') +
-            ' · url=' + ((SRVDBG && SRVDBG.url) ? SRVDBG.url : '?'), 'debug');
-        DBG.log('Rutas · FRAG=' + (FRAG || 'NO') +
-            (FRAG ? ' · guardados y recargas por AJAX activos' : ' → FRAG vacío: guardados serán nativos (recarga)'), FRAG ? 'ok' : 'warn');
-        if (SRVDBG && SRVDBG.validacion && SRVDBG.validacion.length) {
-            for (var _vi = 0; _vi < SRVDBG.validacion.length; _vi++) {
-                DBG.log('⚠ validación pendiente: ' + SRVDBG.validacion[_vi], 'warn');
+            ' (activas=' + (SRVDBG ? SRVDBG.activas : 0) + ', inactivas=' + (SRVDBG ? SRVDBG.inactivas : 0) + ')', 'ok');
+
+        /* ═══ FILTRO EN VIVO DE TABLA DE TARIFAS ═══ */
+        function aplicarFiltroTarifas(scope, logEv) {
+            var sc = scope || root;
+            if (!sc) return;
+            var chipAct = sc.querySelector('.tar-filter-chip.active');
+            var filtroAct = chipAct ? chipAct.getAttribute('data-tar-filter') : 'all';
+            var q = (sc.querySelector('.js-tar-search')?.value || '').toLowerCase().trim();
+            var visibles = 0;
+
+            var filas = sc.querySelectorAll('.js-tar-row');
+            filas.forEach(function (tr) {
+                var act  = tr.getAttribute('data-tar-active') || '0';
+                var blob = tr.getAttribute('data-tar-search') || '';
+                var okEst = (filtroAct === 'all') || (act === filtroAct);
+                var okQ   = !q || blob.indexOf(q) !== -1;
+                var show  = okEst && okQ;
+                tr.style.display = show ? '' : 'none';
+                if (show) visibles++;
+            });
+
+            var emptyRow = sc.querySelector('.js-tar-empty-filter');
+            if (emptyRow && filas.length > 0) {
+                emptyRow.style.display = visibles === 0 ? '' : 'none';
             }
-        }
-        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
-            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
-                DBG.log('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
+            if (logEv) {
+                DBG.log('Filtro tarifas · estado=' + filtroAct + ' · q="' + q + '" · visibles=' + visibles + '/' + filas.length, 'info');
             }
         }
 
-        /* ═══ 3) HELPERS DE SWAP · repinta la raíz con el HTML del fragmento ═══ */
+        /* ═══ CALCULAR DURACIÓN DE VIGENCIA EN MODALES DE TARIFA ═══ */
+        function actualizarDuracionModal(form) {
+            if (!form) return;
+            var iniInp = form.querySelector('.js-tar-fecha-ini');
+            var finInp = form.querySelector('.js-tar-fecha-fin');
+            var pill   = form.querySelector('.js-tar-duracion');
+            if (!iniInp || !finInp || !pill) return;
+
+            var vIni = iniInp.value;
+            var vFin = finInp.value;
+            if (!vIni || !vFin) {
+                pill.classList.add('d-none');
+                return;
+            }
+            var d1 = new Date(vIni + 'T00:00:00');
+            var d2 = new Date(vFin + 'T00:00:00');
+            var diffDias = Math.round((d2 - d1) / 86400000) + 1;
+
+            pill.classList.remove('d-none');
+            if (diffDias <= 0) {
+                pill.classList.add('err');
+                pill.textContent = '⚠ "Hasta" debe ser igual o posterior a "Desde"';
+            } else {
+                pill.classList.remove('err');
+                pill.textContent = 'Vigencia: ' + diffDias + ' día(s)';
+            }
+        }
+
+        if (window.__tarInputHandler) { document.removeEventListener('input', window.__tarInputHandler); }
+        window.__tarInputHandler = function (e) {
+            var t = e.target;
+            if (!t) return;
+            if (t.classList && t.classList.contains('js-tar-search')) {
+                var sc = t.closest('.tar-root');
+                aplicarFiltroTarifas(sc, false);
+                return;
+            }
+            if (t.classList && (t.classList.contains('js-tar-fecha-ini') || t.classList.contains('js-tar-fecha-fin'))) {
+                actualizarDuracionModal(t.closest('form'));
+            }
+        };
+        document.addEventListener('input', window.__tarInputHandler);
+
+        if (window.__tarChangeHandler) { document.removeEventListener('change', window.__tarChangeHandler); }
+        window.__tarChangeHandler = function (e) {
+            var t = e.target;
+            if (t && t.classList && (t.classList.contains('js-tar-fecha-ini') || t.classList.contains('js-tar-fecha-fin'))) {
+                actualizarDuracionModal(t.closest('form'));
+            }
+        };
+        document.addEventListener('change', window.__tarChangeHandler);
+
+        /* ═══ HELPERS DE SWAP ═══ */
         function tarRunScripts(scope) {
             var scripts = scope.querySelectorAll('script');
             for (var i = 0; i < scripts.length; i++) {
@@ -881,7 +986,7 @@
             }
         }
         function limpiarResiduosModal() {
-            if (document.querySelector('.modal.show')) { return; } /* hay otro modal legítimo abierto (otra vista): no tocar */
+            if (document.querySelector('.modal.show')) { return; }
             var fondos = document.querySelectorAll('.modal-backdrop');
             for (var i = 0; i < fondos.length; i++) {
                 if (fondos[i].parentNode) { fondos[i].parentNode.removeChild(fondos[i]); }
@@ -903,34 +1008,35 @@
             tarRunScripts(nuevo);
             limpiarResiduosModal();
         }
-        function tarCargar(url) {
-            if (!FRAG) { window.location.reload(); return; }
-            DBG.log('fetch ' + url, 'net');
+        function tarCargar(url, motivo) {
+            if (!FRAG) { return; }
+            var t0 = performance.now();
+            DBG.log('GET Fragmento (' + (motivo || 'sync') + ') → ' + url, 'net');
             fetch(url, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                cache: 'no-store'
             }).then(function (r) {
+                var ms = Math.round(performance.now() - t0);
                 if (r.redirected && /\/login(\?|$)/.test(r.url || '')) {
-                    throw new Error('la sesión expiró (el servidor redirigió al login); inicia sesión y reintenta');
+                    throw new Error('la sesión expiró (redirigido al login)');
                 }
                 if (!r.ok) {
                     return r.text().then(function (t) {
                         var det = extraerErrorLaravel(t);
-                        throw new Error('HTTP ' + r.status + (det ? ' · ' + det : (t && t.length > 0 && t.length < 80 ? ' · ' + t.trim() : '')));
+                        throw new Error('HTTP ' + r.status + ' (' + ms + 'ms)' + (det ? ' · ' + det : ''));
                     });
                 }
-                return r.text();
-            }).then(function (html) {
-                tarSwapFragmento(html);
-                DBG.log('tarifas recargadas · ' + html.length + ' bytes · sin recargar la página', 'ok');
+                return r.text().then(function (html) { return { html: html, ms: ms }; });
+            }).then(function (res) {
+                tarSwapFragmento(res.html);
+                DBG.log('Tarifas actualizadas (' + res.ms + 'ms · ' + res.html.length + ' bytes)', 'ok');
             }).catch(function (err) {
-                DBG.log('⚠ recarga de tarifas falló (' + err.message + ') → respaldo: recarga de la página', 'err');
+                DBG.log('⚠ Recarga de tarifas falló: ' + err.message, 'err');
                 DBG.open();
-                window.location.reload();
             });
         }
 
-        /* ═══ 4) TOAST propio (no pisa los de otras vistas) ═══ */
         function tarToast(txt, nivel) {
             var wrap = document.getElementById('tarToastWrap');
             if (!wrap) {
@@ -952,41 +1058,58 @@
             setTimeout(function () { if (t.parentNode) { t.parentNode.removeChild(t); } }, 3800);
         }
 
-        /* ═══ 5) RECARGA CON CONTEXTO · mantiene el inmueble actual tras guardar ═══ */
-        function recargarContexto() {
-            if (!FRAG) { window.location.reload(); return; }
+        function recargarContexto(motivo) {
+            if (!FRAG) { return; }
             var inm = (SRVDBG && SRVDBG.inmuebleId) ? SRVDBG.inmuebleId : 'todos';
-            tarCargar(FRAG + (FRAG.indexOf('?') === -1 ? '?' : '&') + 'inmueble_id=' + encodeURIComponent(inm || 'todos'));
+            var sep = FRAG.indexOf('?') === -1 ? '?' : '&';
+            tarCargar(FRAG + sep + 'inmueble_id=' + encodeURIComponent(inm || 'todos') + '&_t=' + Date.now(), motivo || 'contexto');
         }
+        window.tarReloadFragment = recargarContexto;
 
-        /* ═══ 6) FORMULARIOS POR AJAX · crear / editar (delegado · re-registrable) ═══ */
+        /* ═══ FORMULARIOS POR AJAX · crear / editar ═══ */
         if (window.__tarFormHandler) { document.removeEventListener('submit', window.__tarFormHandler); }
         window.__tarFormHandler = function (e) {
             var form = e.target;
             if (!form || !form.closest || !form.hasAttribute('data-tar-form')) { return; }
             e.preventDefault();
-            var tipo = form.getAttribute('data-tar-form');
-            var btn = form.querySelector('button[type="submit"]');
+
             var caja = form.querySelector('.tar-form-err');
             if (caja) { caja.style.display = 'none'; caja.innerHTML = ''; }
+
+            // Validación rápida de rango de fechas antes de ir al servidor
+            var fIni = form.querySelector('[name="fecha_inicio"]')?.value || '';
+            var fFin = form.querySelector('[name="fecha_fin"]')?.value || '';
+            if (fIni && fFin && fFin < fIni) {
+                if (caja) {
+                    caja.innerHTML = '<div>• La fecha "Hasta" no puede ser menor que la fecha "Desde".</div>';
+                    caja.style.display = 'block';
+                }
+                DBG.log('⚠ Validación cliente: fecha_fin (' + fFin + ') < fecha_inicio (' + fIni + ')', 'warn');
+                return;
+            }
+
+            var tipo = form.getAttribute('data-tar-form');
+            var btn = form.querySelector('button[type="submit"]');
             if (btn) { btn.disabled = true; }
-            DBG.log('submit ' + tipo + ' → ' + (form.getAttribute('action') || '(sin action)') + ' (por AJAX, sin recargar)', 'info');
+            var t0 = performance.now();
+            DBG.log('POST (' + tipo + ') → ' + (form.getAttribute('action') || '(sin action)'), 'net');
+
             fetch(form.getAttribute('action'), {
                 method: 'POST',
                 body: new FormData(form),
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                 credentials: 'same-origin'
             }).then(function (r) {
+                var ms = Math.round(performance.now() - t0);
                 if (r.redirected && /\/login(\?|$)/.test(r.url || '')) {
-                    throw new Error('la sesión expiró (el servidor redirigió al login); inicia sesión y reintenta');
+                    throw new Error('la sesión expiró (redirigido al login)');
                 }
                 var ct = r.headers.get('content-type') || '';
                 if (ct.indexOf('application/json') !== -1) {
-                    return r.json().then(function (j) { return { status: r.status, ok: r.ok, json: j }; });
+                    return r.json().then(function (j) { return { status: r.status, ok: r.ok, ms: ms, json: j }; });
                 }
-                return r.text().then(function (t) { return { status: r.status, ok: r.ok, html: t }; });
+                return r.text().then(function (t) { return { status: r.status, ok: r.ok, ms: ms, html: t }; });
             }).then(function (res) {
-                /* 422 · errores de validación → se pintan DENTRO del modal, sin cerrarlo */
                 if (res.status === 422) {
                     var errs = (res.json && res.json.errors) ? res.json.errors : {};
                     var msgs = [];
@@ -1000,23 +1123,22 @@
                         caja.innerHTML = msgs.map(function (m) { return '<div>• ' + escapar(m) + '</div>'; }).join('');
                         caja.style.display = msgs.length ? 'block' : 'none';
                     }
-                    DBG.log('⚠ validación (422): ' + (msgs.join(' | ') || 'sin detalle'), 'err');
+                    DBG.log('⚠ Validación 422 (' + res.ms + 'ms): ' + (msgs.join(' | ') || 'sin detalle'), 'err');
                     tarToast('Revisa el formulario: hay campos con errores', 'err');
                     return;
                 }
                 if (!res.ok) {
                     var det = res.html ? extraerErrorLaravel(res.html) : ((res.json && res.json.message) ? res.json.message : '');
-                    throw new Error('HTTP ' + res.status + (det ? ' · ' + det : ''));
+                    throw new Error('HTTP ' + res.status + ' (' + res.ms + 'ms)' + (det ? ' · ' + det : ''));
                 }
-                /* Éxito (JSON o HTML tras redirect) → cerrar modal + recargar la tabla por AJAX */
                 if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
                     try { bootstrap.Modal.getOrCreateInstance(form.closest('.modal')).hide(); } catch (e8) {}
                 }
-                tarToast(tipo === 'crear' ? 'Tarifa creada · actualizando la tabla…' : 'Cambios guardados · actualizando la tabla…', 'ok');
-                DBG.log('guardado OK (' + (res.json ? 'JSON' : 'respuesta HTML tras redirect') + ') → recargando tarifas por AJAX', 'ok');
-                recargarContexto();
+                tarToast(tipo === 'crear' ? 'Tarifa creada · actualizando tabla…' : 'Cambios guardados · actualizando tabla…', 'ok');
+                DBG.log('Guardado OK (' + tipo + ' · ' + res.ms + 'ms) → refrescando fragmento', 'ok');
+                recargarContexto('post-' + tipo);
             }).catch(function (err) {
-                DBG.log('⚠ guardado falló (' + err.message + ')', 'err');
+                DBG.log('⚠ Guardado falló (' + err.message + ')', 'err');
                 tarToast('No se pudo guardar · ' + err.message, 'err');
                 DBG.open();
             }).then(function () {
@@ -1026,10 +1148,7 @@
         };
         document.addEventListener('submit', window.__tarFormHandler);
 
-        /* ═══ 7) LLENADO DEL MODAL DE EDITAR · delegado en document (capture · re-registrable) ═══
-           FIX del script muerto: antes era DOMContentLoaded + querySelectorAll por uid (no corría
-           cuando el fragmento llegaba por AJAX). Ahora UN solo oyente atiende a TODOS los botones
-           con data-tar-editar, vivos o re-creados tras cada swap.                               */
+        /* ═══ LLENADO DEL MODAL DE EDITAR · delegado en document (capture) ═══ */
         if (window.__tarFillHandler) { document.removeEventListener('click', window.__tarFillHandler, true); }
         window.__tarFillHandler = function (e) {
             var btn = (e.target && e.target.closest) ? e.target.closest('[data-tar-editar]') : null;
@@ -1038,6 +1157,10 @@
             var modal = selModal ? document.querySelector(selModal) : null;
             var form = modal ? modal.querySelector('form[data-tar-form="editar"]') : null;
             if (!form) { DBG.log('⚠ botón Editar sin modal/form destino (' + (selModal || '?') + ')', 'warn'); return; }
+
+            var errBox = form.querySelector('.tar-form-err');
+            if (errBox) { errBox.style.display = 'none'; errBox.innerHTML = ''; }
+
             var get = function (k) { return btn.getAttribute('data-' + k) || ''; };
             form.setAttribute('action', get('url-update'));
             var porNombre = function (n) { return form.querySelector('[name="' + n + '"]'); };
@@ -1050,9 +1173,11 @@
             if ((f = porNombre('precio_fin_semana'))) { f.value = get('precio-fin-semana'); }
             if ((f = porNombre('precio_minimo_reserva'))) { f.value = get('precio-minimo-reserva'); }
             if ((f = porNombre('dias_maximos'))) { f.value = get('dias-maximos'); }
-            if ((f = porNombre('max_reservas_anuales_cliente'))) { f.value = get('max-reservas'); } // <-- FIX NUEVO CAMPO
-            if ((f = porNombre('active'))) { f.checked = get('active') === '1'; }
-            /* Contexto del header/footer (igual que el script original) */
+            if ((f = porNombre('max_reservas_anuales_cliente'))) { f.value = get('max-reservas'); }
+            if ((f = porNombre('active')) && f.type === 'checkbox') { f.checked = get('active') === '1'; }
+
+            actualizarDuracionModal(form);
+
             var hTitle = modal.querySelector('[data-tar-hint="title"]');
             var hVig = modal.querySelector('[data-tar-hint="vigencia"]');
             var hPre = modal.querySelector('[data-tar-hint="precio"]');
@@ -1067,11 +1192,9 @@
                     + noche.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                     + '</b> por noche';
             }
-            DBG.log('modal editar listo · "' + (get('nombre-temporada') || '?') + '" → ' + get('url-update'), 'debug');
+            DBG.log('Modal editar listo · "' + (get('nombre-temporada') || '?') + '"', 'debug');
         };
         document.addEventListener('click', window.__tarFillHandler, true);
-
-        DBG.log('interceptores listos · formularios (document) + llenado de modal (document capture) · uid=' + (SRVDBG && SRVDBG.uid ? SRVDBG.uid : '?'), 'debug');
     })();
     </script>
 

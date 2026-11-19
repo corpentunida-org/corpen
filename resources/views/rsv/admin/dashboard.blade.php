@@ -1,4 +1,4 @@
-{{-- resources/views/rsv/admin/dashboard.blade.php · Panel Maestro del Administrador (ADMIN-DASH-v3-DBG) --}}
+{{-- resources/views/rsv/admin/dashboard.blade.php · Panel Maestro del Administrador (ADMIN-DASH-v4-SOPORTES) --}}
 <x-base-layout>
     @section('titlepage', 'Panel Maestro de Inmuebles - RSV')
 
@@ -199,7 +199,7 @@
                             <i class="bi bi-grid-3x3-gap me-1 text-success"></i> Panel Consolidado
                         </div>
                         <h6 class="fw-bold text-dark mb-0">Gestión Global del Sistema</h6>
-                        <p class="text-muted mb-0" style="font-size: 0.76rem;">Vista consolidada de propiedades, reservas, calendario, finanzas y auditoría.</p>
+                        <p class="text-muted mb-0" style="font-size: 0.76rem;">Vista consolidada de propiedades, reservas, calendario, finanzas, soportes y auditoría.</p>
                     </div>
                     <span class="badge bg-light text-secondary border rounded-pill fw-normal py-2 px-3 d-inline-flex align-items-center gap-2 shadow-sm">
                         <i class="bi bi-calendar3 small text-success"></i>
@@ -232,6 +232,12 @@
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-finanzas" type="button" role="tab">
                                 <i class="bi bi-wallet2 me-1"></i> Finanzas
                                 <span class="badge bg-light text-secondary border ms-1 kpi-money">{{ $fmtMoney($tabFinanzas ?? 0) }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#global-soportes" type="button" role="tab">
+                                <i class="bi bi-headset me-1"></i> Soportes
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1">{{ $tabSoportesSinResponder ?? 0 }}</span>
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
@@ -330,6 +336,27 @@
                                 <div class="tab-pane fade show active" id="fin-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-finanzas')</div>
                                 <div class="tab-pane fade" id="fin-sub-transacciones" role="tabpanel">@include('rsv.admin.partials.finanzas.transacciones')</div>
                                 <div class="tab-pane fade" id="fin-sub-pasarelas" role="tabpanel">@include('rsv.admin.partials.finanzas.pasarela')</div>
+                            </div>
+                        </div>
+
+                        {{-- GLOBAL - TAB 6: SOPORTES --}}
+                        <div class="tab-pane fade" id="global-soportes" role="tabpanel">
+                            <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
+                                    <i class="bi bi-diagram-3-fill"></i> Ecosistema de Soportes:
+                                </div>
+                                <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#global-soportes" id="soportesSubTabs" role="tablist">
+                                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#sop-sub-inicio" type="button" role="tab"><i class="bi bi-house-door me-1"></i> Inicio</button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#sop-sub-sin-responder" type="button" role="tab"><i class="bi bi-envelope-exclamation me-1"></i> Sin Responder <span class="badge bg-danger ms-1">{{ $tabSoportesSinResponder ?? 0 }}</span></button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#sop-sub-respondidos" type="button" role="tab"><i class="bi bi-check2-all me-1"></i> Respondidos <span class="badge bg-secondary ms-1">{{ $tabSoportesRespondidos ?? 0 }}</span></button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#sop-sub-todos" type="button" role="tab"><i class="bi bi-chat-left-text me-1"></i> Todos Escritos <span class="badge bg-secondary ms-1">{{ $tabSoportesTotal ?? 0 }}</span></button></li>
+                                </ul>
+                            </div>
+                            <div class="tab-content p-3" id="soportesSubContent">
+                                <div class="tab-pane fade show active" id="sop-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-soportes')</div>
+                                <div class="tab-pane fade" id="sop-sub-sin-responder" role="tabpanel">@include('rsv.admin.partials.soportes.sin_responder')</div>
+                                <div class="tab-pane fade" id="sop-sub-respondidos" role="tabpanel">@include('rsv.admin.partials.soportes.respondidos')</div>
+                                <div class="tab-pane fade" id="sop-sub-todos" role="tabpanel">@include('rsv.admin.partials.soportes.todos')</div>
                             </div>
                         </div>
 
@@ -538,6 +565,12 @@
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
+                            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#soportes" type="button" role="tab">
+                                <i class="bi bi-headset me-1"></i> Soportes
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-1">{{ $soportesSinResponderInmueble ?? 0 }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
                             <button class="nav-link" data-bs-toggle="tab" data-bs-target="#auditoria" type="button" role="tab">
                                 <i class="bi bi-shield-check me-1"></i> Auditoría
                                 <span class="badge bg-light text-secondary border ms-1">{{ $auditoriaCount ?? '—' }}</span>
@@ -636,6 +669,27 @@
                                 <div class="tab-pane fade show active" id="single-fin-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-finanzas', ['inmueble' => $inmueble])</div>
                                 <div class="tab-pane fade" id="single-fin-sub-transacciones" role="tabpanel">@include('rsv.admin.partials.finanzas.transacciones', ['inmueble' => $inmueble])</div>
                                 <div class="tab-pane fade" id="single-fin-sub-pasarelas" role="tabpanel">@include('rsv.admin.partials.finanzas.pasarela', ['inmueble' => $inmueble])</div>
+                            </div>
+                        </div>
+
+                        {{-- INMUEBLE - TAB 6: SOPORTES --}}
+                        <div class="tab-pane fade" id="soportes" role="tabpanel">
+                            <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
+                                    <i class="bi bi-diagram-3-fill"></i> Ecosistema de Soportes:
+                                </div>
+                                <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#soportes" id="singleSoportesSubTabs" role="tablist">
+                                    <li class="nav-item" role="presentation"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#single-sop-sub-inicio" type="button" role="tab"><i class="bi bi-house-door me-1"></i> Inicio</button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sop-sub-sin-responder" type="button" role="tab"><i class="bi bi-envelope-exclamation me-1"></i> Sin Responder <span class="badge bg-danger ms-1">{{ $soportesSinResponderInmueble ?? 0 }}</span></button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sop-sub-respondidos" type="button" role="tab"><i class="bi bi-check2-all me-1"></i> Respondidos <span class="badge bg-secondary ms-1">{{ $soportesRespondidosInmueble ?? 0 }}</span></button></li>
+                                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="pill" data-bs-target="#single-sop-sub-todos" type="button" role="tab"><i class="bi bi-chat-left-text me-1"></i> Todos Escritos <span class="badge bg-secondary ms-1">{{ $soportesTotalInmueble ?? 0 }}</span></button></li>
+                                </ul>
+                            </div>
+                            <div class="tab-content p-3" id="singleSoportesSubContent">
+                                <div class="tab-pane fade show active" id="single-sop-sub-inicio" role="tabpanel">@include('rsv.admin.partials.tab-soportes', ['inmueble' => $inmueble])</div>
+                                <div class="tab-pane fade" id="single-sop-sub-sin-responder" role="tabpanel">@include('rsv.admin.partials.soportes.sin_responder', ['inmueble' => $inmueble])</div>
+                                <div class="tab-pane fade" id="single-sop-sub-respondidos" role="tabpanel">@include('rsv.admin.partials.soportes.respondidos', ['inmueble' => $inmueble])</div>
+                                <div class="tab-pane fade" id="single-sop-sub-todos" role="tabpanel">@include('rsv.admin.partials.soportes.todos', ['inmueble' => $inmueble])</div>
                             </div>
                         </div>
 

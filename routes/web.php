@@ -710,6 +710,7 @@ Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinS
 //      · TAB 3 · CALENDARIO (admin) · 1 micro-fragmento ....... NIVEL 2 + 3
 //      · TAB 4 · FINANZAS (admin) · 2 micro-fragmentos ........ NIVEL 2 + 3
 //      · TAB 5 · AUDITORÍA (admin) · 1 micro-fragmento ........ NIVEL 2 + 3
+//      · TAB 6 · SOPORTES (admin) · 3 micro-fragmentos ......... NIVEL 2 + 3
 //      · PORTAL CLIENTE · 5 TABS (NIVEL 2) + 12 MICRO (NIVEL 3)
 //   3. RUTAS ESPECÍFICAS DE ACCIÓN (acciones puntuales PATCH/POST/PUT/GET)
 //   4. RUTAS CRUD (Resources) POR DOMINIO:
@@ -803,7 +804,7 @@ Route::middleware(['auth'])
         Route::get('reservas-status-fragmento', [AdminDashboardController::class, 'statusFragmento'])
             ->name('admin.reservas.status.fragmento'); // partials/reservas/status.blade.php
 
-        // Búsqueda auxiliar predictiva para el tab de reservas (usuarios/titulares)
+        // Búsqueda auxiliar predictiva para el tab de reservas (usuarios/titulares)AdminDashboardController
         Route::get('usuarios-buscar', [AdminDashboardController::class, 'buscarUsuarios'])
             ->name('admin.usuarios.buscar');
         // --- FIN 2. TAB RESERVAS ---
@@ -840,6 +841,22 @@ Route::middleware(['auth'])
         Route::get('auditoria-informes-fragmento', [AdminDashboardController::class, 'auditoriaInformesFragmento'])
             ->name('admin.auditoria.informes.fragmento'); // partials/auditorias/informes.blade.php
         // --- FIN 5. TAB AUDITORÍA ---
+
+        // --- INICIO 6. TAB SOPORTES (NIVEL 2 + MICRO-FRAGMENTOS NIVEL 3) ---
+        // Contenedor principal de la pestaña (partials/tab-soportes.blade.php) · NIVEL 2
+        Route::get('soportes-fragmento', [AdminDashboardController::class, 'soportesFragmento'])
+            ->name('admin.soportes.fragmento');
+
+        // Micro-fragmentos (Nivel 3)
+        Route::get('soportes-sin-responder-fragmento', [AdminDashboardController::class, 'soportesSinResponderFragmento'])
+            ->name('admin.soportes.sin_responder.fragmento'); // partials/soportes/sin_responder.blade.php
+
+        Route::get('soportes-respondidos-fragmento', [AdminDashboardController::class, 'soportesRespondidosFragmento'])
+            ->name('admin.soportes.respondidos.fragmento'); // partials/soportes/respondidos.blade.php
+
+        Route::get('soportes-todos-fragmento', [AdminDashboardController::class, 'soportesTodosFragmento'])
+            ->name('admin.soportes.todos.fragmento'); // partials/soportes/todos.blade.php
+        // --- FIN 6. TAB SOPORTES ---
 
         // ---------------------------------------------------------------------
         // PORTAL CLIENTE · TABS (NIVEL 2 · SECCIÓN 1-5/5)
@@ -934,6 +951,10 @@ Route::middleware(['auth'])
         Route::put('inmuebles/{id}/tipo', [TipoInmuebleController::class, 'asignarTipo'])->name('inmuebles.tipo.asignar');
 
         Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
+
+        // Acciones puntuales de Soportes (responder / cambiar estado en plataforma)
+        Route::post('soportes/{id}/responder', [MensajeController::class, 'responder'])->name('soportes.responder');
+        Route::patch('soportes/{id}/estado', [MensajeController::class, 'cambiarEstado'])->name('soportes.estado');
 
         // ---------------------------------------------------------------------
         // NUEVA RUTA: API CLIENTE (Consulta disponibilidad en tiempo real)
