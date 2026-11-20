@@ -1,4 +1,4 @@
-{{-- resources/views/rsv/admin/partials/soportes/respondidos.blade.php · SOP-RS-v1.1-DBG · NIVEL 3 --}}
+{{-- resources/views/rsv/admin/partials/soportes/respondidos.blade.php · SOP-RS-v2.0-REAL · NIVEL 3 --}}
 @php
     $sopRsInmId = null;
     if (isset($inmueble) && $inmueble) {
@@ -8,171 +8,139 @@
     } elseif (request('inmueble_id') && request('inmueble_id') !== 'todos' && is_numeric(request('inmueble_id'))) {
         $sopRsInmId = (int) request('inmueble_id');
     }
+
+    if (!isset($soportes)) {
+        $qMsg = \App\Models\Rsv\Mensaje::with(['reserva.inmueble', 'reserva.user', 'remitente'])
+            ->orderBy('created_at', 'asc');
+        if ($sopRsInmId) {
+            $qMsg->whereHas('reserva', fn($r) => $r->where('id_rsv_catalogo_inmueble', $sopRsInmId));
+        }
+        $soportes = $qMsg->get()->groupBy('id_rsv_reservas')->map(function ($grupo, $reservaId) {
+            $ultimo    = $grupo->last();
+            $primero   = $grupo->first();
+            $reserva   = $ultimo->reserva;
+            $clienteId = optional($reserva)->id_user ?? optional($primero)->id_user_remitente;
+            $esUltimoCliente = ((int) $ultimo->id_user_remitente === (int) $clienteId);
+            $clienteObj = optional($reserva)->user ?? $primero->remitente;
+
+            return (object) [
+                'id'              => (int) $reservaId,
+                'reserva_id'      => (int) $reservaId,
+                'codigo_reserva'  => optional($reserva)->codigo_reserva ?? ('RSV-' . $reservaId),
+                'inmueble_nombre' => optional(optional($reserva)->inmueble)->name ?? 'Sin inmueble',
+                'usuario_nombre'  => optional($clienteObj)->name ?? ('Usuario #' . $clienteId),
+                'ultimo_mensaje'  => (string) ($ultimo->contenido ?? ''),
+                'respondido'      => !$esUltimoCliente,
+                'created_at'      => $ultimo->created_at,
+                'mensajes'        => $grupo->map(function ($m) use ($clienteId) {
+                    $esCliente = ((int) $m->id_user_remitente === (int) $clienteId);
+                    return [
+                        'autor'       => optional($m->remitente)->name ?? ($esCliente ? 'Cliente' : 'Administración RSV'),
+                        'rol'         => $esCliente ? 'Cliente' : 'Soporte',
+                        'hora'        => optional($m->created_at)->format('d/m H:i') ?? '',
+                        'texto'       => (string) ($m->contenido ?? ''),
+                        'url_archivo' => $m->url_archivo,
+                    ];
+                })->values()->all(),
+            ];
+        })->filter(fn($h) => $h->respondido)->sortByDesc('created_at')->values();
+    }
+
+    $itemsRs = collect($soportes)->filter(fn($h) => !empty($h->respondido))->values();
 @endphp
 
-<div id="sopRsRoot" class="sop-n3-root" data-sop-view="respondidos" data-sop-inm="{{ $sopRsInmId ?? '' }}">
-    <div class="sop-n3-card">
-        <div class="sop-n3-head">
+<div id="sopRsRoot">
+    <div class="border rounded-3 bg-white overflow-hidden">
+        <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <span class="badge bg-success-subtle text-success border border-success-subtle me-1" style="font-size:10px;">RESPONDIDOS</span>
-                <strong style="font-size:13px; color:#334155;">Historial de Mensajes Ya Respondidos</strong>
-                <div class="text-muted" style="font-size:11px;">Consulta respuestas enviadas o reabre un hilo si requiere seguimiento</div>
+                <strong style="font-size:13px; color:#334155;">Conversaciones Respondidas ({{ $itemsRs->count() }})</strong>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="badge bg-success text-white js-sop-rs-count">0 respondidos</span>
-                <input type="search" class="sop-n3-search js-sop-rs-q" placeholder="Buscar persona, reserva, asunto…">
-            </div>
+            <input type="search" class="form-control form-control-sm js-rs-search" placeholder="Filtrar respondidos…" style="max-width:260px;">
         </div>
 
-        <div class="row g-0">
-            <div class="col-12 col-md-5 border-end">
-                <div class="sop-n3-list js-sop-rs-list"></div>
+        @if($itemsRs->isEmpty())
+            <div class="p-5 text-center text-muted" style="font-size:12px;">
+                Aún no hay conversaciones respondidas registradas en <code>rsv_mensajes</code>.
             </div>
-            <div class="col-12 col-md-7">
-                <div class="sop-n3-thread js-sop-rs-thread"></div>
+        @else
+            <div class="row g-0">
+                <div class="col-12 col-md-5 border-end" style="max-height:440px; overflow-y:auto;">
+                    @foreach($itemsRs as $idx => $hilo)
+                        <div class="p-3 border-bottom js-rs-item {{ $idx === 0 ? 'bg-success-subtle' : '' }}"
+                             style="cursor:pointer;"
+                             data-reserva-id="{{ $hilo->reserva_id }}"
+                             data-search="{{ mb_strtolower($hilo->usuario_nombre . ' ' . $hilo->codigo_reserva . ' ' . $hilo->inmueble_nombre . ' ' . $hilo->ultimo_mensaje) }}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong style="font-size:12px; color:#0f172a;">{{ $hilo->usuario_nombre }}</strong>
+                                <span class="text-success fw-semibold" style="font-size:10px;">{{ optional($hilo->created_at)->format('d/m H:i') }}</span>
+                            </div>
+                            <div class="text-muted mt-1 text-truncate" style="font-size:11.5px;">{{ $hilo->ultimo_mensaje }}</div>
+                            <div class="text-muted mt-1" style="font-size:10.5px;">{{ $hilo->codigo_reserva }} · {{ $hilo->inmueble_nombre }}</div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="col-12 col-md-7 p-3" id="sopRsThreadBox">
+                    @php $primeroRs = $itemsRs->first(); @endphp
+                    <div class="border-bottom pb-2 mb-2">
+                        <div class="fw-bold" style="font-size:13px; color:#0f172a;">{{ $primeroRs->usuario_nombre }}</div>
+                        <div class="text-muted" style="font-size:11px;">{{ $primeroRs->codigo_reserva }} · {{ $primeroRs->inmueble_nombre }}</div>
+                    </div>
+                    <div class="d-flex flex-column gap-2" style="max-height:310px; overflow-y:auto;">
+                        @foreach($primeroRs->mensajes as $m)
+                            <div class="p-2 rounded-3 border {{ $m['rol'] === 'Soporte' ? 'bg-success-subtle border-success-subtle ms-3' : 'bg-light me-3' }}" style="font-size:12px;">
+                                <div class="d-flex justify-content-between mb-1" style="font-size:10.5px;">
+                                    <strong>{{ $m['autor'] }}</strong>
+                                    <span class="text-muted">{{ $m['hora'] }}</span>
+                                </div>
+                                <div>{{ $m['texto'] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
-        </div>
+        @endif
     </div>
 
+    <script type="application/json" id="sopRsDataJson">@json($itemsRs)</script>
     <script>
         (function () {
-            'use strict';
-            var KEY = 'rsv_admin_soportes_v1';
-            var selId = null;
-            var qStr = '';
+            var dataEl = document.getElementById('sopRsDataJson');
+            var hilos = [];
+            try { hilos = JSON.parse((dataEl && dataEl.textContent) || '[]') || []; } catch (e) {}
 
-            function readStore() {
-                try {
-                    var raw = localStorage.getItem(KEY);
-                    return raw ? (JSON.parse(raw) || []) : [];
-                } catch (e) { return []; }
-            }
-
-            function writeStore(arr) {
-                try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch (e) {}
-            }
-
-            function paint() {
-                var root = document.getElementById('sopRsRoot');
-                if (!root) return;
-                var inmFilter = root.getAttribute('data-sop-inm') || '';
-                var all = readStore();
-
-                var done = all.filter(function (t) {
-                    if (t.estado !== 'respondido') return false;
-                    if (inmFilter && t.inmuebleId && String(t.inmuebleId) !== String(inmFilter)) return false;
-                    if (qStr) {
-                        var blob = (t.id + ' ' + t.usuario + ' ' + t.reserva + ' ' + t.inmueble + ' ' + t.asunto).toLowerCase();
-                        if (blob.indexOf(qStr.toLowerCase()) === -1) return false;
-                    }
-                    return true;
+            document.addEventListener('input', function (e) {
+                if (!e.target || !e.target.classList.contains('js-rs-search')) return;
+                var q = e.target.value.toLowerCase().trim();
+                document.querySelectorAll('#sopRsRoot .js-rs-item').forEach(function (el) {
+                    var blob = el.getAttribute('data-search') || '';
+                    el.style.display = (!q || blob.indexOf(q) !== -1) ? '' : 'none';
                 });
+            });
 
-                var cntEl = root.querySelector('.js-sop-rs-count');
-                if (cntEl) cntEl.textContent = done.length + ' respondidos';
+            document.addEventListener('click', function (e) {
+                var item = e.target && e.target.closest ? e.target.closest('#sopRsRoot .js-rs-item') : null;
+                if (!item) return;
+                var rid = item.getAttribute('data-reserva-id');
+                document.querySelectorAll('#sopRsRoot .js-rs-item').forEach(function (el) { el.classList.remove('bg-success-subtle'); });
+                item.classList.add('bg-success-subtle');
 
-                if (!selId && done.length) selId = done[0].id;
-                else if (selId && !done.some(function (t) { return t.id === selId; })) selId = done.length ? done[0].id : null;
+                var h = hilos.find(function (x) { return String(x.reserva_id) === String(rid); });
+                var box = document.getElementById('sopRsThreadBox');
+                if (!h || !box) return;
 
-                var listEl = root.querySelector('.js-sop-rs-list');
-                var threadEl = root.querySelector('.js-sop-rs-thread');
-                if (!listEl || !threadEl) return;
-
-                if (!done.length) {
-                    listEl.innerHTML = '<div class="p-4 text-center text-muted" style="font-size:12px;">No hay mensajes respondidos en este filtro.</div>';
-                    threadEl.innerHTML = '<div class="p-4 text-center text-muted m-auto" style="font-size:12px;">Selecciona un registro respondido para ver la conversación.</div>';
-                    return;
-                }
-
-                listEl.innerHTML = done.map(function (t) {
-                    var isAct = t.id === selId;
-                    return '<div class="sop-n3-item ' + (isAct ? 'active' : '') + '" data-rs-id="' + t.id + '">' +
-                        '<div class="d-flex justify-content-between align-items-center gap-1">' +
-                            '<strong style="font-size:12px; color:#0f172a;">' + t.usuario + '</strong>' +
-                            '<span class="text-success fw-semibold" style="font-size:10px;">' + t.actualizado + '</span>' +
-                        '</div>' +
-                        '<div style="font-size:11.5px; color:#334155;" class="text-truncate mt-0.5">' + t.asunto + '</div>' +
-                        '<div class="text-muted mt-0.5" style="font-size:10.5px;">' + t.id + ' · ' + t.reserva + ' · ' + t.inmueble + '</div>' +
-                    '</div>';
-                }).join('');
-
-                var cur = done.find(function (t) { return t.id === selId; }) || done[0];
-                var msgsHtml = (cur.mensajes || []).map(function (m) {
-                    var cls = m.rol === 'Soporte' ? 'sop-n3-bubble-a' : 'sop-n3-bubble-u';
-                    return '<div class="' + cls + '">' +
+                var msgsHtml = (h.mensajes || []).map(function (m) {
+                    var cls = m.rol === 'Soporte' ? 'bg-success-subtle border-success-subtle ms-3' : 'bg-light me-3';
+                    return '<div class="p-2 rounded-3 border ' + cls + '" style="font-size:12px;">' +
                         '<div class="d-flex justify-content-between mb-1" style="font-size:10.5px;"><strong>' + m.autor + '</strong><span class="text-muted">' + m.hora + '</span></div>' +
                         '<div>' + m.texto + '</div>' +
                     '</div>';
                 }).join('');
 
-                threadEl.innerHTML =
-                    '<div class="border-bottom pb-2 mb-2 d-flex justify-content-between align-items-start gap-2 flex-wrap">' +
-                        '<div>' +
-                            '<div class="fw-bold" style="font-size:13px; color:#0f172a;">' + cur.usuario + '</div>' +
-                            '<div class="text-muted" style="font-size:11px;">' + cur.asunto + ' · <b>' + cur.inmueble + '</b> · ' + cur.reserva + '</div>' +
-                        '</div>' +
-                        '<button type="button" class="btn btn-sm btn-outline-warning py-0 px-2 js-rs-reopen" data-rs-id="' + cur.id + '" style="font-size:11px;">Mover a Sin responder</button>' +
-                    '</div>' +
-                    '<div class="sop-n3-msgs">' + msgsHtml + '</div>' +
-                    '<form class="js-rs-followup mt-auto" data-rs-id="' + cur.id + '">' +
-                        '<textarea class="form-control form-control-sm mb-2" rows="2" placeholder="Agregar seguimiento adicional en este hilo..." required></textarea>' +
-                        '<button type="submit" class="btn btn-sm btn-outline-success fw-bold px-3 sop-n3-btn-send"><i class="bi bi-reply me-1"></i>Agregar mensaje al hilo</button>' +
-                    '</form>';
-            }
-
-            document.addEventListener('DOMContentLoaded', paint);
-
-            document.addEventListener('click', function (e) {
-                var t = e.target;
-                if (!t || !t.closest) return;
-                var item = t.closest('#sopRsRoot .sop-n3-item');
-                if (item) {
-                    selId = item.getAttribute('data-rs-id');
-                    paint();
-                    return;
-                }
-                var reopen = t.closest('#sopRsRoot .js-rs-reopen');
-                if (reopen) {
-                    var idR = reopen.getAttribute('data-rs-id');
-                    var all = readStore();
-                    all.forEach(function (it) {
-                        if (it.id === idR) {
-                            it.estado = 'sin_responder';
-                            it.actualizado = 'Reabierto ahora';
-                        }
-                    });
-                    writeStore(all);
-                    paint();
-                }
-            });
-
-            document.addEventListener('input', function (e) {
-                if (e.target && e.target.classList && e.target.classList.contains('js-sop-rs-q')) {
-                    qStr = e.target.value || '';
-                    paint();
-                }
-            });
-
-            document.addEventListener('submit', function (e) {
-                var form = e.target;
-                if (!form || !form.classList || !form.classList.contains('js-rs-followup')) return;
-                e.preventDefault();
-                var tid = form.getAttribute('data-rs-id');
-                var ta = form.querySelector('textarea');
-                var txt = ta ? ta.value.trim() : '';
-                if (!txt) return;
-                var now = new Date();
-                var hh = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2);
-                var all = readStore();
-                all.forEach(function (it) {
-                    if (it.id === tid) {
-                        it.mensajes = it.mensajes || [];
-                        it.mensajes.push({ autor: 'Administración RSV', rol: 'Soporte', hora: hh, texto: txt });
-                        it.actualizado = 'Hoy · ' + hh;
-                    }
-                });
-                writeStore(all);
-                paint();
+                box.innerHTML =
+                    '<div class="border-bottom pb-2 mb-2"><div class="fw-bold" style="font-size:13px; color:#0f172a;">' + h.usuario_nombre + '</div><div class="text-muted" style="font-size:11px;">' + h.codigo_reserva + ' · ' + h.inmueble_nombre + '</div></div>' +
+                    '<div class="d-flex flex-column gap-2" style="max-height:310px; overflow-y:auto;">' + msgsHtml + '</div>';
             });
         })();
     </script>

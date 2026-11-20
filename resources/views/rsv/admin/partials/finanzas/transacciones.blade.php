@@ -1,5 +1,5 @@
 {{-- ============================================================================
-     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v3.2-DBG
+     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v3.3-DBG
      Parcial: resources/views/rsv/admin/partials/finanzas/transacciones.blade.php
      ============================================================================ --}}
 @php
@@ -219,7 +219,7 @@
     }
 
     $trxDbg = [
-        'version'       => 'TRX-v3.2-DBG',
+        'version'       => 'TRX-v3.3-DBG',
         'vista'         => 'partials/finanzas/transacciones.blade.php',
         'render'        => now()->format('H:i:s'),
         'modo'          => $trxGlobal ? 'global' : ('inmueble #' . $trxInmId),
@@ -253,13 +253,13 @@
     ];
 @endphp
 
-{{-- TRX-v3.2-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3) --}}
-<div id="trxDbgToggle" title="Debug Transacciones (TRX-v3.2-DBG)">
+{{-- TRX-v3.3-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3) --}}
+<div id="trxDbgToggle" title="Debug Transacciones (TRX-v3.3-DBG)">
     <span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>
 </div>
 <div id="trxDbgPanel" role="dialog" aria-label="Panel de debug de Transacciones Financieras">
     <div class="trx-dbg-header" id="trxDbgHeader">
-        <span>DEBUG · Finanzas · Transacciones · TRX-v3.2-DBG</span>
+        <span>DEBUG · Finanzas · Transacciones · TRX-v3.3-DBG</span>
         <span class="trx-dbg-controls">
             <button type="button" class="trx-dbg-btn" id="trxDbgRefresh" title="Refrescar fragmento">↻ Frag</button>
             <button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>
@@ -369,7 +369,7 @@
                     <i class="bi bi-receipt-cutoff text-success me-1"></i> Transacciones Financieras
                 </h6>
                 <span class="badge rounded-pill" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; font-family: ui-monospace, monospace;">
-                    TRX-v3.2-DBG
+                    TRX-v3.3-DBG
                 </span>
                 @if(!$trxGlobal)
                     <span class="count-badge" title="Filtro activo: transacciones de un solo inmueble">
@@ -869,8 +869,8 @@
 <script>
 (function () {
     'use strict';
-    if (window.__jsTransaccionesV32Listo) return;
-    window.__jsTransaccionesV32Listo = true;
+    if (window.__jsTransaccionesV33Listo) return;
+    window.__jsTransaccionesV33Listo = true;
 
     var TRX_FRAG_URL  = '{!! $trxFragmentoUrl ?? "" !!}';
     var PAGINA_ACTUAL = 1;
@@ -880,7 +880,7 @@
     var TRX_Q_SEQ     = 0;
     var TRX_Q_TIMER   = null;
 
-    /* ═══ PANEL DE DEBUG LOCAL TRX-v3.2-DBG (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL TRX-v3.3-DBG (diseño TIP-v1.3) ═══ */
     var DBG = (window.TrxDbg && window.TrxDbg.alive && window.TrxDbg.alive())
         ? window.TrxDbg
         : (function () {
@@ -896,7 +896,7 @@
                 if (!$('trxDbgToggle')) {
                     var t = document.createElement('div');
                     t.id = 'trxDbgToggle';
-                    t.title = 'Debug Transacciones (TRX-v3.2-DBG)';
+                    t.title = 'Debug Transacciones (TRX-v3.3-DBG)';
                     t.innerHTML = '<span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -904,7 +904,7 @@
                     var p = document.createElement('div');
                     p.id = 'trxDbgPanel';
                     p.innerHTML = '<div class="trx-dbg-header" id="trxDbgHeader">' +
-                        '<span>DEBUG · Finanzas · Transacciones · TRX-v3.2-DBG</span>' +
+                        '<span>DEBUG · Finanzas · Transacciones · TRX-v3.3-DBG</span>' +
                         '<span class="trx-dbg-controls">' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>' +
@@ -975,7 +975,7 @@
                 clear: function () { var b = $('trxDbgBody'); if (b) { b.innerHTML = ''; } },
                 copy: function () {
                     var b = $('trxDbgBody'); if (!b) { return; }
-                    var txt = '=== DEBUG transacciones TRX-v3.2-DBG · ' + new Date().toISOString() + ' ===\n';
+                    var txt = '=== DEBUG transacciones TRX-v3.3-DBG · ' + new Date().toISOString() + ' ===\n';
                     for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(txt).then(function () {
@@ -995,7 +995,7 @@
 
     var SRVDBG = @json($trxDbg);
     if (DBG) {
-        trxdbg('TRX-v3.2-DBG activo · modo=' + (SRVDBG ? SRVDBG.modo : '?') + ' · fuente=' + (SRVDBG ? SRVDBG.fuente_datos : '?'), 'ok');
+        trxdbg('TRX-v3.3-DBG activo · modo=' + (SRVDBG ? SRVDBG.modo : '?') + ' · fuente=' + (SRVDBG ? SRVDBG.fuente_datos : '?'), 'ok');
         trxdbg('init · total=' + (SRVDBG ? SRVDBG.transacciones : 0) + ' · en página=' + (SRVDBG ? SRVDBG.en_pagina : 0) +
             ' · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : 0) + ' · con soporte=' + (SRVDBG ? SRVDBG.con_soporte : 0), 'info');
         if (SRVDBG && SRVDBG.rango_fechas) {
@@ -1008,7 +1008,10 @@
 
     function cerrarBruto(el) {
         if (!el) return;
-        el.classList.remove('show'); el.style.display = 'none'; el.setAttribute('aria-hidden', 'true'); el.removeAttribute('aria-modal');
+        el.classList.remove('show');
+        el.style.display = 'none';
+        el.setAttribute('aria-hidden', 'true');
+        el.removeAttribute('aria-modal');
         document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
         document.body.classList.remove('modal-open');
         document.body.style.removeProperty('overflow');
@@ -1017,17 +1020,16 @@
     function ocultarModal(el) {
         if (!el) return;
         if (window.bootstrap && window.bootstrap.Modal && window.bootstrap.Modal.getOrCreateInstance) {
-            window.bootstrap.Modal.getOrCreateInstance(el).hide();
+            try { window.bootstrap.Modal.getOrCreateInstance(el).hide(); } catch (e) {}
         }
-        setTimeout(function () { if (el.classList.contains('show')) cerrarBruto(el); }, 450);
+        cerrarBruto(el);
     }
     function limpiarResiduos() {
-        if (document.querySelectorAll('.modal.show').length === 0) {
-            document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('overflow');
-            document.body.style.removeProperty('padding-right');
-        }
+        document.querySelectorAll('.modal.show').forEach(function (m) { cerrarBruto(m); });
+        document.querySelectorAll('.modal-backdrop').forEach(function (b) { b.remove(); });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
     }
     function unicarModales() {
         var hojas = document.querySelectorAll('#sheet-transacciones');
@@ -1079,6 +1081,21 @@
             fila.classList.add('fila-nueva');
             setTimeout(function () { fila.classList.remove('fila-nueva'); }, 1600);
         });
+    }
+
+    function marcarFilaAnuladaEnDom(id) {
+        if (!id) return;
+        document.querySelectorAll('#sheet-transacciones tr[data-id="' + id + '"]').forEach(function (tr) {
+            tr.classList.add('trx-anulada');
+            tr.setAttribute('data-grp', 'anulado');
+            var tds = tr.querySelectorAll('td');
+            if (tds[5]) {
+                tds[5].innerHTML = '<span class="st-dot" style="background: #b91c1c;"></span>ANULADO';
+            }
+            var btnVer = tr.querySelector('.js-ver-trx');
+            if (btnVer) { btnVer.dataset.estado = 'ANULADO'; }
+        });
+        aplicarFiltro();
     }
 
     function leerRangoFechas() {
@@ -1141,7 +1158,7 @@
         var __t0 = Date.now();
         trxdbg('GET Fragmento (página ' + (pagina || PAGINA_ACTUAL) + ') → ' + url, 'net');
 
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, cache: 'no-store' })
+        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, cache: 'no-store' })
             .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
             .then(function (html) {
                 var doc = new DOMParser().parseFromString(html, 'text/html');
@@ -1151,6 +1168,7 @@
                     trxdbg('Aviso: respuesta sin #sheet-transacciones', 'warn');
                     return;
                 }
+                limpiarResiduos();
                 copias.forEach(function (actual) { actual.replaceWith(nuevo.cloneNode(true)); });
                 if (TRX_Q) {
                     document.querySelectorAll('#sheet-transacciones #trxSearch').forEach(function (i2) { i2.value = TRX_Q; });
@@ -1158,7 +1176,6 @@
                 unicarModales();
                 aplicarFiltro();
                 if (idResaltar) resaltarFila(idResaltar);
-                limpiarResiduos();
                 document.querySelectorAll('#sheet-transacciones > .reservas-soft').forEach(function (t) {
                     t.classList.remove('trx-pulse'); void t.offsetWidth; t.classList.add('trx-pulse');
                 });
@@ -1181,6 +1198,7 @@
         var token = (tokIn && tokIn.value) || (tokMt && tokMt.content) || '';
         var mIn   = form.querySelector('input[name="_method"]');
         var metodoReal = (mIn && mIn.value) ? String(mIn.value).toUpperCase() : 'POST';
+        var idTrxTarget = form.getAttribute('data-trx-id') || null;
 
         trxdbg('AJAX · ' + metodoReal + ' ' + form.getAttribute('action'), 'net');
         fetch(form.getAttribute('action'), {
@@ -1189,22 +1207,29 @@
             body: new FormData(form)
         })
         .then(function (r) {
-            return r.json()
-                .then(function (j) { return { ok: r.ok, status: r.status, json: j }; })
-                .catch(function () { return { ok: r.ok, status: r.status, json: null }; });
+            return r.text().then(function (raw) {
+                var j = null;
+                try { j = JSON.parse(raw); } catch (e) {}
+                return { ok: r.ok, status: r.status, json: j };
+            });
         })
         .then(function (res) {
             if (res.ok && (!res.json || res.json.success !== false)) {
                 var d = (res.json && res.json.data) || {};
-                var idFila = d.id || (d.data && d.data.id) || form.getAttribute('data-trx-id') || null;
+                var idFila = d.id || (d.data && d.data.id) || idTrxTarget || null;
+
                 ocultarModal(form.closest('.modal'));
-                avisar((res.json && res.json.message) || 'Guardado correctamente', 'success');
-                setTimeout(function () {
-                    refrescarTabla(idFila);
-                    if (typeof window.finTabReloadFragment === 'function') {
-                        window.finTabReloadFragment(null, 'sync-desde-transacciones');
-                    }
-                }, 320);
+
+                if (metodoReal === 'DELETE' && idFila) {
+                    marcarFilaAnuladaEnDom(idFila);
+                }
+
+                avisar((res.json && res.json.message) || (metodoReal === 'DELETE' ? 'Transacción anulada correctamente' : 'Guardado correctamente'), 'success');
+
+                refrescarTabla(idFila, PAGINA_ACTUAL);
+                if (typeof window.finTabReloadFragment === 'function') {
+                    window.finTabReloadFragment(null, 'sync-desde-transacciones');
+                }
             } else if (res.status === 422 && res.json && res.json.errors) {
                 trxdbg('AJAX 422 · ' + Object.keys(res.json.errors).join(', '), 'err');
                 pintarErrores(form, res.json.errors);
@@ -1360,7 +1385,6 @@
             aplicarRangoFechas('cambio de fecha');
             return;
         }
-        // Al seleccionar una reserva en Nueva Transacción, sugerir automáticamente su monto
         if (t.classList && t.classList.contains('js-trx-select-reserva')) {
             var opt = t.options[t.selectedIndex];
             var mSug = opt ? opt.getAttribute('data-monto') : '';
@@ -1396,7 +1420,6 @@
             return;
         }
 
-        // Chips de filtro rápido por estado
         var chip = t.closest('.trx-filter-chip');
         if (chip && chip.closest('#sheet-transacciones')) {
             document.querySelectorAll('#sheet-transacciones .trx-filter-chip').forEach(function (c) { c.classList.remove('active'); });
@@ -1405,7 +1428,6 @@
             return;
         }
 
-        // Visor modal rápido de soporte (PDF o Imagen)
         var btnPrv = t.closest('.js-trx-preview-soporte');
         if (btnPrv) {
             e.preventDefault();
@@ -1417,7 +1439,6 @@
             return;
         }
 
-        // Paginación AJAX
         var a = t.closest('#sheet-transacciones .pagination a');
         if (a && a.getAttribute('href')) {
             e.preventDefault();
@@ -1430,7 +1451,6 @@
             return;
         }
 
-        // Botón Ver Detalle
         var btnVer = t.closest('.js-ver-trx');
         if (btnVer) {
             var d = btnVer.dataset;

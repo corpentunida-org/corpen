@@ -1,15 +1,24 @@
-<div x-data="{ show: false, message: '', type: 'success' }"
-     @notify.window="show = true; message = $event.detail.message; type = $event.detail.type || 'success'; setTimeout(() => show = false, 4000)"
-     x-show="show"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0 transform translate-y-2"
-     x-transition:enter-end="opacity-100 transform translate-y-0"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100 transform translate-y-0"
-     x-transition:leave-end="opacity-0 transform translate-y-2"
-     class="fixed top-5 right-5 z-50 px-4 py-3 rounded-lg shadow-xl text-white flex items-center space-x-3 text-sm font-medium"
-     :class="type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'"
-     style="display: none;">
-    <span x-text="message"></span>
-    <button @click="show = false" class="text-white hover:text-gray-200 focus:outline-none">&times;</button>
-</div>
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show py-2 px-3 small" role="alert">
+        <i class="bi bi-check-circle-fill me-1"></i> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif
+
+@if(isset($errors) && $errors->any())
+    <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small" role="alert">
+        <ul class="mb-0 ps-3">
+            @foreach($errors->all() as $err)
+                <li>{{ $err }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+@endif

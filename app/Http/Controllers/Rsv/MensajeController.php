@@ -311,110 +311,92 @@ class MensajeController extends Controller
         }
     }
 
-/**
-     * Registra una respuesta escrita en plataforma y marca el mensaje como respondido.
+    /**
+     * Responde directamente en el hilo de una reserva (rsv_mensajes) sin WhatsApp ni llamadas.
      */
     public function responder(Request $request, string $id): JsonResponse
     {
         $validated = $request->validate([
-            'respuesta' => 'required|string',
+            'respuesta'   => 'required|string',
+            'url_archivo' => 'nullable|file|max:5120',
         ]);
 
         DB::beginTransaction();
 
         try {
-            $mensaje = Mensaje::find($id);
+            $reservaId = (int) $id;
+            $adminId   = \Illuminate\Support\Facades\Auth::id();
 
-            if (!$mensaje) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El mensaje de soporte solicitado no existe.',
-                ], 404);
-            }
+            // Marcar como leídos los mensajes anteriores de esa reserva
+            Mensaje::where('id_rsv_reservas', $reservaId)
+                ->whereNull('leido_en')
+                ->update(['leido_en' => now()]);
 
-            $actualizacion = [
-                'leido' => true,
+            $dataInsert = [
+                'id_rsv_reservas'   => $reservaId,
+                'id_user_remitente' => $adminId,
+                'tipo_mensaje'      => 'texto',
+                'contenido'         => $validated['respuesta'],
+                'leido_en'          => now(),
             ];
 
-            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido')) {
-                $actualizacion['respondido'] = true;
-            }
-            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respuesta')) {
-                $actualizacion['respuesta'] = $validated['respuesta'];
-            }
-            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido_at')) {
-                $actualizacion['respondido_at'] = now();
+            if ($request->hasFile('url_archivo')) {
+                $path = $request->file('url_archivo')->store('mensajes_chat', 'public');
+                $dataInsert['url_archivo'] = '/storage/' . $path;
+                $dataInsert['tipo_mensaje'] = 'archivo';
             }
 
-            $mensaje->update($actualizacion);
+            $nuevo = Mensaje::create($dataInsert);
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Respuesta registrada en la plataforma.',
-                'data'    => $mensaje->fresh(),
-            ], 200);
+                'message' => 'Respuesta registrada correctamente en rsv_mensajes.',
+                'data'    => $nuevo,
+            ], 201);
 
         } catch (Throwable $e) {
             DB::rollBack();
-            Log::error('Error en MensajeController@responder: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            Log::error('Error en MensajeController@responder: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al registrar la respuesta.',
+                'message' => 'No se pudo guardar la respuesta en la base de datos.',
                 'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }
 
     /**
-     * Cambia el estado de atención (respondido / sin responder) de un soporte.
+     * Marca todos los mensajes de una reserva como leídos o pendientes de lectura (leido_en).
      */
     public function cambiarEstado(Request $request, string $id): JsonResponse
     {
-        DB::beginTransaction();
-
         try {
-            $mensaje = Mensaje::find($id);
+            $reservaId = (int) $id;
+            $estado    = $request->input('estado', 'respondido');
 
-            if (!$mensaje) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El mensaje de soporte solicitado no existe.',
-                ], 404);
+            if ($estado === 'sin_responder') {
+                Mensaje::where('id_rsv_reservas', $reservaId)
+                    ->latest('id')
+                    ->limit(1)
+                    ->update(['leido_en' => null]);
+            } else {
+                Mensaje::where('id_rsv_reservas', $reservaId)
+                    ->whereNull('leido_en')
+                    ->update(['leido_en' => now()]);
             }
-
-            $estadoSolicitado = $request->input('estado');
-            $marcarRespondido = !is_null($estadoSolicitado)
-                ? ($estadoSolicitado === 'respondido' || filter_var($estadoSolicitado, FILTER_VALIDATE_BOOLEAN))
-                : true;
-
-            $actualizacion = ['leido' => true];
-            if (\Illuminate\Support\Facades\Schema::hasColumn($mensaje->getTable(), 'respondido')) {
-                $actualizacion['respondido'] = $marcarRespondido;
-            }
-
-            $mensaje->update($actualizacion);
-            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Estado de soporte actualizado.',
-                'data'    => $mensaje->fresh(),
+                'message' => 'Estado actualizado en rsv_mensajes.',
             ], 200);
 
         } catch (Throwable $e) {
-            DB::rollBack();
-            Log::error('Error en MensajeController@cambiarEstado: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            Log::error('Error en MensajeController@cambiarEstado: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Ocurrió un error al actualizar el estado del soporte.',
-                'error'   => config('app.debug') ? $e->getMessage() : null,
+                'message' => 'Error al actualizar el estado.',
             ], 500);
         }
     }
