@@ -1,13 +1,13 @@
-{{-- partials/mis-reservas/activas-pasadas.blade.php · Cliente · Minimalista 360° Reactivo sin Reload (AP-v4.1-DBG) --}}
+{{-- partials/mis-reservas/activas-pasadas.blade.php · Cliente · Minimalista 360° Reactivo sin Reload (AP-v4.2-DBG) --}}
 <div id="sheet-activas-pasadas-cliente">
 
-    {{-- AP-v4.1-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
-    <div id="apDbgToggle" title="Debug Activas y Pasadas (AP-v4.1-DBG)">
+    {{-- AP-v4.2-DBG · Tab DBG terminal + LED + Panel LOCAL Persistente (diseño TIP-v1.3) --}}
+    <div id="apDbgToggle" title="Debug Activas y Pasadas (AP-v4.2-DBG)">
         <span class="ap-dbg-led" id="apDbgLed"></span>DBG<span class="ap-dbg-badge" id="apDbgBadge">0</span>
     </div>
     <div id="apDbgPanel" role="dialog" aria-label="Panel de debug de Activas y Pasadas">
         <div class="ap-dbg-header" id="apDbgHeader">
-            <span>DEBUG · Activas y Pasadas · AP-v4.1-DBG</span>
+            <span>DEBUG · Activas y Pasadas · AP-v4.2-DBG</span>
             <span class="ap-dbg-controls">
                 <button type="button" class="ap-dbg-btn" id="apDbgRefresh" title="Refrescar fragmento desde ClientePortalController">↻ Frag</button>
                 <button type="button" class="ap-dbg-btn" id="apDbgCopy">Copiar</button>
@@ -90,6 +90,8 @@
             }
         }
 
+        $tieneRutaPdf = \Illuminate\Support\Facades\Route::has('rsv.reservas.pdf');
+
         $tiposReceptor = collect();
         $tipoReceptorDefaultId = 1;
         try {
@@ -130,7 +132,7 @@
         $cntPasadas = isset($pasadas) && $pasadas instanceof \Illuminate\Support\Collection ? $pasadas->count() : null;
 
         $apDbgData = [
-            'version'     => 'AP-v4.1-DBG',
+            'version'     => 'AP-v4.2-DBG',
             'controlador' => 'ClientePortalController@misReservasActivasFragmento',
             'vista'       => 'partials/mis-reservas/activas-pasadas.blade.php',
             'reservas'    => $mis->count(),
@@ -143,6 +145,7 @@
             'rutas'       => [
                 'mensaje_store' => $rutaStoreMensaje ?: 'NO definida',
                 'review_store'  => $rutaStoreReview  ?: 'NO definida',
+                'pdf_comprobante' => $tieneRutaPdf ? 'rsv.reservas.pdf' : 'url fallback',
             ],
             'errores'     => $apErrores,
         ];
@@ -238,6 +241,7 @@
                 transition:all .15s; text-decoration:none; cursor:pointer;
             }
             .ap-icon-btn:hover { background:var(--head); border-color:var(--grid-2); color:var(--accent); }
+            .ap-icon-btn.ap-pdf-btn:hover { background:#fef2f2; border-color:#fecaca; color:#b91c1c; }
             .ap-chevron { color:var(--ink-4); font-size:12px; transition:transform .15s, color .15s; }
             .ap-res-row:hover .ap-chevron { transform:translateX(3px); color:var(--accent); }
 
@@ -359,6 +363,9 @@
                     : null;
                 $tarifaSnap = $inm?->latestTarifa;
                 $origenNombre = optional($r->origen)->nombre ?? 'Portal Cliente';
+                $urlPdfReserva = $tieneRutaPdf
+                    ? route('rsv.reservas.pdf', $r->id)
+                    : url('/rsv/reservas/' . $r->id . '/comprobante-pdf');
 
                 $huespedesList = $r->relationLoaded('huespedes') ? $r->huespedes : collect();
                 $txList        = $r->relationLoaded('transacciones') ? $r->transacciones : collect();
@@ -457,8 +464,8 @@
                     </div>
                 </div>
 
-                {{-- Derecha: Monto + Estado + Pin reactivo sin reload + Chevron --}}
-                <div class="d-flex align-items-center gap-3 flex-shrink-0">
+                {{-- Derecha: Monto + Estado + PDF + Pin reactivo sin reload + Chevron --}}
+                <div class="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0">
                     <div class="text-end d-none d-sm-block">
                         <div class="val" style="font-size:10.5px; color:var(--ink-2);">
                             ${{ number_format($montoTotal, 0) }}
@@ -475,6 +482,17 @@
                     </div>
 
                     <span class="pill pill-{{ $stGroup }}">{{ $st }}</span>
+
+                    {{-- Descarga directa del comprobante PDF oficial --}}
+                    <a href="{{ $urlPdfReserva }}"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       onclick="event.stopPropagation();"
+                       class="ap-icon-btn ap-pdf-btn text-danger js-ap-pdf-link"
+                       data-reserva-cod="{{ $r->codigo_reserva }}"
+                       title="Descargar comprobante PDF (#{{ $r->codigo_reserva }})">
+                        <i class="bi bi-file-earmark-pdf"></i>
+                    </a>
 
                     {{-- Ícono sutil para fijar reserva reactivamente sin recargar toda la página --}}
                     <button type="button"
@@ -508,7 +526,16 @@
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-2">
-                                <button type="button" class="ap-icon-btn" onclick="window.apPrintReserva({{ $r->id }}, '{{ $r->codigo_reserva }}')" title="Imprimir o guardar PDF">
+                                <a href="{{ $urlPdfReserva }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="btn-mini js-ap-pdf-link"
+                                   data-reserva-cod="{{ $r->codigo_reserva }}"
+                                   style="color:#b91c1c; border-color:#fecaca; background:#fef2f2;"
+                                   title="Descargar comprobante PDF oficial">
+                                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                                </a>
+                                <button type="button" class="ap-icon-btn" onclick="window.apPrintReserva({{ $r->id }}, '{{ $r->codigo_reserva }}')" title="Imprimir o guardar vista rápida">
                                     <i class="bi bi-printer"></i>
                                 </button>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar" style="font-size:10px;"></button>
@@ -842,7 +869,7 @@
 (function () {
     'use strict';
 
-    /* ═══ PANEL DE DEBUG LOCAL AP-v4.1-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL AP-v4.2-DBG PERSISTENTE (diseño TIP-v1.3) ═══ */
     var DBG = (window.ApDbg && window.ApDbg.alive && window.ApDbg.alive())
         ? window.ApDbg
         : (function () {
@@ -852,7 +879,7 @@
                 var rootDbg = document.querySelector('#sheet-activas-pasadas-cliente') || document.body;
                 if (!$('apDbgToggle')) {
                     var t = document.createElement('div');
-                    t.id = 'apDbgToggle'; t.title = 'Debug Activas y Pasadas (AP-v4.1-DBG)';
+                    t.id = 'apDbgToggle'; t.title = 'Debug Activas y Pasadas (AP-v4.2-DBG)';
                     t.innerHTML = '<span class="ap-dbg-led" id="apDbgLed"></span>DBG<span class="ap-dbg-badge" id="apDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -860,7 +887,7 @@
                     var p = document.createElement('div');
                     p.id = 'apDbgPanel';
                     p.innerHTML = '<div class="ap-dbg-header" id="apDbgHeader">' +
-                        '<span>DEBUG · Activas y Pasadas · AP-v4.1-DBG</span>' +
+                        '<span>DEBUG · Activas y Pasadas · AP-v4.2-DBG</span>' +
                         '<span class="ap-dbg-controls">' +
                         '<button type="button" class="ap-dbg-btn" id="apDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="ap-dbg-btn" id="apDbgCopy">Copiar</button>' +
@@ -919,7 +946,7 @@
                 clear: function () { var b = $('apDbgBody'); if (b) b.innerHTML = ''; },
                 copy: function () {
                     var b = $('apDbgBody'); if (!b) return;
-                    var txt = '=== DEBUG Activas y Pasadas AP-v4.1-DBG ===\n';
+                    var txt = '=== DEBUG Activas y Pasadas AP-v4.2-DBG ===\n';
                     for (var i = 0; i < b.children.length; i++) txt += b.children[i].textContent + '\n';
                     if (navigator.clipboard) navigator.clipboard.writeText(txt);
                 },
@@ -1039,7 +1066,7 @@
     };
 
     window.apPrintReserva = function (id, codigo) {
-        apdbg('Click: Imprimir / PDF de reserva #' + codigo + ' (id=' + id + ')', 'ev');
+        apdbg('Click: Imprimir vista rápida de reserva #' + codigo + ' (id=' + id + ')', 'ev');
         var el = document.getElementById('printArea_' + id);
         if (!el) { window.print(); return; }
         var w = window.open('', '_blank', 'width=850,height=700');
@@ -1090,6 +1117,14 @@
             if (t.closest('#apDbgRefresh')) {
                 e.stopPropagation();
                 window.apReloadFragment(null, 'manual-btn-dbg');
+                return;
+            }
+
+            // Descarga PDF oficial
+            var pdfBtn = t.closest('.js-ap-pdf-link');
+            if (pdfBtn) {
+                var codPdf = pdfBtn.getAttribute('data-reserva-cod') || '?';
+                apdbg('Click: Descargar Comprobante PDF oficial de #' + codPdf, 'net');
                 return;
             }
 
@@ -1300,7 +1335,7 @@
     actualizarContadoresChips();
 
     var SRV = @json($apDbgData);
-    apdbg('AP-v4.1-DBG activo · reservas=' + (SRV ? SRV.reservas : 0) +
+    apdbg('AP-v4.2-DBG activo · reservas=' + (SRV ? SRV.reservas : 0) +
           (SRV && SRV.conteos ? ' [act=' + SRV.conteos.success + ', pend=' + SRV.conteos.warning + ', fin=' + SRV.conteos.primary + ', canc=' + SRV.conteos.danger + ']' : '') +
           ' · fijada=' + (SRV && SRV.reserva_sel ? '#' + SRV.reserva_sel : 'ninguna'), 'ok');
     if (SRV && SRV.errores && SRV.errores.length) {

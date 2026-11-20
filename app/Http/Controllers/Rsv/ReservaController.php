@@ -794,7 +794,7 @@ class ReservaController extends Controller
             }
 
             DB::transaction(function () use ($reserva) {
-                $reserva->delete(); 
+                $reserva->delete();
             });
 
             return response()->json([
@@ -1217,6 +1217,62 @@ class ReservaController extends Controller
             return $codigo . Str::random(3);
         } catch (Throwable $e) {
             return $pref . str_pad((string) mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        }
+    }
+
+    /**
+     * Genera o descarga el comprobante PDF de la reserva con sus huéspedes y transacciones.
+     */
+    public function descargarPdfComprobante(string $id)
+    {
+        try {
+            $relaciones = ['inmueble', 'user', 'status'];
+
+            $modeloReserva = new Reserva();
+            if (method_exists($modeloReserva, 'huespedes')) {
+                $relaciones[] = 'huespedes';
+            }
+            if (method_exists($modeloReserva, 'transacciones')) {
+                $relaciones[] = 'transacciones.pasarela';
+            }
+
+            $reserva = Reserva::with($relaciones)->findOrFail($id);
+
+            $huespedes = method_exists($reserva, 'huespedes')
+                ? ($reserva->huespedes ?? collect())
+                : (class_exists(\App\Models\Rsv\ReservaHuesped::class)
+                    ? \App\Models\Rsv\ReservaHuesped::where('id_rsv_reservas', $reserva->id)->get()
+                    : collect());
+
+            $transacciones = method_exists($reserva, 'transacciones')
+                ? ($reserva->transacciones ?? collect())
+                : (class_exists(\App\Models\Rsv\TransaccionFinanciera::class)
+                    ? \App\Models\Rsv\TransaccionFinanciera::where('id_rsv_reservas', $reserva->id)->get()
+                    : collect());
+
+            $html = view('rsv.pdf.comprobante', compact('reserva', 'huespedes', 'transacciones'))->render();
+
+            if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class)) {
+                return \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+                    ->setPaper('letter', 'portrait')
+                    ->download('comprobante-' . ($reserva->codigo_reserva ?? $reserva->id) . '.pdf');
+            }
+
+            return response($html, 200)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        } catch (Throwable $e) {
+            Log::error('Error en ReservaController@descargarPdfComprobante: ' . $e->getMessage(), [
+                'reserva_id' => $id,
+            ]);
+
+            if (request()->wantsJson() || request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo generar el comprobante PDF de la reserva.',
+                ], 500);
+            }
+
+            return back()->with('error', 'No se pudo generar el comprobante PDF de la reserva.');
         }
     }
 }
