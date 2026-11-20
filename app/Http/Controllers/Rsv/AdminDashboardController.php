@@ -1113,6 +1113,10 @@ class AdminDashboardController extends Controller
     // SECCIÓN 6/6: SOPORTES (Gestión Escrita Interna)
     // =========================================================================
 
+    // =========================================================================
+    // SECCIÓN 6/6: SOPORTES (100% Real desde rsv_mensajes)
+    // =========================================================================
+
     public function soportesFragmento(Request $request)
     {
         $this->auditarVistaAdmin($request, 'admin-soportes-tab');
@@ -1196,47 +1200,83 @@ class AdminDashboardController extends Controller
     private function consultarSoportes(?CatalogoInmueble $inmueble, ?string $filtro)
     {
         try {
-            $clsMensaje = 'App\\Models\\Rsv\\Mensaje';
-            if (!class_exists($clsMensaje)) {
+            $q = \App\Models\Rsv\Mensaje::with(['reserva.inmueble', 'reserva.user', 'remitente'])
+                ->orderBy('created_at', 'asc');
+
+            if ($inmueble) {
+                $q->whereHas('reserva', fn($r) => $r->where('id_rsv_catalogo_inmueble', $inmueble->id));
+            }
+
+            $mensajes = $q->get();
+            if ($mensajes->isEmpty()) {
                 return collect();
             }
-            $q = $clsMensaje::query()->latest();
-            if ($inmueble && Schema::hasColumn((new $clsMensaje)->getTable(), 'id_rsv_catalogo_inmueble')) {
-                $q->where('id_rsv_catalogo_inmueble', $inmueble->id);
+
+            // Agrupar mensajes reales por reserva (hilo de conversación)
+            $hilos = $mensajes->groupBy('id_rsv_reservas')->map(function ($grupo, $reservaId) {
+                $ultimo   = $grupo->last();
+                $primero  = $grupo->first();
+                $reserva  = $ultimo->reserva;
+                $clienteId = optional($reserva)->id_user ?? optional($primero)->id_user_remitente;
+
+                // Si el último mensaje lo envió el titular de la reserva (y no tiene leido_en marcado por cierre), está sin responder
+                $esUltimoDelCliente = ((int) $ultimo->id_user_remitente === (int) $clienteId);
+                $respondido = !$esUltimoDelCliente;
+
+                $clienteObj = optional($reserva)->user ?? $primero->remitente;
+
+                return (object) [
+                    'id'              => (int) $reservaId,
+                    'reserva_id'      => (int) $reservaId,
+                    'codigo_reserva'  => optional($reserva)->codigo_reserva ?? ('RSV-' . $reservaId),
+                    'inmueble_id'     => optional($reserva)->id_rsv_catalogo_inmueble,
+                    'inmueble_nombre' => optional(optional($reserva)->inmueble)->name ?? 'Sin inmueble',
+                    'usuario_nombre'  => optional($clienteObj)->name ?? ('Usuario #' . $clienteId),
+                    'usuario_doc'     => optional($clienteObj)->nit ?? optional($clienteObj)->nid ?? optional($clienteObj)->email ?? '',
+                    'ultimo_mensaje'  => (string) ($ultimo->contenido ?? ''),
+                    'url_archivo'     => $ultimo->url_archivo,
+                    'respondido'      => $respondido,
+                    'created_at'      => $ultimo->created_at,
+                    'mensajes'        => $grupo->map(function ($m) use ($clienteId) {
+                        $esCliente = ((int) $m->id_user_remitente === (int) $clienteId);
+                        return [
+                            'id'          => $m->id,
+                            'autor'       => optional($m->remitente)->name ?? ($esCliente ? 'Cliente' : 'Administración RSV'),
+                            'rol'         => $esCliente ? 'Cliente' : 'Soporte',
+                            'hora'        => optional($m->created_at)->format('d/m H:i') ?? '',
+                            'texto'       => (string) ($m->contenido ?? ''),
+                            'url_archivo' => $m->url_archivo,
+                            'tipo'        => $m->tipo_mensaje ?? 'texto',
+                        ];
+                    })->values()->all(),
+                ];
+            })->sortByDesc('created_at')->values();
+
+            if ($filtro === 'sin_responder') {
+                return $hilos->filter(fn($h) => !$h->respondido)->values();
             }
-            if ($filtro === 'sin_responder' && Schema::hasColumn((new $clsMensaje)->getTable(), 'respondido')) {
-                $q->where(fn($w) => $w->where('respondido', 0)->orWhereNull('respondido'));
-            } elseif ($filtro === 'respondidos' && Schema::hasColumn((new $clsMensaje)->getTable(), 'respondido')) {
-                $q->where('respondido', 1);
+            if ($filtro === 'respondidos') {
+                return $hilos->filter(fn($h) => $h->respondido)->values();
             }
-            return $q->get();
+
+            return $hilos;
         } catch (Throwable $e) {
+            Log::error('consultarSoportes: ' . $e->getMessage());
             return collect();
         }
     }
 
     private function obtenerMetricasSoportes(?int $inmuebleId): array
     {
-        try {
-            $clsMensaje = 'App\\Models\\Rsv\\Mensaje';
-            if (!class_exists($clsMensaje)) {
-                return ['total' => 0, 'sin_responder' => 0, 'respondidos' => 0];
-            }
-            $tabla = (new $clsMensaje)->getTable();
-            $q = $clsMensaje::query();
-            if ($inmuebleId && Schema::hasColumn($tabla, 'id_rsv_catalogo_inmueble')) {
-                $q->where('id_rsv_catalogo_inmueble', $inmuebleId);
-            }
-            $total = (clone $q)->count();
-            if (Schema::hasColumn($tabla, 'respondido')) {
-                $resp    = (clone $q)->where('respondido', 1)->count();
-                $sinResp = max(0, $total - $resp);
-                return ['total' => $total, 'sin_responder' => $sinResp, 'respondidos' => $resp];
-            }
-            return ['total' => $total, 'sin_responder' => $total, 'respondidos' => 0];
-        } catch (Throwable $e) {
-            return ['total' => 0, 'sin_responder' => 0, 'respondidos' => 0];
-        }
+        $inm = $inmuebleId ? CatalogoInmueble::find($inmuebleId) : null;
+        $hilos = $this->consultarSoportes($inm, null);
+        $total = $hilos->count();
+        $sinResp = $hilos->filter(fn($h) => !$h->respondido)->count();
+        return [
+            'total'         => $total,
+            'sin_responder' => $sinResp,
+            'respondidos'   => max(0, $total - $sinResp),
+        ];
     }
 
 
