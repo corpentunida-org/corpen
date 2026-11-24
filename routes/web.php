@@ -1149,6 +1149,9 @@ Route::prefix('archivo')
         // Rutas para el CRUD de empleados
         Route::get('empleados', [GdoEmpleadoController::class, 'index'])->name('archivo.empleado.index');
 
+        // Prellenado del modal "Nuevo Empleado" desde MaeTerceros
+        Route::get('empleados/buscar-tercero', [GdoEmpleadoController::class, 'buscarTercero'])->name('archivo.empleado.buscarTercero');
+
         Route::post('empleados', [GdoEmpleadoController::class, 'store'])->name('archivo.empleado.store');
 
         Route::put('empleados/{empleado}', [GdoEmpleadoController::class, 'update'])->name('archivo.empleado.update');

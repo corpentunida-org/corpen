@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoEmpleado;
 use App\Models\Archivo\GdoDocsEmpleados;
 use App\Models\Archivo\GdoTipoDocumento;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Response;
@@ -34,8 +35,8 @@ class GdoEmpleadoController extends Controller
             })
             ->orderBy('apellido1')
             ->orderBy('apellido2')
-            ->paginate(1)
-            ->appends(['search' => $search]);
+            ->paginate(15)
+            ->appends(['search' => $search, 'id' => $empleadoId]);
         
         $empleadoSeleccionado = null;
         $documentosDelEmpleado = null;
@@ -62,6 +63,55 @@ class GdoEmpleadoController extends Controller
             'documentosDelEmpleado', 
             'tiposDocumento'
         ));
+    }
+
+    /**
+     * Consulta la maestra de terceros (MaeTerceros) por cédula para prellenar el modal
+     * "Nuevo Empleado". Indica además si la cédula ya está registrada como empleado.
+     */
+    public function buscarTercero(Request $request)
+    {
+        $cedula = preg_replace('/\D/', '', (string) $request->query('cedula'));
+        if ($cedula === '') {
+            return response()->json(['found' => false, 'message' => 'Cédula inválida.'], 422);
+        }
+
+        $existente = GdoEmpleado::where('cedula', $cedula)->first(['id']);
+        if ($existente) {
+            return response()->json([
+                'found'       => false,
+                'existe'      => true,
+                'empleado_id' => $existente->id,
+                'url'         => route('archivo.empleado.index', ['id' => $existente->id]),
+                'message'     => 'Esta cédula ya está registrada como empleado.',
+            ]);
+        }
+
+        $t = MaeTerceros::where('cod_ter', $cedula)
+            ->first(['cod_ter', 'nom1', 'nom2', 'apl1', 'apl2', 'sexo', 'fec_nac', 'lugar_naci', 'cel', 'email']);
+
+        if (!$t) {
+            return response()->json(['found' => false, 'message' => 'No existe en la maestra de terceros. Diligencia los datos manualmente.']);
+        }
+
+        // En MaeTerceros el sexo viene mezclado ('0', '1', 'V', 'H'); '0'/'1' no son
+        // consistentes, así que solo se traducen los códigos inequívocos.
+        $sexo = ['V' => 'M', 'H' => 'F', 'M' => 'M', 'F' => 'F'][strtoupper(trim((string) $t->sexo))] ?? null;
+
+        return response()->json([
+            'found'   => true,
+            'tercero' => [
+                'nombre1'          => $t->nom1,
+                'nombre2'          => $t->nom2,
+                'apellido1'        => $t->apl1,
+                'apellido2'        => $t->apl2,
+                'nacimiento'       => optional($t->fec_nac)->format('Y-m-d'),
+                'lugar'            => $t->lugar_naci,
+                'sexo'             => $sexo,
+                'correo_personal'  => filter_var($t->email, FILTER_VALIDATE_EMAIL) ? $t->email : null,
+                'celular_personal' => $t->cel,
+            ],
+        ]);
     }
 
     /**
