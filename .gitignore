@@ -10,6 +10,8 @@
 /storage/*.key
 /vendor
 .env
+.env.desarrollo
+.env.example
 .env.backup
 .env.production
 .phpactor.json
@@ -22,3 +24,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+.env.*
+!.env.example
+!.env.desarrollo.example
