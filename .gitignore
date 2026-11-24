@@ -11,6 +11,7 @@
 /vendor
 .env
 .env.desarrollo
+.env.desarrollo
 .env.example
 .env.backup
 .env.production
