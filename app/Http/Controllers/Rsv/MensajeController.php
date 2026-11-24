@@ -310,4 +310,96 @@ class MensajeController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Responde directamente en el hilo de una reserva (rsv_mensajes) sin WhatsApp ni llamadas.
+     */
+    public function responder(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'respuesta'   => 'required|string',
+            'url_archivo' => 'nullable|file|max:5120',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $reservaId = (int) $id;
+            $adminId   = \Illuminate\Support\Facades\Auth::id();
+
+            // Marcar como leídos los mensajes anteriores de esa reserva
+            Mensaje::where('id_rsv_reservas', $reservaId)
+                ->whereNull('leido_en')
+                ->update(['leido_en' => now()]);
+
+            $dataInsert = [
+                'id_rsv_reservas'   => $reservaId,
+                'id_user_remitente' => $adminId,
+                'tipo_mensaje'      => 'texto',
+                'contenido'         => $validated['respuesta'],
+                'leido_en'          => now(),
+            ];
+
+            if ($request->hasFile('url_archivo')) {
+                $path = $request->file('url_archivo')->store('mensajes_chat', 'public');
+                $dataInsert['url_archivo'] = '/storage/' . $path;
+                $dataInsert['tipo_mensaje'] = 'archivo';
+            }
+
+            $nuevo = Mensaje::create($dataInsert);
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Respuesta registrada correctamente en rsv_mensajes.',
+                'data'    => $nuevo,
+            ], 201);
+
+        } catch (Throwable $e) {
+            DB::rollBack();
+            Log::error('Error en MensajeController@responder: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pudo guardar la respuesta en la base de datos.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
+    }
+
+    /**
+     * Marca todos los mensajes de una reserva como leídos o pendientes de lectura (leido_en).
+     */
+    public function cambiarEstado(Request $request, string $id): JsonResponse
+    {
+        try {
+            $reservaId = (int) $id;
+            $estado    = $request->input('estado', 'respondido');
+
+            if ($estado === 'sin_responder') {
+                Mensaje::where('id_rsv_reservas', $reservaId)
+                    ->latest('id')
+                    ->limit(1)
+                    ->update(['leido_en' => null]);
+            } else {
+                Mensaje::where('id_rsv_reservas', $reservaId)
+                    ->whereNull('leido_en')
+                    ->update(['leido_en' => now()]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado actualizado en rsv_mensajes.',
+            ], 200);
+
+        } catch (Throwable $e) {
+            Log::error('Error en MensajeController@cambiarEstado: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el estado.',
+            ], 500);
+        }
+    }
+
+
 }

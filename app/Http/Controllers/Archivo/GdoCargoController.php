@@ -45,6 +45,8 @@ class GdoCargoController extends Controller
         $areas = GdoArea::orderBy('nombre')->get();
         $empleados = GdoEmpleado::all();
         $cargo = new GdoCargo();
+        // Viene de "Asignar Cargo" en la ficha del empleado: dejarlo preseleccionado.
+        $cargo->GDO_empleados_cedula = request('empleado');
 
         return view('archivo.cargo.create', compact('areas', 'empleados', 'cargo'));
     }

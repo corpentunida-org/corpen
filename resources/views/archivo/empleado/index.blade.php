@@ -61,6 +61,11 @@
                             <div class="text-center p-4">No se encontraron empleados</div>
                         @endforelse
                     </div>
+                    @if ($empleados->hasPages())
+                        <div class="card-footer bg-white py-2 small">
+                            {{ $empleados->onEachSide(1)->links('pagination::bootstrap-5') }}
+                        </div>
+                    @endif
                 </div>
             </div>
 
@@ -506,9 +511,10 @@
                                             </div>
                                             <h5 class="fw-bold text-dark">Cargo no definido</h5>
                                             <p class="text-muted small">Este empleado no tiene una relación contractual de cargo activa.</p>
-                                            <button class="btn btn-warning shadow-sm fw-bold px-4 rounded-pill btn-sm" data-bs-toggle="modal" data-bs-target="#asignarCargoModal">
+                                            {{-- #asignarCargoModal nunca existió: se usa el formulario de Cargos con el empleado preseleccionado --}}
+                                            <a href="{{ route('archivo.cargo.create', ['empleado' => $empleadoSeleccionado->cedula]) }}" class="btn btn-warning shadow-sm fw-bold px-4 rounded-pill btn-sm">
                                                 Asignar Cargo
-                                            </button>
+                                            </a>
                                         </div>
                                     @endif
                                 </div>
@@ -552,6 +558,181 @@
             </div>
         </div>
     </div>
+
+    {{-- MODAL PARA CREAR NUEVO EMPLEADO (restaurado: se había eliminado en 9607ac51 y el botón
+         "Nuevo Empleado" quedó apuntando a un modal inexistente). Envío normal: store() redirige
+         al empleado creado; si falla la validación, el script de abajo reabre el modal. --}}
+    <div class="modal fade" id="crearEmpleadoModal" tabindex="-1" aria-labelledby="crearEmpleadoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="crearEmpleadoModalLabel">
+                        <i class="bi bi-person-plus me-2 text-warning"></i> Registrar Nuevo Empleado
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="form-crear-empleado" action="{{ route('archivo.empleado.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="_form" value="crear-empleado">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label for="crear_ubicacion_foto" class="form-label">Foto de Perfil (Opcional)</label>
+                                <input class="form-control @error('ubicacion_foto') is-invalid @enderror" type="file" id="crear_ubicacion_foto" name="ubicacion_foto" accept="image/*">
+                                @error('ubicacion_foto') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <small class="form-text text-muted">Archivos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB.</small>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="cedula" id="crear_cedula" class="form-control @error('cedula') is-invalid @enderror" placeholder="Cédula" value="{{ old('cedula') }}" required>
+                                    <label for="crear_cedula">Cédula *</label>
+                                    @error('cedula') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                                <small id="crear_cedula_estado" class="form-text text-muted">Escribe la cédula y pulsa Tab o Enter para consultar la maestra de terceros.</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="nombre1" id="crear_nombre1" class="form-control @error('nombre1') is-invalid @enderror" placeholder="Primer Nombre" value="{{ old('nombre1') }}" required>
+                                    <label for="crear_nombre1">Primer Nombre *</label>
+                                    @error('nombre1') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="apellido1" id="crear_apellido1" class="form-control @error('apellido1') is-invalid @enderror" placeholder="Primer Apellido" value="{{ old('apellido1') }}" required>
+                                    <label for="crear_apellido1">Primer Apellido *</label>
+                                    @error('apellido1') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="nombre2" id="crear_nombre2" class="form-control" placeholder="Segundo Nombre" value="{{ old('nombre2') }}">
+                                    <label for="crear_nombre2">Segundo Nombre</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="apellido2" id="crear_apellido2" class="form-control" placeholder="Segundo Apellido" value="{{ old('apellido2') }}">
+                                    <label for="crear_apellido2">Segundo Apellido</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="date" name="nacimiento" id="crear_nacimiento" class="form-control @error('nacimiento') is-invalid @enderror" value="{{ old('nacimiento') }}">
+                                    <label for="crear_nacimiento">Fecha de Nacimiento</label>
+                                    @error('nacimiento') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" name="lugar" id="crear_lugar" class="form-control" placeholder="Lugar de Nacimiento" value="{{ old('lugar') }}">
+                                    <label for="crear_lugar">Lugar de Nacimiento</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <select class="form-select @error('sexo') is-invalid @enderror" id="crear_sexo" name="sexo">
+                                        <option value="">Seleccione...</option>
+                                        <option value="M" {{ old('sexo') == 'M' ? 'selected' : '' }}>Masculino</option>
+                                        <option value="F" {{ old('sexo') == 'F' ? 'selected' : '' }}>Femenino</option>
+                                    </select>
+                                    <label for="crear_sexo">Sexo</label>
+                                    @error('sexo') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="email" name="correo_personal" id="crear_correo_personal" class="form-control @error('correo_personal') is-invalid @enderror" placeholder="Correo Personal" value="{{ old('correo_personal') }}">
+                                    <label for="crear_correo_personal">Correo Personal</label>
+                                    @error('correo_personal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="celular_personal" id="crear_celular_personal" class="form-control" placeholder="Celular Personal" value="{{ old('celular_personal') }}">
+                                    <label for="crear_celular_personal">Celular Personal</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" name="celular_acudiente" id="crear_celular_acudiente" class="form-control" placeholder="Celular Acudiente" value="{{ old('celular_acudiente') }}">
+                                    <label for="crear_celular_acudiente">Celular Acudiente</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-circle me-1"></i> Guardar Empleado
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Prellenado desde MaeTerceros al digitar la cédula en "Nuevo Empleado".
+        (function () {
+            var input  = document.getElementById('crear_cedula');
+            var estado = document.getElementById('crear_cedula_estado');
+            if (!input || !estado) { return; }
+            var url = @json(route('archivo.empleado.buscarTercero'));
+            var ultima = null;
+
+            function setEstado(html, cls) {
+                estado.className = 'form-text ' + (cls || 'text-muted');
+                estado.innerHTML = html;
+            }
+            function poner(name, valor) {
+                var el = document.querySelector('#form-crear-empleado [name="' + name + '"]');
+                if (el && valor !== null && valor !== undefined && valor !== '') { el.value = valor; }
+            }
+
+            function consultar() {
+                var ced = (input.value || '').replace(/\D/g, '');
+                if (ced.length < 5 || ced === ultima) { return; }
+                ultima = ced;
+                setEstado('<span class="spinner-border spinner-border-sm me-1"></span> Consultando maestra de terceros…');
+                fetch(url + '?cedula=' + encodeURIComponent(ced), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d.existe) {
+                            setEstado('<i class="bi bi-exclamation-triangle me-1"></i>' + d.message + ' <a href="' + d.url + '">Ver empleado</a>', 'text-danger');
+                            return;
+                        }
+                        if (!d.found) {
+                            setEstado('<i class="bi bi-info-circle me-1"></i>' + (d.message || 'No encontrado.'), 'text-warning');
+                            return;
+                        }
+                        Object.keys(d.tercero).forEach(function (k) { poner(k, d.tercero[k]); });
+                        setEstado('<i class="bi bi-check-circle me-1"></i>Datos cargados desde la maestra de terceros. Revisa y completa lo que falte.', 'text-success');
+                    })
+                    .catch(function () {
+                        ultima = null;
+                        setEstado('<i class="bi bi-x-circle me-1"></i>No se pudo consultar la maestra de terceros.', 'text-danger');
+                    });
+            }
+
+            input.addEventListener('change', consultar);
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { e.preventDefault(); consultar(); }
+            });
+        })();
+    </script>
+
+    @if (old('_form') === 'crear-empleado' && $errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var m = document.getElementById('crearEmpleadoModal');
+                if (m && window.bootstrap) { bootstrap.Modal.getOrCreateInstance(m).show(); }
+            });
+        </script>
+    @endif
 
     <div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">

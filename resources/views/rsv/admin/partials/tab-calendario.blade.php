@@ -1,49 +1,49 @@
-{{-- resources/views/rsv/admin/partials/tab-calendario.blade.php --}}
-{{-- CAL-v3-DBG · CAMBIO CAL-v3-1 · Panel de debug con el estilo "terminal" aprobado (mismo de TIP-v1.3 / INM-v3): --}}
-{{--    TAB DBG textual de 16px de alto (monospace 8px + LED de estado verde/rojo pulsante + badge numérico),     --}}
-{{--    fundida SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0 · nunca se apila hacia arriba) y el    --}}
-{{--    panel abre como CAJÓN pegado al mismo borde (radius solo sup-izq, bordes solo arriba/izquierda). El       --}}
-{{--    apilado con los demás toggles de la página se mide en px REALES (getBoundingClientRect · ocultos 0×0      --}}
-{{--    descartados) y la regla exacta vive como "SPEC DE DISTANCIAS" dentro del CSS. El panel es LOCAL de esta   --}}
-{{--    vista: registra SOLO operaciones del calendario (fetches, filtro, tabs, export global, modales) y NO      --}}
-{{--    captura errores ajenos. El contexto del servidor viaja como JSON ($calDbg).                               --}}
-{{-- v2 · FIX GLOBAL: lista de inmuebles corregida ($listaInmuebles),                                            --}}
-{{-- updateSize() para AMBOS tabs (#global-calendario y #calendario),                                            --}}
-{{-- contexto preseleccionado en individual. Resto idéntico (estaba super).                                      --}}
+{{-- resources/views/rsv/admin/partials/tab-calendario.blade.php · CAL-v3.5-DBG --}}
+{{-- ══════════════════════════════════════════════════════════════════════════ --}}
+{{-- CALENDARIO · CENTRO DE CONTROL VISUAL (Mismo motor CAL-v3-DBG + UI FIN-v2) --}}
+{{-- Conserva @push('style') y @push('scripts') intactos para carga garantizada --}}
+{{-- ══════════════════════════════════════════════════════════════════════════ --}}
 
 @php
-    // ── CAL-v3-DBG · colector de contexto del servidor (autónomo y solo lectura:
-    // re-deriva el mismo contexto que el bloque de #calRoot, sin tocar esa lógica) ──
+    // ── CAL-v3.5-DBG · colector de contexto del servidor (autónomo y solo lectura) ──
     $__calDbgInmId = null;
     if (isset($inmueble) && $inmueble) {
         $__calDbgInmId = is_object($inmueble) ? ($inmueble->id ?? null) : $inmueble;
-    } elseif (!empty($inmuebleId) && is_numeric($inmuebleId)) {
+    } elseif (!empty($inmuebleId) && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
         $__calDbgInmId = $inmuebleId;
     } elseif (request('inmueble_id') && is_numeric(request('inmueble_id'))) {
         $__calDbgInmId = request('inmueble_id');
     }
+
+    $listaInmuebles = $listaInmuebles ?? $inmuebles ?? collect();
+    if ((!$listaInmuebles || count($listaInmuebles) === 0) && class_exists(\App\Models\Rsv\CatalogoInmueble::class)) {
+        try {
+            $listaInmuebles = \App\Models\Rsv\CatalogoInmueble::select('id', 'name', 'city')->orderBy('name', 'asc')->get();
+        } catch (\Throwable $e) {
+            $listaInmuebles = collect();
+        }
+    }
+
+    $calTotalProps = method_exists($listaInmuebles, 'total') ? $listaInmuebles->total() : count($listaInmuebles);
+
     $calDbg = [
-        'marca'      => 'CAL-v3-DBG',
+        'marca'      => 'CAL-v3.5-DBG',
         'vista'      => 'rsv.admin.partials.tab-calendario',
         'url'        => url()->full(),
         'peticion'   => request()->ajax() ? 'AJAX (X-Requested-With)' : 'navegación normal',
         'global'     => empty($__calDbgInmId),
         'inmuebleId' => $__calDbgInmId,
-        'inmuebles'  => (isset($listaInmuebles) && $listaInmuebles)
-            ? (method_exists($listaInmuebles, 'total') ? $listaInmuebles->total() : $listaInmuebles->count())
-            : (isset($inmuebles) && $inmuebles
-                ? (method_exists($inmuebles, 'total') ? $inmuebles->total() : $inmuebles->count())
-                : 0),
+        'inmuebles'  => $calTotalProps,
         'rutas'      => ['/rsv/reservas', '/rsv/bloqueos-calendario'],
         'errores'    => [],
     ];
 @endphp
 
-{{-- CAL-v3-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps · NO global) --}}
-<div id="calDbgToggle" title="Debug Calendario (CAL-v3-DBG)"><span class="cal-dbg-led" id="calDbgLed"></span>DBG<span class="cal-dbg-badge" id="calDbgBadge">0</span></div>
+{{-- CAL-v3.5-DBG · Tab DBG terminal + LED + Panel LOCAL (fuera del root: sobrevive a los swaps) --}}
+<div id="calDbgToggle" title="Debug Calendario (CAL-v3.5-DBG)"><span class="cal-dbg-led" id="calDbgLed"></span>DBG<span class="cal-dbg-badge" id="calDbgBadge">0</span></div>
 <div id="calDbgPanel" role="dialog" aria-label="Panel de debug de Calendario">
     <div class="cal-dbg-header" id="calDbgHeader">
-        <span>DEBUG · Calendario · CAL-v3-DBG</span>
+        <span>DEBUG · Calendario · CAL-v3.5-DBG</span>
         <span class="cal-dbg-controls">
             <button type="button" class="cal-dbg-btn" id="calDbgCopy">Copiar</button>
             <button type="button" class="cal-dbg-btn" id="calDbgClear">Limpiar</button>
@@ -53,24 +53,14 @@
     <div id="calDbgBody"></div>
 </div>
 
-<div id="calRoot">
+<div class="p-3 bg-white rounded-3 border" id="calRoot" style="border-color: #f1f5f9 !important;">
 
     @php
-        /*
-        ══════════════════════════════════════════════════════════════
-        FIX 1: el dashboard pasa $listaInmuebles (no $inmuebles).
-        Antes el select quedaba vacío y en global no se podía filtrar.
-        FIX 2: contexto — en individual se preselecciona el inmueble
-        activo para que los eventos ya nazcan filtrados.
-        ══════════════════════════════════════════════════════════════
-        */
-        $listaInmuebles = $listaInmuebles ?? $inmuebles ?? collect();
-
         $calInm = null; $calInmId = null; $calGlobal = true;
         if (isset($inmueble) && $inmueble) {
             $calInm = $inmueble;
             $calInmId = is_object($calInm) ? ($calInm->id ?? null) : $calInm;
-        } elseif (!empty($inmuebleId) && is_numeric($inmuebleId)) {
+        } elseif (!empty($inmuebleId) && $inmuebleId !== 'todos' && is_numeric($inmuebleId)) {
             $calInmId = $inmuebleId;
         } elseif (request('inmueble_id') && is_numeric(request('inmueble_id'))) {
             $calInmId = request('inmueble_id');
@@ -78,15 +68,105 @@
         $calGlobal = empty($calInmId);
     @endphp
 
-    <!-- ═══ CINTA SUPERIOR: leyenda + filtro ═══ -->
+    {{-- 1. HERO BANNER CALENDARIO (MISMO ESTILO QUE FIN-v2.0-DBG) --}}
+    <div class="cal-hero-pro">
+        <i class="bi bi-calendar3 hero-watermark"></i>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 position-relative" style="z-index: 2;">
+            <div style="max-width: 660px;">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-success text-white fw-bold" style="font-size: 7.5px; letter-spacing: .5px; text-transform: uppercase;">
+                        <i class="bi bi-calendar-check me-1"></i> Ecosistema de Calendario RSV
+                    </span>
+                    <span class="badge rounded-pill" style="font-size: 7px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #334155; font-family: ui-monospace, monospace;">
+                        CAL-v3.5-DBG
+                    </span>
+                </div>
+                <h6 class="fw-bold text-white mb-1" style="font-size: 14px;">
+                    Centro de Control de Disponibilidad, Ocupación y Bloqueos
+                </h6>
+                <p class="mb-2 text-light opacity-75" style="font-size: 9.5px;">
+                    Visualiza en tiempo real la programación de reservas, endosos y bloqueos de mantenimiento por propiedad, con vistas por año, mes y semana.
+                </p>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="cal-hero-btn-primary" id="calBtnGoBloqueos">
+                        <i class="bi bi-calendar-x"></i> Gestionar Bloqueos
+                    </button>
+                    <button type="button" class="cal-hero-btn-outline" id="calBtnGoReservas">
+                        <i class="bi bi-journal-check"></i> Ver Listado de Reservas
+                    </button>
+                    <button type="button" class="cal-hero-btn-outline" id="calBtnHeroRefresh">
+                        <i class="bi bi-arrow-clockwise"></i> Sincronizar Eventos
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-md-end">
+                <div class="lbl text-light opacity-50">Eventos en Rango Visible</div>
+                <div class="fw-bold text-success num" style="font-size: 19px; line-height: 1.15;" id="calHeroTotal">
+                    0 <span style="font-size: 9px; color: #94a3b8;">EVENTOS</span>
+                </div>
+                <div class="sub text-light opacity-75" style="font-size: 8px;" id="calHeroSub">
+                    {{ $calGlobal ? ($calTotalProps . ' propiedades monitoreadas') : ('Propiedad #' . $calInmId . ' seleccionada') }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 2. TARJETAS KPI DEL CALENDARIO (SE ACTUALIZAN EN VIVO AL CARGAR EVENTOS) --}}
+    <div class="cal-kpi-grid">
+        <div class="cal-kpi-card" title="Reservas aprobadas / confirmadas en el periodo visible">
+            <div>
+                <div class="lbl">Reservas Aprobadas</div>
+                <div class="val num" style="font-size: 13px; color: #15803d;" id="calKpiAprobadas">0</div>
+                <div class="sub">confirmadas en vista</div>
+            </div>
+            <div class="cal-kpi-icon" style="color:#15803d; background:#f0fdf4; border-color:#bbf7d0;">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card" title="Reservas pendientes o con endoso en el periodo visible">
+            <div>
+                <div class="lbl">Pendientes / Endosos</div>
+                <div class="val num" style="font-size: 13px; color: #b45309;" id="calKpiPendientes">0</div>
+                <div class="sub"><b id="calKpiEndosos">0</b> endoso(s)</div>
+            </div>
+            <div class="cal-kpi-icon" style="color:#b45309; background:#fffbeb; border-color:#fde68a;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card" id="calKpiCardBloqueos" title="Clic para ir a la sub-pestaña de Bloqueos">
+            <div>
+                <div class="lbl">Mantenimientos</div>
+                <div class="val num" style="font-size: 13px; color: #b91c1c;" id="calKpiBloqueos">0</div>
+                <div class="sub">bloqueos activos</div>
+            </div>
+            <div class="cal-kpi-icon" style="color:#b91c1c; background:#fef2f2; border-color:#fecaca;">
+                <i class="bi bi-tools"></i>
+            </div>
+        </div>
+
+        <div class="cal-kpi-card" title="Reservas canceladas en el periodo visible">
+            <div>
+                <div class="lbl">Canceladas</div>
+                <div class="val num" style="font-size: 13px; color: #64748b;" id="calKpiCanceladas">0</div>
+                <div class="sub">de <b id="calKpiProps">{{ $calTotalProps }}</b> propiedad(es)</div>
+            </div>
+            <div class="cal-kpi-icon" style="color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe;">
+                <i class="bi bi-buildings"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ 3. CINTA SUPERIOR: leyenda + filtro de inmueble ═══ -->
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 px-2 py-1.5 mb-2"
-         style="background: #fafbfd; border: 1px solid #f1f5f9; border-radius: 4px 4px 0 0;">
+         style="background: #fafbfd; border: 1px solid #f1f5f9; border-radius: 6px 6px 0 0;">
 
         <!-- Leyenda pastel -->
         <div class="d-flex flex-wrap align-items-center gap-1">
-
-            <span class="me-1" style="font-size: 7.5px; letter-spacing: .05em; color: #b3bcc7; font-weight: 600;">
-                <i class="bi bi-calendar3 me-1" style="font-size: 8px;"></i>LEYENDA
+            <span class="me-1" style="font-size: 7.5px; letter-spacing: .05em; color: #b3bcc7; font-weight: 700;">
+                <i class="bi bi-calendar3 me-1 text-success" style="font-size: 8px;"></i>LEYENDA:
             </span>
 
             <span class="cal-chip"><span class="ldot" style="background:#a3cfb6;"></span> Aprobada</span>
@@ -95,16 +175,14 @@
             <span class="cal-chip"><span class="ldot" style="background:#e5b8b8;"></span> Cancelada</span>
             <span class="cal-chip"><span class="ldot" style="background:#c98a85;"></span> Mantenimiento</span>
 
-            {{-- Verificación de versión --}}
-            <span class="cal-chip" style="border-color:#d5e7dc; color:#3d7a5c; font-weight:600;">CAL3-DBG</span>
-
+            <span class="cal-chip" style="border-color:#d5e7dc; color:#3d7a5c; font-weight:700;">CAL-v3.5-DBG</span>
         </div>
 
         <!-- Filtro de inmueble (suave) -->
         <div class="d-flex align-items-center gap-1">
-            <i class="bi bi-building" style="font-size: 9px; color: #c3ccd6;"></i>
+            <i class="bi bi-building text-success" style="font-size: 9px;"></i>
             <select id="filtro_inmueble_cal" class="cal-select" title="Filtrar por inmueble">
-                <option value="">Todos los inmuebles</option>
+                <option value="">Todos los inmuebles ({{ $calTotalProps }})</option>
                 @forelse(($listaInmuebles ?? collect()) as $inm)
                     <option value="{{ $inm->id }}" @selected((string) $calInmId === (string) $inm->id)>{{ $inm->name }}</option>
                 @empty
@@ -115,17 +193,14 @@
 
     </div>
 
-
-    <!-- ═══ MARCO DEL CALENDARIO + LOADER CRISTAL ═══ -->
+    <!-- ═══ 4. MARCO DEL CALENDARIO + LOADER CRISTAL ═══ -->
     <div class="position-relative"
-         style="border: 1px solid #f1f5f9; border-radius: 0 0 4px 4px; background: #fff; overflow: hidden;">
+         style="border: 1px solid #f1f5f9; border-radius: 0 0 6px 6px; background: #fff; overflow: hidden;">
 
         <div id="calendar-loader"
              class="d-none position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
              style="z-index: 50; background: rgba(255,255,255,.72); backdrop-filter: blur(3px);">
-
             <div class="spinner-border spinner-border-sm" role="status" style="color: #3d7a5c; width: 14px; height: 14px;"></div>
-
         </div>
 
         <div id="calendario-global" class="p-1"></div>
@@ -137,13 +212,13 @@
 
 @push('style')
 <style>
-    /* ═══ BASE — anclada a #calRoot (misma paleta de las hojas) ═══ */
+    /* ═══ BASE — anclada a #calRoot (misma paleta que FIN-v2.0-DBG) ═══ */
     #calRoot {
         --grid:  #f1f5f9;
         --grid-2:#e9eef4;
         --head:  #fafbfd;
         --ink:   #64748b;
-        --ink-2: #475569;
+        --ink-2: #334155;
         --ink-3: #94a3b8;
         --ink-4: #b3bcc7;
         --accent:#3d7a5c;
@@ -153,6 +228,56 @@
         font-size: 8px;
         line-height: 1.4;
         color: var(--ink);
+    }
+    #calRoot .lbl { font-size: 7.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+    #calRoot .val { font-size: 10.5px; color: var(--ink-2); font-weight: 700; letter-spacing: -0.2px; }
+    #calRoot .sub { font-size: 8px; line-height: 1.35; color: var(--ink-3); }
+    #calRoot .num { font-variant-numeric: tabular-nums; }
+
+    /* ── HERO BANNER CALENDARIO (IDÉNTICO A FIN-v2.0-DBG) ── */
+    #calRoot .cal-hero-pro {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 11px;
+        padding: 20px 24px;
+        position: relative;
+        overflow: hidden;
+        color: #ffffff;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+    }
+    #calRoot .cal-hero-pro .hero-watermark {
+        position: absolute; right: -2%; bottom: -35%; font-size: 12rem;
+        opacity: 0.04; color: #ffffff; pointer-events: none; transform: rotate(-10deg);
+    }
+    #calRoot .cal-hero-btn-primary {
+        background: #10b981; color: #0f172a; border: none;
+        font-size: 9px; font-weight: 800; padding: 7px 14px; border-radius: 6px;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.18s ease;
+    }
+    #calRoot .cal-hero-btn-primary:hover { background: #34d399; transform: translateY(-1px); }
+    #calRoot .cal-hero-btn-outline {
+        background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.2);
+        font-size: 9px; font-weight: 700; padding: 7px 13px; border-radius: 6px;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.18s ease;
+    }
+    #calRoot .cal-hero-btn-outline:hover { background: rgba(255,255,255,0.16); border-color: #fff; color: #fff; }
+
+    /* ── TARJETAS KPI DEL CALENDARIO (IDÉNTICAS A FIN-v2.0-DBG) ── */
+    #calRoot .cal-kpi-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+    }
+    @media (max-width: 767px) { #calRoot .cal-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    #calRoot .cal-kpi-card {
+        background: #fff; border: 1px solid var(--grid-2); border-radius: 9px;
+        padding: 10px 13px; display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; cursor: pointer; transition: all 0.16s ease;
+    }
+    #calRoot .cal-kpi-card:hover { border-color: var(--accent-bd); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,23,42,0.04); }
+    #calRoot .cal-kpi-icon {
+        width: 34px; height: 34px; border-radius: 8px; display: flex;
+        align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid;
     }
 
     /* Chips de leyenda */
@@ -170,21 +295,18 @@
     /* Select suave */
     #calRoot .cal-select {
         border: 1px solid var(--grid-2); background: #fff; color: var(--ink-2);
-        font-family: inherit; font-size: 9px; font-weight: 500;
-        padding: 2px 8px; border-radius: 3px; cursor: pointer;
+        font-family: inherit; font-size: 9px; font-weight: 600;
+        padding: 2px 8px; border-radius: 4px; cursor: pointer;
         box-shadow: none !important; outline: none;
     }
     #calRoot .cal-select:focus { border-color: #c8d6cd; }
 
 
     /* ═══ FULLCALENDAR · overrides (scoped) ═══ */
-
-    /* Grilla */
     #calRoot .fc-theme-standard td,
     #calRoot .fc-theme-standard th,
     #calRoot .fc-theme-standard .fc-scrollgrid { border-color: var(--grid); }
 
-    /* Encabezados de día — 9px */
     #calRoot .fc-col-header-cell {
         padding: 4px 0 !important;
         background: var(--head);
@@ -197,7 +319,6 @@
     }
     #calRoot .fc-col-header-cell-cushion { color: inherit; text-decoration: none; padding: 2px 4px; }
 
-    /* Celdas de día — 8px */
     #calRoot .fc-daygrid-day-number {
         font-size: 8px !important;
         padding: 2px 5px !important;
@@ -211,8 +332,6 @@
     #calRoot .fc-dayGridMonth-view .fc-daygrid-day-frame { min-height: 62px; }
     #calRoot .fc-daygrid-day { transition: background .15s ease; }
     #calRoot .fc-daygrid-day:hover { background: #fafcfe; }
-
-    /* Otros meses: aún más tenues */
     #calRoot .fc-day-other .fc-daygrid-day-number { color: #dfe5ec; }
 
     /* Toolbar — botones estilo soft */
@@ -242,7 +361,6 @@
     #calRoot .fc .fc-button-group { gap: 3px; }
     #calRoot .fc .fc-toolbar-chunk { display: flex; gap: 4px; align-items: center; }
 
-    /* Título del mes */
     #calRoot .fc-toolbar-title {
         font-size: 10.5px !important;
         font-weight: 600;
@@ -269,7 +387,6 @@
     #calRoot .fc-event-title { font-weight: 600; }
     #calRoot .fc-daygrid-event-dot { display: none; }
 
-    /* Estados (franja lateral pastel) */
     #calRoot .ev-cancelada {
         background: #fdf4f4 !important;
         border-color: #f0dcdc !important;
@@ -316,12 +433,7 @@
 <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/es.global.min.js'></script>
 
 <script>
-    /* ═══════════════ CAL-v3-DBG · tab-calendario · PANEL DE DEBUG LOCAL ═══════════════
-       Estilo "terminal" aprobado (TIP-v1.3 / INM-v3): tab DBG textual de 16px con LED
-       de estado, fundida SIEMPRE en la esquina (right:0 · bottom:0); el panel abre como
-       CAJÓN pegado al mismo borde y esquiva a los vecinos midiendo px reales.
-       NO captura fetch ni errores de otros módulos: solo registra operaciones de ESTA
-       vista. El contexto del servidor llega por SRVDBG (JSON de $calDbg).              */
+    /* ═══════════════ CAL-v3.5-DBG · tab-calendario · PANEL DE DEBUG LOCAL ═══════════════ */
     (function () {
         var SRVDBG = @json($calDbg);
 
@@ -335,16 +447,6 @@
                     var st = document.createElement('style');
                     st.id = 'calDbgStyle';
                     st.textContent = [
-                        /* ═════════ SPEC DE DISTANCIAS · CAL-v3 (tab terminal · patrón TIP-v1.3) ════════
-                           TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la
-                                       esquina inferior-derecha (nunca sube: con
-                                       16px de alto cabe bajo cualquier otro toggle)
-                                     · altura fija 16px · padding lateral 8px
-                                     · radius 3px solo sup-izq · borde 1px arriba/izq
-                                     · monospace 8px · LED 5px (verde ok / rojo error)
-                           PANEL     · right:0px · bottom = max(20, vecino + 4px)
-                                       (20 = 16 de tab + 4 de aire mínimo)
-                                       · ancho 380px · radius 6px 0 0 0 (cajón pegado) */
                         '#calDbgToggle{position:fixed;right:0;bottom:0;z-index:1090;height:16px;padding:0 8px;',
                         'border-radius:3px 0 0 0;border:1px solid #1e293b;border-right:0;border-bottom:0;',
                         'background:rgba(2,6,23,.94);color:#64748b;',
@@ -385,12 +487,10 @@
                     document.head.appendChild(st);
                 }
                 function asegurarNodos() {
-                    /* El toggle y el panel ya vienen como HTML de la vista (antes de
-                       #calRoot). Este respaldo solo los re-crea si un swap los borró. */
                     if (!$('calDbgToggle')) {
                         var t = document.createElement('div');
                         t.id = 'calDbgToggle';
-                        t.title = 'Debug Calendario (CAL-v3-DBG)';
+                        t.title = 'Debug Calendario (CAL-v3.5-DBG)';
                         t.innerHTML = '<span class="cal-dbg-led" id="calDbgLed"></span>DBG<span class="cal-dbg-badge" id="calDbgBadge">0</span>';
                         document.body.appendChild(t);
                     }
@@ -398,7 +498,7 @@
                         var p = document.createElement('div');
                         p.id = 'calDbgPanel';
                         p.innerHTML = '<div class="cal-dbg-header" id="calDbgHeader">' +
-                            '<span>DEBUG · Calendario · CAL-v3-DBG</span>' +
+                            '<span>DEBUG · Calendario · CAL-v3.5-DBG</span>' +
                             '<span class="cal-dbg-controls">' +
                             '<button type="button" class="cal-dbg-btn" id="calDbgCopy">Copiar</button>' +
                             '<button type="button" class="cal-dbg-btn" id="calDbgClear">Limpiar</button>' +
@@ -408,23 +508,20 @@
                     }
                     apilar();
                 }
-                /* CAL-v3: la TAB se queda SIEMPRE abajo (bottom:0, nunca se apila:
-                   con 16px de alto cabe bajo cualquier otro toggle sin tocarlo).
-                   Solo el PANEL esquiva a los vecinos: bottom = max(20, vecino + 4). */
                 function apilar() {
-                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle']; /* serie completa */
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rhDbgToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'blqDbgToggle', 'finDbgToggle', 'psDbgToggle', 'trxDbgToggle', 'audDbgToggle', 'infDbgToggle'];
                     var ocupado = 0;
                     for (var i = 0; i < ids.length; i++) {
                         var el = $(ids[i]);
                         if (!el) { continue; }
                         var r = el.getBoundingClientRect();
-                        if (!r.width && !r.height) { continue; } /* display:none no ocupa sitio */
-                        var desdeAbajo = window.innerHeight - r.top; /* cuánto sube ese vecino desde el fondo */
+                        if (!r.width && !r.height) { continue; }
+                        var desdeAbajo = window.innerHeight - r.top;
                         if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
                     }
                     var t = $('calDbgToggle'), p = $('calDbgPanel');
-                    if (t) { t.style.bottom = '0px'; } /* SI O SI pegada abajo */
-                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } /* 16 tab + 4 aire */
+                    if (t) { t.style.bottom = '0px'; }
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; }
                 }
                 function hora() {
                     var d = new Date();
@@ -479,7 +576,7 @@
                 $('calDbgCopy').addEventListener('click', function (e2) {
                     e2.stopPropagation();
                     var b = $('calDbgBody'); if (!b) { return; }
-                    var txt = '=== DEBUG tab-calendario CAL-v3-DBG · ' + new Date().toISOString() + ' ===\n';
+                    var txt = '=== DEBUG tab-calendario CAL-v3.5-DBG · ' + new Date().toISOString() + ' ===\n';
                     for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(txt).then(function () {
@@ -495,19 +592,13 @@
             })();
         if (!DBG) { return; }
 
-        /* ═══ BOOT · contexto del servidor (como el Panel de Inmuebles) ═══ */
-        DBG.log('CAL-v3-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · panel LOCAL (solo tab-calendario · NO captura errores ajenos)', 'ok');
+        DBG.log('CAL-v3.5-DBG activo · tab DBG terminal fija en la esquina (0,0) · LED de estado · estilo FIN-v2.0', 'ok');
         DBG.log('init · modo=' + (SRVDBG && SRVDBG.global ? 'GLOBAL (todos los inmuebles)' : 'INDIVIDUAL (contexto preseleccionado)') +
             (SRVDBG && SRVDBG.inmuebleId ? ' · inmuebleCtx=' + SRVDBG.inmuebleId : '') +
             ' · inmuebles=' + (SRVDBG ? SRVDBG.inmuebles : '?'), 'info');
         DBG.log('SRV · peticion=' + (SRVDBG && SRVDBG.peticion ? SRVDBG.peticion : '?') +
             ' · url=' + (SRVDBG && SRVDBG.url ? SRVDBG.url : '?'), 'debug');
         DBG.log('Rutas fetch · ' + ((SRVDBG && SRVDBG.rutas) ? SRVDBG.rutas.join(' · ') : '?'), 'debug');
-        if (SRVDBG && SRVDBG.errores && SRVDBG.errores.length) {
-            for (var _di = 0; _di < SRVDBG.errores.length; _di++) {
-                DBG.log('⚠ SERVIDOR capturó: ' + SRVDBG.errores[_di], 'err');
-            }
-        }
     })();
 </script>
 
@@ -517,7 +608,6 @@
               filtro = document.getElementById('filtro_inmueble_cal'),
               loader = document.getElementById('calendar-loader');
 
-        /* CAL-v3-DBG · guards con aviso en el panel (antes eran silenciosos) */
         if (!calEl) { if (window.CalDbg) { window.CalDbg.log('abort · no existe #calendario-global en el DOM', 'err'); } return; }
         if (typeof FullCalendar === 'undefined') { if (window.CalDbg) { window.CalDbg.log('abort · FullCalendar NO está cargado (CDN caído o bloqueado)', 'err'); } return; }
 
@@ -525,7 +615,7 @@
         DBG.log('FullCalendar ' + (FullCalendar.version || 'global') + ' cargado · refs: cal=' + (calEl ? 'ok' : 'no') +
             ' · filtro=' + (filtro ? 'ok' : 'no') + ' · loader=' + (loader ? 'ok' : 'no'), 'debug');
 
-        /* Paleta pastel por inmueble (saturación rebajada) */
+        /* Paleta pastel por inmueble */
         const getInmuebleStyle = (inmuebleName) => {
             if (!inmuebleName) return { bg: '#fafbfd', border: '#e2e8f0', text: '#64748b' };
 
@@ -579,6 +669,21 @@
             return `${day} de ${meses[monthIndex]} de ${year}`;
         };
 
+        /* Actualizador de las 4 Tarjetas KPI y Hero Banner en vivo */
+        const actualizarKpisCalendario = (cntAprob, cntPend, cntEnd, cntCanc, cntBlq) => {
+            const totalEv = cntAprob + cntPend + cntEnd + cntCanc + cntBlq;
+            const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            setEl('calKpiAprobadas', cntAprob);
+            setEl('calKpiPendientes', cntPend + cntEnd);
+            setEl('calKpiEndosos', cntEnd);
+            setEl('calKpiBloqueos', cntBlq);
+            setEl('calKpiCanceladas', cntCanc);
+            const heroTot = document.getElementById('calHeroTotal');
+            if (heroTot) {
+                heroTot.innerHTML = `${totalEv} <span style="font-size: 9px; color: #94a3b8;">EVENTOS</span>`;
+            }
+        };
+
         const calendar = new FullCalendar.Calendar(calEl, {
             initialView: 'dayGridMonth',
             multiMonthMaxColumns: 3,
@@ -589,10 +694,8 @@
 
             events: async (info, success, fail) => {
                 const fIni = info.startStr.split('T')[0], fFin = info.endStr.split('T')[0];
-                /* El select ya nace preseleccionado en individual → el contexto viaja solo */
                 const qInm = (filtro && filtro.value) ? `&id_rsv_catalogo_inmueble=${filtro.value}` : '';
 
-                /* CAL-v3-DBG · telemetría de fetch */
                 const __t0 = (window.performance && performance.now) ? performance.now() : Date.now();
                 DBG.log('fetch · rango ' + fIni + ' → ' + fFin + (qInm ? ' · filtro=' + filtro.value : ' · sin filtro') + ' …', 'debug');
 
@@ -606,6 +709,8 @@
 
                     const arrRes = res.data?.data || res.data || [];
                     const arrBlq = blq.data?.data || blq.data || [];
+
+                    let cntAprob = 0, cntPend = 0, cntEnd = 0, cntCanc = 0;
 
                     const evts = [
                         ...arrRes.filter(r => r.fecha_inicio && r.fecha_fin).map(r => {
@@ -622,12 +727,17 @@
                                 cssClass = 'ev-cancelada';
                                 icn = 'bi-x-circle';
                                 statusBorderColor = STATUS.cancelada;
+                                cntCanc++;
                             } else if (endoso || st.includes('endos')) {
                                 icn = 'bi-arrow-left-right';
                                 statusBorderColor = STATUS.endoso;
+                                cntEnd++;
                             } else if (st.includes('pendient') || st.includes('pre')) {
                                 icn = 'bi-clock-history';
                                 statusBorderColor = STATUS.pendiente;
+                                cntPend++;
+                            } else {
+                                cntAprob++;
                             }
 
                             let startRaw = r.fecha_inicio.split(' ')[0];
@@ -679,7 +789,9 @@
                         })
                     ];
 
-                    /* CAL-v3-DBG · resultado del fetch */
+                    const cntBlq = arrBlq.filter(b => b.fecha_inicio && b.fecha_fin).length;
+                    actualizarKpisCalendario(cntAprob, cntPend, cntEnd, cntCanc, cntBlq);
+
                     const __ms = Math.round(((window.performance && performance.now) ? performance.now() : Date.now()) - __t0);
                     DBG.log('eventos · reservas=' + arrRes.length + ' · bloqueos=' + arrBlq.length + ' · montados=' + evts.length + ' · ' + __ms + 'ms', 'ok');
 
@@ -708,7 +820,6 @@
             eventClick: ({ event }) => {
                 const { t, icn, cod, est, usr, dtl, inm, realStart, realEnd } = event.extendedProps;
 
-                /* CAL-v3-DBG · apertura del modal */
                 DBG.log('modal · ' + (t === 'blq' ? 'mantenimiento' : 'reserva') + ' · ' + (cod || dtl || event.id), 'info');
 
                 Swal.fire({
@@ -744,41 +855,77 @@
 
         // 1. EXPORTAR EL CALENDARIO GLOBALMENTE PARA PODER REFRESCARLO DESDE OTRAS VISTAS
         window.rsvCalendar = calendar;
-
-        /* CAL-v3-DBG · export visible en el panel */
         DBG.log('window.rsvCalendar exportado · refresco externo disponible desde otras vistas', 'ok');
 
         calendar.render();
 
         if (filtro) {
             filtro.addEventListener('change', () => {
-                /* CAL-v3-DBG · cambio de filtro */
                 DBG.log('filtro inmueble → ' + (filtro.value || 'todos') + ' · refetchEvents', 'info');
                 calendar.refetchEvents();
             });
         }
 
-        /* ═══ FIX DEFINITIVO · updateSize & refetchEvents ═══
-           Al entrar en la pestaña Padre (Calendario) o Hijo (Inicio), 
-           forzamos a FullCalendar a calcular su tamaño Y volver a traer los datos. */
+        /* Botones del Hero Banner y KPIs (estilo FIN-v2.0-DBG) */
+        const btnRefresh = document.getElementById('calBtnHeroRefresh');
+        if (btnRefresh) {
+            btnRefresh.addEventListener('click', () => {
+                DBG.log('Sincronización manual solicitada desde Hero Banner', 'info');
+                calendar.refetchEvents();
+                calendar.updateSize();
+            });
+        }
+
+        const irABloqueos = () => {
+            const btnBlq = document.querySelector('[data-bs-target="#cal-sub-bloqueos"], [data-bs-target="#single-cal-sub-bloqueos"]');
+            if (btnBlq) {
+                DBG.log('Navegando a sub-pestaña Bloqueos', 'info');
+                btnBlq.click();
+            }
+        };
+        const btnBlqHero = document.getElementById('calBtnGoBloqueos');
+        const kpiBlqCard = document.getElementById('calKpiCardBloqueos');
+        if (btnBlqHero) btnBlqHero.addEventListener('click', irABloqueos);
+        if (kpiBlqCard) kpiBlqCard.addEventListener('click', irABloqueos);
+
+        const btnResHero = document.getElementById('calBtnGoReservas');
+        if (btnResHero) {
+            btnResHero.addEventListener('click', () => {
+                const esGlobal = !!document.getElementById('globalAdminTabs');
+                const pSel = esGlobal ? '#global-reservas' : '#reservas';
+                const cSel = esGlobal ? '#res-sub-reservas' : '#single-res-sub-reservas';
+                DBG.log('Navegando a módulo Reservas → ' + pSel + ' → ' + cSel, 'info');
+                if (window.RsvAdmin && typeof window.RsvAdmin.go === 'function') {
+                    window.RsvAdmin.go(pSel, cSel);
+                } else {
+                    const pBtn = document.querySelector(`[data-bs-target="${pSel}"]`);
+                    if (pBtn) pBtn.click();
+                    setTimeout(() => {
+                        const cBtn = document.querySelector(`[data-bs-target="${cSel}"]`);
+                        if (cBtn) cBtn.click();
+                    }, 80);
+                }
+            });
+        }
+
+        /* ═══ FIX DEFINITIVO · updateSize & refetchEvents ═══ */
         document.addEventListener('shown.bs.tab', (e) => {
             const target = e.target?.getAttribute?.('data-bs-target') || e.target?.getAttribute?.('href');
             if (!target) return;
 
             const targetsCalendario = [
-                '#global-calendario', 
-                '#calendario', 
-                '#cal-sub-inicio', 
+                '#global-calendario',
+                '#calendario',
+                '#cal-sub-inicio',
                 '#single-cal-sub-inicio'
             ];
 
             if (targetsCalendario.includes(target)) {
-                /* CAL-v3-DBG · reacción al tab */
                 DBG.log('tab ' + target + ' visible · updateSize + refetchEvents (en 200ms)', 'info');
                 setTimeout(() => {
-                    calendar.updateSize();    // Evita que se vea blanco
-                    calendar.refetchEvents(); // TRAE LOS DATOS NUEVOS DE BLOQUEOS/RESERVAS
-                }, 200); // 200ms da tiempo a que la animación de Bootstrap termine
+                    calendar.updateSize();
+                    calendar.refetchEvents();
+                }, 200);
             }
         });
 
@@ -786,9 +933,7 @@
         window.addEventListener('resize', () => calendar.updateSize());
         setTimeout(() => calendar.updateSize(), 300);
 
-        /* CAL-v3-DBG · red de seguridad armada */
         DBG.log('red de seguridad · resize listener + updateSize(300ms) armados', 'debug');
     });
 </script>
 @endpush
-

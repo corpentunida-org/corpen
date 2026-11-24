@@ -495,10 +495,24 @@ class ScpSoporteController extends Controller
             'usuario_escalado' => 'nullable|string|max:100',
         ]);
 
+        // scp_soportes.id_gdo_cargo es NOT NULL. El form manda el cargo resuelto por correo
+        // corporativo (User::getCargoAttribute); si no lo encuentra, se intenta por cédula y,
+        // si el usuario no está en gdo_cargo, se avisa en vez de reventar con un 500.
+        $creador = User::find(Auth::id());
+        $idCargo = $request->id_gdo_cargo
+            ?: optional($creador?->cargo)->id
+            ?: optional($creador?->cargoRelation)->id;
+
+        if (!$idCargo) {
+            return back()
+                ->withInput()
+                ->withErrors(['id_gdo_cargo' => 'Tu usuario no tiene un cargo/área asignado en Gestión Documental (gdo_cargo), por eso no se puede crear el soporte. Pide a Talento Humano o a Sistemas que registren tu cargo con tu correo corporativo.']);
+        }
+
         $data = [
             'detalles_soporte' => $request->detalles_soporte,
             'timestam' => now(),
-            'id_gdo_cargo' => $request->id_gdo_cargo,
+            'id_gdo_cargo' => $idCargo,
             'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
             'id_categoria' => $request->id_categoria,
             'id_scp_tipo' => $request->id_scp_tipo,

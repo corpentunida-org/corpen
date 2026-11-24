@@ -305,6 +305,9 @@
                         value="{{ $usuario->cargo->nombre_cargo ?? 'Sin cargo asignado' }}" readonly>
                     <input type="hidden" name="id_gdo_cargo" value="{{ $usuario->cargo->id ?? '' }}">
                 </div>
+                @error('id_gdo_cargo')
+                    <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i>{{ $message }}</div>
+                @enderror
             </div>
         </div>
 

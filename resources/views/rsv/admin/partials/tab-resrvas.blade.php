@@ -1,81 +1,4 @@
-{{-- tab-reservas.blade.php · v28-DBG --}}
-{{--
-   NOVEDADES v28-DBG (AGENDA DENTRO DEL FRAGMENTO · la tabla y el CRUD no cambian):
-   · "Consultar" (botón) e "Ir a hoy" (enlace) dejan de navegar la página
-     completa: ahora re-piden SOLO este partial vía reservasFragmento()
-     (GET del data-fragmento de #rvTabWrap con agenda_fecha ajustada) y
-     reemplazan el wrap en caliente — el mismo mecanismo del alta v26 —,
-     así que el dashboard, el calendario grande y el panel de debug quedan
-     intactos y vivos (cada refresco queda registrado en el panel DBG).
-   · Enter sobre el input de fecha consulta igual que el botón (igual que
-     antes, pero por fragmento).
-   · Fallbacks conservados: si la ruta del fragmento no existe o el fetch
-     falla, se navega la página completa con el parámetro (comportamiento
-     anterior) y el panel DBG muestra la causa real del fallo.
-   · "Ir a hoy" sin ruta de fragmento deja navegar su href completo como
-     siempre (degradación elegante).
---}}{{-- NOVEDADES v27-DBG (SOLO PANEL DE DEBUG · cero cambios funcionales):
-   · El panel 🐛 Debug se rediseña al diseño TIP-v1.3 aprobado (canónico
-     BLQ-v1-2, el mismo de status.blade.php): pestaña terminal "DBG" de
-     16px fija SIEMPRE en la esquina inferior-derecha (right:0 · bottom:0,
-     radius 3px solo superior-izquierdo) con LED de estado (verde = ok ·
-     rojo pulsante + conteo = errores) y panel cajón de 380px alineado al
-     mismo borde. La regla exacta de distancias está documentada como
-     "SPEC DE DISTANCIAS" dentro del CSS, y el panel esquiva a los toggles
-     hermanos de las otras vistas midiendo píxeles reales
-     (getBoundingClientRect · bottom = max(20, vecino + 4)).
-   · El toggle y el panel pasan a ser HERMANOS de #rvTabWrap (antes del
-     wrap): el refresco AJAX interno solo intercambia el wrap, así que los
-     nodos DBG y sus logs sobreviven SIN el parche de restauración de v26
-     (refrescarSoloTab ya no copia innerHTML; solo re-apila con RvDbg).
-     Nada se cuelga de document.body: el respaldo re-crea DENTRO de #rvRoot.
-   · Cabecera canónica con Copiar / Limpiar / ✕ (clic en la cabecera o
-     doble clic cierra) · unicarDbg() deja UN solo toggle/panel por página
-     · la API viva queda en window.RvDbg · LED rojo + badge con conteo de
-     errores (se resetean al abrir).
-   · dbgLog(nivel, msg) conserva su firma para TODAS las llamadas
-     existentes: ahora escribe en el panel nuevo. $phpDebugLogs y el JSON
-     #rvPhpDebug siguen llegando igual (con prefijo "<b>PHP</b> ").
---}}
-{{-- NOVEDADES v26.1:
-   · Diagnóstico: si GET /rsv/reservas-fragmento responde error (p.ej.
-     HTTP 500), ahora se extrae el MENSAJE REAL de la excepción desde el
-     body de la respuesta y se muestra en el panel 🐛 Debug
-     (antes: 'HTTP 500' ciego + reload completo).
-   · FALLBACK LOCAL: la tabla se pinta en cliente desde #rvDataset, así
-     que si el fragmento falla la reserva recién creada (respuesta del
-     store-ajax) se inyecta en el dataset (DS) + render() + refetch del
-     calendario → el tab muestra la reserva SIN recargar el dashboard.
-   · El reload completo queda como ÚLTIMO recurso (cuando no hay datos
-     locales, p.ej. refrescos que no vienen de una creación).
---}}
-{{-- NOVEDADES v26:
-   · CREAR RESERVA YA NO RECARGA EL DASHBOARD: antes, tras guardar, se
-     hacía window.location.reload() (demora + se veía actualizar toda
-     dashboard.blade.php). Ahora se re-pide SOLO este partial por AJAX
-     (ruta admin.reservas.fragmento → GET /rsv/reservas-fragmento, ya
-     expuesta por el backend) y se reemplaza #rvTabWrap en caliente.
-   · Script re-ejecutable: init extraído a rvTabInit() y arrancado por
-     readyState (DOMContentLoaded la 1ra vez; inmediato tras el swap).
-   · Panel 🐛 Debug sobrevive al refresco: logs restaurados y estado
-     abierto/cerrado conservado; dbgLog resuelve el body en vivo.
-   · Handler de 'Detalle' a nivel document registrado UNA sola vez y
-     conectado vía window.rsvTabApi al closure vigente (DS fresco).
-   · Tras crear: window.rsvCalendar.refetchEvents() si existe (calendario
-     grande del dashboard) + toast de confirmación.
-   · Fallback: si el fragmento falla (HTTP != 200, sin #rvTabWrap o ruta
-     no registrada) se recarga la página completa como antes.
---}}
-{{-- NOVEDADES v24:
-   · Titular: autocomplete real (input + dropdown flotante, sin lista visible).
-     Chip con el titular seleccionado + botón X para borrar.
-   · Origen: preselecciona la 3ra opción (index 2).
-   · Monto: se auto-llena con precio sugerido (o mínimo si no hay tarifa)
-     al completar la selección del rango.
-   · Comentario: chips de respuestas rápidas con frases comunes
-     (incluye el nombre del usuario logueado).
---}}
-
+{{-- tab-reservas.blade.php · v32-EXC-DBG (Diseño unificado FIN-v2.0 / CAL-v3.5 + Motor v31-EXC intacto) --}}
 @php
     /* 🆕 v26 · Resuelto TEMPRANO: este partial imprime data-fragmento en
        #rvTabWrap antes de llegar al @php principal (que vive dentro de
@@ -112,9 +35,59 @@
 <style>
     .reservas-soft {
         --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd;
-        --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7;
+        --ink:#64748b; --ink-2:#334155; --ink-3:#94a3b8; --ink-4:#b3bcc7;
         --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc;
     }
+    .reservas-soft .lbl { font-size: 7.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+    .reservas-soft .val { font-size: 10.5px; color: var(--ink-2); font-weight: 700; letter-spacing: -0.2px; }
+    .reservas-soft .num { font-variant-numeric: tabular-nums; }
+
+    /* ── HERO BANNER RESERVAS (IDÉNTICO A FIN-v2.0-DBG / CAL-v3.5-DBG) ── */
+    .reservas-soft .rv-hero-pro {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        border-radius: 11px;
+        padding: 20px 24px;
+        position: relative;
+        overflow: hidden;
+        color: #ffffff;
+        margin-bottom: 12px;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+    }
+    .reservas-soft .rv-hero-pro .hero-watermark {
+        position: absolute; right: -2%; bottom: -35%; font-size: 12rem;
+        opacity: 0.04; color: #ffffff; pointer-events: none; transform: rotate(-10deg);
+    }
+    .reservas-soft .rv-hero-btn-primary {
+        background: #10b981; color: #0f172a; border: none;
+        font-size: 9px; font-weight: 800; padding: 7px 14px; border-radius: 6px;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.18s ease;
+    }
+    .reservas-soft .rv-hero-btn-primary:hover { background: #34d399; transform: translateY(-1px); }
+    .reservas-soft .rv-hero-btn-outline {
+        background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.2);
+        font-size: 9px; font-weight: 700; padding: 7px 13px; border-radius: 6px;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.18s ease;
+    }
+    .reservas-soft .rv-hero-btn-outline:hover { background: rgba(255,255,255,0.16); border-color: #fff; color: #fff; }
+
+    /* ── TARJETAS KPI DE RESERVAS (IDÉNTICAS A FIN-v2.0-DBG / CAL-v3.5-DBG) ── */
+    .reservas-soft .rv-kpi-grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px;
+    }
+    @media (max-width: 767px) { .reservas-soft .rv-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .reservas-soft .rv-kpi-card {
+        background: #fff; border: 1px solid var(--grid-2); border-radius: 9px;
+        padding: 10px 13px; display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; cursor: pointer; transition: all 0.16s ease;
+    }
+    .reservas-soft .rv-kpi-card:hover { border-color: var(--accent-bd); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(15,23,42,0.04); }
+    .reservas-soft .rv-kpi-icon {
+        width: 34px; height: 34px; border-radius: 8px; display: flex;
+        align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; border: 1px solid;
+    }
+
     .reservas-soft .table > :not(caption) > * > * {
         padding: 2px 7px; height: 20px; line-height: 1.1; vertical-align: middle;
     }
@@ -552,21 +525,7 @@
     #modalNuevaReserva .cal-tarifa-box .tarifa-warn { color: #d97706; font-weight: 700; }
     #modalNuevaReserva .cal-tarifa-box .tarifa-err { color: #dc3545; font-weight: 700; }
 
-    /* ═════════ SPEC DE DISTANCIAS · RV-v1-DBG (tab terminal TIP-v1.3) ═════════
-       TAB DBG   · right:0px · bottom:0px → fundida SIEMPRE en la esquina
-                   inferior-derecha (nunca sube: con 16px de alto cabe bajo
-                   cualquier otro toggle sin tocarlo)
-                 · altura fija 16px · padding lateral 8px
-                 · radius 3px solo sup-izq · borde 1px arriba/izq
-                 · monospace 8px · LED 5px (verde ok / rojo pulsante = error)
-       PANEL     · right:0px · bottom = max(20, vecino + 4px) medido en px
-                   reales con getBoundingClientRect (los toggles ocultos 0×0
-                   no cuentan) · (20 = 16 de tab + 4 de aire mínimo)
-                 · ancho 380px · radius 6px 0 0 0 (cajón pegado al borde)
-       UNICIDAD  · toggle y panel son HERMANOS de #rvTabWrap (el refresco
-                   AJAX interno solo intercambia el wrap: los nodos y el CSS
-                   sobreviven) y unicarDbg() deja UN solo toggle/panel por
-                   página. El respaldo re-crea DENTRO de #rvRoot. */
+    /* ═════════ SPEC DE DISTANCIAS · RV-v1-DBG (tab terminal TIP-v1.3) ═════════ */
     #rvDebugToggle { position: fixed; right: 0; bottom: 0; z-index: 1090; height: 16px; padding: 0 8px; border-radius: 3px 0 0 0; border: 1px solid #1e293b; border-right: 0; border-bottom: 0; background: rgba(2,6,23,.94); color: #64748b; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; font-weight: 700; letter-spacing: .18em; line-height: 1; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-user-select: none; transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
     #rvDebugToggle:hover { color: #38bdf8; border-color: #334155; background: rgba(8,15,30,.97); box-shadow: 0 0 12px rgba(56,189,248,.12); }
     .rv-dbg-led { width: 5px; height: 5px; border-radius: 1px; flex-shrink: 0; background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,.75); }
@@ -632,7 +591,7 @@
 
 @php
     /* ══════════════════════════════════════════════════════════════════════
-       tab-reservas.blade.php · v24 · PHP BACKEND con DEBUG INFO
+       tab-reservas.blade.php · v32-EXC-DBG · PHP BACKEND con DEBUG INFO
        ══════════════════════════════════════════════════════════════════════ */
 
     // ─── 0 · Valores por defecto ─────────────────────────────────────
@@ -677,7 +636,8 @@
             'codigo' => (string) ($r->codigo_reserva ?? ''),
             'uname'  => (string) (optional($r->user)->name ?? 'Sin asignar'),
             'umail'  => (string) (optional($r->user)->email ?? ''),
-            'unid'   => (string) (optional($r->user)->nid ?? ''),
+            'unid'   => (string) (optional($r->user)->nid ?? optional($r->user)->nit ?? ''),
+            'uid'    => (string) ($r->id_user ?? ''), // 🆕 v29-DBG · para el chequeo del límite anual por titular
             'inm'    => (string) (optional($r->inmueble)->name ?? 'N/D'),
             'st'     => $r->id_rsv_statuses,
             'stn'    => (string) (optional($r->status)->name ?? 'Pendiente'),
@@ -753,11 +713,6 @@
     if ($dsStatusesJson === false || $dsStatusesJson === null) { $dsStatusesJson = '[]'; }
 
     // ─── 2d · Estados NO-bloqueantes (Cancelada/Rechazada/Anulada) ─────
-    // 🆕 v25.1 · Se calculan una sola vez y se aplican a KPIs y Agenda,
-    //            para ser consistente con el controlador v27.1 que las
-    //            excluye de fechasOcupadasAjax() y de las validaciones.
-    //            Si una reserva está cancelada NO cuenta como ACTIVA, no
-    //            suma al monto del mes ni a la ocupación.
     $estadosNoBloqueantesIds = [];
     try {
         if (class_exists(\App\Models\Rsv\Status::class)) {
@@ -776,10 +731,6 @@
     ];
 
     // ─── 3 · KPIs reales (excluyendo reservas canceladas) ──────────
-    // 🆕 v25.1 · Las reservas con estado Cancelada/Rechazada/Anulada
-    //            NO cuentan para ACTIVAS, MES ni OCUP., porque no están
-    //            vigentes. Consistente con el controlador v27.1 que las
-    //            excluye del calendario y de las validaciones.
     try {
         if (class_exists(\App\Models\Rsv\Reserva::class)) {
             $qK = \App\Models\Rsv\Reserva::query();
@@ -815,14 +766,6 @@
     } catch (\Throwable $e) { /* KPIs en guion */ }
 
     // ─── 4 · Agenda de la fecha seleccionada ─────────────────────────
-    // 🆕 v25.1 · Las reservas canceladas/rechazadas/anuladas se marcan
-    //            con `cancelada = true` para que la vista pueda:
-    //              · Mostrarlas con estilo visual diferenciado (tachado,
-    //                badge "NO VIGENTE").
-    //              · NO contarlas en los badges de LLEGADAS/SALIDAS del
-    //                toggle de la agenda (solo se cuentan las vigentes).
-    //            Sí se muestran en el listado para que el usuario sepa
-    //            que existían y fueron canceladas (informativo).
     $esEstadoNoBloqueante = function ($r) use ($estadosNoBloqueantesIds) {
         if (empty($estadosNoBloqueantesIds)) return false;
         $sid = $r->id_rsv_statuses ?? null;
@@ -853,9 +796,6 @@
     } catch (\Throwable $e) { $agendaHoy = collect(); }
 
     // ─── 5 · Preparador de item de agenda ────────────────────────────
-    // 🆕 v25.1 · Agrega flag `cancelada` para que la vista pueda aplicar
-    //            estilos visuales (tachado, badge NO VIGENTE) y diferenciar
-    //            las reservas vigentes de las canceladas/rechazadas/anuladas.
     $agPrep = function ($item) {
         $out = ['ok' => false];
         $r = $item['r'] ?? null;
@@ -984,95 +924,169 @@
         $phpDebugLogs[] = ['err', 'Ruta rsv.reservas.fechas-ocupadas NO registrada: ' . $e->getMessage()];
     }
 
-    // 🆕 v26 · Log del refresco AJAX (la URL ya se resolvió en el @php
-    // temprano del inicio del partial, ANTES de imprimir data-fragmento).
     $phpDebugLogs[] = !empty($rvFragmentoUrl)
         ? ['ok', 'Refresco AJAX: fragmento → ' . $rvFragmentoUrl]
         : ['warn', 'Refresco AJAX: ruta de fragmento NO registrada (admin.reservas.fragmento) → al crear reserva se recargará la página completa'];
-    // 🆕 v24 · Usuario logueado (para chip de respuesta rápida "Reserva creada por usuario X")
+
     $authUserName = auth()->check() ? (auth()->user()->name ?? 'admin') : 'admin';
 
-    // 🆕 v27-DBG · Marcador de versión del panel de debug (TIP-v1.3 · canónico BLQ-v1-2)
-    $phpDebugLogs[] = ['ok', 'RV-v1-DBG · panel debug TIP-v1.3 activo · tab DBG terminal + LED + panel cajón 380px (hermanos de #rvTabWrap, sobreviven al refresco AJAX)'];
+    $phpDebugLogs[] = ['ok', 'RV-v1-DBG · panel debug TIP-v1.3 activo · diseño unificado FIN-v2.0 / CAL-v3.5'];
 
     $phpDebugJson = json_encode($phpDebugLogs, $dsJsonFlags);
+
+    // Conteos de Agenda para los KPIs y el botón de Agenda
+    $agendaHoyVigentes  = ($agendaHoy ?? collect())->where('cancelada', false);
+    $llegadasVigentes   = $agendaHoyVigentes->where('tipo', 'LLEGADA')->count();
+    $salidasVigentes    = $agendaHoyVigentes->where('tipo', 'SALIDA')->count();
+    $llegadasCanceladas = ($agendaHoy ?? collect())->where('tipo', 'LLEGADA')->where('cancelada', true)->count();
+    $salidasCanceladas  = ($agendaHoy ?? collect())->where('tipo', 'SALIDA')->where('cancelada', true)->count();
 @endphp
 
 
-<!-- HEADER -->
-<div class="d-flex justify-content-between align-items-center mb-2 flex-wrap" style="gap: 8px;">
-    <h6 class="fw-bold mb-0" style="font-size: 9.5px; color: #334155;">
-        <i class="bi bi-calendar2-check me-1" style="font-size: 8px; color: #5d8a70;"></i>
-        {{ ($modoGlobal ?? true) ? 'Reservas Globales del Sistema' : 'Reservas del Inmueble' }}
-        <span class="badge rounded-pill ms-1" id="rvChipVer" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; vertical-align: middle; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em;">RV-v1-DBG</span>
-    </h6>
-    <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-        @if(!($modoGlobal ?? true) && ($xlsInmId ?? null))
-            <span class="ctx-chip" title="Vista filtrada por inmueble">
-                <i class="bi bi-funnel-fill"></i>
-                {{ (is_object($xlsInm ?? null) ? ($xlsInm->name ?? null) : null) ?? ('Inmueble #'.($xlsInmId ?? '—')) }}
-            </span>
-        @endif
-        <span class="count-badge">
-            <i class="bi bi-list-ol" style="font-size: 7.5px; color: #b3bcc7;"></i>
-            <span id="rvBadgeTxt"><b>{{ $dsTotalContexto }}</b> reservas</span>
-        </span>
-        <button type="button" id="rvExport" class="btn-mini d-inline-flex align-items-center gap-1" title="Descarga en Excel TODO el resultado filtrado">
-            <i class="bi bi-download" style="font-size: 8px;"></i> Exportar
-        </button>
-        <button type="button" class="btn-green d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
-            <i class="bi bi-plus-lg" style="font-size: 8px;"></i> Nueva Reserva
-        </button>
+{{-- 1. HERO BANNER RESERVAS (MISMO ESTILO QUE FIN-v2.0-DBG Y CAL-v3.5-DBG) --}}
+<div class="rv-hero-pro">
+    <i class="bi bi-calendar2-check hero-watermark"></i>
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 position-relative" style="z-index: 2;">
+        <div style="max-width: 680px;">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-success text-white fw-bold" style="font-size: 7.5px; letter-spacing: .5px; text-transform: uppercase;">
+                    <i class="bi bi-shield-check me-1"></i> Ecosistema de Reservas RSV
+                </span>
+                <span class="badge rounded-pill" id="rvChipVer" style="font-size: 7px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #334155; font-family: ui-monospace, monospace;">
+                    RV-v32-EXC-DBG
+                </span>
+                @if(!($modoGlobal ?? true) && ($xlsInmId ?? null))
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 7px;">
+                        <i class="bi bi-funnel-fill me-1"></i>{{ (is_object($xlsInm ?? null) ? ($xlsInm->name ?? null) : null) ?? ('Inmueble #'.($xlsInmId ?? '—')) }}
+                    </span>
+                @endif
+            </div>
+            <h6 class="fw-bold text-white mb-1" style="font-size: 14px;">
+                {{ ($modoGlobal ?? true) ? 'Centro de Control de Reservas Globales del Sistema' : 'Centro de Control de Reservas del Inmueble' }}
+            </h6>
+            <p class="mb-2 text-light opacity-75" style="font-size: 9.5px;">
+                Administra reservaciones, verifica disponibilidad por temporada y alistamiento, supervisa la agenda diaria de llegadas/salidas y exporta reportes filtrados en tiempo real.
+            </p>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="rv-hero-btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevaReserva">
+                    <i class="bi bi-plus-lg"></i> Nueva Reserva
+                </button>
+                <button type="button" class="rv-hero-btn-outline js-rv-go-subtab" data-sub="reservas">
+                    <i class="bi bi-journal-check"></i> Gestionar Expedientes ({{ $dsTotalContexto }})
+                </button>
+                <button type="button" class="rv-hero-btn-outline js-rv-go-subtab" data-sub="huespedes">
+                    <i class="bi bi-people"></i> Huéspedes
+                </button>
+                <button type="button" class="rv-hero-btn-outline js-rv-go-subtab" data-sub="estados">
+                    <i class="bi bi-flag"></i> Estados
+                </button>
+                <button type="button" id="rvExport" class="rv-hero-btn-outline" title="Descarga en Excel TODO el resultado filtrado">
+                    <i class="bi bi-download"></i> Exportar Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="text-md-end">
+            <div class="lbl text-light opacity-50">Volumen Mensual Vigente</div>
+            <div class="fw-bold text-success num" style="font-size: 19px; line-height: 1.15;">
+                {{ !is_null($kpiMontoMes ?? null) ? '$'.number_format($kpiMontoMes, 0) : '$0' }} <span style="font-size: 9px; color: #94a3b8;">COP</span>
+            </div>
+            <div class="sub text-light opacity-75" style="font-size: 8px;">
+                <span id="rvBadgeTxt"><b>{{ $dsTotalContexto }}</b> reservas en contexto</span>
+            </div>
+        </div>
     </div>
 </div>
 
+{{-- 2. TARJETAS KPI DE RESERVAS (MISMO ESTILO QUE FIN-v2.0-DBG Y CAL-v3.5-DBG) --}}
+<div class="rv-kpi-grid">
+    <div class="rv-kpi-card js-rv-go-subtab" data-sub="reservas" title="Ver y gestionar todas las reservas del contexto">
+        <div>
+            <div class="lbl">Total en Contexto</div>
+            <div class="val num" style="font-size: 13px; color: var(--ink-2);">{{ $dsTotalContexto }}</div>
+            <div class="sub"><b>{{ $dsCol->count() }}</b> cargadas en vivo</div>
+        </div>
+        <div class="rv-kpi-icon" style="color:#1d4ed8; background:#eff6ff; border-color:#bfdbfe;">
+            <i class="bi bi-journal-bookmark-fill"></i>
+        </div>
+    </div>
 
-<!-- KPIs -->
-<div class="d-flex flex-wrap align-items-center gap-1.5 mb-2">
-    <span class="kpi"><span class="dot" style="color:#a3cfb6;"></span><span class="kpi-l">ACTIVAS</span><b>{{ $kpiActivas ?? '—' }}</b></span>
-    <span class="kpi"><span class="dot" style="color:#a9cfe8;"></span><span class="kpi-l">MES</span><b>{{ !is_null($kpiMontoMes ?? null) ? '$'.number_format($kpiMontoMes, 0) : '—' }}</b></span>
-    <span class="kpi"><span class="dot" style="color:#cdb4e4;"></span><span class="kpi-l">OCUP.</span><b>{{ $kpiOcupacion ?? '—' }}</b></span>
+    <div class="rv-kpi-card" title="Reservas vigentes con huéspedes alojados hoy">
+        <div>
+            <div class="lbl">En Curso Hoy</div>
+            <div class="val num" style="font-size: 13px; color: #15803d;">{{ $kpiActivas ?? '—' }}</div>
+            <div class="sub">ocupación activa hoy</div>
+        </div>
+        <div class="rv-kpi-icon" style="color:#15803d; background:#f0fdf4; border-color:#bbf7d0;">
+            <i class="bi bi-house-check"></i>
+        </div>
+    </div>
+
+    <div class="rv-kpi-card" title="Monto acumulado y porcentaje de ocupación del mes actual (excluye canceladas)">
+        <div>
+            <div class="lbl">Ocupación del Mes</div>
+            <div class="val num" style="font-size: 13px; color: #b45309;">{{ $kpiOcupacion ?? '—' }}</div>
+            <div class="sub">Mes: <b>{{ !is_null($kpiMontoMes ?? null) ? '$'.number_format($kpiMontoMes, 0) : '—' }}</b></div>
+        </div>
+        <div class="rv-kpi-icon" style="color:#b45309; background:#fffbeb; border-color:#fde68a;">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+    </div>
+
+    <div class="rv-kpi-card" data-bs-toggle="collapse" data-bs-target="#agendaHoyBox" title="Clic para desplegar u ocultar la Agenda del día">
+        <div>
+            <div class="lbl">Agenda ({{ ($esAgendaHoy ?? true) ? 'Hoy' : $agendaFecha->format('d/m') }})</div>
+            <div class="val num" style="font-size: 12.5px; color: #3d7a5c;">
+                <span style="color:#15803d;">↓{{ $llegadasVigentes }}</span> · <span style="color:#b91c1c;">↑{{ $salidasVigentes }}</span>
+            </div>
+            <div class="sub">llegadas y salidas</div>
+        </div>
+        <div class="rv-kpi-icon" style="color:#3d7a5c; background:#f0f7f2; border-color:#d5e7dc;">
+            <i class="bi bi-calendar-day"></i>
+        </div>
+    </div>
 </div>
 
 
 <!-- AGENDA · hoy o fecha puntual -->
 <div class="mb-2">
-    <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
-        <button type="button" class="rv-agenda-toggle" data-bs-toggle="collapse" data-bs-target="#agendaHoyBox" aria-expanded="false">
-            <i class="bi bi-calendar-day" style="font-size: 8px;"></i>
-            Agenda
-            @php
-                $agendaHoyVigentes  = ($agendaHoy ?? collect())->where('cancelada', false);
-                $llegadasVigentes   = $agendaHoyVigentes->where('tipo', 'LLEGADA')->count();
-                $salidasVigentes    = $agendaHoyVigentes->where('tipo', 'SALIDA')->count();
-                $llegadasCanceladas = ($agendaHoy ?? collect())->where('tipo', 'LLEGADA')->where('cancelada', true)->count();
-                $salidasCanceladas  = ($agendaHoy ?? collect())->where('tipo', 'SALIDA')->where('cancelada', true)->count();
-            @endphp
-            <span class="lg"><i class="bi bi-arrow-down-right"></i> {{ $llegadasVigentes }}@if($llegadasCanceladas > 0)<span class="text-muted" title="{{ $llegadasCanceladas }} cancelada(s)">+{{ $llegadasCanceladas }}<i class="bi bi-slash-circle" style="font-size:7px;"></i></span>@endif</span>
-            <span class="sl"><i class="bi bi-arrow-up-right"></i> {{ $salidasVigentes }}@if($salidasCanceladas > 0)<span class="text-muted" title="{{ $salidasCanceladas }} cancelada(s)">+{{ $salidasCanceladas }}<i class="bi bi-slash-circle" style="font-size:7px;"></i></span>@endif</span>
-            <i class="bi bi-chevron-down" style="font-size: 7px;"></i>
-        </button>
-        <span class="ag-fecha-chip {{ ($esAgendaHoy ?? true) ? '' : 'other' }}" title="Fecha consultada en la agenda">
-            <i class="bi {{ ($esAgendaHoy ?? true) ? 'bi-sun-fill' : 'bi-calendar-event' }}"></i>
-            @if($esAgendaHoy ?? true)
-                HOY · {{ $agendaFecha->translatedFormat('d M') }}
-            @else
-                {{ $agendaFecha->translatedFormat('D d/m/Y') }}
-            @endif
-        </span>
-        <div class="d-flex align-items-center" style="gap: 5px;" title="Validar una fecha puntual">
-            <i class="bi bi-calendar-event" style="font-size: 8.5px; color: #c3ccd6;"></i>
-            <input type="date" id="agendaFechaInput" class="xls-date" style="width: 118px;"
-                   value="{{ $agendaFecha->toDateString() }}" title="Elija la fecha y presione Consultar (o Enter)">
-            <button type="button" id="agendaConsultarBtn" class="ag-consultar" title="Consultar la fecha elegida (refresca SOLO el tab · sin recargar el dashboard)">
-                <i class="bi bi-arrow-right-circle"></i> Consultar
+    <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap: 8px;">
+        <div class="d-flex align-items-center flex-wrap" style="gap: 8px;">
+            <button type="button" class="rv-agenda-toggle" data-bs-toggle="collapse" data-bs-target="#agendaHoyBox" aria-expanded="false">
+                <i class="bi bi-calendar-day" style="font-size: 8px;"></i>
+                Agenda
+                <span class="lg"><i class="bi bi-arrow-down-right"></i> {{ $llegadasVigentes }}@if($llegadasCanceladas > 0)<span class="text-muted" title="{{ $llegadasCanceladas }} cancelada(s)">+{{ $llegadasCanceladas }}<i class="bi bi-slash-circle" style="font-size:7px;"></i></span>@endif</span>
+                <span class="sl"><i class="bi bi-arrow-up-right"></i> {{ $salidasVigentes }}@if($salidasCanceladas > 0)<span class="text-muted" title="{{ $salidasCanceladas }} cancelada(s)">+{{ $salidasCanceladas }}<i class="bi bi-slash-circle" style="font-size:7px;"></i></span>@endif</span>
+                <i class="bi bi-chevron-down" style="font-size: 7px;"></i>
             </button>
+            <span class="ag-fecha-chip {{ ($esAgendaHoy ?? true) ? '' : 'other' }}" title="Fecha consultada en la agenda">
+                <i class="bi {{ ($esAgendaHoy ?? true) ? 'bi-sun-fill' : 'bi-calendar-event' }}"></i>
+                @if($esAgendaHoy ?? true)
+                    HOY · {{ $agendaFecha->translatedFormat('d M') }}
+                @else
+                    {{ $agendaFecha->translatedFormat('D d/m/Y') }}
+                @endif
+            </span>
+            <div class="d-flex align-items-center" style="gap: 5px;" title="Validar una fecha puntual">
+                <i class="bi bi-calendar-event" style="font-size: 8.5px; color: #c3ccd6;"></i>
+                <input type="date" id="agendaFechaInput" class="xls-date" style="width: 118px;"
+                       value="{{ $agendaFecha->toDateString() }}" title="Elija la fecha y presione Consultar (o Enter)">
+                <button type="button" id="agendaConsultarBtn" class="ag-consultar" title="Consultar la fecha elegida (refresca SOLO el tab · sin recargar el dashboard)">
+                    <i class="bi bi-arrow-right-circle"></i> Consultar
+                </button>
+            </div>
+            @if(!($esAgendaHoy ?? true))
+                <a href="{{ request()->fullUrlWithQuery(['agenda_fecha' => null]) }}" id="agendaHoyBtn" class="ag-hoy-btn" title="Volver a la agenda de hoy (refresca SOLO el tab)">
+                    <i class="bi bi-arrow-counterclockwise" style="font-size: 7px;"></i> Ir a hoy
+                </a>
+            @endif
         </div>
-        @if(!($esAgendaHoy ?? true))
-            <a href="{{ request()->fullUrlWithQuery(['agenda_fecha' => null]) }}" id="agendaHoyBtn" class="ag-hoy-btn" title="Volver a la agenda de hoy (refresca SOLO el tab)">
-                <i class="bi bi-arrow-counterclockwise" style="font-size: 7px;"></i> Ir a hoy
-            </a>
-        @endif
+
+        <div class="d-flex align-items-center flex-wrap" style="gap: 6px;">
+            <span class="kpi"><span class="dot" style="color:#a3cfb6;"></span><span class="kpi-l">ACTIVAS</span><b>{{ $kpiActivas ?? '—' }}</b></span>
+            <span class="kpi"><span class="dot" style="color:#a9cfe8;"></span><span class="kpi-l">MES</span><b>{{ !is_null($kpiMontoMes ?? null) ? '$'.number_format($kpiMontoMes, 0) : '—' }}</b></span>
+            <span class="kpi"><span class="dot" style="color:#cdb4e4;"></span><span class="kpi-l">OCUP.</span><b>{{ $kpiOcupacion ?? '—' }}</b></span>
+        </div>
     </div>
     <div class="collapse mt-1" id="agendaHoyBox">
         <div class="border rounded-3 overflow-hidden" style="border-color: var(--grid) !important; background: #fff;">
@@ -1249,11 +1263,12 @@
                                     <option value="">—</option>
                                     @foreach($modalUsers as $u)
                                         @php
-                                            $searchBlob = strtolower(trim(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . ($u->nid ?? '')));
-                                            $userLabel = $u->name . (!empty($u->nid) ? ' · CC '.$u->nid : '') . (!empty($u->email) ? ' · '.$u->email : '');
+                                            $docU = $u->nid ?? $u->nit ?? '';
+                                            $searchBlob = strtolower(trim(($u->name ?? '') . ' ' . ($u->email ?? '') . ' ' . $docU));
+                                            $userLabel = $u->name . (!empty($docU) ? ' · CC '.$docU : '') . (!empty($u->email) ? ' · '.$u->email : '');
                                         @endphp
                                         <option value="{{ $u->id }}"
-                                                data-nid="{{ $u->nid ?? '' }}"
+                                                data-nid="{{ $docU }}"
                                                 data-search="{{ $searchBlob }}"
                                                 data-label="{{ $userLabel }}">
                                             {{ $userLabel }}
@@ -1277,7 +1292,7 @@
                             <span class="me-2"><span class="cal-dot cal-dot-free"></span> Libre</span>
                             <span class="me-2"><span class="cal-dot cal-dot-occ"></span> Reservada</span>
                             <span class="me-2"><span class="cal-dot cal-dot-ali"></span> 🧹 Alistamiento</span>
-                            <span class="me-2"><span class="cal-dot cal-dot-sel"></span> Seleleccionada</span>
+                            <span class="me-2"><span class="cal-dot cal-dot-sel"></span> Seleccionada</span>
                             <span class="me-2"><span class="cal-dot cal-dot-past"></span> Pasada</span>
                         </div>
                         <div id="calSelInfo" class="cal-sel-info mt-1">
@@ -1310,7 +1325,7 @@
                                         @php
                                             $oActive = isset($o->active) ? (bool) $o->active : true;
                                             $oLabel = $o->nombre ?? $o->name ?? $o->titulo ?? ('Origen #' . $o->id);
-                                            $isThird = ($i === 2); // 🆕 v24 · 3ra opción preseleccionada
+                                            $isThird = ($i === 2);
                                         @endphp
                                         <option value="{{ $o->id }}"
                                                 @if($isThird) selected @endif
@@ -1394,13 +1409,8 @@
 {{-- DATASET + logs PHP --}}
 <script type="application/json" id="rvDataset">{!! $dsJson !!}</script>
 <script type="application/json" id="rvStatuses">{!! $dsStatusesJson !!}</script>
+<script type="application/json" id="rvNoBloqueantes">{!! json_encode(array_values(array_map('intval', $estadosNoBloqueantesIds))) !!}</script>
 <script type="application/json" id="rvPhpDebug">{!! $phpDebugJson !!}</script>
-
-
-{{-- 🆕 v27-DBG · El botón flotante y el panel de debug subieron a HERMANOS de
-   #rvTabWrap (al inicio del partial, antes de abrir el wrap): el refresco
-   AJAX interno solo intercambia el wrap, así que los nodos DBG y sus logs
-   sobreviven sin parches. Diseño TIP-v1.3 aprobado (canónico BLQ-v1-2). --}}
 
 
 {{-- 🆕 v25.2 · MODAL DETALLE DE RESERVA (botón "Detalle" de la tabla) --}}
@@ -1468,23 +1478,15 @@
 <script>
     function rvTabInit() {
 
-        /* ═══ 0) PANEL DE DEBUG LOCAL RV-v1-DBG (diseño TIP-v1.3 aprobado · canónico BLQ-v1-2) ═══
-           IIFE propia con $ por id: no toca el resto del script.
-           Exclusiva de esta vista: los nodos son HTML del fragmento (hermanos
-           de #rvTabWrap, sobreviven al refresco AJAX interno que solo
-           intercambia el wrap) y el respaldo solo re-crea DENTRO de #rvRoot.
-           Nada se cuelga de document.body. */
+        /* ═══ 0) PANEL DE DEBUG LOCAL RV-v1-DBG (diseño TIP-v1.3 aprobado · canónico BLQ-v1-2) ═══ */
         var DBG = (window.RvDbg && window.RvDbg.alive && window.RvDbg.alive())
             ? window.RvDbg
             : (function () {
                 var MAX = 250, numErr = 0;
                 function $(id) { return document.getElementById(id); }
                 function asegurarNodos() {
-                    /* Respaldo: si un swap externo borrara los nodos (normalmente
-                       viven como hermanos de #rvTabWrap), se re-crean DENTRO del root.
-                       Cero document.body (exclusividad total). */
                     var rootDbg = document.getElementById('rvRoot');
-                    if (!rootDbg) { return; } // sin vista montada → cero nodos
+                    if (!rootDbg) { return; }
                     if (!$('rvDebugToggle')) {
                         var t = document.createElement('div');
                         t.id = 'rvDebugToggle';
@@ -1506,24 +1508,20 @@
                     }
                     apilar();
                 }
-                /* RV-v1-DBG: la TAB se queda SIEMPRE abajo (bottom:0, nunca se
-                   apila: con 16px de alto cabe bajo cualquier otro toggle sin
-                   tocarlo). Solo el PANEL esquiva a los vecinos de las otras
-                   vistas: bottom = max(20, vecino + 4) en píxeles reales. */
                 function apilar() {
-                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'psDbgToggle', 'audDbgToggle', 'infDbgToggle', 'stDbgToggle']; // serie completa de hermanos
+                    var ids = ['rsvShowDebugToggle', 'rhDebugToggle', 'rhDbgToggle', 'rvDebugToggle', 'inmDbgToggle', 'catDbgToggle', 'tarDbgToggle', 'gmDbgToggle', 'tipDbgToggle', 'calDbgToggle', 'blqDbgToggle', 'finDbgToggle', 'psDbgToggle', 'trxDbgToggle', 'audDbgToggle', 'infDbgToggle', 'stDbgToggle'];
                     var ocupado = 0;
                     for (var i = 0; i < ids.length; i++) {
                         var el = $(ids[i]);
                         if (!el) { continue; }
                         var r = el.getBoundingClientRect();
-                        if (!r.width && !r.height) { continue; } // oculto 0×0 no ocupa sitio
-                        var desdeAbajo = window.innerHeight - r.top; // cuánto sube ese vecino desde el fondo
+                        if (!r.width && !r.height) { continue; }
+                        var desdeAbajo = window.innerHeight - r.top;
                         if (desdeAbajo > ocupado) { ocupado = desdeAbajo; }
                     }
                     var t = $('rvDebugToggle'), p = $('rvDebugPanel');
-                    if (t) { t.style.bottom = '0px'; } // SIEMPRE pegada abajo
-                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; } // 16 tab + 4 aire
+                    if (t) { t.style.bottom = '0px'; }
+                    if (p) { p.style.bottom = Math.max(20, Math.ceil(ocupado + 4)) + 'px'; }
                 }
                 function hora() {
                     var d = new Date();
@@ -1585,13 +1583,10 @@
                 return api;
             })();
         if (!DBG) { return; }
-        DBG.ensure(); // re-apila y re-crea nodos si algún swap externo los reemplazó
+        DBG.ensure();
         function dbgLog(level, msg) { if (DBG && DBG.log) { DBG.log(msg, level); } }
 
         function unicarDbg() {
-            /* RV-v1-DBG: el parcial puede renderizarse 2+ veces; el HTML de cada
-               copia trae sus propios nodos DBG → se conservan los del primero y
-               se eliminan los duplicados (un solo toggle/panel por página). */
             var ts = document.querySelectorAll('#rvDebugToggle');
             for (var i = 1; i < ts.length; i++) { if (ts[i] && ts[i].remove) { ts[i].remove(); } }
             var ps = document.querySelectorAll('#rvDebugPanel');
@@ -1599,8 +1594,6 @@
         }
         unicarDbg();
 
-        /* Botones del panel por DELEGACIÓN en document (sobreviven a los swaps;
-           el guard __rvDbgDocHandler garantiza que se registran UNA sola vez) */
         if (window.__rvDbgDocHandler) { document.removeEventListener('click', window.__rvDbgDocHandler); }
         window.__rvDbgDocHandler = function (e) {
             var t = e.target;
@@ -1609,6 +1602,23 @@
             if (t.closest('#rvDbgClose')) { e.stopPropagation(); DBG.close(); return; }
             if (t.closest('#rvDbgClear')) { e.stopPropagation(); DBG.clear(); return; }
             if (t.closest('#rvDbgCopy')) { e.stopPropagation(); DBG.copy(); return; }
+
+            // Navegación desde el Hero Banner / KPIs a las sub-pestañas de Reservas
+            var btnSub = t.closest('.js-rv-go-subtab');
+            if (btnSub && btnSub.closest('#rvRoot')) {
+                e.preventDefault();
+                var sub = btnSub.getAttribute('data-sub') || 'reservas';
+                var mapaSub = {
+                    reservas:  '[data-bs-target="#res-sub-reservas"], [data-bs-target="#single-res-sub-reservas"]',
+                    huespedes: '[data-bs-target="#res-sub-huespedes"], [data-bs-target="#single-res-sub-huespedes"]',
+                    estados:   '[data-bs-target="#res-sub-status"], [data-bs-target="#single-res-sub-status"]'
+                };
+                var btnDest = document.querySelector(mapaSub[sub] || mapaSub.reservas);
+                if (btnDest) {
+                    dbgLog('info', 'Navegando a sub-pestaña de Reservas: ' + sub);
+                    btnDest.click();
+                }
+            }
         };
         document.addEventListener('click', window.__rvDbgDocHandler);
         if (window.__rvDbgDblHandler) { document.removeEventListener('dblclick', window.__rvDbgDblHandler); }
@@ -1617,8 +1627,6 @@
         };
         document.addEventListener('dblclick', window.__rvDbgDblHandler);
 
-        /* Al mostrarse la pestaña que contiene este parcial, re-apila (los
-           toggles ocultos 0×0 no cuentan hasta que la pestaña es visible) */
         if (window.__rvDbgTabHandler) { document.removeEventListener('shown.bs.tab', window.__rvDbgTabHandler); }
         window.__rvDbgTabHandler = function () {
             if (DBG && DBG.alive && DBG.alive()) { DBG.ensure(); }
@@ -1649,6 +1657,14 @@
         } catch (e) { DS = []; dbgLog('err', 'Error parseando dataset: ' + e.message); }
         if (!Array.isArray(DS)) { DS = []; }
 
+        var RV_NO_BLOQ = [];
+        try {
+            var rawNB = document.getElementById('rvNoBloqueantes');
+            RV_NO_BLOQ = JSON.parse(rawNB ? (rawNB.textContent || '[]') : '[]');
+        } catch (e) { RV_NO_BLOQ = []; }
+        if (!Array.isArray(RV_NO_BLOQ)) { RV_NO_BLOQ = []; }
+        dbgLog('info', '<b>Límite anual v29</b>: chequeo client-side activo · estados no-bloqueantes=' + (RV_NO_BLOQ.length ? RV_NO_BLOQ.join(',') : 'NINGUNO') + ' · 🆕 v31-EXC: salto de admin disponible (detalle → campo de observación)');
+
         var PAGE_SIZE = 15;
         var page = 1;
         var q = ''; var statusF = ''; var fDesde = ''; var fHasta = '';
@@ -1672,7 +1688,6 @@
             var s = String(stn || '').toLowerCase();
             if (s.indexOf('confirm') !== -1 || s.indexOf('activ') !== -1) return 'text-success';
             if (s.indexOf('pendien') !== -1) return 'text-warning';
-            // 🆕 v25.1 · incluir 'anulad' (Anulada/Anulado) para consistencia con controlador v27.1
             if (s.indexOf('cancela') !== -1 || s.indexOf('rechaz') !== -1 || s.indexOf('anulad') !== -1) return 'text-danger';
             return 'text-secondary';
         }
@@ -1713,7 +1728,7 @@
             var term = q.replace(/#/g, '').toLowerCase().trim();
             var dD = fDesde ? midnight(fDesde) : null;
             var dH = fHasta ? midnight(fHasta) : null;
-            return DS.filter(function (r) {
+            var lista = DS.filter(function (r) {
                 if (term) {
                     var blob = (r.codigo + ' ' + r.uname + ' ' + r.umail + ' ' + r.unid + ' ' + r.inm + ' ' + (r.com || '')).toLowerCase();
                     if (blob.indexOf(term) === -1) return false;
@@ -1724,16 +1739,23 @@
                 if (dH) { if (!fi || fi.getTime() > dH.getTime()) return false; }
                 return true;
             });
+
+            if (sortAttr) {
+                lista.sort(function (a, b) {
+                    var va = sortAttr === 'monto' ? Number(a.monto || 0) : (a.fi || '');
+                    var vb = sortAttr === 'monto' ? Number(b.monto || 0) : (b.fi || '');
+                    if (va < vb) return sortDir === 'asc' ? -1 : 1;
+                    if (va > vb) return sortDir === 'asc' ? 1 : -1;
+                    return 0;
+                });
+            }
+            return lista;
         }
 
         function filaHTML(r, nGlobal) {
             var fi = midnight(r.fi), ff = midnight(r.ff);
             var hoy = HOY;
             var noches = (fi && ff) ? Math.abs(dayDiff(fi, ff)) : null;
-            // 🆕 v25.1 · Detectar si la reserva está NO-VIGENTE (cancelada/rechazada/anulada)
-            //           Para NO mostrar badges de "EN CURSO", "HOY", "MAÑANA" ni
-            //           resaltar la fila como row-today, ya que no está activa.
-            //           Consistente con el controlador v27.1 que la excluye.
             var stnLow = String(r.stn || '').toLowerCase();
             var noVigente = (stnLow.indexOf('cancela') !== -1
                           || stnLow.indexOf('rechaz') !== -1
@@ -1741,7 +1763,6 @@
             var enCurso = false, pct = 0, cdTxt = '—', cdCls = 'cd-done';
             if (fi && ff && hoy >= fi && hoy <= ff) {
                 if (noVigente) {
-                    // Reserva cancelada cuya ventana temporal incluye hoy → NO está "en curso"
                     cdTxt = 'NO VIGENTE'; cdCls = 'cd-done';
                 } else {
                     enCurso = true;
@@ -1751,14 +1772,12 @@
             } else if (fi) {
                 var dias = dayDiff(fi, hoy);
                 if (noVigente) {
-                    // Cancelada: no mostrar HOY/MAÑANA/+Nd porque no va a ocurrir
                     cdTxt = 'NO VIGENTE'; cdCls = 'cd-done';
                 } else if (dias === 0) { cdTxt = 'HOY'; cdCls = 'cd-today'; }
                 else if (dias === 1) { cdTxt = 'MAÑANA'; cdCls = 'cd-next'; }
                 else if (dias > 1) { cdTxt = '+' + dias + 'd'; cdCls = 'cd-future'; }
                 else if (dias < 0) { cdTxt = 'FIN'; cdCls = 'cd-done'; }
             }
-            // 🆕 v25.1 · Solo marcar row-today si es llegada HOY y la reserva está vigente
             var llegaHoy = (fi && !noVigente) ? (dayDiff(fi, hoy) === 0) : false;
             var dot = statusDot(r.stn);
             var h = '';
@@ -1929,7 +1948,6 @@
                 var a = document.createElement('a');
                 a.href = url; a.download = 'Reservas_' + ctx.replace(/[^a-z0-9]+/gi, '_') + '_' + fArchivo + '.xls';
                 a.style.display = 'none'; a.click();
-                // setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
             } catch (e) {
                 var blob2 = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8' });
                 var url2 = URL.createObjectURL(blob2);
@@ -1999,20 +2017,11 @@
 
         /* ═══════════════════════════════════════════════════════════════
            🆕 v28-DBG · AGENDA DENTRO DEL FRAGMENTO
-           "Consultar" (botón), Enter (input) e "Ir a hoy" (enlace) ya NO
-           recargan el dashboard: re-piden SOLO este partial al endpoint
-           reservasFragmento (data-fragmento de #rvTabWrap) con agenda_fecha
-           ajustada y reemplazan el wrap en caliente — el mismo mecanismo
-           del alta de reservas (v26). El dashboard, el calendario grande y
-           el panel de debug quedan vivos; cada paso queda en el panel DBG.
-           Fallback: navegación completa con el parámetro si la ruta del
-           fragmento no existe o el fetch falla (comportamiento anterior).
            ═══════════════════════════════════════════════════════════════ */
         var agDate = document.getElementById('agendaFechaInput');
         var agGo   = document.getElementById('agendaConsultarBtn');
         var agHoy  = document.getElementById('agendaHoyBtn');
 
-        /* URL del dashboard con agenda_fecha ajustada (fallback de navegación) */
         function urlNavegacionAgenda(fechaIso) {
             try {
                 var url = new URL(window.location.href);
@@ -2025,7 +2034,6 @@
         function recargarAgendaFragmento(fechaIso) {
             var wrap = document.getElementById('rvTabWrap');
             var fragUrl = wrap ? (wrap.getAttribute('data-fragmento') || '') : '';
-            /* Sin ruta de fragmento → navegación completa (como antes) */
             if (!fragUrl) {
                 dbgLog('warn', 'Agenda: ruta de fragmento no disponible → navegación completa (agenda_fecha=' + (fechaIso || 'hoy') + ')');
                 var urlNav = urlNavegacionAgenda(fechaIso);
@@ -2041,7 +2049,6 @@
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
                 .then(function (resp) {
                     if (!resp.ok) {
-                        /* v26.1 · extrae el mensaje REAL del backend si viene */
                         return resp.text().then(function (bt) {
                             var er = new Error('HTTP ' + resp.status);
                             er.__body = bt || '';
@@ -2093,8 +2100,6 @@
                 if (e.key === 'Enter') { e.preventDefault(); irAFechaAgenda(); }
             });
         }
-        /* "Ir a hoy" · con ruta de fragmento refresca SOLO el tab; sin ruta
-           deja navegar el href completo del enlace (como siempre). */
         if (agHoy) {
             agHoy.addEventListener('click', function (e) {
                 var wrapHoy = document.getElementById('rvTabWrap');
@@ -2107,12 +2112,6 @@
 
         /* ═══════════════════════════════════════════════════════════════
            🆕 v24 · AUTOCOMPLETE DE TITULAR (input + dropdown flotante)
-           · Solo el input es visible, el select queda oculto.
-           · Al escribir, se filtran los titulares y se muestran en el dropdown.
-           · Click en un item → se setea el value del select y se muestra
-             un chip con el nombre del titular seleccionado.
-           · El chip tiene botón X para borrar la selección.
-           · Navegación con flechas ↑/↓ y Enter para seleccionar el activo.
            ═══════════════════════════════════════════════════════════════ */
         var fldUserSearch  = document.getElementById('fldUserSearch');
         var fldUser        = document.getElementById('fldUser');
@@ -2121,7 +2120,6 @@
         var userCountLbl   = document.getElementById('userCountLbl');
         var userCountTxt   = document.getElementById('userCountTxt');
 
-        // Guardar TODAS las options del select en memoria (con su data)
         var userOriginalData = [];
         if (fldUser) {
             userOriginalData = Array.from(fldUser.querySelectorAll('option')).map(function(opt) {
@@ -2132,7 +2130,7 @@
                     dataNid: opt.getAttribute('data-nid') || '',
                     dataSearch: opt.getAttribute('data-search') || ''
                 };
-            }).filter(function(o) { return o.value !== ''; }); // excluir placeholder
+            }).filter(function(o) { return o.value !== ''; });
 
             dbgLog('ok', 'Titulares cargados para autocomplete: ' + userOriginalData.length);
             if (userCountLbl) {
@@ -2143,7 +2141,6 @@
             }
         }
 
-        /* Mostrar el chip del titular seleccionado */
         function renderUserSelected(userId) {
             if (!userId) {
                 if (fldUserSelected) {
@@ -2160,7 +2157,6 @@
                     '<span class="user-selected-text">' + esc(userData.label) + '</span>' +
                     '<span class="user-selected-clear" title="Quitar selección"><i class="bi bi-x-lg"></i></span>';
                 fldUserSelected.classList.remove('d-none');
-                // Listener para borrar
                 var clearBtn = fldUserSelected.querySelector('.user-selected-clear');
                 if (clearBtn) {
                     clearBtn.addEventListener('click', function() {
@@ -2176,7 +2172,6 @@
             }
         }
 
-        /* Render del dropdown con los items coincidentes */
         function renderUserDropdown(items, activeIdx) {
             if (!fldUserDropdown) return;
             if (items.length === 0) {
@@ -2192,7 +2187,6 @@
             fldUserDropdown.innerHTML = html;
             fldUserDropdown.classList.remove('d-none');
 
-            // Click en un item
             fldUserDropdown.querySelectorAll('.user-dropdown-item').forEach(function(el) {
                 el.addEventListener('click', function() {
                     var userId = this.getAttribute('data-user-id');
@@ -2201,13 +2195,11 @@
             });
         }
 
-        /* Seleccionar un titular por ID */
         function seleccionarTitular(userId) {
             if (!fldUser) return;
             fldUser.value = userId;
             var userData = userOriginalData.find(function(o) { return String(o.value) === String(userId); });
             if (userData && fldUserSearch) {
-                // Mostrar el nombre (sin la parte de email) en el input
                 var labelShort = userData.label.split(' ·')[0];
                 fldUserSearch.value = labelShort;
             }
@@ -2216,10 +2208,8 @@
             dbgLog('ok', 'Titular seleccionado: ID=' + userId + ' · ' + (userData ? userData.label : ''));
         }
 
-        /* Filtrar titulares según término de búsqueda */
         function filtrarYMostrarTitulares(term) {
             var t = (term || '').toLowerCase().trim();
-            // Si hay selección previa y el término cambió, limpiar
             if (fldUser && fldUser.value) {
                 var userData = userOriginalData.find(function(o) { return String(o.value) === String(fldUser.value); });
                 if (userData) {
@@ -2237,7 +2227,7 @@
             }
             var matches = userOriginalData.filter(function(o) {
                 return o.dataSearch.indexOf(t) !== -1;
-            }).slice(0, 10); // limitar a 10 resultados
+            }).slice(0, 10);
             renderUserDropdown(matches, 0);
             if (userCountTxt) {
                 userCountTxt.innerHTML = 'Coincidencias: <b>' + matches.length + '</b>';
@@ -2254,7 +2244,6 @@
                 }
             });
             fldUserSearch.addEventListener('blur', function() {
-                // Delay para permitir click en item
                 setTimeout(function() {
                     if (fldUserDropdown) fldUserDropdown.classList.add('d-none');
                 }, 200);
@@ -2277,7 +2266,6 @@
                             next.classList.add('active');
                             next.scrollIntoView({block: 'nearest'});
                         } else {
-                            // Si no hay siguiente, volver al primero
                             var first = fldUserDropdown.querySelector('.user-dropdown-item');
                             if (first) first.classList.add('active');
                         }
@@ -2295,7 +2283,6 @@
                             prev.classList.add('active');
                             prev.scrollIntoView({block: 'nearest'});
                         } else {
-                            // Si no hay anterior, ir al último
                             var allItems = fldUserDropdown.querySelectorAll('.user-dropdown-item');
                             if (allItems.length > 0) {
                                 allItems[allItems.length - 1].classList.add('active');
@@ -2311,10 +2298,6 @@
 
         /* ═══════════════════════════════════════════════════════════════
            🆕 v24 · CHIPS DE COMENTARIO (respuestas rápidas)
-           · Click en chip → agrega el texto al textarea
-           · Si ya está agregado, no lo duplica
-           · Separa frases con " · "
-           · El chip "added" marca los que ya están en el textarea
            ═══════════════════════════════════════════════════════════════ */
         var fldComentario = document.getElementById('fldComentario');
         document.querySelectorAll('.com-chip').forEach(function(chip) {
@@ -2323,7 +2306,6 @@
                 var txt = this.getAttribute('data-text');
                 var current = fldComentario.value.trim();
                 if (current && current.indexOf(txt) !== -1) {
-                    // Ya está, no agregar
                     return;
                 }
                 if (current) {
@@ -2331,16 +2313,13 @@
                 } else {
                     fldComentario.value = txt;
                 }
-                // Marcar como agregado
                 this.classList.add('added');
                 fldComentario.focus();
-                // Mover cursor al final
                 fldComentario.selectionStart = fldComentario.selectionEnd = fldComentario.value.length;
                 dbgLog('debug', 'Frase agregada al comentario: ' + txt);
             });
         });
 
-        // Desmarcar chips cuando el texto se borra
         if (fldComentario) {
             fldComentario.addEventListener('input', function() {
                 var val = this.value;
@@ -2409,8 +2388,6 @@
             return getCellType(date) !== null;
         }
 
-        /* v25 - getCellInfo: devuelve el objeto completo de ocupacion
-           para una fecha (con titular, codigo, tipo). */
         function getCellInfo(date) {
             var t = date.getTime();
             var resultReserva = null;
@@ -2432,7 +2409,6 @@
             return null;
         }
 
-        /* v25 - mostrarInfoReserva: popup flotante con titular */
         function mostrarInfoReserva(info, cellEl) {
             var existing = document.getElementById('calInfoPopup');
             if (existing) existing.remove();
@@ -2553,6 +2529,56 @@
                 }
             }
             return menor;
+        }
+
+        function limiteAnualDelRango(start, end) {
+            var tarifas = tarifasEnRango(start, end);
+            var limite = 0, tarifa = null;
+            for (var i = 0; i < tarifas.length; i++) {
+                var v = parseInt(tarifas[i].max_reservas_anuales_cliente || 0, 10);
+                if (v > 0 && (limite === 0 || v < limite)) { limite = v; tarifa = tarifas[i]; }
+            }
+            if (limite === 0) { limite = 1; tarifa = null; }
+            return { limite: limite, tarifa: tarifa };
+        }
+        function rvYmd(d) {
+            return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        }
+        function conteoAnualTitular(uid, fiStr) {
+            var fi = calParse(fiStr);
+            if (!fi || isNaN(fi.getTime())) return { conteo: 0, limInf: '', limSup: '' };
+            var dInf = new Date(fi.getTime()); dInf.setFullYear(dInf.getFullYear() - 1);
+            var dSup = new Date(fi.getTime()); dSup.setFullYear(dSup.getFullYear() + 1);
+            var limInf = rvYmd(dInf), limSup = rvYmd(dSup);
+            var noBloq = (typeof RV_NO_BLOQ !== 'undefined' && Array.isArray(RV_NO_BLOQ)) ? RV_NO_BLOQ.map(String) : [];
+            var conteo = 0;
+            for (var i = 0; i < DS.length; i++) {
+                var it = DS[i];
+                if (!it || String(it.uid || '') !== String(uid)) continue;
+                if (!it.fi) continue;
+                if (it.fi < limInf || it.fi > limSup) continue;
+                if (noBloq.length && noBloq.indexOf(String(it.st)) !== -1) continue;
+                conteo++;
+            }
+            return { conteo: conteo, limInf: limInf, limSup: limSup };
+        }
+
+        /* ═══ 🆕 v31-EXC · SALTO DE ADMIN PARA EL LÍMITE ANUAL ═══ */
+        var excepcionLimiteDetalle = null;
+        function detalleExcepcionLimite(conteo, limite, limInf, limSup, origen) {
+            var d = '⚠ EXCEPCIÓN ADMIN · límite anual del asociado';
+            if (origen) { d += ' (' + origen + ')'; }
+            return d + ' · conteo=' + conteo + ' · límite=' + limite + ' · ventana ' + limInf + ' → ' + limSup;
+        }
+        function aplicarDetalleObservacion(det) {
+            if (!fldComentario) return;
+            var base = String(fldComentario.value || '').trim();
+            if (base && (base + ' · ' + det).length > 2000) {
+                var espacio = 2000 - det.length - 3;
+                base = espacio > 0 ? base.substring(0, espacio).trim() : '';
+            }
+            fldComentario.value = base ? base + ' · ' + det : det;
+            dbgLog('debug', 'Detalle de excepción agregado al campo de observación (' + fldComentario.value.length + '/2000 chars)');
         }
 
         function tarifaParaNoche(fecha) {
@@ -2680,7 +2706,6 @@
             }
             grid.innerHTML = html;
 
-            // v25 - Cerrar popup de info si estaba abierto al re-render
             var existingPopup = document.getElementById('calInfoPopup');
             if (existingPopup) existingPopup.remove();
 
@@ -2690,10 +2715,8 @@
                 c.addEventListener('click', function(e) {
                     e.stopPropagation();
 
-                    // v25 - Click en dia pasado -> ignorar
                     if (c.classList.contains('cal-past')) return;
 
-                    // v25 - Click en dia RESERVADO o ALISTAMIENTO -> mostrar popup
                     if (c.classList.contains('cal-occ') || c.classList.contains('cal-ali')) {
                         var ds = c.getAttribute('data-date');
                         var info = getCellInfo(calParse(ds));
@@ -2848,6 +2871,8 @@
                             h += '</div>';
                         }
 
+                        var limInfo = limiteAnualDelRango(calState.startSel, calState.endSel);
+                        h += '<br><small>Límite anual por asociado: <b>' + limInfo.limite + ' reserva(s)/año</b>' + (limInfo.tarifa ? ' (temporada ' + esc(limInfo.tarifa.nombre) + ')' : ' (sistema)') + '</small><br>';
                         h += '<br><small>Mín. reserva aplicable: <b>' + money0(minAplicable) + '</b></small><br>';
                         h += '<span class="precio-sug">Precio sugerido: ' + money(precioSug) + ' <small>(' + noches + ' noches)</small></span>';
                     }
@@ -2862,8 +2887,6 @@
                         + (tarifaRestr ? ' (tarifa más restrictiva: ' + tarifaRestr.nombre + ')' : ' (sistema)');
                 }
 
-                /* 🆕 v24 · AUTO-LLENAR EL MONTO con el precio sugerido
-                   (o mínimo si no hay precio sugerido > 0). */
                 if (montoInput) {
                     var autoMonto = 0;
                     if (precioSug > 0) {
@@ -2881,13 +2904,13 @@
                 if (box)  { box.classList.add('d-none'); box.innerHTML = ''; }
                 if (fiFld) fiFld.value = calFmt(calState.startSel);
                 if (ffFld) ffFld.value = '';
-                if (montoInput) montoInput.value = ''; // 🆕 v24 · limpiar monto mientras no hay rango completo
+                if (montoInput) montoInput.value = '';
             } else {
                 if (info) info.innerHTML = '<i class="bi bi-hand-index"></i> Haga clic en una fecha libre para elegir el check-in';
                 if (box)  { box.classList.add('d-none'); box.innerHTML = ''; }
                 if (fiFld) fiFld.value = '';
                 if (ffFld) ffFld.value = '';
-                if (montoInput)   { montoInput.min = calState.montoMinBase; montoInput.value = ''; } // 🆕 v24 · limpiar monto
+                if (montoInput)   { montoInput.min = calState.montoMinBase; montoInput.value = ''; }
                 if (montoMinLbl)  montoMinLbl.textContent = '(mín. ' + money0(calState.montoMinBase) + ')';
                 if (montoHelp)    montoHelp.textContent = 'Valor mínimo permitido: ' + money0(calState.montoMinBase) + '. Se auto-llena al seleccionar el rango.';
             }
@@ -2938,7 +2961,8 @@
                                 + ' · $/noche=' + t.precio_noche
                                 + ' · finde=' + t.precio_fin_semana
                                 + ' · mín=' + t.precio_minimo_reserva
-                                + ' · max_días=' + t.dias_maximos);
+                                + ' · max_días=' + t.dias_maximos
+                                + ' · límite_año=' + (t.max_reservas_anuales_cliente || 0));
                         });
                     }
                     if (calState.occupied.length === 0) {
@@ -3059,26 +3083,23 @@
                     if (selSt) { selSt.value = '{{ (string) $modalPendienteId }}'; }
                 @endif
 
-                // 🆕 v24 · Resetear buscador de titular + chip de seleccionado
                 if (fldUserSearch) fldUserSearch.value = '';
                 if (fldUser) fldUser.value = '';
                 renderUserSelected(null);
                 if (fldUserDropdown) fldUserDropdown.classList.add('d-none');
                 if (userCountTxt) userCountTxt.textContent = 'Total titulares: ' + userOriginalData.length;
 
-                // 🆕 v24 · Asegurar que Origen tenga la 3ra opción seleccionada
                 var fldOrigen = document.getElementById('fldOrigen');
                 if (fldOrigen && fldOrigen.options.length >= 3) {
-                    fldOrigen.selectedIndex = 2; // 🆕 v24 · 3ra opción
+                    fldOrigen.selectedIndex = 2;
                 } else if (fldOrigen && fldOrigen.options.length > 0) {
-                    // Si hay menos de 3, seleccionar la última disponible
                     fldOrigen.selectedIndex = fldOrigen.options.length - 1;
                 }
 
-                // 🆕 v24 · Resetear monto y chips de comentario
                 var montoInputReset = document.getElementById('fldMonto');
                 if (montoInputReset) { montoInputReset.value = ''; montoInputReset.classList.remove('is-invalid'); }
                 if (fldComentario) fldComentario.value = '';
+                excepcionLimiteDetalle = null;
                 document.querySelectorAll('.com-chip').forEach(function(c) { c.classList.remove('added'); });
             }
         }
@@ -3136,7 +3157,6 @@
                     return;
                 }
 
-                /* DEFENSA FINAL ANTI-SOLAPAMIENTO */
                 var fiDate = calParse(fiVal);
                 var ffDate = calParse(ffVal);
                 if (rangeHasOccupied(fiDate, ffDate)) {
@@ -3154,7 +3174,6 @@
                     return;
                 }
 
-                /* DEFENSA FINAL: SIN TARIFA EN RANGO */
                 var tarifasRangoFinal = tarifasEnRango(fiDate, ffDate);
                 if (tarifasRangoFinal.length === 0) {
                     dbgLog('warn', '<b>Submit bloqueado</b>: SIN tarifa en rango (client-side)');
@@ -3165,7 +3184,6 @@
                     return;
                 }
 
-                /* DEFENSA FINAL: NOCHES SIN TARIFA */
                 var coberturaFinal = rangoTotalmenteCubierto(fiDate, ffDate);
                 if (!coberturaFinal.ok) {
                     dbgLog('warn', '<b>Submit bloqueado</b>: ' + coberturaFinal.nochesSinTarifa + ' noche(s) sin tarifa');
@@ -3176,7 +3194,6 @@
                     return;
                 }
 
-                /* DEFENSA FINAL DÍAS MÁXIMOS */
                 var nochesSeleccionadas = Math.round((ffDate - fiDate) / 86400000);
                 var diasMax = diasMaximosMasRestrictivo(fiDate, ffDate);
                 if (diasMax > 0 && nochesSeleccionadas > diasMax) {
@@ -3187,6 +3204,41 @@
                         alertNR.classList.remove('d-none');
                     }
                     return;
+                }
+
+                var uidSel = fldUser ? String(fldUser.value || '') : '';
+                if (uidSel) {
+                    var limAnual = limiteAnualDelRango(fiDate, ffDate);
+                    var resAnual = conteoAnualTitular(uidSel, fiVal);
+                    if (resAnual.conteo >= limAnual.limite) {
+                        var origenLim = limAnual.tarifa
+                            ? 'La temporada "' + esc(limAnual.tarifa.nombre) + '" permite un máximo de ' + limAnual.limite + ' reserva(s) por año por asociado.'
+                            : 'Se aplica el límite del sistema: 1 reserva por año.';
+                        dbgLog('warn', '<b>Submit bloqueado</b>: límite anual del asociado · conteo=' + resAnual.conteo + ' · límite=' + limAnual.limite + ' · ventana ' + resAnual.limInf + ' → ' + resAnual.limSup);
+                        var saltarLimite = false;
+                        if (excepcionLimiteDetalle) {
+                            saltarLimite = true;
+                        } else if (confirm('⚠ Límite anual del asociado alcanzado (conteo=' + resAnual.conteo + ' · límite=' + limAnual.limite + ').\n\n¿Saltar la regla como ADMINISTRADOR?\n\nSe agregará al campo de observación el detalle de la excepción, que luego alimenta la auditoría.')) {
+                            var detalleExc = detalleExcepcionLimite(resAnual.conteo, limAnual.limite, resAnual.limInf, resAnual.limSup, '');
+                            aplicarDetalleObservacion(detalleExc);
+                            excepcionLimiteDetalle = detalleExc;
+                            saltarLimite = true;
+                        } else {
+                            dbgLog('info', 'Excepción de límite anual cancelada por el usuario');
+                        }
+                        if (saltarLimite) {
+                            dbgLog('warn', '<b>EXCEPCIÓN ADMIN</b>: límite anual SALTADO · detalle en el campo de observación · motivo_excepcion viaja en el payload');
+                            if (alertNR) { alertNR.classList.add('d-none'); alertNR.textContent = ''; }
+                        } else {
+                            if (alertNR) {
+                                alertNR.innerHTML = '<i class="bi bi-calendar-x me-1"></i>El asociado ya tiene <b>' + resAnual.conteo + ' reserva(s) ACTIVA(S)</b> en menos de un año de diferencia (ventana ' + fmtDMY(resAnual.limInf) + ' → ' + fmtDMY(resAnual.limSup) + '). ' + origenLim + ' Verifique que la reserva anterior esté en estado "Cancelada", "Rechazada" o "Anulada".';
+                                alertNR.classList.remove('d-none');
+                            }
+                            return;
+                        }
+                    } else {
+                        dbgLog('ok', '<b>Límite anual OK</b>: ' + resAnual.conteo + '/' + limAnual.limite + ' en ventana ' + resAnual.limInf + ' → ' + resAnual.limSup + (modo === 'single' ? ' (contexto single: el servidor valida el histórico global)' : ''));
+                    }
                 }
 
                 var montoInput = document.getElementById('fldMonto');
@@ -3218,6 +3270,10 @@
 
                 var storeUrl = formNR.getAttribute('data-store') || formNR.getAttribute('action');
                 var fd = new FormData(formNR);
+                if (excepcionLimiteDetalle) {
+                    fd.append('motivo_excepcion', excepcionLimiteDetalle);
+                    dbgLog('debug', 'Payload + motivo_excepcion (' + excepcionLimiteDetalle.length + ' chars)');
+                }
                 var csrfMeta = document.querySelector('meta[name="csrf-token"]');
                 var csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : (fd.get('_token') || '');
 
@@ -3250,22 +3306,40 @@
                     if (r.ok && j.ok) {
                         dbgLog('ok', '✅ Reserva creada! ID=' + (j.reserva && j.reserva.id));
                         if (bsModal) { bsModal.hide(); }
-                        /* 🆕 v26 · Refresca SOLO el partial tab-reservas vía AJAX
-                           (el dashboard queda intacto, sin reload completo).
-                           🆕 v26.1 · Pasa la reserva creada + el payload: si
-                           el fragmento falla, el fallback LOCAL inyecta la
-                           reserva en la tabla sin recargar el dashboard. */
                         setTimeout(function () { refrescarSoloTab(j.reserva || null, payload); }, 400);
                         return;
                     }
                     var msg = j.message || (j.errors ? Object.values(j.errors).map(function (a) { return Array.isArray(a) ? a.join(' · ') : a; }).join(' · ') : 'Error al crear la reserva.');
-                    if (alertNR) {
-                        alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg);
-                        alertNR.classList.remove('d-none');
-                    }
                     if (btnGuardar) {
                         btnGuardar.disabled = false;
                         if (btnTxt) { btnTxt.innerHTML = originalTxt; }
+                    }
+                    if (j.excepcion && j.excepcion.disponible) {
+                        if (j.excepcion.error_motivo) {
+                            dbgLog('warn', '<b>motivo_excepcion rechazado</b>: ' + j.excepcion.error_motivo);
+                        }
+                        if (!excepcionLimiteDetalle && confirm('El servidor bloqueó la reserva por el límite anual del asociado.\n\n¿Saltar la regla como ADMINISTRADOR?\n\nSe agregará al campo de observación el detalle de la excepción y se reintentará el guardado.')) {
+                            var detSrv = (typeof resAnual !== 'undefined' && resAnual && typeof limAnual !== 'undefined' && limAnual)
+                                ? detalleExcepcionLimite(resAnual.conteo, limAnual.limite, resAnual.limInf, resAnual.limSup, 'bloqueo del servidor')
+                                : '⚠ EXCEPCIÓN ADMIN · límite anual del asociado (bloqueo del servidor) · saltado desde el modal';
+                            aplicarDetalleObservacion(detSrv);
+                            excepcionLimiteDetalle = detSrv;
+                            dbgLog('warn', '<b>EXCEPCIÓN ADMIN (servidor)</b>: reintento automático con motivo_excepcion');
+                            formNR.dispatchEvent(new Event('submit', { cancelable: true }));
+                        } else {
+                            if (!excepcionLimiteDetalle) {
+                                dbgLog('info', 'Excepción de límite anual (servidor) cancelada por el usuario');
+                            }
+                            if (alertNR) {
+                                alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg) + (j.excepcion.error_motivo ? '<br>' + esc(j.excepcion.error_motivo) : '');
+                                alertNR.classList.remove('d-none');
+                            }
+                        }
+                        return;
+                    }
+                    if (alertNR) {
+                        alertNR.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>' + esc(msg);
+                        alertNR.classList.remove('d-none');
                     }
                 })
                 .catch(function (err) {
@@ -3290,13 +3364,6 @@
 
 /* ═══════════════════════════════════════════════════════════════
    🆕 v26 · REFRESCO SOLO DEL PARTIAL (sin recargar el dashboard)
-   Al crear una reserva ya NO se hace window.location.reload(): se
-   vuelve a pedir SOLO el fragmento del tab (ruta admin.reservas.
-   fragmento → GET /rsv/reservas-fragmento) y se reemplaza #rvTabWrap
-   en caliente. El script del partial es re-ejecutable (rvTabInit +
-   readyState), así que el tab queda vivo con dataset/KPIs/agenda
-   frescos, conservando el panel de debug (logs restaurados).
-   Fallback: reload completo si el fragmento falla.
    ═══════════════════════════════════════════════════════════════ */
 var rvToastTimer = null;
 function toastRv(msg) {
@@ -3324,14 +3391,9 @@ function refrescarSoloTab(nueva, payload) {
     }
     var url = fragUrl + (window.location.search || '');
     dbgLog('info', '<b>Refresco AJAX del tab</b> → ' + url);
-    /* 🆕 v27-DBG · El panel DBG es HERMANO de #rvTabWrap: el swap no lo
-       toca, así que sus logs y su estado abierto/cerrado sobreviven solos
-       (ya no hace falta el parche de restauración de v26). */
     fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
         .then(function (resp) {
             if (!resp.ok) {
-                /* 🆕 v26.1 · Lee el body del error y extrae el mensaje REAL
-                   del backend (causa exacta del 500) para el panel 🐛 Debug. */
                 return resp.text().then(function (bodyTxt) {
                     var er = new Error('HTTP ' + resp.status);
                     er.__body = bodyTxt || '';
@@ -3368,16 +3430,6 @@ function refrescarSoloTab(nueva, payload) {
         });
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   🆕 v26.1 · EXTRAE EL MENSAJE REAL DEL ERROR DEL BACKEND
-   Antes un fallo del fragmento mostraba solo "HTTP 500" y recargaba
-   la página sin decir POR QUÉ. Ahora se intenta leer del body:
-     1) JSON de error de Laravel (exception / message / file).
-     2) <title> de la página de error (Ignition pone el mensaje).
-     3) Líneas con "...Exception / ...Error" del texto plano.
-   El resultado va al panel 🐛 Debug → causa exacta visible (p.ej.
-   'View [rsv.admin.partials.tab-reservas] not found') sin abrir logs.
-   ═══════════════════════════════════════════════════════════════ */
 function extraerMensajeError500(bodyTxt, err) {
     var base = (err && err.message) ? String(err.message) : 'Error desconocido';
     if (!bodyTxt) { return base; }
@@ -3387,7 +3439,7 @@ function extraerMensajeError500(bodyTxt, err) {
             var nomArc = j.file ? String(j.file).split('/').pop().split('\\').pop() : '';
             return (base + ' · backend: ' + (j.exception ? j.exception + ' → ' : '') + (j.message || '') + (nomArc ? ' [' + nomArc + ']' : '')).substring(0, 400);
         }
-    } catch (e) { /* body no era JSON */ }
+    } catch (e) {}
     var t = String(bodyTxt)
         .replace(/<script[\s\S]*?<\/script>/gi, ' ')
         .replace(/<style[\s\S]*?<\/style>/gi, ' ');
@@ -3403,15 +3455,6 @@ function extraerMensajeError500(bodyTxt, err) {
     return (base + ' · ' + plain.substring(0, 200)).substring(0, 400);
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   🆕 v26.1 · FALLBACK LOCAL CUANDO EL FRAGMENTO FALLA (HTTP 500 etc.)
-   La tabla se pinta 100% en cliente desde #rvDataset, así que si el
-   endpoint del fragmento responde error PERO tenemos los datos de la
-   reserva recién creada (respuesta del store-ajax), la inyectamos en
-   el dataset (DS) + render() de la tabla + refetch del calendario:
-   el usuario ve la reserva NUEVA sin recargar el dashboard.
-   El reload completo queda como ÚLTIMO recurso (sin datos locales).
-   ═══════════════════════════════════════════════════════════════ */
 function fallbackPostFragmento(detalle, nueva, payload) {
     dbgLog('err', '<b>Refresco AJAX FAIL</b>: ' + esc(detalle));
     if (nueva && (nueva.codigo || nueva.id)) {
@@ -3430,7 +3473,6 @@ function fallbackPostFragmento(detalle, nueva, payload) {
         };
         var ya = DS.filter(function (x) { return String(x.codigo) === fila.codigo; });
         if (ya.length === 0) { DS.unshift(fila); }
-        /* Limpia filtros para que la reserva nueva sea visible de una vez */
         statusF = ''; q = ''; fDesde = ''; fHasta = ''; page = 1;
         try {
             var si = document.getElementById('inputSearchReservas'); if (si) { si.value = ''; }
@@ -3450,13 +3492,9 @@ function fallbackPostFragmento(detalle, nueva, payload) {
     dbgLog('warn', 'Sin datos locales para el refresco → reload completo');
     window.location.reload();
 }
+
 /* ═══════════════════════════════════════════════════════════════
    🆕 v25.2 · FIX BOTÓN "DETALLE" DE LA TABLA
-   El botón se renderizaba sin clase gancho, sin data-cod y sin
-   handler de clic (por eso no hacía nada). Ahora:
-     · filaHTML() lo emite con class="rv-detail" + data-cod.
-     · Este handler delegado abre #modalDetalleReserva con los
-       datos de la reserva tomados del dataset (DS).
    ═══════════════════════════════════════════════════════════════ */
 var dtModalEl = document.getElementById('modalDetalleReserva');
 var dtModal   = (dtModalEl && window.bootstrap) ? bootstrap.Modal.getOrCreateInstance(dtModalEl) : null;
@@ -3500,10 +3538,6 @@ function abrirDetalleReserva(cod) {
     }
 }
 
-/* 🆕 v26 · API pública del closure: el handler de click a nivel document
-   SOBREVIVE a los refrescos AJAX (se registra UNA sola vez), así que
-   debe llamar siempre a las funciones del closure VIGENTE (DS fresco),
-   no a las del closure viejo que quedó huérfano tras el swap. */
 window.rsvTabApi = { abrirDetalleReserva: abrirDetalleReserva, dbgLog: dbgLog, recargarAgendaFragmento: recargarAgendaFragmento };
 
 if (!window.__rvDetailClickBound) {
@@ -3513,9 +3547,6 @@ if (!window.__rvDetailClickBound) {
         var b = e.target.closest('.rv-detail');
         var legacy = false;
         if (!b) {
-            /* 🆕 v25.3 · Fallback: también acepta el markup ANTIGUO del botón
-               (btn-mini sin clase gancho). Si este camino se ejecuta, la
-               tabla en pantalla sigue siendo de una versión anterior. */
             var bb = e.target.closest('button.btn-mini');
             if (bb && (bb.textContent || '').replace(/^\s+|\s+$/g, '') === 'Detalle') { b = bb; legacy = true; }
         }
@@ -3535,18 +3566,11 @@ if (!window.__rvDetailClickBound) {
 
         render();
 
-        /* 🆕 v25.3 · Marcador de verificación en el panel 🐛 Debug.
-           Esta línea debe aparecer al cargar la página. Si NO aparece,
-           la vista desplegada NO es la versión con el fix del botón
-           Detalle (reemplazar el archivo y recargar con Ctrl+F5). */
         dbgLog('ok', '🆕 v25.3 activo · ' + document.querySelectorAll('.rv-detail').length + ' botón(es) Detalle enlazado(s) en la tabla');
         dbgLog('ok', '🆕 v26.1 activo · refresco parcial por AJAX + fallback local si el fragmento falla');
         dbgLog('ok', '🆕 v28-DBG activo · agenda dentro del fragmento (Consultar / Enter / Ir a hoy refrescan SOLO el tab)');
     }
 
-    /* 🆕 v26 · Bootstrap re-ejecutable: la primera carga pasa por
-       DOMContentLoaded; tras un refresco AJAX el script se re-ejecuta
-       con el DOM ya listo y arranca de inmediato. */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', rvTabInit);
     } else {

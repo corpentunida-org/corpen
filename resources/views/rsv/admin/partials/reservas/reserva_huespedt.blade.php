@@ -35,8 +35,45 @@
        texto aunque estén dentro de comentarios y una arroba pelada rompe
        la compilación (lección BLQ-v1-2).
      ============================================================================ --}}
-{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.4 · botón Actualizar (icono) + prefill reserva por ID + recarga AJAX anti-duplicados + pulso visual (cambios visibles sin F5) --}}
+{{-- partials/reservas/reserva_huespedt.blade.php · CRUD Huéspedes · v2.6 · baja LÓGICA VERIFICADA en BD (deleted_at) + CSRF auto-sanante (fin del HTTP 419) + paginación y exportación activas --}}
 {{--
+  NOVEDADES v2.6 (baja lógica VERIFICADA · telemetría honesta):
+  · El panel DBG ya NO asume el éxito: pinta el veredicto REAL que devuelve
+    destroy(). El controlador corregido responde { success, logico, via,
+    message } después de VERIFICAR en la tabla rsv_reserva_huespedes que la
+    fila quedó con deleted_at (el bug real estaba allí: una
+    DB::beginTransaction() sin commit() revertía el borrado suave al
+    cerrarse la conexión, aunque el 200 ya hubiera salido).
+  · Tres estados en el panel: "Baja LÓGICA verificada en BD" (ok) ·
+    advertencia si el servidor responde sin verificación (¿controlador
+    antiguo sin el fix?) · error con el mensaje real si logico=false.
+  · La vista no cambia el flujo de borrado: sigue enviando POST+_method=DELETE
+    con token fresco y reintento ante 419 (v2.5 intacto).
+
+  NOVEDADES v2.5 (baja lógica + CSRF auto-sanante + paginación/exportación):
+  · ELIMINACIÓN LÓGICA (requisito): "Eliminar" aplica la baja suave que YA
+    existe en la base de datos (rsv_reserva_huespedes.deleted_at · modelo
+    ReservaHuesped con SoftDeletes · el destroy() del controlador usa
+    delete()). El registro NO se borra físicamente: queda con deleted_at
+    (recuperable) y el listado lo excluye solo. El modal lo explica, el
+    panel DBG reporta cuántos eliminados lógicos hay en BD (onlyTrashed) y
+    la consulta trae un doble seguro whereNull('deleted_at') por si el
+    modelo perdiera el trait.
+  · FIN DEL HTTP 419 (CSRF token mismatch al eliminar): el token ya no se
+    usa "horneado" de la carga original. Ahora viaja DENTRO del fragmento
+    (#rhCsrf, se recompila fresco en cada recarga AJAX), enviar() lo lee en
+    el MOMENTO de enviar, sale por 3 canales (_token · X-CSRF-TOKEN ·
+    X-XSRF-TOKEN desde la cookie) y ante un 419 se pide un token fresco al
+    servidor y se REINTENTA una vez antes de avisar sesión expirada.
+  · PAGINACIÓN Y EXPORTACIÓN ACTIVAS (estaban sin cablear): ‹ Anterior /
+    Siguiente › cambian de página (15 por página) con etiqueta "Página X de
+    Y" e info "N–M de T"; Exportar descarga CSV compatible con Excel (BOM
+    UTF-8, separador ;) de TODO lo filtrado, no solo la página visible.
+  · Conteos de los chips Todos/Titulares/Acompañantes recalculados al
+    filtrar y tras cada recarga; init se auto-ejecuta si DOMContentLoaded
+    ya disparó (inyección tardía del fragmento).
+  · enviar() ya no duplica el campo _token (set en lugar de append).
+
   NOVEDADES v2.4 (icono de actualización):
   · Nuevo botón "Actualizar" en el header (icono bi-arrow-clockwise): recarga el fragmento
     por AJAX vía window.reloadRhFragment() sin F5. Mientras carga, el icono gira (rh-spin)
@@ -85,6 +122,10 @@
      data-modo="{{ ($rhGlobal ?? true) ? 'global' : 'single' }}"
      data-ctx="{{ ($rhGlobal ?? true) ? 'Global' : ((is_object($rhInm ?? null) ? ($rhInm->name ?? 'Inmueble') : ('Inmueble #'.($rhInmId ?? '')))) }}"
      style="border-color: #f1f5f9 !important;">
+
+    <!-- RH-v2.5 · token CSRF que viaja DENTRO del fragmento: cada recarga AJAX
+         lo recompila fresco y el JS lo lee en el momento de enviar (fin del 419) -->
+    <input type="hidden" id="rhCsrf" value="{{ csrf_token() }}">
 
 <style>
     .reservas-soft { --grid:#f1f5f9; --grid-2:#e9eef4; --head:#fafbfd; --ink:#64748b; --ink-2:#475569; --ink-3:#94a3b8; --ink-4:#b3bcc7; --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc; }
@@ -160,6 +201,7 @@
     $rhDbgErrores = []; // RH-v1-DBG · colector de errores del servidor para el panel
     $rhInm = null; $rhInmId = $inmuebleId ?? null; $rhGlobal = true;
     $rhItems = collect(); $rhReservasOptMapped = collect();
+    $rhTrashed = 0; // RH-v2.5 · eliminados lógicos en BD (para el panel DBG)
     $rhJson = '[]'; $rhReservasJson = '[]'; $rhTotalCtx = 0;
     $rhStoreUrl = null; $rhUpdateUrlBase = null; $rhDestroyUrlBase = null;
 
@@ -185,11 +227,28 @@
                     $qq->where('id_rsv_catalogo_inmueble', $rhInmId);
                 });
             }
-            $huespedes = $qHuespedes->orderBy('created_at', 'desc')->get();
+            /* RH-v2.5 · doble seguro de la baja lógica: con SoftDeletes el modelo
+               ya excluye los deleted_at; si el modelo perdiera el trait, este
+               filtro evita mostrar "fantasmas". Si la columna no existiera,
+               se consulta sin filtro y el panel DBG lo reporta. */
+            try {
+                $huespedes = (clone $qHuespedes)->whereNull('deleted_at')->orderBy('created_at', 'desc')->get();
+            } catch (\Throwable $eDel) {
+                $rhDbgErrores[] = 'filtro deleted_at omitido: ' . $eDel->getMessage();
+                $huespedes = $qHuespedes->orderBy('created_at', 'desc')->get();
+            }
         } catch (\Throwable $e) {
             $rhDbgErrores[] = 'dataset huéspedes: ' . $e->getMessage();
             $huespedes = collect();
         }
+    }
+
+    // 2c · RH-v2.5 · eliminación lógica: cuántos huéspedes YA están de baja suave
+    try {
+        $rhTrashed = \App\Models\Rsv\ReservaHuesped::onlyTrashed()->count();
+    } catch (\Throwable $e) {
+        $rhTrashed = -1; // sin columna deleted_at o modelo sin SoftDeletes
+        $rhDbgErrores[] = 'onlyTrashed: ' . $e->getMessage();
     }
 
     // 2b · Cargar reservas para el select si no vienen dadas
@@ -274,6 +333,7 @@
         'modo'      => $rhGlobal ? 'global' : ('inmueble #' . $rhInmId),
         'huespedes' => $rhTotalCtx,
         'reservas'  => count($rhReservasOptMapped),
+        'eliminados_logicos' => ($rhTrashed >= 0) ? $rhTrashed : 'n/d',
         'puede'     => [
             'crear'  => $rhStoreUrl       ? 'sí' : 'no',
             'editar' => $rhUpdateUrlBase  ? 'sí' : 'no',
@@ -431,7 +491,9 @@
                 <i class="bi bi-trash3" style="font-size: 1.2rem; color: #c98a85;"></i>
                 <h6 class="fw-bold mt-2 mb-1" style="font-size: 0.9rem;">Eliminar huésped</h6>
                 <p class="mb-0" style="font-size: 8.5px; color: #94a3b8;">
-                    Se eliminará <b id="rhDelNombre" style="color: #334155;">—</b> de la reserva <b id="rhDelCod" style="color: #334155;">—</b>.
+                    Baja <b style="color: #334155;">lógica</b> de <b id="rhDelNombre" style="color: #334155;">—</b>
+                    (reserva <b id="rhDelCod" style="color: #334155;">—</b>): el registro queda en la base de
+                    datos con <b style="color: #334155;">deleted_at</b> y desaparece del listado.
                 </p>
             </div>
             <div class="modal-footer justify-content-center" style="border-top: 1px solid #f1f5f9; padding: 9px 14px;">
@@ -684,6 +746,63 @@
     }
 
 
+    /* ═══ 0c) RH-v2.5 · CSRF AUTO-SANANTE (fin del HTTP 419 al eliminar) ═══
+       Por qué salía 419: enviar() usaba el token horneado en la CARGA original
+       de la página; si la sesión rotaba el token, el fragmento se recargaba
+       por AJAX o la sesión expiraba, el JS seguía mandando el viejo.
+       Ahora: el token fresco viaja DENTRO del fragmento (#rhCsrf), se lee en
+       el MOMENTO de enviar, sale por 3 canales (_token · X-CSRF-TOKEN ·
+       X-XSRF-TOKEN) y ante un 419 se pide un token nuevo y se reintenta 1 vez. */
+    function xsrfDeCookie() {
+        var m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
+        try { return m ? decodeURIComponent(m[1]) : ''; } catch (e2) { return m ? m[1] : ''; }
+    }
+    function leerToken() {
+        var el = document.getElementById('rhCsrf');              // 1 · el más fresco: viaja en el fragmento
+        if (el && el.value) { return el.value; }
+        var meta = document.querySelector('meta[name="csrf-token"]'); // 2 · meta del layout
+        if (meta && meta.getAttribute('content')) { return meta.getAttribute('content'); }
+        var inp = document.querySelector('#rhForm input[name="_token"]'); // 3 · input del formulario
+        if (inp && inp.value) { return inp.value; }
+        return xsrfDeCookie();                                   // 4 · cookie XSRF-TOKEN (Laravel la acepta)
+    }
+    function instalarToken(tok) {
+        if (!tok) { return; }
+        var el = document.getElementById('rhCsrf');
+        if (el) { el.value = tok; }
+        var meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) { meta.setAttribute('content', tok); }
+        var inp = document.querySelector('#rhForm input[name="_token"]');
+        if (inp) { inp.value = tok; }
+    }
+    function refrescarTokenServidor() {
+        /* Pide el fragmento de nuevo (misma sesión): la respuesta trae el token
+           compilado de AHORA y refresca las cookies de sesión y XSRF-TOKEN.
+           Si el servidor manda al login, la sesión terminó de verdad. */
+        var url = RH_FRAG_URL + (RH_FRAG_URL.indexOf('?') > -1 ? '&' : '?') + '_csrf=' + Date.now();
+        return fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, cache: 'no-store', credentials: 'same-origin' })
+            .then(function (res) { if (!res.ok) { throw new Error('HTTP ' + res.status); } return res.text(); })
+            .then(function (html) {
+                if (html.indexOf('rhCsrf') === -1 && /Iniciar sesi|Recuperar contrase|name="password"/i.test(html)) {
+                    rhdbg('El servidor mandó al LOGIN: la sesión expiró de verdad → recarga la página (F5) e inicia sesión otra vez', 'err');
+                    return false;
+                }
+                var m = html.match(/id="rhCsrf"[^>]*value="([^"]+)"/)
+                     || html.match(/name="csrf-token"[^>]*content="([^"]+)"/);
+                if (m && m[1]) {
+                    instalarToken(m[1]);
+                    rhdbg('Token CSRF refrescado desde el servidor (' + String(m[1]).substring(0, 10) + '…)', 'ok');
+                    return true;
+                }
+                rhdbg('La respuesta del servidor no trajo un token utilizable', 'warn');
+                return false;
+            })
+            .catch(function (e2) {
+                rhdbg('No se pudo refrescar el token CSRF: ' + e2.message, 'err');
+                return false;
+            });
+    }
+
     window.reloadRhFragment = function() {
         var url = RH_FRAG_URL + (RH_FRAG_URL.indexOf('?') > -1 ? '&' : '?') + '_t=' + Date.now();
         rhdbg('refrescando fragmento · ' + url, 'net');
@@ -713,6 +832,8 @@
                 else { document.body.appendChild(newRoot); }
                 unicarDbg();
                 if (DBG && DBG.ensure) { DBG.ensure(); } // re-apila tras el swap
+                instalarToken(leerToken()); // RH-v2.5 · propaga el token fresco que vino en el fragmento
+                rhdbg('Token CSRF vigente tras el swap: ' + (leerToken() ? (String(leerToken()).substring(0, 10) + '…') : 'FALTA'), 'debug');
                 rhdbg('Copias #rhRoot en la página: ' + roots.length
                     + (roots.length > 1 ? ' · ¡HABÍA DUPLICADOS! (eliminados)' : ''), 'info');
 
@@ -737,7 +858,7 @@
                     newRoot.classList.add('rh-pulse');
                 } catch (e) {}
 
-                rhdbg('Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.4)', 'ok');
+                rhdbg('Fragmento Huéspedes recargado por AJAX · dataset fresco (v2.5)', 'ok');
             })
             .catch(function (err) {
                 rhdbg('Error recargando fragmento: ' + err.message, 'err');
@@ -748,7 +869,6 @@
         var root = document.getElementById('rhRoot');
         if (!root) return;
 
-        var CSRF = '{{ csrf_token() }}';
         var STORE = '{{ $rhStoreUrl ?? "" }}';
         var UPDATE_URL = '{{ $rhUpdateUrlBase ?? "" }}';
         var DESTROY_URL = '{{ $rhDestroyUrlBase ?? "" }}';
@@ -768,10 +888,12 @@
 
 
         /* v2.0 · Trazas de arranque en el panel de debug */
-        rhdbg('RH-v1-DBG activo · v2.4 · botón Actualizar · prefill reserva por ID · recarga AJAX anti-duplicados + pulso visual · cambios sin F5', 'ok');
+        rhdbg('RH-v1-DBG activo · v2.6 · baja LÓGICA VERIFICADA (deleted_at) · CSRF auto-sanante (fin del 419) · paginación + exportación activas', 'ok');
         rhdbg('init · modo=' + (root.getAttribute('data-modo') || 'global') + ' · ctx=' + (root.getAttribute('data-ctx') || 'Global'), 'info');
         rhdbg('Rutas · STORE=' + (STORE || 'NO') + ' · UPDATE=' + (UPDATE_URL || 'NO') + ' · DESTROY=' + (DESTROY_URL || 'NO'), (STORE || UPDATE_URL) ? 'ok' : 'warn');
         rhdbg('Dataset: ' + DS.length + ' huésped(es) · reservas para el select: ' + RESERVAS.length, DS.length ? 'ok' : 'warn');
+        var TRASH = (SRVDBG && typeof SRVDBG.eliminados_logicos !== 'undefined') ? SRVDBG.eliminados_logicos : 'n/d';
+        rhdbg('Baja LÓGICA activa (deleted_at en rsv_reserva_huespedes) · eliminados lógicos en BD: ' + TRASH + ' (no salen en la tabla · recuperables)', 'info');
         var PAGE_SIZE = 15, page = 1, q = '', titF = '';
         var tbody = document.getElementById('rhTbody');
         var badge = document.getElementById('rhBadge');
@@ -823,6 +945,24 @@
                     ? 'Mostrando <b>' + res.length + '</b> de ' + DS.length
                     : '<b>' + DS.length + '</b> ' + (DS.length == 1 ? 'huésped' : 'huéspedes');
             }
+
+            /* v2.5 · paginación siempre viva + conteos de chips recalculados */
+            var lbl = document.getElementById('rhPgLbl');
+            if (lbl) lbl.textContent = 'Página ' + page + ' de ' + pages;
+            var info = document.getElementById('rhPgInfo');
+            if (info) {
+                info.innerHTML = '<i class="bi bi-layers" style="font-size: 7.5px; color: #b3bcc7;"></i> '
+                    + (res.length ? (ini + 1) : 0) + '–' + (ini + slice.length) + ' de ' + res.length;
+            }
+            var bp = document.getElementById('rhPrev'), bn = document.getElementById('rhNext');
+            if (bp) bp.disabled = (page <= 1);
+            if (bn) bn.disabled = (page >= pages);
+            var cTodas = document.getElementById('rhCntTodas');
+            if (cTodas) cTodas.textContent = '(' + DS.length + ')';
+            var c1 = document.querySelector('.fchip .cnt[data-cnt="1"]');
+            if (c1) c1.textContent = '(' + DS.filter(function (x) { return String(x.tit) === '1'; }).length + ')';
+            var c0 = document.querySelector('.fchip .cnt[data-cnt="0"]');
+            if (c0) c0.textContent = '(' + DS.filter(function (x) { return String(x.tit) === '0'; }).length + ')';
         }
 
         var search = document.getElementById('rhSearch');
@@ -874,22 +1014,34 @@
             }
         }
 
-        function enviar(url, method, fd) {
-            fd.append('_token', CSRF);
-            if (method !== 'POST') fd.append('_method', method);
+        function enviar(url, method, fd, etiqueta, esReintento) {
+            var tok = leerToken();       // RH-v2.5 · token del MOMENTO, no el de la carga original
+            fd.set('_token', tok);       // set (no append): si el form ya trajo _token, queda UNO
+            if (method !== 'POST' && !fd.has('_method')) fd.append('_method', method);
             
-            rhdbg('Enviando petición [' + method + '] a: ' + url, 'info');
+            rhdbg('Enviando petición [' + method + ']' + (etiqueta ? ' · ' + etiqueta : '') + ' a: ' + url + (esReintento ? ' · REINTENTO con token fresco' : ''), 'info');
 
             fetch(url, { 
                 method: 'POST', 
                 body: fd, 
                 headers: { 
-                    'X-CSRF-TOKEN': CSRF, 
+                    'X-CSRF-TOKEN': tok, 
+                    'X-XSRF-TOKEN': xsrfDeCookie(),  
                     'X-Requested-With': 'XMLHttpRequest', 
                     'Accept': 'application/json' 
                 } 
             })
             .then(async function (r) { 
+                /* RH-v2.5 · ante 419 (CSRF token mismatch): pedir token fresco
+                   al servidor y reintentar UNA vez antes de rendirse. */
+                if (r.status === 419 && !esReintento) {
+                    rhdbg('HTTP 419 · token CSRF vencido o rotado · pidiendo token fresco…', 'warn');
+                    var tokenOk = await refrescarTokenServidor();
+                    if (tokenOk) { return enviar(url, method, fd, etiqueta, true); }
+                    var e419 = new Error('HTTP 419 · sesión expirada: recarga la página (F5) e inicia sesión otra vez.');
+                    e419.__body = '';
+                    throw e419;
+                }
                 if (!r.ok) {
                     const bodyTxt = await r.text();
                     const er = new Error('HTTP ' + r.status);
@@ -899,7 +1051,7 @@
                 return r.json();
             })
             .then(function (j) {
-                rhdbg('Operación exitosa.', 'ok');
+                rhdbg('Operación exitosa' + (etiqueta ? ' · ' + etiqueta : '') + '.', 'ok');
 
                 document.querySelectorAll('.modal.show').forEach(m => {
                     try {
@@ -917,6 +1069,19 @@
                 document.body.style.removeProperty('overflow');
                 document.body.style.removeProperty('padding-right');
 
+                if (etiqueta && etiqueta.indexOf('baja lógica') === 0) {
+                    /* RH-v2.6 · veredicto REAL del servidor (no asumido): destroy()
+                       corregido responde { logico, via, message } tras VERIFICAR la
+                       tabla. Si logico no viene, el controlador desplegado es
+                       antiguo (sin el fix) y el panel lo avisa. */
+                    if (j && j.logico === true) {
+                        rhdbg('Baja LÓGICA verificada en BD · ' + (j.message || 'la fila queda con deleted_at (no se borra físicamente)') + (j.via ? ' · vía ' + j.via : '') + ' · refrescando listado…', 'ok');
+                    } else if (j && j.logico === false) {
+                        rhdbg('⚠ ' + (j.message || 'El servidor no pudo verificar la baja lógica') + ' · revisa laravel.log', 'err');
+                    } else {
+                        rhdbg('⚠ Respuesta sin verificación de baja lógica (¿controlador antiguo?) · aplica el ReservaHuespedController.php con el fix RH-FIX', 'warn');
+                    }
+                }
                 window.reloadRhFragment();
             })
             .catch(function (err) { 
@@ -1011,7 +1176,11 @@
                 var go = document.getElementById('rhDelGo');
                 go.onclick = function () {
                     var url = DESTROY_URL.replace('ID', r2.id);
-                    enviar(url, 'DELETE', new FormData());
+                    /* RH-v2.5 · baja LÓGICA: destroy() ejecuta delete() sobre un modelo
+                       con SoftDeletes → la fila NO se borra físicamente: queda en
+                       rsv_reserva_huespedes con deleted_at (recuperable) y el listado
+                       la excluye solo. */
+                    enviar(url, 'DELETE', new FormData(), 'baja lógica de huésped #' + r2.id + ' (' + (r2.nom || '') + ' ' + (r2.ape || '') + ')');
                 };
                 
                 if (mDel) mDel.show();
@@ -1042,15 +1211,55 @@
                     return; 
                 }
 
-                enviar(url, method, fd);
+                enviar(url, method, fd, id ? ('edición de huésped #' + id) : 'alta de huésped');
+            };
+        }
+
+        /* ═══ v2.5 · PAGINACIÓN CLIENTE (‹ Anterior / Siguiente › · estaban sin cablear) ═══ */
+        var btnPrev = document.getElementById('rhPrev');
+        var btnNext = document.getElementById('rhNext');
+        if (btnPrev) btnPrev.onclick = function () { if (page > 1) { page--; render(); } };
+        if (btnNext) btnNext.onclick = function () {
+            var paginas = Math.max(1, Math.ceil(filtrar().length / PAGE_SIZE));
+            if (page < paginas) { page++; render(); }
+        };
+
+        /* ═══ v2.5 · EXPORTAR CSV (Excel · BOM UTF-8 · TODO lo filtrado · estaba sin cablear) ═══ */
+        var btnExport = document.getElementById('rhExport');
+        if (btnExport) {
+            btnExport.onclick = function () {
+                var filas = filtrar();
+                if (!filas.length) { rhdbg('Exportar: no hay huéspedes que exportar con los filtros actuales', 'warn'); return; }
+                var celda = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+                var lineas = [['#', 'Nombre', 'Apellidos', 'Tipo Doc.', 'Número', 'Titular', 'Reserva', 'Inmueble', 'Registró', 'Fecha'].map(celda).join(';')];
+                filas.forEach(function (r, i) {
+                    lineas.push([(i + 1), r.nom, r.ape, r.tdoc, r.ndoc, r.tit ? 'SÍ' : 'NO', '#' + r.cod, r.inm, r.reg, r.fec].map(celda).join(';'));
+                });
+                var d = new Date();
+                function f2(n) { return (n < 10 ? '0' : '') + n; }
+                var nombre = 'huespedes_' + d.getFullYear() + f2(d.getMonth() + 1) + f2(d.getDate()) + '_' + f2(d.getHours()) + f2(d.getMinutes()) + '.csv';
+                try {
+                    var blob = new Blob(['\ufeff' + lineas.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = nombre;
+                    document.body.appendChild(a); a.click(); a.remove();
+                    rhdbg('Exportado ' + nombre + ' · ' + filas.length + ' fila(s) de ' + DS.length + ' (todo lo filtrado)', 'ok');
+                } catch (e2) {
+                    rhdbg('Exportar falló: ' + e2.message, 'err');
+                }
             };
         }
 
         render();
     };
 
-    document.addEventListener('DOMContentLoaded', function () {
+    /* v2.5 · arranque seguro: si el fragmento se inyecta cuando DOMContentLoaded
+       ya disparó, el listener nunca sonaría → auto-ejecutar aquí mismo. */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { window.initReservaHuespedes(); });
+    } else {
         window.initReservaHuespedes();
-    });
+    }
 })();
 </script>
