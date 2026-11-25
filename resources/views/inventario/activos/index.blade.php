@@ -1,469 +1,665 @@
+{{-- resources/views/inventario/activos/index.blade.php · INV-ACT-INDEX-v5.3-COLORGROUPS --}}
 <x-base-layout>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
+        /* Sistema de Diseño Corporativo & UX Full-Width */
         :root {
-            /* Paleta General UX */
-            --bg-body: #f8fafc;
-            --bg-surface: #ffffff;
-            
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --text-light: #94a3b8;
-            
-            --border-light: #e2e8f0;
-            --border-focus: #cbd5e1;
-            
-            /* Colores de Google / Sheets */
-            --primary-blue: #1a73e8;
-            --primary-blue-soft: #e8f0fe;
-            --success-green: #188038;
-            --success-green-soft: #e6f4ea;
-            --danger-red: #d93025;
-            --danger-red-soft: #fce8e6;
-            --warning-yellow: #f29900;
-            --warning-yellow-soft: #fef7e0;
-            
-            /* Bordes y fondos exclusivos de la tabla tipo Sheets */
-            --sheet-border: #cccccc;
-            --sheet-header-bg: #f8f9fa;
-            --sheet-text: #202124;
-            
-            /* Tonalidades de Filas de datos */
-            --row-assigned: #f8fbff;
-            --row-available: #ffffff;
-            --row-issue: #fef2f2;
+            --corp-ink: #0f172a;
+            --corp-muted: #64748b;
+            --corp-border: #e2e8f0;
+            --corp-surface: #ffffff;
+            --corp-bg: #f8fafc;
+            --corp-accent: #1d4ed8;
+            --corp-accent-soft: #eff6ff;
+
+            /* Colores de estado */
+            --success-green: #059669;
+            --success-green-soft: #ecfdf5;
+            --danger-red: #dc2626;
+            --danger-red-soft: #fef2f2;
+            --warning-yellow: #d97706;
+            --warning-yellow-soft: #fffbeb;
         }
 
-        /* Reset & Tipografía base */
-        .container { 
-            max-width: 100%; 
-            margin: 0 auto; 
-            padding: 24px 32px; 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            color: var(--text-main); 
-            background-color: var(--bg-body); 
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        
-        /* ==========================================
-           HEADER & ACTIONS UX
-           ========================================== */
-        .header-section { 
-            display: flex; justify-content: space-between; align-items: flex-end; 
-            flex-wrap: wrap; gap: 20px;
-        }
-        .page-title { 
-            font-size: 1.75rem; font-weight: 700; margin: 0; line-height: 1.2; 
-            color: var(--text-main); letter-spacing: -0.025em;
-        }
-        .counter-badge { 
-            background: var(--bg-surface); color: var(--text-muted); padding: 6px 14px; 
-            border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
-            border: 1px solid var(--border-light); display: inline-flex; 
-            align-items: center; gap: 8px; margin-top: 8px;
-        }
-        .counter-dot { 
-            width: 8px; height: 8px; background: var(--primary-blue); border-radius: 50%; 
+        .corp-shell {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            color: var(--corp-ink);
         }
 
-        /* Botones Premium */
-        .toolbar-actions { display: flex; gap: 12px; align-items: center; }
-        .btn-action { 
-            display: inline-flex; align-items: center; justify-content: center; height: 38px; 
-            border-radius: 8px; border: 1px solid var(--border-light); transition: all 0.2s; 
-            cursor: pointer; text-decoration: none; padding: 0 16px; font-size: 0.85rem; 
-            font-weight: 600; gap: 8px; background: var(--bg-surface); color: var(--text-muted);
-        }
-        .btn-action:hover { background: #f8fafc; color: var(--text-main); border-color: var(--border-focus); }
-        .btn-primary { background: var(--primary-blue); color: #ffffff; border: none; }
-        .btn-primary:hover { background: #1557b0; color: #ffffff; }
-        
-        .btn-icon-only { padding: 0 10px; border: none; background: transparent; color: var(--text-light); }
-        .btn-icon-only:hover { background: var(--primary-blue-soft); color: var(--primary-blue); border-radius: 4px; }
-
-        /* ==========================================
-           DASHBOARD SECTION (Tarjetas Flotantes)
-           ========================================== */
-        .dashboard-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-        }
-        .chart-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-light);
+        /* Cabecera ejecutiva */
+        .corp-header {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
             border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            height: 240px; 
+            padding: 16px 20px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        /* Barra minimalista de accesos rápidos por grupo de enfoque */
+        .corp-quicknav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            scrollbar-width: none;
+        }
+        .corp-quicknav::-webkit-scrollbar {
+            display: none;
+        }
+        .corp-nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            transition: all .15s ease;
+        }
+        .corp-nav-pill i {
+            font-size: 13px;
+        }
+        .corp-nav-sep {
+            width: 1px;
+            height: 18px;
+            background: #e2e8f0;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+
+        /* 1. Grupo Principal / Vistas Core (Azul claro) */
+        .pill-core {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #dbeafe;
+        }
+        .pill-core:hover {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+        .pill-core.active {
+            background: #1d4ed8;
+            color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
+        }
+
+        /* 2. Grupo Operaciones / Altas Rápidas (Verde esmeralda claro) */
+        .pill-ops {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #d1fae5;
+        }
+        .pill-ops:hover {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .pill-ops.active {
+            background: #059669;
+            color: #ffffff;
+            border-color: #059669;
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+        }
+
+        /* 3. Grupo Control / Bitácoras y Alertas (Ámbar cálido claro) */
+        .pill-audit {
+            background: #fffbeb;
+            color: #b45309;
+            border-color: #fef3c7;
+        }
+        .pill-audit:hover {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+        .pill-audit.active {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+        }
+
+        /* 4. Grupo Configuración / Catálogos Maestros (Púrpura suave) */
+        .pill-conf {
+            background: #f5f3ff;
+            color: #6d28d9;
+            border-color: #ede9fe;
+        }
+        .pill-conf:hover {
+            background: #ede9fe;
+            color: #5b21b6;
+            border-color: #ddd6fe;
+        }
+        .pill-conf.active {
+            background: #7c3aed;
+            color: #ffffff;
+            border-color: #7c3aed;
+            box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+        }
+
+        /* Tarjetas de Gráficos Interactivos */
+        .corp-chart-card {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            height: 230px;
             display: flex;
             flex-direction: column;
         }
-        .chart-title {
-            font-size: 0.75rem; font-weight: 700; color: var(--text-muted); 
-            text-transform: uppercase; letter-spacing: 0.05em; 
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px;
+        .corp-chart-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--corp-muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
-        .chart-instruction {
-            font-size: 0.65rem; color: var(--text-light); font-weight: 500; 
-            text-transform: none; background: var(--bg-body); padding: 4px 8px; border-radius: 6px;
+        .corp-chart-hint {
+            font-size: 10.5px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: none;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 6px;
         }
-        /* ¡CORRECCIÓN DEL OVERFLOW DEL GRÁFICO AQUÍ! (min-height: 0) */
-        .chart-container { 
-            position: relative; 
-            flex: 1 1 auto; 
-            width: 100%; 
-            min-height: 0; 
+        .chart-container {
+            position: relative;
+            flex: 1 1 auto;
+            width: 100%;
+            min-height: 0;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* ==========================================
-           BARRA DE FILTROS MINIMAL
-           ========================================== */
-        .filter-section { 
-            background: var(--bg-surface); padding: 16px 20px; 
-            border: 1px solid var(--border-light); border-radius: 8px 8px 0 0; 
-            border-bottom: none; display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end;
+        /* Panel principal y barra de filtros */
+        .corp-panel {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
         }
-        .filter-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 160px; }
-        .filter-group.search-group { flex: 2; }
-        .filter-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-        .filter-input, .filter-select { 
-            padding: 10px 12px; border: 1px solid var(--border-light); border-radius: 6px; 
-            font-size: 0.85rem; background: var(--bg-body); color: var(--text-main); 
-            width: 100%; outline: none;
+        .corp-filter-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 12px 16px;
         }
-        .filter-input:focus, .filter-select:focus { 
-            border-color: var(--primary-blue); background: var(--bg-surface);
-            box-shadow: 0 0 0 2px var(--primary-blue-soft);
+        .corp-input, .corp-select {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13px;
+            padding: 7px 11px;
+            background-color: #ffffff;
+            color: var(--corp-ink);
+            transition: all .15s ease;
         }
-        .filter-select:disabled { opacity: 0.6; cursor: not-allowed; }
-        
-        .btn-clear-filters { 
-            color: var(--danger-red); font-size: 0.8rem; font-weight: 600; text-decoration: none; 
-            display: none; align-items: center; gap: 6px; padding: 10px 14px; 
-            border-radius: 6px; background: var(--danger-red-soft);
+        .corp-input:focus, .corp-select:focus {
+            border-color: var(--corp-accent);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+            outline: none;
         }
 
-        /* ==========================================
-           TABLA DE DATOS (ESTILO GOOGLE SHEETS)
-           ========================================== */
-        #table-container { 
-            flex: 1; 
-            background: var(--bg-surface); 
-            border: 1px solid var(--sheet-border); 
-            border-radius: 0 0 8px 8px; 
-            overflow: auto; 
+        /* Tabla de Activos */
+        #table-container {
             position: relative;
+            overflow-x: auto;
         }
-        .t-sheet { 
-            width: 100%; 
-            border-collapse: collapse; 
-            text-align: left; 
-            /* Se usa Arial u otra tipografía de sistema para emular Sheets */
-            font-family: 'Arial', sans-serif; 
-            font-size: 0.85rem; 
+        .corp-table {
+            width: 100%;
+            border-collapse: collapse;
         }
-        
-        /* Celdas generales: Todo tiene borde de cuadrícula */
-        .t-sheet th, .t-sheet td {
-            border: 1px solid var(--sheet-border);
-            padding: 6px 12px;
-            color: var(--sheet-text);
+        .corp-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 10px 14px;
+            white-space: nowrap;
+        }
+        .corp-table tbody td {
+            font-size: 13px;
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
         }
-
-        /* Fila de Encabezados Principales */
-        .t-sheet th { 
-            background: var(--sheet-header-bg); 
-            font-weight: 600; 
-            font-size: 0.8rem; 
-            position: sticky; 
-            top: 0; 
-            z-index: 10;
-            box-shadow: 0 1px 0 var(--sheet-border); /* Asegura que el borde no se pierda al hacer scroll */
+        .corp-table tbody tr:hover td:not(.row-header) {
+            background-color: #f8fafc !important;
         }
-
-        /* Columna de números al estilo 'Row Header' de Sheets */
-        .t-sheet th.row-header, .t-sheet td.row-header {
-            background: var(--sheet-header-bg);
-            color: #5f6368;
-            font-weight: 500;
+        .corp-table th.row-header, .corp-table td.row-header {
+            background: #f8fafc;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 11.5px;
             text-align: center;
-            width: 45px;
+            width: 48px;
+            border-right: 1px solid #f1f5f9;
             user-select: none;
         }
 
-        /* Efecto Hover en las filas, igual que al seleccionar en Sheets */
-        .t-sheet tr { transition: background-color 0.1s ease; }
-        .t-sheet tr:hover td:not(.row-header) { background-color: var(--primary-blue-soft) !important; cursor: default; }
+        /* Tonalidades sutiles de fila */
+        .row-assigned td:not(.row-header) { background-color: #fafcff; }
+        .row-issue td:not(.row-header) { background-color: #fffafa; }
 
-        /* Efecto Skeleton Carga */
-        .loading .t-sheet { opacity: 0.4; pointer-events: none; }
+        /* Skeleton Loading */
+        .loading .corp-table { opacity: 0.45; pointer-events: none; }
         .loading::after {
-            content: ""; position: absolute; top: 35px; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
-            background-size: 200% 100%; animation: loading-skeleton 1.5s infinite;
-            z-index: 20; pointer-events: none;
+            content: "";
+            position: absolute;
+            top: 38px; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.75), transparent);
+            background-size: 200% 100%;
+            animation: loading-skeleton 1.4s infinite;
+            z-index: 20;
+            pointer-events: none;
         }
-        @keyframes loading-skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        @keyframes loading-skeleton {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
 
-        /* Tonalidades de fila según estado */
-        .row-assigned td:not(.row-header) { background-color: var(--row-assigned); }
-        .row-issue td:not(.row-header) { background-color: var(--row-issue); }
-
-        /* Chips estilo Google Docs / Sheets dropdowns */
-        .cat-tag { 
-            font-size: 0.7rem; background: #f1f3f4; color: #3c4043; 
-            padding: 2px 8px; border-radius: 12px; font-weight: 500; 
+        /* Badges y códigos */
+        .corp-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            padding: 2px 7px;
+            border-radius: 6px;
             display: inline-block;
         }
-        .mono-code { 
-            font-family: 'Consolas', monospace; 
-            color: var(--primary-blue); font-weight: bold;
+        .cat-tag {
+            font-size: 11px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            display: inline-block;
         }
-        
-        .status-pill { 
-            display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; 
-            border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
             border: 1px solid transparent;
+            white-space: nowrap;
         }
         .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        
-        .st-ok { background: var(--success-green-soft); color: var(--success-green); border-color: #cce8d6; }
+
+        .st-ok { background: var(--success-green-soft); color: var(--success-green); border-color: #a7f3d0; }
         .st-ok .status-dot { background: var(--success-green); }
-        
-        .st-busy { background: var(--primary-blue-soft); color: var(--primary-blue); border-color: #c2e0ff; }
-        .st-busy .status-dot { background: var(--primary-blue); }
-        
-        .st-bad { background: var(--danger-red-soft); color: var(--danger-red); border-color: #fad2cf; }
+
+        .st-busy { background: var(--corp-accent-soft); color: var(--corp-accent); border-color: #dbeafe; }
+        .st-busy .status-dot { background: var(--corp-accent); }
+
+        .st-bad { background: var(--danger-red-soft); color: var(--danger-red); border-color: #fecaca; }
         .st-bad .status-dot { background: var(--danger-red); }
-        
-        .st-fix { background: var(--warning-yellow-soft); color: var(--warning-yellow); border-color: #feefc3; }
+
+        .st-fix { background: var(--warning-yellow-soft); color: var(--warning-yellow); border-color: #fde68a; }
         .st-fix .status-dot { background: var(--warning-yellow); }
 
-        .pagination-container { padding: 12px 16px; background: var(--bg-surface); border: 1px solid var(--sheet-border); border-top: none; }
+        /* Paginación */
+        .pagination { margin-bottom: 0; }
+        .pagination .page-link {
+            font-size: 12.5px;
+            color: #334155;
+            border-color: #e2e8f0;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #0f172a;
+            border-color: #0f172a;
+            color: #ffffff;
+        }
 
-        /* Estado Vacío / Empty State */
-        .empty-state { text-align: center; padding: 50px 20px !important; }
-        .empty-icon { width: 50px; height: 50px; color: #dadce0; margin-bottom: 12px; }
-        .empty-title { font-size: 1rem; font-weight: 600; color: var(--text-main); margin: 0 0 6px 0; }
-        .empty-text { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
-        
         @media print {
-            .dashboard-section, .filter-section, .toolbar-actions, .pagination-container, th:last-child, td:last-child { display: none !important; }
-            .container { padding: 0 !important; background: white !important; }
-            #table-container { border: none !important; box-shadow: none !important; }
+            .corp-quicknav, .dashboard-section, .corp-filter-bar, .toolbar-actions, .pagination-container, th:last-child, td:last-child { display: none !important; }
+            .corp-panel { border: none !important; box-shadow: none !important; }
         }
     </style>
 
-    <div class="container">
-        
-        <div class="header-section">
-            <div>
-                <h1 class="page-title">Almacén de Activos</h1>
-                <div class="counter-badge">
-                    <span class="counter-dot"></span>
-                    <span id="total-count">{{ $activos->total() }}</span> registros en total
+    <div class="container-fluid py-2 px-2 px-md-3">
+        <div class="corp-shell">
+
+            {{-- 1. CABECERA EJECUTIVA + ACCESOS RÁPIDOS POR GRUPO DE ENFOQUE --}}
+            <div class="corp-header mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div>
+                        <nav aria-label="breadcrumb" class="mb-1">
+                            <ol class="breadcrumb mb-0" style="font-size: 11.5px;">
+                                <li class="breadcrumb-item text-muted">Gestión de Inventario</li>
+                                <li class="breadcrumb-item text-muted">Almacén y Gestión</li>
+                                <li class="breadcrumb-item active fw-semibold text-primary" aria-current="page">Almacén de Activos</li>
+                            </ol>
+                        </nav>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h4 class="fw-bold mb-0" style="letter-spacing: -0.02em; color: #0f172a;">
+                                Almacén de Activos
+                            </h4>
+                            <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-2" style="font-size: 11.5px; padding: 5px 10px;">
+                                <span style="width: 7px; height: 7px; border-radius: 50%; background: #1d4ed8; display: inline-block;"></span>
+                                <span id="total-count">{{ $activos->total() }}</span> registros
+                            </span>
+                        </div>
+                        <p class="text-secondary mb-0" style="font-size: 13.5px;">
+                            Control centralizado de equipos, ubicación en bodega, condición física y asignación a responsables.
+                        </p>
+                    </div>
+
+                    <div class="toolbar-actions d-flex align-items-center gap-2 flex-wrap">
+                        <a href="#"
+                           id="btn-generate-pdf"
+                           class="btn btn-light border fw-semibold text-dark px-3 py-2"
+                           style="font-size: 13px; border-radius: 9px;"
+                           title="Descargar como PDF">
+                            <i class="bi bi-file-earmark-pdf text-danger me-1"></i> PDF
+                        </a>
+                        <a href="#"
+                           id="btn-generate-excel"
+                           class="btn btn-light border fw-semibold text-dark px-3 py-2"
+                           style="font-size: 13px; border-radius: 9px;"
+                           title="Descargar como Excel">
+                            <i class="bi bi-file-earmark-excel text-success me-1"></i> Excel
+                        </a>
+                        <a href="{{ route('inventario.compras.create') }}"
+                           class="btn btn-primary fw-semibold px-3 py-2 shadow-sm"
+                           style="font-size: 13px; border-radius: 9px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo Ingreso
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Barra Minimalista de Accesos Rápidos con Color por Enfoque --}}
+                <div class="corp-quicknav" aria-label="Accesos rápidos de inventario">
+                    {{-- GRUPO 1: PRINCIPAL / VISTAS CORE (Azul claro) --}}
+                    <a href="{{ route('inventario.tablero') }}" class="corp-nav-pill pill-core" title="Vista Principal">
+                        <i class="bi bi-speedometer2"></i> Tablero
+                    </a>
+                    <a href="{{ route('inventario.activos.index') }}" class="corp-nav-pill pill-core active" title="Vista Principal">
+                        <i class="bi bi-laptop-fill"></i> Activos
+                    </a>
+
+                    <span class="corp-nav-sep"></span>
+
+                    {{-- GRUPO 2: OPERACIONES / ALTAS (Verde esmeralda claro) --}}
+                    <a href="{{ route('inventario.compras.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                        <i class="bi bi-cart-plus"></i> + Compra
+                    </a>
+                    <a href="{{ route('inventario.movimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                        <i class="bi bi-file-earmark-arrow-up"></i> + Acta / Mov.
+                    </a>
+                    <a href="{{ route('inventario.mantenimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                        <i class="bi bi-wrench-adjustable"></i> + Mantenimiento
+                    </a>
+
+                    <span class="corp-nav-sep"></span>
+
+                    {{-- GRUPO 3: CONTROL / BITÁCORAS Y ALERTAS (Ámbar cálido claro) --}}
+                    <a href="{{ route('inventario.movimientos.index') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                        <i class="bi bi-arrow-left-right"></i> Movimientos
+                    </a>
+                    <a href="{{ route('inventario.compras.index') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                        <i class="bi bi-receipt"></i> Facturas
+                    </a>
+                    <a href="{{ route('inventario.activos.alertas') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                        <i class="bi bi-exclamation-triangle"></i> Alertas
+                    </a>
+
+                    <span class="corp-nav-sep"></span>
+
+                    {{-- GRUPO 4: CONFIGURACIÓN / CATÁLOGOS (Púrpura suave) --}}
+                    <a href="{{ route('inventario.bodegas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                        <i class="bi bi-geo-alt"></i> Bodegas
+                    </a>
+                    <a href="{{ route('inventario.clasificacion.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                        <i class="bi bi-diagram-3"></i> Clasificación
+                    </a>
+                    <a href="{{ route('inventario.marcas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                        <i class="bi bi-tags"></i> Marcas
+                    </a>
+                    <a href="{{ route('inventario.metodos-pago.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                        <i class="bi bi-credit-card"></i> Métodos Pago
+                    </a>
                 </div>
             </div>
-            <div class="toolbar-actions">
-                <a href="#" id="btn-generate-pdf" class="btn-action" title="Descargar como PDF">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    PDF
-                </a>
-                <a href="#" id="btn-generate-excel" class="btn-action" title="Descargar como Excel">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
-                    Excel
-                </a>
-                <span style="width: 1px; height: 24px; background: var(--border-light); margin: 0 4px;"></span>
-                <a href="{{ route('inventario.compras.create') }}" class="btn-action btn-primary">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Nuevo Ingreso
-                </a>
-            </div>
-        </div>
 
-        <div class="dashboard-section">
-            <div class="chart-card">
-                <div class="chart-title">
-                    Estado Físico
-                    <span class="chart-instruction">Clic para filtrar</span>
+            {{-- 2. DASHBOARD DE GRÁFICOS INTERACTIVOS --}}
+            <div class="dashboard-section row g-3 mb-3">
+                <div class="col-12 col-lg-4">
+                    <div class="corp-chart-card">
+                        <div class="corp-chart-title">
+                            <span><i class="bi bi-heart-pulse text-primary me-1"></i> Estado Físico</span>
+                            <span class="corp-chart-hint">Clic para filtrar</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartEstados"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartEstados"></canvas>
-                </div>
-            </div>
 
-            <div class="chart-card">
-                <div class="chart-title">
-                    Distribución por Bodega
-                    <span class="chart-instruction">Clic para filtrar</span>
+                <div class="col-12 col-lg-4">
+                    <div class="corp-chart-card">
+                        <div class="corp-chart-title">
+                            <span><i class="bi bi-geo-alt text-primary me-1"></i> Distribución por Bodega</span>
+                            <span class="corp-chart-hint">Clic para filtrar</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartBodegas"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="chartBodegas"></canvas>
-                </div>
-            </div>
 
-            <div class="chart-card">
-                <div class="chart-title">
-                    Top Categorías
-                    <span class="chart-instruction">Clic para filtrar</span>
-                </div>
-                <div class="chart-container">
-                    <canvas id="chartCategorias"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <form id="live-search-form" action="{{ route('inventario.activos.index') }}" method="GET" class="filter-section">
-            <div class="filter-group search-group">
-                <label class="filter-label">Búsqueda Inteligente</label>
-                <div style="position: relative;">
-                    <svg style="position: absolute; left: 12px; top: 10px; color: var(--text-light);" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <input type="text" name="search" class="filter-input" style="padding-left: 36px;" placeholder="Placa, serial, nombre o responsable..." value="{{ request('search') }}" autocomplete="off">
+                <div class="col-12 col-lg-4">
+                    <div class="corp-chart-card">
+                        <div class="corp-chart-title">
+                            <span><i class="bi bi-diagram-3 text-primary me-1"></i> Top Categorías</span>
+                            <span class="corp-chart-hint">Clic para filtrar</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartCategorias"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="filter-group">
-                <label class="filter-label">Ubicación</label>
-                <select name="bodega_id" id="bodega_id" class="filter-select">
-                    <option value="">Todas las Bodegas</option>
-                    @foreach($bodegas as $bodega)
-                        <option value="{{ $bodega->id }}" {{ request('bodega_id') == $bodega->id ? 'selected' : '' }}>{{ $bodega->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">Condición</label>
-                <select name="estado_id" id="estado_id" class="filter-select">
-                    <option value="">Todos los Estados</option>
-                    @foreach($estados as $estado)
-                        <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label class="filter-label">Clasificación</label>
-                <select name="subgrupo_id" id="subgrupo_id" class="filter-select">
-                    <option value="">Todas</option>
-                    @foreach($subgrupos as $subgrupo)
-                        <option value="{{ $subgrupo->id }}" {{ request('subgrupo_id') == $subgrupo->id ? 'selected' : '' }}>{{ $subgrupo->nombre }}</option>
-                    @endforeach
-                </select>
-            </div>
-            
-            <a href="javascript:void(0)" id="btn-reset" class="btn-clear-filters" style="{{ request()->hasAny(['search', 'bodega_id', 'estado_id', 'subgrupo_id']) ? 'display: flex;' : 'display: none;' }}">
-                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                Limpiar
-            </a>
-        </form>
-
-        <div id="table-container">
-            <table class="t-sheet">
-                <thead>
-                    <tr>
-                        <th class="row-header">Nº</th>
-                        <th>Descripción y Categoría</th>
-                        <th>Identificadores</th>
-                        <th>Sede / Bodega</th>
-                        <th>Estado</th>
-                        <th>Asignación</th>
-                        <th style="width: 80px; text-align: center;">Acción</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($activos as $index => $activo)
-                    @php
-                        $rowClass = 'row-available';
-                        if(in_array($activo->id_Estado, [3, 4])) $rowClass = 'row-issue';
-                        elseif($activo->usuarioAsignado) $rowClass = 'row-assigned';
-
-                        $statusClass = match($activo->id_Estado) {
-                            1 => 'st-ok', 
-                            2 => 'st-busy', 
-                            3 => 'st-bad', 
-                            4 => 'st-fix', 
-                            default => 'st-busy'
-                        };
-                    @endphp
-                    <tr class="{{ $rowClass }}">
-                        <td class="row-header">{{ $activos->firstItem() + $index }}</td>
-                        <td>
-                            <div style="font-weight: bold; margin-bottom: 2px;">{{ $activo->nombre }}</div>
-                            <span class="cat-tag">{{ $activo->subgrupo->nombre ?? 'Sin categoría' }}</span>
-                        </td>
-                        <td>
-                            <div class="mono-code">{{ $activo->codigo_activo }}</div>
-                            <div style="font-size: 0.75rem; color: #5f6368;">
-                                SN: {{ $activo->serial ?? 'N/A' }}
+            {{-- 3. PANEL DE FILTROS AJAX + TABLA DE ACTIVOS --}}
+            <div class="corp-panel">
+                <form id="live-search-form" action="{{ route('inventario.activos.index') }}" method="GET" class="corp-filter-bar">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-12 col-lg-4">
+                            <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px; text-transform: uppercase;">
+                                Búsqueda Inteligente
+                            </label>
+                            <div class="position-relative">
+                                <i class="bi bi-search text-muted position-absolute" style="left: 11px; top: 50%; transform: translateY(-50%); font-size: 13px;"></i>
+                                <input type="text"
+                                       name="search"
+                                       class="form-control corp-input ps-4"
+                                       placeholder="Placa, serial, nombre o responsable..."
+                                       value="{{ request('search') }}"
+                                       autocomplete="off">
                             </div>
-                        </td>
-                        <td>
-                            {{ $activo->referencia->bodega->nombre ?? 'Sin Bodega' }}
-                        </td>
-                        <td>
-                            <div class="status-pill {{ $statusClass }}">
-                                <span class="status-dot"></span>
-                                {{ $activo->estado->nombre ?? 'N/D' }}
-                            </div>
-                        </td>
-                        <td>
-                            @if($activo->usuarioAsignado)
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <div style="width: 20px; height: 20px; border-radius: 50%; background: #e8eaed; color: #3c4043; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;">
-                                        {{ strtoupper(substr($activo->usuarioAsignado->name, 0, 1)) }}
-                                    </div>
-                                    <span>{{ $activo->usuarioAsignado->name }}</span>
-                                </div>
-                            @else
-                                <span style="color: var(--success-green); font-weight: bold; font-size: 0.75rem;">DISPONIBLE</span>
-                            @endif
-                        </td>
-                        <td style="text-align: center; white-space: nowrap;">
-                            <a href="{{ route('inventario.activos.show', $activo->id) }}" class="btn-action btn-icon-only" title="Ver Detalles">
-                                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                        </div>
+
+                        <div class="col-12 col-sm-4 col-lg-2">
+                            <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px; text-transform: uppercase;">
+                                Ubicación
+                            </label>
+                            <select name="bodega_id" id="bodega_id" class="form-select corp-select">
+                                <option value="">Todas las Bodegas</option>
+                                @foreach($bodegas as $bodega)
+                                    <option value="{{ $bodega->id }}" {{ request('bodega_id') == $bodega->id ? 'selected' : '' }}>{{ $bodega->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-sm-4 col-lg-2">
+                            <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px; text-transform: uppercase;">
+                                Condición
+                            </label>
+                            <select name="estado_id" id="estado_id" class="form-select corp-select">
+                                <option value="">Todos los Estados</option>
+                                @foreach($estados as $estado)
+                                    <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>{{ $estado->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-sm-4 col-lg-2">
+                            <label class="form-label fw-bold text-muted mb-1" style="font-size: 11px; text-transform: uppercase;">
+                                Clasificación
+                            </label>
+                            <select name="subgrupo_id" id="subgrupo_id" class="form-select corp-select">
+                                <option value="">Todas</option>
+                                @foreach($subgrupos as $subgrupo)
+                                    <option value="{{ $subgrupo->id }}" {{ request('subgrupo_id') == $subgrupo->id ? 'selected' : '' }}>{{ $subgrupo->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-lg-2 d-flex justify-content-lg-end">
+                            <a href="javascript:void(0)"
+                               id="btn-reset"
+                               class="btn btn-outline-danger fw-semibold w-100"
+                               style="font-size: 12.5px; border-radius: 8px; {{ request()->hasAny(['search', 'bodega_id', 'estado_id', 'subgrupo_id']) ? 'display: inline-flex; align-items: center; justify-content: center;' : 'display: none;' }}">
+                                <i class="bi bi-x-circle me-1"></i> Limpiar filtros
                             </a>
-                            
-                            <a href="{{ route('inventario.activos.edit', $activo->id) }}" class="btn-action btn-icon-only" title="Editar Activo" style="color: var(--primary-blue);">
-                                <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="7" class="empty-state">
-                            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <h3 class="empty-title">Sin registros</h3>
-                            <p class="empty-text">No hay activos que coincidan con los filtros aplicados.</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        
-        @if($activos->hasPages())
-            <div class="pagination-container">
-                {{ $activos->links() }}
+                        </div>
+                    </div>
+                </form>
+
+                <div id="table-container">
+                    <table class="table corp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th class="row-header">Nº</th>
+                                <th>Descripción y Categoría</th>
+                                <th>Identificadores</th>
+                                <th>Sede / Bodega</th>
+                                <th>Estado</th>
+                                <th>Asignación</th>
+                                <th style="width: 100px; text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($activos as $index => $activo)
+                                @php
+                                    $rowClass = 'row-available';
+                                    if(in_array($activo->id_Estado, [3, 4])) $rowClass = 'row-issue';
+                                    elseif($activo->usuarioAsignado) $rowClass = 'row-assigned';
+
+                                    $statusClass = match($activo->id_Estado) {
+                                        1 => 'st-ok',
+                                        2 => 'st-busy',
+                                        3 => 'st-bad',
+                                        4 => 'st-fix',
+                                        default => 'st-busy'
+                                    };
+                                @endphp
+                                <tr class="{{ $rowClass }}">
+                                    <td class="row-header">{{ $activos->firstItem() + $index }}</td>
+                                    <td>
+                                        <div class="fw-bold text-dark mb-1" style="font-size: 13.5px;">{{ $activo->nombre }}</div>
+                                        <span class="cat-tag">{{ $activo->subgrupo->nombre ?? 'Sin categoría' }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="corp-code mb-1">{{ $activo->codigo_activo }}</div>
+                                        <div class="text-muted" style="font-size: 11.5px;">
+                                            SN: <span class="font-monospace">{{ $activo->serial ?? 'N/A' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-secondary fw-semibold">
+                                        {{ $activo->referencia->bodega->nombre ?? 'Sin Bodega' }}
+                                    </td>
+                                    <td>
+                                        <div class="status-pill {{ $statusClass }}">
+                                            <span class="status-dot"></span>
+                                            {{ $activo->estado->nombre ?? 'N/D' }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if($activo->usuarioAsignado)
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold"
+                                                     style="width: 24px; height: 24px; background: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; font-size: 11px; flex-shrink: 0;">
+                                                    {{ strtoupper(substr($activo->usuarioAsignado->name, 0, 1)) }}
+                                                </div>
+                                                <span class="text-dark fw-semibold" style="font-size: 12.5px;">{{ $activo->usuarioAsignado->name }}</span>
+                                            </div>
+                                        @else
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 11px; font-weight: 700;">
+                                                DISPONIBLE
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center" style="white-space: nowrap;">
+                                        <div class="d-inline-flex gap-1">
+                                            <a href="{{ route('inventario.activos.show', $activo->id) }}"
+                                               class="btn btn-sm btn-light border text-dark"
+                                               style="padding: 3px 8px;"
+                                               title="Ver Detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ route('inventario.activos.edit', $activo->id) }}"
+                                               class="btn btn-sm btn-light border text-primary"
+                                               style="padding: 3px 8px;"
+                                               title="Editar Activo">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox d-block mb-1" style="font-size: 26px;"></i>
+                                        <div class="fw-bold text-dark">Sin registros</div>
+                                        <div style="font-size: 12.5px;">No hay activos que coincidan con los filtros aplicados.</div>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if($activos->hasPages())
+                    <div class="pagination-container p-3 border-top bg-white d-flex justify-content-center">
+                        {{ $activos->links() }}
+                    </div>
+                @endif
             </div>
-        @endif
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            
+
             // ==========================================
             // 1. CONFIGURACIÓN DEL FILTRO AJAX
             // ==========================================
@@ -477,11 +673,13 @@
                 const formData = new FormData(form);
                 url.search = new URLSearchParams(formData).toString();
 
-                // Mostrar/ocultar botón limpiar
                 const filtersActive = Array.from(formData.values()).some(val => val !== '');
-                btnReset.style.display = filtersActive ? 'flex' : 'none';
+                btnReset.style.display = filtersActive ? 'inline-flex' : 'none';
+                if (filtersActive) {
+                    btnReset.style.alignItems = 'center';
+                    btnReset.style.justifyContent = 'center';
+                }
 
-                // Activar animación skeleton
                 tableContainer.classList.add('loading');
 
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
@@ -490,8 +688,7 @@
                     const doc = new DOMParser().parseFromString(html, 'text/html');
                     tableContainer.innerHTML = doc.getElementById('table-container').innerHTML;
                     document.getElementById('total-count').innerText = doc.getElementById('total-count').innerText;
-                    
-                    // Remover animación
+
                     tableContainer.classList.remove('loading');
                     window.history.pushState({}, '', url);
                 })
@@ -520,14 +717,13 @@
             // ==========================================
             // 2. INICIALIZACIÓN DE GRÁFICOS (CHART.JS)
             // ==========================================
-            
             Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-            Chart.defaults.color = '#5f6368'; 
-            
+            Chart.defaults.color = '#64748b';
+
             const tooltipConfig = {
-                backgroundColor: '#202124',
+                backgroundColor: '#0f172a',
                 padding: 10,
-                cornerRadius: 4,
+                cornerRadius: 6,
                 titleFont: { size: 12, weight: '600' },
                 bodyFont: { size: 12 },
                 displayColors: true,
@@ -538,7 +734,7 @@
             const rawBodegas = @json($statsBodegas ?? []);
             const rawCategorias = @json($statsCategorias ?? []);
 
-            // --- GRÁFICO 1: ESTADOS (Doughnut adaptativo) ---
+            // --- GRÁFICO 1: ESTADOS ---
             if(document.getElementById('chartEstados') && rawEstados.length > 0) {
                 const ctxEstados = document.getElementById('chartEstados').getContext('2d');
                 new Chart(ctxEstados, {
@@ -548,18 +744,18 @@
                         datasets: [{
                             data: rawEstados.map(e => e.count),
                             backgroundColor: rawEstados.map(e => e.color),
-                            borderWidth: 2, 
+                            borderWidth: 2,
                             borderColor: '#ffffff',
                             hoverOffset: 4,
-                            cutout: '70%' // Control del grosor
+                            cutout: '70%'
                         }]
                     },
                     options: {
-                        responsive: true, 
-                        maintainAspectRatio: false, // Ahora funciona gracias a min-height:0 en CSS
-                        layout: { padding: 10 },
-                        plugins: { 
-                            legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: { padding: 8 },
+                        plugins: {
+                            legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11, weight: '600' } } },
                             tooltip: tooltipConfig
                         },
                         onClick: (event, elements) => {
@@ -573,7 +769,7 @@
                 });
             }
 
-            // --- GRÁFICO 2: BODEGAS (Bar Horizontal Minimal) ---
+            // --- GRÁFICO 2: BODEGAS ---
             if(document.getElementById('chartBodegas') && rawBodegas.length > 0) {
                 const ctxBodegas = document.getElementById('chartBodegas').getContext('2d');
                 new Chart(ctxBodegas, {
@@ -583,20 +779,20 @@
                         datasets: [{
                             label: 'Activos',
                             data: rawBodegas.map(b => b.count),
-                            backgroundColor: '#1a73e8',
+                            backgroundColor: '#1d4ed8',
                             borderRadius: 4,
                             barThickness: 'flex',
-                            maxBarThickness: 24
+                            maxBarThickness: 22
                         }]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true, maintainAspectRatio: false,
-                        layout: { padding: { top: 10, bottom: 10, right: 15 } },
+                        layout: { padding: { top: 6, bottom: 6, right: 12 } },
                         plugins: { legend: { display: false }, tooltip: tooltipConfig },
-                        scales: { 
-                            x: { display: false, grid: { display: false } }, 
-                            y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } } 
+                        scales: {
+                            x: { display: false, grid: { display: false } },
+                            y: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 11 } } }
                         },
                         onClick: (event, elements) => {
                             if (elements.length > 0) {
@@ -609,7 +805,7 @@
                 });
             }
 
-            // --- GRÁFICO 3: CATEGORÍAS (Bar Vertical Clean) ---
+            // --- GRÁFICO 3: CATEGORÍAS ---
             if(document.getElementById('chartCategorias') && rawCategorias.length > 0) {
                 const ctxCategorias = document.getElementById('chartCategorias').getContext('2d');
                 new Chart(ctxCategorias, {
@@ -620,16 +816,16 @@
                             data: rawCategorias.map(c => c.count),
                             backgroundColor: rawCategorias.map(c => c.color),
                             borderRadius: 4,
-                            maxBarThickness: 30
+                            maxBarThickness: 28
                         }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        layout: { padding: { top: 10 } },
+                        layout: { padding: { top: 8 } },
                         plugins: { legend: { display: false }, tooltip: tooltipConfig },
-                        scales: { 
-                            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } }, 
-                            y: { display: false, grid: { display: false } } 
+                        scales: {
+                            x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 10 }, maxRotation: 45, minRotation: 45 } },
+                            y: { display: false, grid: { display: false } }
                         },
                         onClick: (event, elements) => {
                             if (elements.length > 0) {
@@ -648,7 +844,7 @@
                 const searchParams = new URLSearchParams(new FormData(form)).toString();
                 window.location.href = "{{ route('inventario.activos.pdf') }}?" + searchParams;
             });
-            
+
             document.getElementById('btn-generate-excel').addEventListener('click', function(e) {
                 e.preventDefault();
                 const searchParams = new URLSearchParams(new FormData(form)).toString();
