@@ -8,7 +8,31 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
 class AsociadosImport implements ToCollection, WithHeadingRow
 {
+    private const HEADING_ALIASES = [
+        'primer_nombre' => 'nombre1',
+        'segundo_nombre' => 'nombre2',
+        'primer_apellido' => 'apellido1',
+        'segundo_apellido' => 'apellido2',
+        'codigo_distrito' => 'distrito_actual',
+        'codigo_ciudad' => 'ciudad_distrito',
+        'ubicacion_link_ecm' => 'ubicacion_ecm_link',
+        'estado_consolidado' => 'estado_conservacion',
+    ];
+
     protected $rows = [];
+
+    private function normalizeHeadingKeys(Collection $row): array
+    {
+        $values = $row->all();
+
+        foreach (self::HEADING_ALIASES as $heading => $field) {
+            if (!array_key_exists($field, $values) && array_key_exists($heading, $values)) {
+                $values[$field] = $values[$heading];
+            }
+        }
+
+        return $values;
+    }
 
     /**
      * Recorre la colección leída del Excel, limpia los datos, formatea fechas 
@@ -17,6 +41,8 @@ class AsociadosImport implements ToCollection, WithHeadingRow
     public function collection(Collection $collection)
     {
         foreach ($collection as $row) {
+            $row = $this->normalizeHeadingKeys($row);
+
             // Omitir si la cédula viene vacía en el Excel
             if (empty(trim($row['cedula'] ?? ''))) {
                 continue;
@@ -25,10 +51,10 @@ class AsociadosImport implements ToCollection, WithHeadingRow
             // Mapeo exhaustivo de las 48 columnas con transformación en caliente
             $this->rows[] = [
                 'radicado'                  => $row['radicado'] ?? null,
-                'cedula'                    => $row['cedula'],
-                'nombre1'                   => $row['nombre1'],
+                'cedula'                    => $row['cedula'] ?? null,
+                'nombre1'                   => $row['nombre1'] ?? null,
                 'nombre2'                   => $row['nombre2'] ?? null,
-                'apellido1'                 => $row['apellido1'],
+                'apellido1'                 => $row['apellido1'] ?? null,
                 'apellido2'                 => $row['apellido2'] ?? null,
                 'fecha_nacimiento'          => $this->transformDate($row['fecha_nacimiento'] ?? null),
                 'lugar_expedicion_cedula'   => $row['lugar_expedicion_cedula'] ?? null,

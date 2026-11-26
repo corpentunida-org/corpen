@@ -9,7 +9,7 @@
 
             <div class="header-actions">
                 <!-- Botón para descargar / exportar Excel -->
-                <a href="{{ route('asociados.sincronizar.descargar') }}" class="btn btn-corporate-outline shadow-sm me-2" title="Exportar directorio completo en Excel">
+                <a href="{{ route('asociados.sincronizar.descargar') }}" data-no-loading class="btn btn-corporate-outline shadow-sm me-2" title="Exportar directorio completo en Excel">
                     <i class="fas fa-file-excel text-success me-1"></i> <span>Exportar Excel</span>
                 </a>
 

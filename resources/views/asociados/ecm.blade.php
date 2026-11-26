@@ -59,7 +59,7 @@
         <form action="{{ url()->current() }}" method="GET" class="card shadow-sm border-0 mb-4 rounded-3 border-start border-primary border-4">
             <div class="card-body p-3 bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="d-flex gap-3 align-items-center flex-grow-1">
-                    
+
                     {{-- CAMPO INDIVIDUAL PARA RADICADO --}}
                     <div class="input-group input-group-sm shadow-sm" style="max-width: 280px;">
                         <span class="input-group-text bg-light border-primary text-primary fw-bold"><i class="fas fa-barcode me-2"></i> Radicado</span>
@@ -72,16 +72,16 @@
                         <input type="text" name="search" class="form-control border-start-0" placeholder="Buscar Cédula o Nombre..." value="{{ request('search') }}">
                     </div>
                 </div>
-                
+
                 <div class="d-flex gap-2">
                     <select name="estado_digitalizacion" class="form-select form-select-sm text-muted shadow-sm" style="width: 180px;">
                         <option value="">Estado Digitalización</option>
                         <option value="1" {{ request('estado_digitalizacion') == '1' ? 'selected' : '' }}>Completados</option>
                         <option value="0" {{ request('estado_digitalizacion') == '0' ? 'selected' : '' }}>En Proceso</option>
                     </select>
-                    
+
                     <button type="submit" class="btn btn-sm btn-primary shadow-sm"><i class="fas fa-filter"></i> Filtrar</button>
-                    
+
                     {{-- Botón para limpiar si hay filtros aplicados --}}
                     @if(request()->anyFilled(['radicado', 'search', 'estado_digitalizacion']))
                         <a href="{{ url()->current() }}" class="btn btn-sm btn-light border shadow-sm text-danger"><i class="fas fa-times"></i> Limpiar</a>
@@ -112,9 +112,9 @@
                                     if($asociado->escaneado) $score += 33;
                                     if($asociado->cargado_ecm) $score += 33;
                                     if($asociado->validado_archivo) $score += 34;
-                                    
+
                                     $progressColor = $score == 100 ? 'bg-success' : ($score > 30 ? 'bg-warning' : 'bg-danger');
-                                    
+
                                     // Generación de Iniciales para el Avatar
                                     $iniciales = strtoupper(substr($asociado->nombre1, 0, 1) . substr($asociado->apellido1, 0, 1));
                                 @endphp
@@ -137,7 +137,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    
+
                                     <td>
                                         <div class="d-flex align-items-center">
                                             <div class="avatar-circle me-3 shadow-sm">{{ $iniciales }}</div>
@@ -147,7 +147,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    
+
                                     <td>
                                         <div class="location-box">
                                             <div class="d-flex justify-content-between mb-1">
@@ -160,7 +160,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                    
+
                                     <td>
                                         <div class="d-flex justify-content-between align-items-center mb-1">
                                             <span class="small fw-bold text-muted">Estatus</span>
@@ -170,12 +170,12 @@
                                             <div class="progress-bar {{ $progressColor }}" role="progressbar" style="width: {{ $score }}%" aria-valuenow="{{ $score }}" aria-valuemin="0" aria-valuemax="100"></div>
                                         </div>
                                     </td>
-                                    
+
                                     <td>
                                         <span class="d-block fw-bold text-dark" style="font-size: 0.85rem;">{{ $asociado->custodia_actual ?? 'Archivo Central' }}</span>
                                         <small class="text-muted"><i class="far fa-clock me-1"></i> {{ $asociado->fecha_ingreso_archivo ? $asociado->fecha_ingreso_archivo->format('d M Y') : 'Sin fecha' }}</small>
                                     </td>
-                                    
+
                                     <td class="text-center pe-4">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light border rounded-circle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; line-height: 1;">
@@ -190,7 +190,7 @@
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item py-2" href="{{ route('asociados.maestro.edit', $asociado->id) }}">
-                                                        <i class="fas fa-pen text-warning me-2"></i> Editar Metadatos
+                                                        <i class="fas fa-pen text-warning me-2"></i> Editar Carpeta
                                                     </a>
                                                 </li>
                                                 @if($asociado->ubicacion_ecm_link)
@@ -232,7 +232,7 @@
         </div>
     </div>
     @include('asociados.partials.styles')
-    
+
     <script>
         document.addEventListener("DOMContentLoaded", function(){
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
