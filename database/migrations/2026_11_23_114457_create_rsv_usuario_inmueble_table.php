@@ -15,7 +15,7 @@ return new class extends Migration
                   ->cascadeOnUpdate()
                   ->cascadeOnDelete();
             $table->foreignId('inmueble_id')
-                  ->constrained('rsv_catalogo_inmuebles')
+                  ->constrained('rsv_catalogo_inmueble')
                   ->cascadeOnUpdate()
                   ->restrictOnDelete();
             $table->boolean('bloqueado')->default(true);
