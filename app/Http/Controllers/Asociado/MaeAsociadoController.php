@@ -14,7 +14,6 @@ use App\Imports\Asociado\AsociadosImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-//use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
@@ -116,11 +115,11 @@ class MaeAsociadoController extends Controller
 
             $asociado = new MaeAsociado($validated);
 
-            if (!$request->boolean('sincronizar_tercero')) {
-                $asociado->skipTerceroSync = true;
-            }
-
-            $asociado->save();
+            DB::transaction(function () use ($asociado) {
+                if (!$asociado->save()) {
+                    throw new \RuntimeException('No se pudo guardar el expediente del asociado.');
+                }
+            });
 
             return redirect()->route('asociados.maestro.index')
                 ->with('success', 'Expediente del asociado creado correctamente.');
@@ -176,13 +175,22 @@ class MaeAsociadoController extends Controller
         $validated['cargado_ecm']      = $request->boolean('cargado_ecm');
         $validated['validado_archivo'] = $request->boolean('validado_archivo');
 
-        $maeAsociado->fill($validated);
+        try {
+            DB::transaction(function () use ($maeAsociado, $validated) {
+                $maeAsociado->fill($validated);
 
-        if (!$request->boolean('sincronizar_tercero')) {
-            $maeAsociado->skipTerceroSync = true;
+                if (!$maeAsociado->save()) {
+                    throw new \RuntimeException('No se pudo guardar el expediente del asociado.');
+                }
+            });
+        } catch (\Exception $e) {
+            Log::error('Error actualizando asociado y sincronizando tercero: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            return back()->withInput()
+                ->with('error', 'No se pudieron guardar los cambios ni sincronizar el registro maestro. No se guardaron cambios.');
         }
-
-        $maeAsociado->save();
 
         return redirect()->route('asociados.maestro.index')
             ->with('success', 'Expediente del asociado actualizado correctamente.');
@@ -230,7 +238,6 @@ class MaeAsociadoController extends Controller
         $query = MaeAsociado::with(['ciudad', 'distrito']);
 
         // 1. Búsqueda individual y exacta por Radicado
-        // Al poner '=', le decimos a la base de datos que el radicado debe ser EXACTAMENTE igual a lo que escribiste.
         if ($request->filled('radicado')) {
             $query->where('radicado', '=', trim($request->radicado));
         }
@@ -250,7 +257,6 @@ class MaeAsociadoController extends Controller
             $query->where('cargado_ecm', $request->estado_digitalizacion == '1');
         }
 
-        // Retenemos los parámetros en la URL con withQueryString() para que no se pierdan al cambiar de página
         $asociados = $query->latest()->paginate(15)->withQueryString();
 
         return view('asociados.ecm', compact('asociados', 'digitalizadosEcm', 'pendientesArchivo', 'validados'));
@@ -320,22 +326,20 @@ class MaeAsociadoController extends Controller
 
     public function excelIndex()
     {
-        return view('asociados.excel-sync');
+        $conteoEstados = $this->calcularConteoEstadosTerceros();
+
+        return view('asociados.excel-sync', compact('conteoEstados'));
     }
 
     public function descargarExcel()
-{
-    set_time_limit(300); // Amplía el tiempo límite a 5 minutos
-    ini_set('memory_limit', '512M'); // Asigna memoria suficiente para el proceso
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
 
-    return Excel::download(new AsociadosExport, 'maestro_asociados_' . now()->format('Y_m_d_His') . '.xlsx');
-}
+        return Excel::download(new AsociadosExport, 'maestro_asociados_' . now()->format('Y_m_d_His') . '.xlsx');
+    }
 
     /**
-     * Acción (Paso 1): Sube el archivo Excel, valida las columnas y lo guarda en Sesión.
-     * Genera la vista de validación con contadores antes de impactar la BD.
-     */
-/**
      * Acción (Paso 1): Sube el archivo Excel, valida optimizado y guarda en Caché.
      */
     public function subirExcel(Request $request)
@@ -356,35 +360,34 @@ class MaeAsociadoController extends Controller
             // OPTIMIZACIÓN 1: Extraer todas las cédulas y buscar cuáles existen en UNA SOLA consulta
             $cedulasEnExcel = array_column($filasRaw, 'cedula');
             $cedulasExistentes = MaeAsociado::whereIn('cedula', $cedulasEnExcel)->pluck('cedula')->toArray();
-            $cedulasMap = array_flip($cedulasExistentes); // Convierte a mapa para búsqueda ultra rápida
+            $cedulasMap = array_flip($cedulasExistentes);
 
             $filasProcesadas = [];
             $errores = [];
             $contadorNuevos = 0;
             $contadorActualizaciones = 0;
 
-            // NUEVO: Array para rastrear si hay cédulas repetidas dentro de tu mismo Excel
+            // Array para rastrear si hay cédulas repetidas dentro del mismo Excel
             $cedulasVistas = [];
 
             foreach ($filasRaw as $index => $fila) {
-                $numeroLinea = $index + 2; // Línea real en el archivo Excel
+                $numeroLinea = $index + 2;
 
                 // 1. Limpieza extrema de la Cédula Principal (Extrae ÚNICAMENTE números)
                 $cedulaOriginal = $fila['cedula'] ?? '';
                 $cedulaLimpia = preg_replace('/[^0-9]/', '', (string)$cedulaOriginal);
 
-                // MODIFICACIÓN: En vez de saltar en silencio, generamos un error visible para avisarte
                 if (empty($cedulaLimpia)) {
                     $errores[] = "Línea {$numeroLinea}: La cédula está vacía o tiene texto inválido ('{$cedulaOriginal}').";
                     continue;
                 }
 
-                // NUEVO: Detector de duplicados en el Excel
+                // Detector de duplicados en el Excel
                 if (in_array($cedulaLimpia, $cedulasVistas)) {
                     $errores[] = "Línea {$numeroLinea}: La cédula {$cedulaLimpia} está DUPLICADA en otra fila de tu archivo.";
                     continue;
                 }
-                $cedulasVistas[] = $cedulaLimpia; // Guardamos la cédula para compararla con las siguientes
+                $cedulasVistas[] = $cedulaLimpia;
 
                 // 2. Limpieza de errores de Excel (#VALUE!, #N/A, #REF!)
                 foreach ($fila as $key => $value) {
@@ -394,13 +397,11 @@ class MaeAsociadoController extends Controller
                 }
 
                 // 3. Limpieza extrema de la Cédula de la Esposa
-                // Si viene con guiones o letras (ej. "172380946-1"), las elimina y deja solo números.
                 if (!empty($fila['cedula_esposa'])) {
                     $esposaLimpia = preg_replace('/[^0-9]/', '', (string)$fila['cedula_esposa']);
                     $fila['cedula_esposa'] = empty($esposaLimpia) ? null : $esposaLimpia;
                 }
 
-                // Asignamos la cédula ya limpia al array
                 $fila['cedula'] = $cedulaLimpia;
 
                 // 4. Validación manual ligera
@@ -423,17 +424,27 @@ class MaeAsociadoController extends Controller
                 $filasProcesadas[] = $fila;
             }
 
-            // Si hay errores (como las filas perdidas), se los mostramos en pantalla y DETENEMOS el proceso
-            /* if (count($errores) > 0) {
-                return back()->withErrors(array_slice($errores, 0, 30))->with('error', 'Se encontraron problemas en algunas filas del Excel. Revísalas:');
-            } */
+            $cedulasProcesables = array_values(array_unique(array_column($filasProcesadas, 'cedula')));
+            $tercerosExistentesCount = 0;
 
-            // OPTIMIZACIÓN 3: Usar Caché en lugar de Sesión para datos masivos
+            foreach (array_chunk($cedulasProcesables, 1000) as $cedulasChunk) {
+                $tercerosExistentesCount += MaeTerceros::whereIn('cod_ter', $cedulasChunk)->count();
+            }
+
+            $tercerosACrearCount = count($cedulasProcesables) - $tercerosExistentesCount;
+
             $cacheKey = 'import_asociados_' . Auth::id();
             Cache::put($cacheKey, $filasProcesadas, now()->addHours(2));
             session(['import_asociados_key' => $cacheKey]);
 
-            return view('asociados.excel-preview', compact('filasProcesadas', 'contadorNuevos', 'contadorActualizaciones', 'errores'));
+            return view('asociados.excel-preview', compact(
+                'filasProcesadas',
+                'contadorNuevos',
+                'contadorActualizaciones',
+                'tercerosExistentesCount',
+                'tercerosACrearCount',
+                'errores'
+            ));
 
         } catch (\Exception $e) {
             Log::error('Error procesando importación masiva: ' . $e->getMessage());
@@ -446,7 +457,6 @@ class MaeAsociadoController extends Controller
      */
     public function confirmarSincronizacion(Request $request)
     {
-        // 1. OPTIMIZACIÓN EXTREMA: Evitar timeouts de PHP y desbordamientos de memoria RAM
         set_time_limit(0);
         DB::disableQueryLog();
 
@@ -458,14 +468,12 @@ class MaeAsociadoController extends Controller
 
         if (!empty($correcciones)) {
             foreach ($datos as $key => $fila) {
-                // Si esta fila tiene una corrección entrante desde el formulario
                 if (isset($correcciones[$key])) {
                     $datos[$key]['cedula']    = preg_replace('/[^0-9]/', '', $correcciones[$key]['cedula'] ?? $fila['cedula']);
                     $datos[$key]['nombre1']   = $correcciones[$key]['nombre1'] ?? $fila['nombre1'];
                     $datos[$key]['apellido1'] = $correcciones[$key]['apellido1'] ?? $fila['apellido1'];
                 }
             }
-            // Retiramos las filas que aún después de corregir (o si las dejaron vacías) sigan sin cédula
             $datos = array_filter($datos, fn($d) => !empty($d['cedula']));
         }
 
@@ -474,27 +482,16 @@ class MaeAsociadoController extends Controller
                 ->with('error', 'La sesión ha expirado o no se encontraron registros listos para confirmación.');
         }
 
-        $sincronizarTerceros = $request->boolean('sincronizar_terceros_global', true);
-
         try {
-            // 2. OPTIMIZACIÓN EXTREMA: Bajamos el tamaño del bloque a 100
-            // porque el modelo dispara eventos hacia MaeTerceros multiplicando las consultas.
             $chunks = array_chunk($datos, 100);
 
             foreach ($chunks as $chunk) {
-
-                // 3. OPTIMIZACIÓN EXTREMA: Obligamos a MySQL a reconectar para evitar el Error 2006
                 DB::reconnect();
-
-                // MÁS IMPORTANTE: La transacción se abre y se cierra ADENTRO del bloque
                 DB::beginTransaction();
 
                 foreach ($chunk as $item) {
                     $asociado = MaeAsociado::firstOrNew(['cedula' => $item['cedula']]);
-
-                    if (!$sincronizarTerceros) {
-                        $asociado->skipTerceroSync = true;
-                    }
+                    $asociado->skipTerceroSync = false;
 
                     $asociado->fill([
                         'cedula'                    => $item['cedula'],
@@ -507,12 +504,9 @@ class MaeAsociadoController extends Controller
                         'fecha_expedicion'          => $this->transformDate($item['fecha_expedicion'] ?? null),
                         'estado_civil'              => $item['estado_civil'] ?? null,
                         'correo_pastor'             => $item['correo_pastor'] ?? null,
-
-                        // BLINDAJE CONTRA TEXTOS LARGOS EN TELÉFONOS (Máximo 15 caracteres)
                         'celular_pastor'            => substr($item['celular_pastor'] ?? '', 0, 15),
                         'whatsapp'                  => substr($item['whatsapp'] ?? '', 0, 15),
                         'celular_esposa'            => substr($item['celular_esposa'] ?? '', 0, 15),
-
                         'fecha_afiliacion'          => $this->transformDate($item['fecha_afiliacion'] ?? null),
                         'distrito_actual'           => $item['distrito_actual'] ?? null,
                         'ciudad_distrito'           => $item['ciudad_distrito'] ?? null,
@@ -548,14 +542,14 @@ class MaeAsociadoController extends Controller
                         'validado_archivo'          => $this->parseBoolean($item['validado_archivo'] ?? false),
                     ]);
 
-                    $asociado->save();
+                    if (!$asociado->save()) {
+                        throw new \RuntimeException('No se pudo guardar ni sincronizar el asociado ' . $item['cedula'] . '.');
+                    }
                 }
 
-                // Confirmamos a la base de datos SOLO los 100 registros de esta vuelta
                 DB::commit();
             }
 
-            // Limpieza de recursos cuando terminan todos los bloques
             Cache::forget($cacheKey);
             session()->forget('import_asociados_key');
 
@@ -563,7 +557,6 @@ class MaeAsociadoController extends Controller
                 ->with('success', 'Sincronización masiva finalizada. Se procesaron con éxito los expedientes.');
 
         } catch (\Exception $e) {
-            // Si hay un error, revertimos el bloque actual
             DB::rollBack();
             Log::critical('Error en confirmación por lotes de Asociados: ' . $e->getMessage());
             return redirect()->route('asociados.sincronizar.index')
@@ -649,5 +642,158 @@ class MaeAsociadoController extends Controller
             'observaciones_generales'   => 'nullable|string',
             'estado'                    => 'nullable|string|max:20',
         ];
+    }
+
+    public function validarEstadosTerceros()
+    {
+        $asociados = MaeAsociado::with(['tercero:cod_ter,estado'])
+            ->select('id', 'cedula', 'nombre1', 'nombre2', 'apellido1', 'apellido2', 'estado')
+            ->get();
+
+        $diferenciasEstado = [];
+        $iguales = 0;
+        $sinTercero = 0;
+
+        foreach ($asociados as $asociado) {
+            if (!$asociado->tercero) {
+                $sinTercero++;
+                continue;
+            }
+
+            $rawEstado = trim((string) ($asociado->tercero->estado ?? ''));
+            $normalizado = $this->normalizarEstadoTercero($rawEstado);
+
+            if ($normalizado === null) {
+                $sinTercero++;
+                continue;
+            }
+
+            if ((string) $asociado->estado === $normalizado) {
+                $iguales++;
+            } else {
+                $diferenciasEstado[] = [
+                    'cedula'             => $asociado->cedula,
+                    'nombre'             => $asociado->nombre_completo,
+                    'estado_actual'      => $asociado->estado,
+                    'estado_tercero_raw' => $rawEstado,
+                    'estado_normalizado' => $normalizado,
+                ];
+            }
+        }
+
+        $resumenEstados = [
+            'diferencias' => count($diferenciasEstado),
+            'sin_tercero' => $sinTercero,
+            'iguales'     => $iguales,
+        ];
+
+        $conteoEstados = $this->calcularConteoEstadosTerceros();
+
+        return view('asociados.excel-sync', compact('diferenciasEstado', 'resumenEstados', 'conteoEstados'));
+    }
+
+    public function actualizarEstadosTerceros(Request $request)
+    {
+        $request->validate([
+            'alcance' => 'required|in:diferencias,todos',
+        ]);
+
+        set_time_limit(0);
+        DB::disableQueryLog();
+
+        $actualizados = 0;
+
+        try {
+            MaeAsociado::with(['tercero:cod_ter,estado'])
+                ->select('id', 'cedula', 'estado')
+                ->chunkById(200, function ($lote) use ($request, &$actualizados) {
+                    DB::reconnect();
+                    DB::beginTransaction();
+
+                    foreach ($lote as $asociado) {
+                        if (!$asociado->tercero) {
+                            continue;
+                        }
+
+                        $rawEstado = trim((string) ($asociado->tercero->estado ?? ''));
+                        $normalizado = $this->normalizarEstadoTercero($rawEstado);
+
+                        if ($normalizado === null) {
+                            continue;
+                        }
+
+                        if ($request->alcance === 'diferencias' && (string) $asociado->estado === $normalizado) {
+                            continue;
+                        }
+
+                        $asociado->estado = $normalizado;
+                        $asociado->saveQuietly();
+                        $actualizados++;
+                    }
+
+                    DB::commit();
+                });
+
+            return redirect()->route('asociados.sincronizar.index')
+                ->with('success', "Actualización completada: {$actualizados} expediente(s) sincronizaron su estado desde MaeTerceros.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error actualizando estados desde MaeTerceros: ' . $e->getMessage());
+
+            return back()->with('error', 'No se pudieron actualizar los estados: ' . $e->getMessage());
+        }
+    }
+
+    private function calcularConteoEstadosTerceros(): array
+    {
+        $asociados = MaeAsociado::with(['tercero:cod_ter,estado'])
+            ->select('id', 'cedula', 'estado')
+            ->get();
+
+        $diferencias = 0;
+        $conTerceroValido = 0;
+
+        foreach ($asociados as $asociado) {
+            if (!$asociado->tercero) {
+                continue;
+            }
+
+            $rawEstado = trim((string) ($asociado->tercero->estado ?? ''));
+            $normalizado = $this->normalizarEstadoTercero($rawEstado);
+
+            if ($normalizado === null) {
+                continue;
+            }
+
+            $conTerceroValido++;
+
+            if ((string) $asociado->estado !== $normalizado) {
+                $diferencias++;
+            }
+        }
+
+        return [
+            'diferencias' => $diferencias,
+            'todos'       => $conTerceroValido,
+        ];
+    }
+
+    private function normalizarEstadoTercero(string $valor): ?string
+    {
+        $upper = strtoupper(trim($valor));
+
+        if ($upper === '') {
+            return null;
+        }
+
+        if (in_array($upper, ['A', 'ACTIVO', 'ACTIVA', '1', 'TRUE', 'V', 'VIGENTE'], true)) {
+            return 'Activo';
+        }
+
+        if (in_array($upper, ['I', 'INACTIVO', 'INACTIVA', '0', 'FALSE', 'RETIRADO', 'SUSPENDIDO'], true)) {
+            return 'Inactivo';
+        }
+
+        return ucfirst(mb_strtolower($valor));
     }
 }

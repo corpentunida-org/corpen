@@ -1890,11 +1890,11 @@ Route::middleware(['auth'])
             ->name('dashboard');
 
         // ---------------------------------------------------
-        // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
+        // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL Y ESTADOS
         // ---------------------------------------------------
         Route::middleware(['can:ecm.sincronizacionmasiva.index'])->group(function () {
 
-            // Vista principal del panel de carga y descarga de plantillas
+            // Vista principal del panel de carga, descarga y validación de estados
             Route::get('sincronizar', [MaeAsociadoController::class, 'excelIndex'])
                 ->name('sincronizar.index');
 
@@ -1902,7 +1902,7 @@ Route::middleware(['auth'])
             Route::get('descargar-excel', [MaeAsociadoController::class, 'descargarExcel'])
                 ->name('sincronizar.descargar');
 
-            // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Sesión
+            // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Caché/Sesión
             Route::post('subir-excel', [MaeAsociadoController::class, 'subirExcel'])
                 ->name('sincronizar.subir');
 
@@ -1910,7 +1910,16 @@ Route::middleware(['auth'])
             Route::post('confirmar-sincronizacion', [MaeAsociadoController::class, 'confirmarSincronizacion'])
                 ->name('sincronizar.confirmar');
 
+            // Auditoría: Compara mae_asociados.estado frente a MaeTerceros.estado
+            Route::post('sincronizar/validar-estados', [MaeAsociadoController::class, 'validarEstadosTerceros'])
+                ->name('sincronizar.validar-estados');
+
+            // Actualización: Sincroniza mae_asociados.estado según MaeTerceros.estado
+            Route::post('sincronizar/actualizar-estados', [MaeAsociadoController::class, 'actualizarEstadosTerceros'])
+                ->name('sincronizar.actualizar-estados');
+
         });
+
         // ---------------------------------------------------
         // 2. GESTIÓN DEL MAESTRO DE ASOCIADOS (CRUD)
         // ---------------------------------------------------
@@ -1933,6 +1942,7 @@ Route::middleware(['auth'])
 
     });
 // FIN MÓDULO ASOCIADOS
+
 // ==========================================
 //   MÓDULO DE DEMOGRAFÍA (GEOGRAFÍA)
 // ==========================================

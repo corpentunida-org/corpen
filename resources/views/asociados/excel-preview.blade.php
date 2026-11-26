@@ -10,8 +10,8 @@
                 <a href="{{ route('asociados.sincronizar.index') }}" class="btn-ghost-corporate me-2 text-danger border-danger">
                     <i class="fas fa-times"></i> <span>Cancelar Lote</span>
                 </a>
-                <button type="button" onclick="document.getElementById('form-confirmar-lote').submit();" class="btn-corporate-black shadow-sm transition-all" style="background-color: #198754; color: white;">
-                    <i class="fas fa-check-double"></i> <span>Aplicar Cambios a la BD</span>
+                <button type="button" data-bs-toggle="modal" data-bs-target="#confirmarLoteModal" class="btn-corporate-black shadow-sm transition-all" style="background-color: #198754; color: white;">
+                    <i class="fas fa-check-double"></i> <span>Revisar y aplicar cambios</span>
                 </button>
             </div>
         </header>
@@ -85,15 +85,10 @@
             <div class="card shadow-sm border-0 mb-4 rounded-3 border-start border-primary border-4">
                 <div class="card-body p-3 bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <div class="w-50">
-                        <h6 class="fw-bold text-dark mb-1"><i class="fas fa-sitemap text-primary me-2"></i>Sincronización Transversal Automática</h6>
-                        <p class="text-muted small mb-0">Define si los cambios de este lote deben afectar también la tabla maestra global de Terceros.</p>
+                        <h6 class="fw-bold text-dark mb-1"><i class="fas fa-sitemap text-primary me-2"></i>Sincronización obligatoria con MaeTerceros</h6>
+                        <p class="text-muted small mb-0">Al confirmar el lote, los asociados nuevos y actualizados también se sincronizarán con la base maestra de terceros.</p>
                     </div>
-                    <div>
-                        <select name="sincronizar_terceros_global" class="form-select form-select-sm text-dark fw-bold border-primary shadow-sm" style="min-width: 300px;">
-                            <option value="1" selected>Sí, sincronizar con MaeTerceros</option>
-                            <option value="0">No, guardar únicamente en módulo Asociados</option>
-                        </select>
-                    </div>
+                    <span class="badge bg-primary">Obligatoria</span>
                 </div>
             </div>
 
@@ -198,6 +193,44 @@
             </div>
         </form>
     </div>
+
+    <div class="modal fade" id="confirmarLoteModal" tabindex="-1" aria-labelledby="confirmarLoteModalLabel"
+        aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="confirmarLoteModalLabel">
+                        <i class="fas fa-clipboard-check me-2"></i> Confirmar cambios del lote
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2">Se procesarán <strong>{{ count($filasProcesadas) }}</strong> asociados:</p>
+                    <ul>
+                        <li><strong>{{ $contadorNuevos }}</strong> asociados nuevos.</li>
+                        <li><strong>{{ $contadorActualizaciones }}</strong> asociados existentes por actualizar.</li>
+                    </ul>
+                    <p class="mb-2">En la Base Maestra de Terceros (MaeTerceros):</p>
+                    <ul>
+                        <li><strong>{{ $tercerosExistentesCount }}</strong> terceros ya existen y se actualizarán.</li>
+                        <li><strong>{{ $tercerosACrearCount }}</strong> terceros no existen y se crearán.</li>
+                    </ul>
+                    <p class="text-muted small mb-0">El conteo corresponde a las filas válidas de la previsualización.
+                        La sincronización con terceros es obligatoria.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Volver a revisar
+                    </button>
+                    <button type="submit" form="form-confirmar-lote" class="btn btn-success">
+                        <i class="fas fa-check-double me-1"></i> Confirmar y aplicar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @include('asociados.partials.styles')
 
     {{-- SCRIPT PARA EL FILTRO VISUAL --}}
