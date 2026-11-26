@@ -620,6 +620,31 @@
         </form>
     </div>
 
+    <div class="modal fade" id="syncModal" tabindex="-1" aria-labelledby="syncModalLabel" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="syncModalLabel">
+                        <i class="fas fa-sync-alt me-2"></i> Sincronización obligatoria
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Al guardar los cambios, los datos del asociado se sincronizarán con la <strong>Base de Datos
+                            Maestra de Terceros (MaeTerceros)</strong>. Si la cédula ya existe, se actualizará con la
+                        información del formulario.</p>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-primary" id="btn-confirm-sync">
+                        <i class="fas fa-check me-1"></i> Actualizar y sincronizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         <script>
             // =====================================================================
@@ -677,21 +702,35 @@
                     });
                 });
 
-                // 2. LÓGICA DE FORMULARIO (Botón de carga)
+                // 2. CONFIRMACIÓN OBLIGATORIA DE SINCRONIZACIÓN
                 const form = document.getElementById('form-expediente');
-                
-                form.addEventListener('submit', function (e) {
-                    if (this.checkValidity()) {
-                        // UX: Prevenir doble clic y dar feedback visual al usuario
-                        const btn = document.getElementById('btn-submit');
-                        const text = document.getElementById('btn-text');
-                        const spinner = document.getElementById('btn-spinner');
+                const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
+                let isSyncHandled = false;
 
-                        btn.classList.add('disabled');
-                        btn.style.pointerEvents = 'none';
-                        text.classList.add('d-none');
-                        spinner.classList.remove('d-none');
+                form.addEventListener('submit', function (e) {
+                    if (isSyncHandled) {
+                        return;
                     }
+
+                    e.preventDefault();
+                    if (this.checkValidity()) {
+                        syncModal.show();
+                    } else {
+                        this.reportValidity();
+                    }
+                });
+
+                document.getElementById('btn-confirm-sync').addEventListener('click', function () {
+                    isSyncHandled = true;
+                    syncModal.hide();
+
+                    const btn = document.getElementById('btn-submit');
+                    document.getElementById('btn-text').classList.add('d-none');
+                    document.getElementById('btn-spinner').classList.remove('d-none');
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+
+                    form.submit();
                 });
             });
         </script>

@@ -116,11 +116,11 @@ class MaeAsociadoController extends Controller
 
             $asociado = new MaeAsociado($validated);
 
-            if (!$request->boolean('sincronizar_tercero')) {
-                $asociado->skipTerceroSync = true;
-            }
-
-            $asociado->save();
+            DB::transaction(function () use ($asociado) {
+                if (!$asociado->save()) {
+                    throw new \RuntimeException('No se pudo guardar el expediente del asociado.');
+                }
+            });
 
             return redirect()->route('asociados.maestro.index')
                 ->with('success', 'Expediente del asociado creado correctamente.');
@@ -176,13 +176,22 @@ class MaeAsociadoController extends Controller
         $validated['cargado_ecm']      = $request->boolean('cargado_ecm');
         $validated['validado_archivo'] = $request->boolean('validado_archivo');
 
-        $maeAsociado->fill($validated);
+        try {
+            DB::transaction(function () use ($maeAsociado, $validated) {
+                $maeAsociado->fill($validated);
 
-        if (!$request->boolean('sincronizar_tercero')) {
-            $maeAsociado->skipTerceroSync = true;
+                if (!$maeAsociado->save()) {
+                    throw new \RuntimeException('No se pudo guardar el expediente del asociado.');
+                }
+            });
+        } catch (\Exception $e) {
+            Log::error('Error actualizando asociado y sincronizando tercero: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            return back()->withInput()
+                ->with('error', 'No se pudieron guardar los cambios ni sincronizar el registro maestro. No se guardaron cambios.');
         }
-
-        $maeAsociado->save();
 
         return redirect()->route('asociados.maestro.index')
             ->with('success', 'Expediente del asociado actualizado correctamente.');

@@ -32,9 +32,6 @@
         <form action="{{ route('asociados.maestro.store') }}" method="POST" id="form-expediente">
             @csrf
 
-            {{-- Input oculto para definir si se sincroniza con MaeTerceros --}}
-            <input type="hidden" name="sincronizar_tercero" id="input_sincronizar_tercero" value="1">
-
             {{-- DATALIST GLOBAL PARA CIUDADES --}}
             <datalist id="ciudades_list">
                 @foreach($ciudades as $ciudad)
@@ -771,23 +768,19 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="syncModalLabel"><i class="fas fa-sync-alt me-2"></i> Sincronización de
-                        Datos</h5>
+                    <h5 class="modal-title" id="syncModalLabel"><i class="fas fa-sync-alt me-2"></i> Sincronización
+                        obligatoria</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>¿Desea actualizar/sincronizar la información de este asociado con la <strong>Base de Datos
-                            Maestra de Terceros (MaeTerceros)</strong>?</p>
-                    <p class="text-muted small"><i class="fas fa-info-circle"></i> Si selecciona "Sí", los datos
-                        personales y de contacto sobrescribirán el registro actual en el directorio global.</p>
+                    <p>Para crear el asociado, es obligatorio sincronizar sus datos con la <strong>Base de Datos
+                            Maestra de Terceros (MaeTerceros)</strong>. Si la cédula ya existe, se actualizará con la
+                        información del formulario.</p>
                 </div>
                 <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-outline-secondary" id="btn-deny-sync">
-                        <i class="fas fa-times me-1"></i> No, guardar solo aquí
-                    </button>
                     <button type="button" class="btn btn-primary" id="btn-confirm-sync">
-                        <i class="fas fa-check me-1"></i> Sí, sincronizar
+                        <i class="fas fa-check me-1"></i> Sincronizar y continuar
                     </button>
                 </div>
             </div>
@@ -951,7 +944,7 @@
                     }
                 });
 
-                // 2. LÓGICA DEL FORMULARIO Y MODAL DE SINCRONIZACIÓN
+                // 2. LÓGICA DEL FORMULARIO Y CONFIRMACIÓN DE SINCRONIZACIÓN
                 const form = document.getElementById('form-expediente');
                 const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
                 let isSyncHandled = false;
@@ -982,14 +975,7 @@
                     form.submit();
                 }
 
-                document.getElementById('btn-deny-sync').addEventListener('click', function () {
-                    document.getElementById('input_sincronizar_tercero').value = "0";
-                    syncModal.hide();
-                    triggerFinalSubmit();
-                });
-
                 document.getElementById('btn-confirm-sync').addEventListener('click', function () {
-                    document.getElementById('input_sincronizar_tercero').value = "1";
                     syncModal.hide();
                     triggerFinalSubmit();
                 });
