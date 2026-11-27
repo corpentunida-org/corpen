@@ -23,9 +23,12 @@ class UpdateTarifaTemporadaRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (! $this->expectsJson()) {
+        // Se normaliza el VALOR enviado (hidden active=0 + switch active=1 → PHP conserva el
+        // último). has() era siempre true por el hidden. Si 'active' no viene (API parcial),
+        // no se toca: la regla 'sometimes' deja el estado actual.
+        if ($this->has('active')) {
             $this->merge([
-                'active' => $this->has('active') ? 1 : 0,
+                'active' => $this->boolean('active') ? 1 : 0,
             ]);
         }
     }
@@ -47,6 +50,7 @@ class UpdateTarifaTemporadaRequest extends FormRequest
             'precio_minimo_reserva'        => ['sometimes', 'required', 'numeric', 'min:0'],
             'dias_maximos'                 => ['sometimes', 'nullable', 'integer', 'min:1'],
             'max_reservas_anuales_cliente' => ['sometimes', 'nullable', 'integer', 'min:0'], // <-- Nuevo campo agregado
+            'max_acompanantes'             => ['sometimes', 'nullable', 'integer', 'min:0', 'max:50'],
             'active'                       => ['sometimes', 'boolean'],
         ];
     }
@@ -66,6 +70,7 @@ class UpdateTarifaTemporadaRequest extends FormRequest
             'precio_minimo_reserva'        => 'precio mínimo de reserva',
             'dias_maximos'                 => 'días máximos',
             'max_reservas_anuales_cliente' => 'reservas máximas anuales por cliente', // <-- Traducción para errores
+            'max_acompanantes'             => 'máximo de acompañantes',
         ];
     }
 }

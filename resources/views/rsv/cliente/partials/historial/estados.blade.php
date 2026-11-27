@@ -70,7 +70,8 @@
 
         $pillSt = function ($name) {
             $s = mb_strtolower((string) $name);
-            if (str_contains($s, 'cancela') || str_contains($s, 'anula') || str_contains($s, 'rechaz')) return 'danger';
+            if (str_contains($s, 'cancela') || str_contains($s, 'anula') || str_contains($s, 'rechaz') || str_contains($s, 'incumpl') || str_contains($s, 'no show')) return 'danger';
+            if (str_contains($s, 'hosped') || str_contains($s, 'curso')) return 'success';
             if (str_contains($s, 'final') || str_contains($s, 'complet')) return 'primary';
             if (str_contains($s, 'pendien') || str_contains($s, 'pre')) return 'warning';
             if (str_contains($s, 'confirm') || str_contains($s, 'activ') || str_contains($s, 'aprob')) return 'success';
@@ -110,6 +111,15 @@
             }
         }
 
+        // Filtros por ESTADO destino del movimiento (catálogo rsv_statuses, en orden de id), con su color
+        $estadosRsv = collect();
+        try {
+            $estadosRsv = \App\Models\Rsv\Status::orderBy('id')->get(['id', 'name', 'color_hex']);
+        } catch (\Throwable $e) {
+            $heErrores[] = $e->getMessage();
+        }
+        $conteosEstado = $movs->countBy(fn ($x) => (string) ($x->id_rsv_statuses_nuevo ?? ''));
+
         $heDbgData = [
             'version'     => 'HI-EST-v2-DBG',
             'controlador' => 'ClientePortalController@historialEstadosFragmento',
@@ -134,15 +144,15 @@
                 --ink:#64748b; --ink-2:#334155; --ink-3:#94a3b8; --ink-4:#cbd5e1;
                 --accent:#3d7a5c; --accent-bg:#f0f7f2; --accent-bd:#d5e7dc;
             }
-            .reservas-soft .lbl { font-size:7.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); }
-            .reservas-soft .val { font-size:10px; color:var(--ink-2); font-weight:700; letter-spacing:-0.2px; }
-            .reservas-soft .sub { font-size:8.5px; color:var(--ink-3); line-height:1.4; }
+            .reservas-soft .lbl { font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); }
+            .reservas-soft .val { font-size:13px; color:var(--ink-2); font-weight:700; letter-spacing:-0.2px; }
+            .reservas-soft .sub { font-size:11px; color:var(--ink-3); line-height:1.4; }
 
             /* ── BARRA DE FILTROS Y SELECTOR ── */
             .he-filter-bar { display:flex; gap:4px; flex-wrap:wrap; align-items:center; }
             .he-filter-chip {
                 border:1px solid transparent; background:transparent; color:var(--ink-3);
-                font-size:8.5px; font-weight:600; padding:3px 9px; border-radius:6px;
+                font-size:11px; font-weight:600; padding:3px 9px; border-radius:6px;
                 cursor:pointer; transition:all .15s ease; display:inline-flex; align-items:center; gap:5px;
             }
             .he-filter-chip:hover { color:var(--ink-2); background:var(--head); }
@@ -150,10 +160,14 @@
                 background:var(--accent-bg); color:var(--accent); border-color:var(--accent-bd); font-weight:700;
             }
             .he-chip-count {
-                font-size:7.5px; font-weight:700; padding:0 5px; border-radius:999px;
+                font-size:10px; font-weight:700; padding:0 5px; border-radius:999px;
                 background:var(--grid); color:var(--ink); line-height:14px;
             }
             .he-filter-chip.active .he-chip-count { background:var(--accent); color:#fff; }
+            /* Chips por estado: color del catálogo rsv_statuses (--st-col) */
+            .he-st-dot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--st-col); margin-right:4px; vertical-align:middle; }
+            .he-filter-chip.he-chip-estado.active { background:color-mix(in srgb, var(--st-col) 14%, #fff); color:color-mix(in srgb, var(--st-col) 70%, #000); border-color:color-mix(in srgb, var(--st-col) 40%, #fff); }
+            .he-filter-chip.he-chip-estado.active .he-chip-count { background:color-mix(in srgb, var(--st-col) 75%, #000); color:#fff; }
             .he-filter-chip[data-filter="danger"].active { background:#fef2f2; color:#b91c1c; border-color:#fee2e2; }
             .he-filter-chip[data-filter="danger"].active .he-chip-count { background:#b91c1c; color:#fff; }
             .he-filter-chip[data-filter="warning"].active { background:#fffbeb; color:#b45309; border-color:#fef3c7; }
@@ -162,7 +176,7 @@
             .he-filter-chip[data-filter="primary"].active .he-chip-count { background:#1d4ed8; color:#fff; }
 
             .he-input-ctrl {
-                font-size:8.5px; color:var(--ink-2); background:var(--head); border:1px solid var(--grid-2);
+                font-size:11px; color:var(--ink-2); background:var(--head); border:1px solid var(--grid-2);
                 border-radius:6px; padding:4px 9px; outline:0; transition:all .15s;
             }
             .he-input-ctrl:focus { background:#fff; border-color:var(--accent-bd); }
@@ -179,12 +193,12 @@
             }
             .he-detail {
                 display:none; padding:10px 14px; background:var(--head);
-                border-top:1px dashed var(--grid-2); font-size:8.5px;
+                border-top:1px dashed var(--grid-2); font-size:11px;
             }
             .he-card.open { border-color:var(--accent-bd); }
             .he-card.open .he-detail { display:block; }
             .he-card.open .he-chevron { transform:rotate(90deg); color:var(--accent); }
-            .he-chevron { font-size:11px; color:var(--ink-4); transition:transform .15s; }
+            .he-chevron { font-size:14.5px; color:var(--ink-4); transition:transform .15s; }
 
             .he-icon-box {
                 width:32px; height:32px; border-radius:8px; display:flex;
@@ -200,7 +214,7 @@
             /* ── PILLS SUAVES ── */
             .reservas-soft .pill {
                 display:inline-flex; align-items:center; padding:2px 8px;
-                border-radius:12px; font-size:7.5px; font-weight:700; border:1px solid;
+                border-radius:12px; font-size:10px; font-weight:700; border:1px solid;
                 text-transform:uppercase; letter-spacing:.3px; white-space:nowrap;
             }
             .reservas-soft .pill-success   { color:#15803d; background:#f0fdf4; border-color:#dcfce7; }
@@ -211,25 +225,25 @@
 
             .he-btn-mini {
                 border:1px solid var(--grid-2); background:#fff; color:var(--ink-2);
-                font-size:8px; font-weight:700; padding:3px 9px; border-radius:5px;
+                font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:5px;
                 cursor:pointer; display:inline-flex; align-items:center; gap:4px;
                 transition:all .15s; text-decoration:none;
             }
             .he-btn-mini:hover { background:var(--accent-bg); color:var(--accent); border-color:var(--accent-bd); }
 
             /* ── PANEL DEBUG (TIP-v1.3) ── */
-            #hiEstDbgToggle { position:fixed; right:0; bottom:0; z-index:1090; height:16px; padding:0 8px; border-radius:3px 0 0 0; border:1px solid #1e293b; border-right:0; border-bottom:0; background:rgba(2,6,23,.94); color:#64748b; font-family:ui-monospace, monospace; font-size:8px; font-weight:700; letter-spacing:.18em; line-height:1; cursor:pointer; display:flex; align-items:center; gap:5px; user-select:none; }
+            #hiEstDbgToggle { position:fixed; right:0; bottom:0; z-index:1090; height:16px; padding:0 8px; border-radius:3px 0 0 0; border:1px solid #1e293b; border-right:0; border-bottom:0; background:rgba(2,6,23,.94); color:#64748b; font-family:ui-monospace, monospace; font-size:10.5px; font-weight:700; letter-spacing:.18em; line-height:1; cursor:pointer; display:flex; align-items:center; gap:5px; user-select:none; }
             #hiEstDbgToggle:hover { color:#38bdf8; border-color:#334155; background:rgba(8,15,30,.97); }
             .hi-est-dbg-led { width:5px; height:5px; border-radius:1px; background:#10b981; box-shadow:0 0 5px rgba(16,185,129,.75); }
             .hi-est-dbg-led.err { background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,.85); animation:hiEstDbgBlink 1s steps(2,start) infinite; }
             @keyframes hiEstDbgBlink { 50% { opacity:.35; } }
-            .hi-est-dbg-badge { display:none; color:#f87171; font-size:8px; font-weight:700; }
+            .hi-est-dbg-badge { display:none; color:#f87171; font-size:10.5px; font-weight:700; }
             #hiEstDbgPanel { position:fixed; right:0; bottom:20px; z-index:1091; width:400px; max-width:calc(100vw - 16px); max-height:60vh; display:none; flex-direction:column; background:rgba(2,6,23,.97); color:#e2e8f0; border:1px solid #1e293b; border-right:0; border-bottom:0; border-radius:6px 0 0 0; box-shadow:0 12px 32px rgba(0,0,0,.55); overflow:hidden; font-family:ui-monospace, monospace; }
-            .hi-est-dbg-header { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#0b1220; border-bottom:1px solid #1e293b; font-size:9px; font-weight:700; color:#38bdf8; cursor:pointer; }
+            .hi-est-dbg-header { display:flex; justify-content:space-between; align-items:center; padding:5px 8px; background:#0b1220; border-bottom:1px solid #1e293b; font-size:11.5px; font-weight:700; color:#38bdf8; cursor:pointer; }
             .hi-est-dbg-controls { display:flex; gap:4px; }
-            .hi-est-dbg-btn { background:#334155; color:#e2e8f0; border:0; border-radius:4px; font-size:9px; padding:2px 7px; cursor:pointer; }
+            .hi-est-dbg-btn { background:#334155; color:#e2e8f0; border:0; border-radius:4px; font-size:11.5px; padding:2px 7px; cursor:pointer; }
             .hi-est-dbg-btn:hover { background:#475569; }
-            #hiEstDbgBody { overflow-y:auto; padding:6px 8px; font-size:9.5px; line-height:1.55; }
+            #hiEstDbgBody { overflow-y:auto; padding:6px 8px; font-size:12.5px; line-height:1.55; }
             .hi-est-dbg-line { white-space:pre-wrap; word-break:break-word; padding:2px 0; border-bottom:1px dashed #1e293b; }
             .hi-est-dbg-time { color:#64748b; margin-right:4px; }
             .hi-est-dbg-info { color:#93c5fd; } .hi-est-dbg-ok { color:#86efac; } .hi-est-dbg-warn { color:#fde68a; } .hi-est-dbg-err { color:#fca5a5; } .hi-est-dbg-net { color:#c4b5fd; } .hi-est-dbg-ev { color:#f9a8d4; }
@@ -238,24 +252,19 @@
         {{-- CABECERA + CHIPS DE CATEGORÍA + FILTRO POR RESERVA Y BUSCADOR --}}
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap" style="gap:8px; border-color:var(--grid) !important;">
             <div class="he-filter-bar">
-                <span class="val me-2" style="font-size:11px;">
+                <span class="val me-2" style="font-size:14.5px;">
                     <i class="bi bi-flag-fill text-success me-1"></i> Auditoría de Estados
                 </span>
                 <button type="button" class="he-filter-chip active" data-filter="all">
                     Todos <span class="he-chip-count" id="heCntAll">{{ $conteos['all'] }}</span>
                 </button>
-                <button type="button" class="he-filter-chip" data-filter="success">
-                    Confirmados <span class="he-chip-count" id="heCntSuccess">{{ $conteos['success'] }}</span>
-                </button>
-                <button type="button" class="he-filter-chip" data-filter="warning">
-                    Pendientes <span class="he-chip-count" id="heCntWarning">{{ $conteos['warning'] }}</span>
-                </button>
-                <button type="button" class="he-filter-chip" data-filter="primary">
-                    Finalizados <span class="he-chip-count" id="heCntPrimary">{{ $conteos['primary'] }}</span>
-                </button>
-                <button type="button" class="he-filter-chip" data-filter="danger">
-                    Cancelados <span class="he-chip-count" id="heCntDanger">{{ $conteos['danger'] }}</span>
-                </button>
+                @foreach($estadosRsv as $est)
+                    @php $colEst = preg_match('/^#[0-9a-fA-F]{6}$/', (string) $est->color_hex) ? $est->color_hex : '#64748b'; @endphp
+                    <button type="button" class="he-filter-chip he-chip-estado" data-filter="st-{{ $est->id }}" style="--st-col: {{ $colEst }};">
+                        <span class="he-st-dot"></span>{{ $est->name }}
+                        <span class="he-chip-count" data-cnt-st="{{ $est->id }}">{{ $conteosEstado[(string) $est->id] ?? 0 }}</span>
+                    </button>
+                @endforeach
             </div>
 
             <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -314,6 +323,7 @@
                      data-reserva-id="{{ $resId }}"
                      data-reserva-cod="{{ $resCod }}"
                      data-st-group="{{ $grpNuevo }}"
+                     data-st-id="{{ $h->id_rsv_statuses_nuevo }}"
                      data-search="{{ mb_strtolower($resCod . ' ' . $inmNombre . ' ' . $antNombre . ' ' . $nuevoNombre . ' ' . $comentario . ' ' . $autorNombre) }}">
 
                     <div class="he-row js-he-toggle-row">
@@ -327,7 +337,7 @@
                                     <span class="val text-truncate">{{ $inmNombre }}</span>
                                     <span class="sub">#{{ $resCod }}</span>
                                     <span class="pill pill-{{ $grpAnt }}">{{ $antNombre }}</span>
-                                    <i class="bi bi-arrow-right text-muted" style="font-size:9px;"></i>
+                                    <i class="bi bi-arrow-right text-muted" style="font-size:11.5px;"></i>
                                     <span class="pill pill-{{ $grpNuevo }}">{{ $nuevoNombre }}</span>
                                 </div>
                                 <div class="sub text-truncate mt-1">
@@ -506,27 +516,19 @@
     function actualizarContadoresEstados() {
         var selRes = document.getElementById('heSelectReserva')?.value || '';
         var cards = document.querySelectorAll('#heEstadosList .he-card');
-        var counts = { all: 0, success: 0, warning: 0, primary: 0, danger: 0 };
+        var total = 0, porEstado = {};
 
         cards.forEach(function (c) {
             if (selRes && c.getAttribute('data-reserva-id') !== selRes) return;
-            counts.all++;
-            var grp = c.getAttribute('data-st-group') || '';
-            if (Object.prototype.hasOwnProperty.call(counts, grp)) {
-                counts[grp]++;
-            }
+            total++;
+            var sid = c.getAttribute('data-st-id') || '';
+            porEstado[sid] = (porEstado[sid] || 0) + 1;
         });
 
-        var mapIds = {
-            all: 'heCntAll',
-            success: 'heCntSuccess',
-            warning: 'heCntWarning',
-            primary: 'heCntPrimary',
-            danger: 'heCntDanger'
-        };
-        Object.keys(mapIds).forEach(function (k) {
-            var el = document.getElementById(mapIds[k]);
-            if (el) el.textContent = counts[k];
+        var elAll = document.getElementById('heCntAll');
+        if (elAll) elAll.textContent = total;
+        document.querySelectorAll('#cliHistEstRoot [data-cnt-st]').forEach(function (el) {
+            el.textContent = porEstado[el.getAttribute('data-cnt-st')] || 0;
         });
     }
 
@@ -539,7 +541,7 @@
 
         document.querySelectorAll('#heEstadosList .he-card').forEach(function (card) {
             var matchRes   = !selRes || (card.getAttribute('data-reserva-id') === selRes);
-            var matchGrupo = (grupo === 'all') || (card.getAttribute('data-st-group') === grupo);
+            var matchGrupo = (grupo === 'all') || ('st-' + (card.getAttribute('data-st-id') || '') === grupo);
             var matchTexto = !q || (card.getAttribute('data-search') || '').indexOf(q) !== -1;
             var mostrar    = matchRes && matchGrupo && matchTexto;
             card.style.display = mostrar ? '' : 'none';

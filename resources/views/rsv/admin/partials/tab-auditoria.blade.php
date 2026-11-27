@@ -283,7 +283,7 @@
                     <i class="bi bi-person-check"></i>
                 </div>
                 <div>
-                    <div class="lbl">Portal Cliente</div>
+                    <div class="lbl">Portal Asociado</div>
                     <div class="val" style="font-size: 13px;">{{ number_format($kpiAudCliente, 0) }}</div>
                     <div class="sub">ingresos y vistas</div>
                 </div>

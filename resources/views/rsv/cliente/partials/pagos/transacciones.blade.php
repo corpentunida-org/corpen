@@ -115,7 +115,8 @@
                 $sumPagado += $mtoItem;
             } elseif ($grpItem === 'danger') {
                 $sumAnulado += $mtoItem;
-            } else {
+            } elseif (!method_exists($tItem, 'tieneSoporte') || $tItem->tieneSoporte()) {
+                // Un intento sin archivo (soporte vacío / "0") no está en verificación
                 $sumPendiente += $mtoItem;
             }
         }
@@ -282,6 +283,11 @@
             }
 
             /* ── ZONA DRAG & DROP + CTRL+V + PREVIEW MINIATURA (IMAGEN / PDF) ── */
+            /* Aviso "¡Subir pago ahora!" (llegada desde Mis Reservas) */
+            .pt-subir-ahora { display:flex; align-items:center; gap:12px; background:#fffbeb; border:1px solid #fcd34d; border-left:4px solid #f59e0b; border-radius:8px; padding:10px 14px; color:#78350f; animation: ptSubirPulse 1.6s ease-in-out 3; }
+            @keyframes ptSubirPulse { 0%,100% { box-shadow:0 0 0 0 rgba(245,158,11,.0); } 50% { box-shadow:0 0 0 6px rgba(245,158,11,.25); } }
+            .pt-dropzone.pt-dropzone-destacada { border-color:#f59e0b !important; background:#fffdf5 !important; }
+
             .pt-dropzone {
                 border:1.5px dashed var(--ink-4); border-radius:8px; background:#fff;
                 padding:10px 12px; cursor:pointer; transition:all .18s ease;
@@ -479,9 +485,30 @@
         {{-- FORMULARIO DESPLEGABLE CON FICHA DESTACADA DE LA RESERVA + DRAG & DROP + CTRL+V --}}
         @if($rutaPago && $reservasPagables->isNotEmpty())
             @php
-                $primeraPag = $reservasPagables->first();
+                // Llegada desde Mis Reservas ("Pendiente subir soporte de pago"): ?reserva_id=X&subir=1
+                // → formulario abierto con ESA reserva seleccionada y aviso "Subir pago ahora".
+                $resSubir   = ($ridFiltro !== '' && request()->boolean('subir'))
+                    ? $reservasPagables->firstWhere('id', (int) $ridFiltro)
+                    : null;
+                $primeraPag = $resSubir ?? $reservasPagables->first();
             @endphp
-            <div id="ptNewPagoBox" class="p-3 mb-3 rounded-3 border d-none" style="background:var(--head); border-color:var(--accent-bd) !important;">
+            <div id="ptNewPagoBox" class="p-3 mb-3 rounded-3 border {{ $resSubir ? '' : 'd-none' }}" data-subir-ahora="{{ $resSubir ? '1' : '0' }}" style="background:var(--head); border-color:var(--accent-bd) !important;">
+                @if($resSubir)
+                    <div class="pt-subir-ahora mb-3" id="ptSubirAhora">
+                        <i class="bi bi-cloud-arrow-up-fill" style="font-size:22px;"></i>
+                        <div style="flex:1;">
+                            <div style="font-size:14px; font-weight:800;">¡Subir pago ahora!</div>
+                            <div style="font-size:12px;">
+                                Reserva <strong>#{{ $resSubir->codigo_reserva }}</strong> · {{ optional($resSubir->inmueble)->name ?? 'Inmueble' }}.
+                                Adjunta el comprobante abajo y presiona enviar.
+                                @php $limSubir = \App\Http\Controllers\Rsv\ReservaController::fechaLimitePagoDe($resSubir); @endphp
+                                @if($limSubir)
+                                    Plazo: hasta el <strong>{{ $limSubir->locale('es')->translatedFormat('l j \d\e F') }}</strong>.
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="val" style="color:var(--accent);">
                         <i class="bi bi-cloud-upload me-1"></i> Reportar Pago y Adjuntar Soporte
@@ -555,13 +582,23 @@
                                         if ($rPag->relationLoaded('transacciones')) {
                                             foreach ($rPag->transacciones as $txR) {
                                                 $estR = mb_strtolower((string) ($txR->estado_pago ?? ''));
-                                                if (!str_contains($estR, 'anulad') && !str_contains($estR, 'rechaz') && !str_contains($estR, 'cancel')) {
+                                                if (!str_contains($estR, 'anulad') && !str_contains($estR, 'rechaz') && !str_contains($estR, 'cancel')
+                                                    && $txR->tieneSoporte()) {
                                                     $pagR += (float) ($txR->monto ?? 0);
                                                 }
                                             }
                                         }
                                         $saldoSug = max(0, $totR - $pagR);
                                         $stR = optional($rPag->status)->name ?? 'Pendiente';
+                                        // Pendiente dividido según el soporte (igual que Mis Reservas)
+                                        if (str_contains(mb_strtolower($stR), 'pendien') && $rPag->relationLoaded('transacciones')) {
+                                            $soportesR = $rPag->transacciones->filter(fn ($t) => $t->esSoporteValido());
+                                            if ($soportesR->isEmpty()) {
+                                                $stR = 'Pendiente subir pago';
+                                            } elseif (!$soportesR->contains(fn ($t) => str_contains(mb_strtolower((string) $t->estado_pago), 'aprob'))) {
+                                                $stR = 'Pendiente validación pago';
+                                            }
+                                        }
                                         $inmR = $rPag->inmueble;
                                         $thumbR = ($inmR && $inmR->relationLoaded('multimedia') && $inmR->multimedia->first())
                                             ? $inmR->multimedia->first()->url_archivo
@@ -575,7 +612,7 @@
                                         $huesCnt = $rPag->relationLoaded('huespedes') ? $rPag->huespedes->count() : 1;
                                         $capMaxR = (int) ($inmR->capacidad_maxima ?? 6);
                                     @endphp
-                                    <option value="{{ $rPag->id }}"
+                                    <option value="{{ $rPag->id }}" {{ (int) optional($primeraPag)->id === (int) $rPag->id ? 'selected' : '' }}
                                             data-cod="{{ $rPag->codigo_reserva }}"
                                             data-hotel="{{ $inmR->name ?? 'Inmueble' }}"
                                             data-tipo="{{ $tipoInmR }}"
@@ -611,14 +648,16 @@
                         <div class="col-6 col-md-3">
                             <label class="lbl d-block mb-1">Pasarela / Canal *</label>
                             @if($pasarelasActivas->isNotEmpty())
+                                {{-- Sin canal por defecto: el asociado DEBE elegir por dónde pagó --}}
                                 <select name="id_rsv_pasarelas" id="ptSelectPasarela" class="form-select form-select-sm" style="font-size:9px;" required>
+                                    <option value="" selected disabled>Ninguno · seleccione…</option>
                                     @foreach($pasarelasActivas as $pasOpt)
                                         @php $nomPasOpt = $pasOpt->nombre ?? $pasOpt->name ?? ('Canal #' . $pasOpt->id); @endphp
                                         <option value="{{ $pasOpt->id }}" data-nombre="{{ $nomPasOpt }}">{{ $nomPasOpt }}</option>
                                     @endforeach
                                 </select>
-                                <input type="hidden" name="id_rsv_pasarela" id="ptHiddenIdPasarela" value="{{ $pasarelaDefaultId }}">
-                                <input type="hidden" name="metodo_pago" id="ptHiddenMetodoPago" value="{{ optional($pasarelasActivas->first())->nombre ?? 'Transferencia' }}">
+                                <input type="hidden" name="id_rsv_pasarela" id="ptHiddenIdPasarela" value="">
+                                <input type="hidden" name="metodo_pago" id="ptHiddenMetodoPago" value="">
                             @else
                                 <input type="hidden" name="id_rsv_pasarelas" value="1">
                                 <input type="hidden" name="id_rsv_pasarela" value="1">
@@ -627,8 +666,8 @@
                         </div>
 
                         <div class="col-12 col-md-3">
-                            <label class="lbl d-block mb-1">Referencia / Comprobante</label>
-                            <input type="text" name="referencia_externa" class="form-control form-control-sm" style="font-size:9px;" placeholder="N° de recibo o CUS…" maxlength="80">
+                            <label class="lbl d-block mb-1">Referencia / Comprobante <span style="text-transform:none; font-weight:500;">(opcional)</span></label>
+                            <input type="text" name="referencia_externa" class="form-control form-control-sm" style="font-size:9px;" placeholder="N° de recibo o CUS (opcional)" maxlength="80">
                         </div>
 
                         {{-- ZONA DRAG & DROP + CTRL+V + MINIATURA EN PEQUEÑO --}}
@@ -1511,6 +1550,7 @@
                 var hMet = document.getElementById('ptHiddenMetodoPago');
                 if (hPas) hPas.value = t.value;
                 if (hMet && nomP) hMet.value = nomP;
+                t.classList.remove('is-invalid');
                 pgtxdbg('Formulario Pago: seleccionada pasarela "' + nomP + '" (id=' + t.value + ')', 'ev');
             }
         });
@@ -1531,6 +1571,39 @@
             var form = e.target;
             if (!form || form.id !== 'cliPagoForm') return;
             e.preventDefault();
+
+            // Pasarela / Canal obligatorio (no hay valor por defecto)
+            var selPasObl = document.getElementById('ptSelectPasarela');
+            if (selPasObl && !selPasObl.value) {
+                alert('Selecciona la pasarela o canal por el que realizaste el pago.');
+                selPasObl.classList.add('is-invalid');
+                selPasObl.focus();
+                pgtxdbg('Envío bloqueado: no se eligió pasarela / canal', 'warn');
+                return;
+            }
+
+            // Aviso de sobrepago: lo reportado con soporte (sin rechazados) ya cubre el valor de la reserva.
+            // No se bloquea: puede estar reemplazando un comprobante errado.
+            var selResChk = document.getElementById('ptFormSelectReserva');
+            var optResChk = (selResChk && selResChk.options.length) ? selResChk.options[selResChk.selectedIndex] : null;
+            if (optResChk) {
+                window.__ptReportadoSesion = window.__ptReportadoSesion || {};
+                var totChk  = parseFloat(optResChk.getAttribute('data-total') || '0') || 0;
+                var repChk  = (parseFloat(optResChk.getAttribute('data-abonado') || '0') || 0) + (window.__ptReportadoSesion[optResChk.value] || 0);
+                var montoChk = parseFloat((form.querySelector('[name="monto"]') || {}).value || '0') || 0;
+                if (totChk > 0 && repChk >= totChk) {
+                    var fmtChk = function (n) { return '$' + Math.round(n).toLocaleString('es-CO') + ' COP'; };
+                    var okChk = confirm(
+                        'Esta reserva ya tiene ' + fmtChk(repChk) + ' reportados con soporte y su valor es ' + fmtChk(totChk) + '.\n\n' +
+                        'Si envías este pago de ' + fmtChk(montoChk) + ' quedarías reportando ' + fmtChk(repChk + montoChk) + '.\n\n' +
+                        '¿Seguro que quieres enviarlo? (por ejemplo, para reemplazar un comprobante errado)'
+                    );
+                    if (!okChk) {
+                        pgtxdbg('Envío cancelado por el usuario: la reserva ya estaba cubierta', 'warn');
+                        return;
+                    }
+                }
+            }
 
             var btn      = document.getElementById('ptBtnSubmitPago');
             var alertBox = document.getElementById('ptMainAlert');
@@ -1601,6 +1674,9 @@
                 var j = res.json || {};
                 if (res.ok && (res.isHtml || j.success !== false)) {
                     pgtxdbg('Pago registrado con éxito · HTTP ' + res.status + ' (' + res.ms + 'ms)', 'ok');
+                    // Lo recién reportado cuenta para el aviso de sobrepago sin recargar la página
+                    window.__ptReportadoSesion = window.__ptReportadoSesion || {};
+                    window.__ptReportadoSesion[metaEnvio.resId] = (window.__ptReportadoSesion[metaEnvio.resId] || 0) + (parseFloat(metaEnvio.monto) || 0);
 
                     // Si el backend devolvió la URL definitiva del archivo guardado, usarla
                     var srvUrl = (j.transaccion && (j.transaccion.url_soporte_pago || j.transaccion.soporte_pago)) || j.url_soporte_pago || '';
@@ -1660,6 +1736,17 @@
 
     actualizarContadoresTx();
     sincronizarFichaReservaObjetivo();
+
+    // Llegada con "Subir pago ahora": formulario ya abierto → llevar al usuario hasta él
+    var boxSubir = document.getElementById('ptNewPagoBox');
+    if (boxSubir && boxSubir.getAttribute('data-subir-ahora') === '1') {
+        setTimeout(function () {
+            boxSubir.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            var dz = document.getElementById('ptDropzone');
+            if (dz) dz.classList.add('pt-dropzone-destacada');
+        }, 400);
+        pgtxdbg('Subir pago ahora: formulario abierto con la reserva #' + (document.getElementById('ptFormSelectReserva')?.value || '?'), 'ok');
+    }
     if (document.getElementById('ptSelectReserva')?.value) {
         aplicarFiltrosTx(false);
     }

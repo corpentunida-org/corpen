@@ -20,18 +20,29 @@ class ReservaInmueble extends Mailable
     public $condiciones;
     public $lista_condiciones;
     public $inmueble;
+    // Opcionales (módulo Rsv): destino y texto del botón. Sin ellos, el botón apunta al
+    // inmueble del módulo Reservas como siempre.
+    public $urlBoton;
+    public $textoBoton;
+    // Opcional (módulo Rsv): valores de los lineamientos tomados de la configuración del
+    // inmueble/tarifa — plazo_pago, estadia_maxima, limite_reservas, capacidad. Lo que falte
+    // usa el texto histórico de la plantilla.
+    public $config;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', bool $condiciones = false, $inmueble = null)
+    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', bool $condiciones = false, $inmueble = null, ?string $urlBoton = null, ?string $textoBoton = null, array $config = [])
     {
+        $this->config = $config;
         $this->nombre = $nombre;
         $this->texto = $texto;
         $this->asunto = $asunto;
         $this->condiciones = $condiciones;
         $this->lista_condiciones = Res_condicion::all();
         $this->inmueble = $inmueble;
+        $this->urlBoton = $urlBoton;
+        $this->textoBoton = $textoBoton;
     }
 
     /**

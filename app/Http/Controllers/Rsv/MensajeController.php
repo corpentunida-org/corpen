@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ReservaInmueble;
 use App\Models\Rsv\Mensaje;
+use App\Models\Rsv\Reserva;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -93,24 +97,50 @@ class MensajeController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        // El portal envía el texto en "contenido" y lo copia a "mensaje" con JS; se acepta cualquiera
+        if (!$request->filled('mensaje') && $request->filled('contenido')) {
+            $request->merge(['mensaje' => $request->input('contenido')]);
+        }
         $validatedData = $request->validate([
             'id_rsv_reservas' => 'required|exists:rsv_reservas,id',
-            'id_user_remitente' => 'required|integer',
-            'id_user_destinatario' => 'nullable|integer', // La BD no lo usa estrictamente en el modelo
-            'mensaje' => 'required|string',
+            'mensaje' => 'required|string|max:1000',
             'url_archivo' => 'nullable|file|max:5120', // Permite adjuntos hasta 5MB
         ]);
+
+        // El remitente es SIEMPRE el usuario autenticado (antes se tomaba del formulario y se
+        // podía escribir a nombre de otro). Si escribe el dueño de la reserva es una consulta del
+        // asociado (queda "sin responder"); si escribe otro usuario (panel admin) es una respuesta.
+        $reserva   = Reserva::find($validatedData['id_rsv_reservas']);
+        $uid       = Auth::id();
+        $esTitular = (int) $reserva->id_user === (int) $uid;
+        if (!$esTitular && !\App\Services\Rsv\RsvAcceso::puede(\App\Services\Rsv\RsvAcceso::SOPORTES_RESPONDER)) {
+            return \App\Services\Rsv\RsvAcceso::denegado('Solo puedes escribir en el soporte de tus reservas.');
+        }
+
+        // El chat con el asociado es en vivo: sin agente en línea se le ofrece crear un ticket.
+        if ($esTitular && !\App\Services\Rsv\RsvSoporteAsociado::hayAgenteEnLinea((int) $uid)) {
+            return response()->json([
+                'success'    => false,
+                'sin_agente' => true,
+                'message'    => 'En este momento no hay agentes en línea. Puedes crear un ticket de soporte y te contactaremos.',
+            ], 409);
+        }
 
         DB::beginTransaction();
 
         try {
+            if (!$esTitular) {
+                // Respuesta del equipo: lo anterior queda atendido
+                Mensaje::where('id_rsv_reservas', $reserva->id)->whereNull('leido_en')->update(['leido_en' => now()]);
+            }
+
             // Mapeamos los datos al nombre exacto que tiene el Modelo (contenido)
             $dataInsert = [
-                'id_rsv_reservas'   => $validatedData['id_rsv_reservas'],
-                'id_user_remitente' => $validatedData['id_user_remitente'],
+                'id_rsv_reservas'   => $reserva->id,
+                'id_user_remitente' => $uid,
                 'contenido'         => $validatedData['mensaje'],
                 'tipo_mensaje'      => 'texto',
-                'leido'             => false
+                'leido_en'          => $esTitular ? null : now(),
             ];
 
             // Si subió un archivo por el chat, lo guardamos
@@ -122,6 +152,10 @@ class MensajeController extends Controller
 
             $mensaje = Mensaje::create($dataInsert);
             DB::commit();
+
+            if (!$esTitular) {
+                $this->notificarRespuestaAsociado($reserva, $mensaje);
+            }
 
             return response()->json([
                 'success' => true,
@@ -314,6 +348,37 @@ class MensajeController extends Controller
     /**
      * Responde directamente en el hilo de una reserva (rsv_mensajes) sin WhatsApp ni llamadas.
      */
+    /**
+     * Correo al asociado: el equipo respondió su consulta de soporte. Botón directo a la reserva
+     * en Mis Reservas. Un fallo del correo solo se registra; el mensaje ya quedó guardado.
+     */
+    private function notificarRespuestaAsociado(Reserva $reserva, Mensaje $mensaje): void
+    {
+        try {
+            $user = $reserva->user;
+            if (!$user || empty($user->email) || (int) $user->id === (int) $mensaje->id_user_remitente) {
+                return;
+            }
+            $texto = 'Tiene una nueva respuesta del equipo de soporte sobre su reserva <strong>' . e($reserva->codigo_reserva) . '</strong>'
+                . ' en <strong>' . e(optional($reserva->inmueble)->name ?? 'el inmueble') . '</strong>:<br><br>'
+                . '<em>«' . nl2br(e(\Illuminate\Support\Str::limit((string) $mensaje->contenido, 600))) . '»</em><br><br>'
+                . ($mensaje->url_archivo ? 'La respuesta incluye un archivo adjunto que puede ver en el portal.<br><br>' : '')
+                . 'Puede leer la conversación completa y responder desde el Portal de Reservas. ¡Dios le bendiga!';
+
+            Mail::to($user->email)->send(new ReservaInmueble(
+                $user->name,
+                $texto,
+                'Respuesta de soporte · Reserva ' . $reserva->codigo_reserva,
+                false,
+                null,
+                url(route('rsv.cliente.portal')) . '?tab=mis-reservas&reserva_id=' . $reserva->id,
+                'Ver la conversación'
+            ));
+        } catch (Throwable $e) {
+            Log::error('Rsv soporte: no se pudo avisar al asociado (reserva ' . $reserva->id . '): ' . $e->getMessage());
+        }
+    }
+
     public function responder(Request $request, string $id): JsonResponse
     {
         $validated = $request->validate([
@@ -348,6 +413,10 @@ class MensajeController extends Controller
 
             $nuevo = Mensaje::create($dataInsert);
             DB::commit();
+
+            if ($reserva = Reserva::find($reservaId)) {
+                $this->notificarRespuestaAsociado($reserva, $nuevo);
+            }
 
             return response()->json([
                 'success' => true,

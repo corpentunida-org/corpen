@@ -409,7 +409,7 @@
                     Todos <span class="inf-canal-cnt" id="infCntAll">{{ $cntCanalAll }}</span>
                 </button>
                 <button type="button" class="inf-canal-chip" data-canal="cliente">
-                    <i class="bi bi-person-badge text-success"></i> Portal Cliente <span class="inf-canal-cnt" id="infCntCli">{{ $cntCanalCliente }}</span>
+                    <i class="bi bi-person-badge text-success"></i> Portal Asociado <span class="inf-canal-cnt" id="infCntCli">{{ $cntCanalCliente }}</span>
                 </button>
                 <button type="button" class="inf-canal-chip" data-canal="admin">
                     <i class="bi bi-sliders text-primary"></i> Panel Admin <span class="inf-canal-cnt" id="infCntAdm">{{ $cntCanalAdmin }}</span>

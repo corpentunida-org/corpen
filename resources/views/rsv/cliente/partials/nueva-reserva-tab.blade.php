@@ -175,8 +175,8 @@
                             <p class="rsv-hero-subtitle">Explora nuestro catálogo premium de apartamentos y casas de descanso. Hemos diseñado un proceso rápido y seguro para que disfrutes de tu estadía sin preocupaciones.</p>
 
                             <div class="hero-actions">
-                                <button type="button" class="btn-hero-primary js-nr-nav-btn" data-target-tab="#nr-sub-buscador" data-nav-name="Explorar Propiedades (Hero)">
-                                    <i class="bi bi-search"></i> Explorar Propiedades
+                                <button type="button" class="btn-hero-primary js-nr-nav-btn" data-target-tab="#nr-sub-buscador" data-nav-name="Nueva Reserva (Hero)">
+                                    <i class="bi bi-calendar-plus"></i> Nueva Reserva
                                 </button>
                                 <button type="button" class="btn-hero-secondary js-nr-nav-mis-reservas" data-nav-name="Mis Reservas (Hero)">
                                     <i class="bi bi-journal-bookmark"></i> Mis Reservas

@@ -22,14 +22,44 @@
         $inmId = request('inmueble_id');
         $inm = is_numeric($inmId) ? \App\Models\Rsv\CatalogoInmueble::with(['latestTarifa', 'multimedia'])->find($inmId) : null;
 
-        $tarifaObj = $inm?->latestTarifa;
+        $fi = request('fi') ? \Carbon\Carbon::parse(request('fi'))->startOfDay() : null;
+        $ff = request('ff') ? \Carbon\Carbon::parse(request('ff'))->startOfDay() : null;
+
+        // Tarifa por INMUEBLE + AÑO DE LA RESERVA (misma regla que valida el servidor al guardar)
+        $tarifaObj = $inm ? \App\Models\Rsv\TarifaTemporada::aplicable($inm->id, $fi ?? \Carbon\Carbon::today(), $ff) : null;
         $precioMin = $tarifaObj ? (float) $tarifaObj->precio_minimo_reserva : 0;
         $diasMax   = $tarifaObj ? $tarifaObj->dias_maximos : 5;
         $maxAnual  = $tarifaObj ? $tarifaObj->max_reservas_anuales_cliente : null;
+
+        // MÁXIMO DE RESERVAS AL AÑO del asociado: misma regla que storeAjax al guardar
+        // (ReservaController::evaluarLimiteAnual). Si ya lo alcanzó, se avisa y se bloquea
+        // el botón ANTES de que llene los datos.
+        $limiteAnualEval = null;
+        if ($inm && $fi && \Illuminate\Support\Facades\Auth::check()) {
+            try {
+                $limiteAnualEval = app(\App\Http\Controllers\Rsv\ReservaController::class)
+                    ->evaluarLimiteAnual(\Illuminate\Support\Facades\Auth::id(), \Illuminate\Support\Carbon::parse($fi), null, $tarifaObj);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('checkout limite anual: ' . $e->getMessage());
+            }
+        }
+        $limiteAlcanzado = !empty($limiteAnualEval['mensaje']);
         $capMaxima = $inm ? ($inm->capacidad_maxima ?? 6) : 6;
 
-        $fi = request('fi') ? \Carbon\Carbon::parse(request('fi'))->startOfDay() : null;
-        $ff = request('ff') ? \Carbon\Carbon::parse(request('ff'))->startOfDay() : null;
+        // Máx. ACOMPAÑANTES (sin el titular) de la tarifa del inmueble + año de la reserva.
+        // Nunca supera la capacidad del inmueble; vacío en la tarifa = capacidad - 1.
+        $maxAcompTarifa = ($tarifaObj && $tarifaObj->max_acompanantes !== null) ? (int) $tarifaObj->max_acompanantes : null;
+        $maxAcompanantes = max(0, min($maxAcompTarifa ?? ($capMaxima - 1), $capMaxima - 1));
+        $maxPersonas = $maxAcompanantes + 1; // titular + acompañantes
+
+        // Valores EFECTIVOS de la configuración (tarifa del inmueble + año) para "Datos a tener
+        // en cuenta": los mismos que aplican el calendario y el servidor.
+        $diasMaxEf  = ($tarifaObj && (int) $tarifaObj->dias_maximos > 0)
+            ? (int) $tarifaObj->dias_maximos
+            : \App\Http\Controllers\Rsv\ReservaController::DIAS_MAX_BASE;
+        $maxAnualEf = ($tarifaObj && (int) $tarifaObj->max_reservas_anuales_cliente > 0)
+            ? (int) $tarifaObj->max_reservas_anuales_cliente
+            : 1;
         $noches = ($fi && $ff && $ff->gt($fi)) ? (int) $fi->diffInDays($ff) : 0;
 
         $subtotal = $precioMin;
@@ -99,7 +129,8 @@
 
             $rawTipo = strtoupper(trim((string) ($authUser->tipo_documento ?? 'CC')));
             $selfTipoDoc = in_array($rawTipo, ['CC', 'CE', 'PAS']) ? $rawTipo : 'CC';
-            $selfNumDoc = trim((string) ($authUser->nit ?? ''));
+            // La cédula está en users.nid (la columna 'nit' no existe; por eso antes salía vacía)
+            $selfNumDoc = trim((string) ($authUser->nid ?? $authUser->nit ?? ''));
         }
 
         $selfGuestData = [
@@ -115,7 +146,8 @@
          data-frag="{{ $rutaFragmento ?: route('rsv.cliente.fragmento') }}"
          data-fragkey="nueva-checkout"
          data-inmueble-id="{{ $inmId ?? '' }}"
-         data-max-guests="{{ $capMaxima }}"
+         data-max-guests="{{ $maxPersonas }}"
+         data-max-acompanantes="{{ $maxAcompanantes }}"
          data-csrf="{{ csrf_token() }}"
          data-store-huesped="{{ $rutaStoreHuesped }}"
          data-user-id="{{ $authUser?->id ?? '' }}"
@@ -137,6 +169,7 @@
             .reservas-soft .btn-self-quick { background:var(--accent-bg); color:var(--accent); border:1px solid var(--accent-bd); font-size:7.5px; font-weight:700; padding:2px 8px; border-radius:4px; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:4px; }
             .reservas-soft .btn-self-quick:hover { background:#e3f1e9; color:#2e5c43; border-color:#b8d8c5; }
             .reservas-soft .btn-self-quick.is-applied { background:var(--accent); color:#fff; border-color:var(--accent); }
+            .reservas-soft .titular-input[readonly] { background:#f3f7f4; color:var(--ink-2); border-color:var(--accent-bd); cursor:default; }
 
             .reservas-soft .btn-outline-dashed { background:transparent; color:var(--ink-3); border:1px dashed var(--ink-4); font-size:8.5px; font-weight:600; padding:6px 12px; border-radius:4px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; justify-content:center; gap:4px; width:100%;}
             .reservas-soft .btn-outline-dashed:hover { background:var(--head); color:var(--accent); border-color:var(--accent-bd); }
@@ -213,10 +246,15 @@
         </div>
 
         @if(!$inm || !$fi || !$ff)
-            <div class="st-warn text-center py-5 rounded" style="font-size: 11px;">
-                <i class="bi bi-exclamation-circle d-block mb-2 text-danger" style="font-size: 32px;"></i>
-                <h6 class="fw-bold mb-1">Información Incompleta</h6>
-                No has seleccionado ninguna propiedad o las fechas son inválidas. <br>Por favor, regresa al buscador.
+            {{-- Se llega aquí abriendo "Checkout" sin haber elegido inmueble y fechas en el buscador --}}
+            <div class="text-center py-5 rounded border bg-light" style="font-size: 14px;">
+                <i class="bi bi-calendar-plus d-block mb-2 text-success" style="font-size: 34px;"></i>
+                <h6 class="fw-bold mb-1" style="font-size: 17px;">Aún no has elegido tu estadía</h6>
+                <div class="text-muted mb-3">Para confirmar una reserva, primero selecciona el alojamiento y las fechas en el buscador.</div>
+                <button type="button" class="btn btn-success px-4"
+                        onclick="document.querySelector('[data-bs-target=\'#nr-sub-buscador\']').click()">
+                    <i class="bi bi-search me-1"></i> Buscar alojamiento y fechas
+                </button>
             </div>
         @else
             <div class="row g-4 mt-1">
@@ -263,11 +301,15 @@
                             </li>
                             <li>
                                 <i class="bi bi-calendar-x-fill"></i>
-                                <span>Estadía máxima permitida: <strong>{{ $diasMax }} días</strong>. @if($maxAnual) (Límite anual: {{ $maxAnual }} reservas). @endif</span>
+                                <span>Estadía máxima permitida: <strong>{{ $diasMaxEf }} días ({{ $diasMaxEf - 1 }} noches)</strong>.</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-calendar2-check-fill"></i>
+                                <span>Límite de reservas: <strong>{{ $maxAnualEf }} reserva{{ $maxAnualEf === 1 ? '' : 's' }} por cada 365 días</strong>.</span>
                             </li>
                             <li>
                                 <i class="bi bi-people-fill"></i>
-                                <span>Capacidad máxima del inmueble: <strong>{{ $capMaxima }} personas</strong>.</span>
+                                <span>Capacidad máxima: <strong>{{ $maxPersonas }} persona{{ $maxPersonas === 1 ? '' : 's' }}</strong> (titular + hasta {{ $maxAcompanantes }} acompañante{{ $maxAcompanantes === 1 ? '' : 's' }}).</span>
                             </li>
                             <li>
                                 <i class="bi bi-x-octagon-fill text-danger"></i>
@@ -295,7 +337,7 @@
                                 <input type="hidden" name="monto_total" value="{{ $total }}">
                                 <input type="hidden" name="id_rsv_statuses" value="{{ $statusPendienteId }}">
                                 <input type="hidden" name="id_rsv_origen_reservas" value="{{ $origenDefectoId }}">
-                                <input type="hidden" name="comentario_reserva" value="Reserva solicitada directamente desde el Portal del Cliente.">
+                                <input type="hidden" name="comentario_reserva" value="Reserva solicitada directamente desde el Portal del Asociado.">
 
                                 <h6 class="val mb-3 text-center text-uppercase" style="letter-spacing: 1px; color: var(--ink-3);">Resumen de Pago</h6>
 
@@ -315,39 +357,60 @@
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between align-items-center gap-2 mb-1 flex-wrap">
                                         <h6 class="val mb-0"><i class="bi bi-people-fill me-1" style="color:var(--accent);"></i> Registro de Huéspedes</h6>
-                                        @if($authUser)
-                                            <button type="button" class="btn-self-quick" id="btnFillSelfGuest" title="Cargar mis datos personales ({{ $authUser->name }} - {{ $authUser->nit }}) como titular">
-                                                <i class="bi bi-person-badge-fill"></i> <span class="self-btn-txt">Usar mis datos</span>
-                                            </button>
-                                        @endif
                                     </div>
-                                    <div class="sub mb-3" style="font-size:7.5px;">Asegura tu cupo cargando tus datos ahora y registra a tus acompañantes después desde <b>Mis Reservas</b>. Capacidad: <b>{{ $capMaxima }}</b> personas.</div>
+                                    <div class="sub mb-3" style="font-size:7.5px;">El titular es el asociado que reserva. Puedes añadir <b>hasta {{ $maxAcompanantes }} acompañante{{ $maxAcompanantes === 1 ? '' : 's' }}</b> ahora o después desde <b>Mis Reservas</b>.</div>
 
+                                    {{-- Huésped 1 = TITULAR: se precarga con los datos del asociado autenticado
+                                         (solo lectura). Un dato que falte en su perfil queda editable. --}}
+                                    @php
+                                        $roTit = fn ($v) => trim((string) $v) !== '' ? 'readonly' : '';
+                                    @endphp
                                     <div id="guestListContainer">
                                         <div class="guest-box mb-2 p-2 border rounded" style="background:var(--head);" id="titularGuestBox">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
                                                 <span class="val" style="font-size:8.5px; color:var(--accent);">Huésped 1 (Titular)</span>
-                                                <span class="sub" id="titularSelfBadge" style="display:none; color:var(--accent); font-weight:700;"><i class="bi bi-check-circle-fill"></i> Mis datos</span>
+                                                @if($authUser)
+                                                    <span class="sub" id="titularSelfBadge" style="color:var(--accent); font-weight:700;"><i class="bi bi-person-check-fill"></i> Datos del asociado</span>
+                                                @endif
                                             </div>
                                             <div class="row g-2">
                                                 <input type="hidden" name="huespedes[0][es_titular]" value="1">
-                                                <div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[0][nombre]" placeholder="Nombres" required></div>
-                                                <div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[0][apellidos]" placeholder="Apellidos" required></div>
+                                                <div class="col-6"><input type="text" class="form-control form-control-sm xls-input titular-input" name="huespedes[0][nombre]" placeholder="Nombres" value="{{ $selfNombre }}" {{ $roTit($selfNombre) }} required></div>
+                                                <div class="col-6"><input type="text" class="form-control form-control-sm xls-input titular-input" name="huespedes[0][apellidos]" placeholder="Apellidos" value="{{ $selfApellidos }}" {{ $roTit($selfApellidos) }} required></div>
                                                 <div class="col-5">
-                                                    <select class="form-select form-select-sm xls-input" name="huespedes[0][tipo_documento]" required>
-                                                        <option value="CC">CC</option>
-                                                        <option value="CE">CE</option>
-                                                        <option value="PAS">PAS</option>
-                                                    </select>
+                                                    @if(trim($selfNumDoc) !== '')
+                                                        {{-- select no admite readonly: se muestra fijo y se envía por hidden --}}
+                                                        <input type="hidden" name="huespedes[0][tipo_documento]" value="{{ $selfTipoDoc }}">
+                                                        <input type="text" class="form-control form-control-sm xls-input titular-input" value="{{ $selfTipoDoc }}" readonly tabindex="-1">
+                                                    @else
+                                                        <select class="form-select form-select-sm xls-input" name="huespedes[0][tipo_documento]" required>
+                                                            @foreach(['CC', 'CE', 'PAS'] as $td)
+                                                                <option value="{{ $td }}" @selected($selfTipoDoc === $td)>{{ $td }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                    @endif
                                                 </div>
-                                                <div class="col-7"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[0][numero_documento]" placeholder="N° Documento" required></div>
+                                                <div class="col-7"><input type="text" class="form-control form-control-sm xls-input titular-input" name="huespedes[0][numero_documento]" placeholder="N° Documento" value="{{ $selfNumDoc }}" {{ $roTit($selfNumDoc) }} required></div>
                                             </div>
                                         </div>
+
+                                        {{-- Número de acompañantes: 0..máximo de la configuración (tarifa inmueble + año,
+                                             sin superar la capacidad). Al cambiarlo se generan/quitan los formularios. --}}
+                                        <div class="d-flex align-items-center justify-content-between gap-2 my-2 px-1">
+                                            <label for="selNumAcompanantes" class="val mb-0" style="font-size:8.5px;">
+                                                <i class="bi bi-person-plus-fill me-1" style="color:var(--accent);"></i> Número de acompañantes <span style="color:#b45f5a;">*</span>
+                                            </label>
+                                            {{-- Obligatorio: el asociado debe ELEGIR (incluso "Sin acompañantes"); no hay valor por defecto. --}}
+                                            <select id="selNumAcompanantes" class="form-select form-select-sm xls-input" style="max-width:150px;" required>
+                                                <option value="" selected disabled>Seleccione…</option>
+                                                @for($na = 0; $na <= $maxAcompanantes; $na++)
+                                                    <option value="{{ $na }}">{{ $na === 0 ? 'Sin acompañantes' : $na . ' acompañante' . ($na === 1 ? '' : 's') }}</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+                                        <div id="acompanantesContainer"></div>
                                     </div>
 
-                                    <button type="button" class="btn-outline-dashed mt-1" id="btnAddGuest">
-                                        <i class="bi bi-person-plus"></i> Añadir Acompañante (opcional ahora)
-                                    </button>
                                 </div>
 
                                 <div id="checkoutAlertError" class="st-warn d-none mt-3"></div>
@@ -359,9 +422,25 @@
                                     </label>
                                 </div>
 
-                                <button type="submit" class="btn-green w-100 py-2 mt-2" id="btnConfirmarReserva">
+                                @if($limiteAlcanzado)
+                                    <div class="mt-2 p-2" style="background:#fdf5f4; border:1px solid #f0dcd8; border-radius:6px; color:#9b3c35; font-size:9px; line-height:1.4;">
+                                        <b><i class="bi bi-exclamation-octagon-fill me-1"></i>Alcanzaste el máximo de reservas al año.</b><br>
+                                        Puedes tener como máximo {{ $limiteAnualEval['limite'] }} reserva(s) en cualquier periodo de 365 días,
+                                        y ya tienes {{ $limiteAnualEval['conteo'] }} entre el
+                                        {{ \Illuminate\Support\Carbon::parse($limiteAnualEval['ventana_desde'])->format('d/m/Y') }}
+                                        y el {{ \Illuminate\Support\Carbon::parse($limiteAnualEval['ventana_hasta'])->format('d/m/Y') }}.
+                                        Elige otra fecha o comunícate con la administración.
+                                    </div>
+                                @elseif($limiteAnualEval)
+                                    <div class="sub text-center mt-2" style="font-size:8px;">
+                                        Reservas activas en 365 días: <b>{{ $limiteAnualEval['conteo'] }} de {{ $limiteAnualEval['limite'] }}</b>
+                                    </div>
+                                @endif
+
+                                <button type="submit" class="btn-green w-100 py-2 mt-2" id="btnConfirmarReserva"
+                                        @if($limiteAlcanzado) disabled data-limite-anual="1" title="Alcanzaste el máximo de reservas al año" @endif>
                                     <i class="bi bi-shield-lock-fill" style="font-size: 14px;"></i>
-                                    <span class="btn-txt">Confirmar Reserva Segura</span>
+                                    <span class="btn-txt">{{ $limiteAlcanzado ? 'Límite anual alcanzado' : 'Confirmar Reserva Segura' }}</span>
                                 </button>
                                 <div class="sub text-center mt-2" style="font-size: 8px;">
                                     Tus fechas quedarán bloqueadas inmediatamente.<br>Dispondrás de 3 días para cargar tu soporte de pago.
@@ -541,7 +620,8 @@
         boxes.forEach(function (box, idx) {
             var nombre = (box.querySelector('input[name$="[nombre]"]')?.value || '').trim();
             var apellidos = (box.querySelector('input[name$="[apellidos]"]')?.value || '').trim();
-            var tipoDoc = (box.querySelector('select[name$="[tipo_documento]"]')?.value || 'CC').trim();
+            // select (acompañantes) o hidden (titular precargado, fijo)
+            var tipoDoc = (box.querySelector('[name$="[tipo_documento]"]')?.value || 'CC').trim();
             var numDoc = (box.querySelector('input[name$="[numero_documento]"]')?.value || '').trim();
             var esTitular = (box.querySelector('input[name$="[es_titular]"]')?.value || (idx === 0 ? '1' : '0'));
 
@@ -654,48 +734,6 @@
                 return;
             }
 
-            // ── AÑADIR ACOMPAÑANTE ──
-            if (t.closest('#btnAddGuest')) {
-                e.preventDefault();
-                var guestList = document.getElementById('guestListContainer');
-                if (!guestList) return;
-
-                var maxGuests = parseInt(root.getAttribute('data-max-guests') || '6', 10);
-                var currentCount = guestList.children.length;
-                if (currentCount >= maxGuests) {
-                    alert('Has alcanzado la capacidad máxima del inmueble (' + maxGuests + ' personas).');
-                    chkdbg('Intento de agregar huésped superando capacidad (' + maxGuests + ')', 'warn');
-                    return;
-                }
-
-                var idx = window.__chkGuestIndex++;
-                var gBox = document.createElement('div');
-                gBox.className = 'guest-box mb-2 p-2 border rounded bg-white';
-                gBox.innerHTML =
-                    '<div class="d-flex justify-content-between align-items-center mb-1">' +
-                        '<span class="val" style="font-size:8.5px; color:var(--ink-3);">Acompañante ' + (currentCount + 1) + '</span>' +
-                        '<button type="button" class="btn-close" style="font-size:6px;" onclick="this.closest(\'.guest-box\').remove()"></button>' +
-                    '</div>' +
-                    '<div class="row g-2">' +
-                        '<input type="hidden" name="huespedes[' + idx + '][es_titular]" value="0">' +
-                        '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][nombre]" placeholder="Nombres" required></div>' +
-                        '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][apellidos]" placeholder="Apellidos" required></div>' +
-                        '<div class="col-5">' +
-                            '<select class="form-select form-select-sm xls-input" name="huespedes[' + idx + '][tipo_documento]" required>' +
-                                '<option value="CC">CC</option>' +
-                                '<option value="TI">TI</option>' +
-                                '<option value="RC">RC</option>' +
-                                '<option value="CE">CE</option>' +
-                                '<option value="PAS">PAS</option>' +
-                            '</select>' +
-                        '</div>' +
-                        '<div class="col-7"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + idx + '][numero_documento]" placeholder="N° Documento" required></div>' +
-                    '</div>';
-                guestList.appendChild(gBox);
-                chkdbg('Formulario para acompañante añadido (total ' + (currentCount + 1) + ')', 'debug');
-                return;
-            }
-
             // ── CANCELAR CHECKOUT ──
             if (t.closest('#btnCancelarCheckout')) {
                 e.preventDefault();
@@ -712,7 +750,89 @@
             }
         });
 
+        // ── NÚMERO DE ACOMPAÑANTES (selector) ──
+        // Sincroniza los formularios con el número elegido: añade los que faltan y quita los
+        // sobrantes desde el final, conservando lo ya escrito. El máximo viene de la
+        // configuración (data-max-acompanantes = tarifa del inmueble + año, ≤ capacidad - 1).
+        function chkCajaAcompanante(n) {
+            var box = document.createElement('div');
+            box.className = 'guest-box mb-2 p-2 border rounded bg-white js-acompanante';
+            box.innerHTML =
+                '<div class="d-flex justify-content-between align-items-center mb-1">' +
+                    '<span class="val" style="font-size:8.5px; color:var(--ink-3);">Acompañante ' + n + '</span>' +
+                '</div>' +
+                '<div class="row g-2">' +
+                    '<input type="hidden" name="huespedes[' + n + '][es_titular]" value="0">' +
+                    '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + n + '][nombre]" placeholder="Nombres" required></div>' +
+                    '<div class="col-6"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + n + '][apellidos]" placeholder="Apellidos" required></div>' +
+                    '<div class="col-5">' +
+                        '<select class="form-select form-select-sm xls-input" name="huespedes[' + n + '][tipo_documento]" required>' +
+                            '<option value="CC">CC</option>' +
+                            '<option value="TI">TI</option>' +
+                            '<option value="RC">RC</option>' +
+                            '<option value="CE">CE</option>' +
+                            '<option value="PAS">PAS</option>' +
+                        '</select>' +
+                    '</div>' +
+                    '<div class="col-7"><input type="text" class="form-control form-control-sm xls-input" name="huespedes[' + n + '][numero_documento]" placeholder="N° Documento" required></div>' +
+                '</div>';
+            return box;
+        }
+
+        document.addEventListener('change', function (e) {
+            var sel = e.target;
+            if (!sel || sel.id !== 'selNumAcompanantes') return;
+            var root = document.getElementById('cliCheckoutRoot');
+            var cont = document.getElementById('acompanantesContainer');
+            if (!cont) return;
+
+            sel.classList.remove('is-invalid');
+            var max = parseInt((root && root.getAttribute('data-max-acompanantes')) || '0', 10);
+            var deseado = Math.max(0, Math.min(parseInt(sel.value || '0', 10), max));
+            if (String(deseado) !== sel.value) sel.value = String(deseado);
+
+            var actuales = cont.querySelectorAll('.js-acompanante');
+            for (var i = actuales.length; i < deseado; i++) {
+                cont.appendChild(chkCajaAcompanante(i + 1));
+            }
+            for (var j = actuales.length - 1; j >= deseado; j--) {
+                actuales[j].remove();
+            }
+            chkdbg('Acompañantes: ' + deseado + ' (máximo ' + max + ')', 'debug');
+        });
+
         // ── PROCESAR RESERVA + REGISTRAR HUÉSPEDES (AJAX SUBMIT DELEGADO) ──
+        // Diálogo Sí/No propio (sin dependencias): confirma reservar sin acompañantes
+        function chkConfirmarSinAcompanantes(onSi, onNo) {
+            var prev = document.getElementById('chkSinAcompDlg');
+            if (prev) prev.remove();
+            var ov = document.createElement('div');
+            ov.id = 'chkSinAcompDlg';
+            ov.setAttribute('role', 'dialog');
+            ov.setAttribute('aria-modal', 'true');
+            ov.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:16px;';
+            ov.innerHTML =
+                '<div style="background:#fff;border-radius:8px;max-width:360px;width:100%;padding:18px 18px 14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:12px;color:#1f2937;">'
+              +   '<div style="font-weight:700;font-size:13px;margin-bottom:6px;"><i class="bi bi-people"></i> Confirmar acompañantes</div>'
+              +   '<div style="margin-bottom:14px;">¿Confirmas que <b>no llevarás acompañantes</b> en esta reserva?</div>'
+              +   '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+              +     '<button type="button" data-r="no" class="btn btn-sm btn-outline-secondary">No, agregar acompañantes</button>'
+              +     '<button type="button" data-r="si" class="btn btn-sm btn-success">Sí, guardar reserva</button>'
+              +   '</div>'
+              + '</div>';
+            function cerrar(cb) { ov.remove(); document.removeEventListener('keydown', onKey); if (cb) cb(); }
+            function onKey(ev) { if (ev.key === 'Escape') cerrar(onNo); }
+            ov.addEventListener('click', function (ev) {
+                var b = ev.target.closest('button[data-r]');
+                if (b) cerrar(b.getAttribute('data-r') === 'si' ? onSi : onNo);
+                else if (ev.target === ov) cerrar(onNo);
+            });
+            document.addEventListener('keydown', onKey);
+            document.body.appendChild(ov);
+            var btnSi = ov.querySelector('button[data-r="si"]');
+            if (btnSi) btnSi.focus();
+        }
+
         document.addEventListener('submit', function (e) {
             var form = e.target;
             if (!form || form.id !== 'cliCheckoutForm') return;
@@ -733,7 +853,35 @@
             var totalHuespedes = guestList ? guestList.children.length : 1;
             chkdbg('Iniciando confirmación de reserva (incluyendo ' + totalHuespedes + ' huésped(es))...', 'info');
 
+            var selAcomp = document.getElementById('selNumAcompanantes');
+            if (selAcomp && selAcomp.value === '') {
+                alert('Selecciona el número de acompañantes (elige "Sin acompañantes" si viajas solo).');
+                selAcomp.focus();
+                selAcomp.classList.add('is-invalid');
+                chkdbg('Intento de reserva bloqueado: no se eligió el número de acompañantes', 'warn');
+                return;
+            }
+
             var btn = document.getElementById('btnConfirmarReserva');
+            if (btn && btn.getAttribute('data-limite-anual') === '1') {
+                chkdbg('Intento de reserva bloqueado: límite anual de reservas alcanzado', 'warn');
+                return; // el servidor también lo rechaza (storeAjax · evaluarLimiteAnual)
+            }
+
+            // "Sin acompañantes" requiere confirmación explícita (Sí → guarda · No → sigue editando)
+            if (selAcomp && selAcomp.value === '0' && !form.__sinAcompConfirmado) {
+                chkConfirmarSinAcompanantes(function () {
+                    form.__sinAcompConfirmado = true;
+                    if (form.requestSubmit) form.requestSubmit();
+                    else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                }, function () {
+                    chkdbg('Reserva no enviada: el usuario quiere agregar acompañantes', 'info');
+                    selAcomp.focus();
+                });
+                return;
+            }
+            form.__sinAcompConfirmado = false;
+
             var btnTxt = btn ? btn.querySelector('.btn-txt') : null;
             var originalTxt = btnTxt ? btnTxt.innerHTML : 'Confirmar Reserva Segura';
 
@@ -776,14 +924,13 @@
                     return pasoHuespedes.then(function () {
                         chkdbg('Reserva y huéspedes procesados con ÉXITO. Redirigiendo a Mis Reservas...', 'ok');
                         alert('¡Reserva confirmada con éxito!');
-                        localStorage.setItem('rsv_cliente_panel_parent', '#cli-reservas');
-                        localStorage.setItem('rsv_cliente_panel_child', '#mr-sub-inicio');
 
-                        // Redirigir siempre a la URL completa del Portal (evitando endpoints /fragmento)
+                        // Redirigir siempre a la URL completa del Portal (evitando endpoints /fragmento).
+                        // La pestaña la decide la URL (portal.blade.php): tab=mis-reservas.
                         var destino = (root && root.getAttribute('data-redirect')) || window.location.origin + window.location.pathname;
-                        destino = destino.replace(/\/fragmento.*$/i, '').split('?')[0];
+                        destino = destino.replace(/\/fragmento.*$/i, '').split('?')[0] + '?tab=mis-reservas';
                         if (reservaCreadaId) {
-                            destino += '?reserva_id=' + encodeURIComponent(reservaCreadaId);
+                            destino += '&reserva_id=' + encodeURIComponent(reservaCreadaId);
                         }
                         window.location.href = destino;
                     });

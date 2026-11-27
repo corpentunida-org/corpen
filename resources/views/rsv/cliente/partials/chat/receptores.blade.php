@@ -210,6 +210,109 @@
             .ch-rec-dbg-info { color:#93c5fd; } .ch-rec-dbg-ok { color:#86efac; } .ch-rec-dbg-warn { color:#fde68a; } .ch-rec-dbg-err { color:#fca5a5; } .ch-rec-dbg-net { color:#c4b5fd; } .ch-rec-dbg-ev { color:#f9a8d4; }
         </style>
 
+        {{-- CREAR TICKET (plataforma Soportes): disponible siempre, con o sin reserva --}}
+        @php
+            $tkReservas = collect();
+            try {
+                $tkReservas = \App\Models\Rsv\Reserva::with('inmueble:id,name')
+                    ->where('id_user', $uid)->orderByDesc('fecha_inicio')->limit(30)
+                    ->get(['id', 'codigo_reserva', 'fecha_inicio', 'id_rsv_catalogo_inmueble']);
+            } catch (\Throwable $e) {}
+        @endphp
+        <div class="cr-ticket-card mb-3" id="crTicketCard">
+            <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:10px;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="cr-avatar" style="background:#eff6ff; color:#1d4ed8;"><i class="bi bi-ticket-perforated"></i></div>
+                    <div>
+                        <div class="val">¿Necesitas ayuda? Crea un ticket de soporte</div>
+                        <div class="sub">Llega a la mesa de ayuda de Corpentunida; te contactaremos por correo o teléfono.</div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary js-cr-tk-toggle" style="font-size:11px;">
+                    <i class="bi bi-plus-circle me-1"></i> Crear ticket ahora
+                </button>
+            </div>
+
+            <form id="crTicketForm" class="d-none mt-3" enctype="multipart/form-data" action="{{ route('rsv.cliente.soporte.ticket') }}">
+                @csrf
+                <div class="row g-2">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label mb-1" style="font-size:11px; font-weight:700;">¿Sobre qué reserva?</label>
+                        <select name="id_rsv_reservas" class="form-select form-select-sm" style="font-size:11.5px;">
+                            <option value="">Consulta general (sin reserva)</option>
+                            @foreach($tkReservas as $tr)
+                                <option value="{{ $tr->id }}">#{{ $tr->codigo_reserva }} · {{ optional($tr->inmueble)->name ?? 'Alojamiento' }} · {{ optional($tr->fecha_inicio)->format('d/m/Y') }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-7">
+                        <label class="form-label mb-1" style="font-size:11px; font-weight:700;">Adjunto (opcional · PDF, JPG o PNG, máx. 10 MB)</label>
+                        <input type="file" name="adjunto" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png" style="font-size:11px;">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mb-1" style="font-size:11px; font-weight:700;">¿Qué necesitas?</label>
+                        <textarea name="descripcion" class="form-control form-control-sm" rows="4" minlength="10" maxlength="2000" required
+                                  style="font-size:11.5px;" placeholder="Describe el problema o la solicitud con el mayor detalle posible."></textarea>
+                    </div>
+                </div>
+                <div id="crTicketAlert" class="d-none mt-2"></div>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="submit" class="btn btn-sm btn-primary" style="font-size:11px;"><i class="bi bi-send me-1"></i> Enviar ticket</button>
+                    <button type="button" class="btn btn-sm btn-light js-cr-tk-toggle" style="font-size:11px;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+        <style>
+            .cr-ticket-card { border:1px solid #bfdbfe; background:#f8fbff; border-radius:10px; padding:14px 16px; }
+        </style>
+        <script>
+        (function () {
+            if (window.__crTicketListo) return;
+            window.__crTicketListo = true;
+            document.addEventListener('click', function (e) {
+                var b = e.target && e.target.closest && e.target.closest('.js-cr-tk-toggle');
+                if (!b) return;
+                var f = document.getElementById('crTicketForm'); if (!f) return;
+                var abrir = f.classList.contains('d-none');
+                f.classList.toggle('d-none', !abrir);
+                var al = document.getElementById('crTicketAlert'); if (al && abrir) al.className = 'd-none';
+                if (abrir) f.querySelector('textarea').focus();
+            });
+            document.addEventListener('submit', function (e) {
+                var f = e.target;
+                if (!f || f.id !== 'crTicketForm') return;
+                e.preventDefault();
+                var btn = f.querySelector('button[type="submit"]'), old = btn.innerHTML;
+                var al = document.getElementById('crTicketAlert');
+                al.className = 'd-none';
+                btn.disabled = true; btn.innerHTML = 'Enviando…';
+                var tok = f.querySelector('input[name="_token"]');
+                fetch(f.getAttribute('action'), {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': tok ? tok.value : '' },
+                    body: new FormData(f)
+                })
+                .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+                .then(function (res) {
+                    if (res.ok && res.j.success) {
+                        al.className = 'alert alert-success py-2 mt-2 mb-0';
+                        al.style.fontSize = '11.5px';
+                        al.textContent = res.j.message;
+                        f.reset();
+                        return;
+                    }
+                    var errs = [];
+                    if (res.j.errors) Object.keys(res.j.errors).forEach(function (k) { errs = errs.concat(res.j.errors[k]); });
+                    al.className = 'alert alert-danger py-2 mt-2 mb-0';
+                    al.style.fontSize = '11.5px';
+                    al.textContent = errs.length ? errs.join(' ') : (res.j.message || 'No se pudo crear el ticket.');
+                })
+                .catch(function () { al.className = 'alert alert-danger py-2 mt-2 mb-0'; al.textContent = 'Error de conexión. Intenta de nuevo.'; })
+                .finally(function () { btn.disabled = false; btn.innerHTML = old; });
+            });
+        })();
+        </script>
+
         {{-- CABECERA + FILTROS CON CONTEO REAL + BUSCADOR EN VIVO --}}
         <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap" style="gap:8px; border-color:var(--grid) !important;">
             <div class="cr-filter-bar">

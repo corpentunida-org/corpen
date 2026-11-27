@@ -181,7 +181,7 @@ class ClientePortalController extends Controller
                 (int) ($userId ?? 0),
                 null,
                 [
-                    'modulo'         => 'Ingreso al Portal del Cliente',
+                    'modulo'         => 'Ingreso al Portal del Asociado',
                     'total_reservas' => $kpiTotal,
                     'activas'        => $kpiActivas,
                     'abonado'        => $kpiAbonado,
@@ -312,7 +312,6 @@ class ClientePortalController extends Controller
             $fInicio = $filtros['fecha_inicio'];
             $fFin    = $filtros['fecha_fin'];
             $noches  = 0;
-            $precioNoche   = optional($inmueble->latestTarifa)->precio_noche;
             $estimadoTotal = null;
 
             if ($fInicio && $fFin) {
@@ -320,6 +319,14 @@ class ClientePortalController extends Controller
                 $fin = Carbon::parse($fFin)->startOfDay();
                 if ($fin->gt($ini)) { $noches = (int) ceil($ini->diffInDays($fin)); }
             }
+
+            // Tarifa por INMUEBLE + AÑO DE LA RESERVA (misma regla que valida ReservaController)
+            $tarifaAplicable = TarifaTemporada::aplicable(
+                $inmueble->id,
+                $fInicio ? Carbon::parse($fInicio) : Carbon::today(),
+                $fFin ? Carbon::parse($fFin) : null
+            );
+            $precioNoche = optional($tarifaAplicable)->precio_noche;
             if ($noches > 0 && is_numeric($precioNoche)) { $estimadoTotal = (float) $precioNoche * $noches; }
 
             $colFi  = $this->colReservaFechaInicio();
@@ -396,13 +403,16 @@ class ClientePortalController extends Controller
 
             $colFi = $this->colReservaFechaInicio();
             $colFf = $this->colReservaFechaFin();
+            // Se amplía 1 día hacia atrás: una reserva que sale el último día del mes anterior
+            // bloquea el día 1 de este mes por alistamiento.
+            $inicioVentana = $inicioMes->copy()->subDay();
             $reservas = Reserva::query()
                 ->with($this->conRelaciones(Reserva::class, ['status']))
                 ->where($this->colReservaInmueble(), $id)
-                ->where(function ($query) use ($inicioMes, $finMes, $colFi, $colFf) {
-                    $query->whereBetween($colFi, [$inicioMes, $finMes])
-                          ->orWhereBetween($colFf, [$inicioMes, $finMes])
-                          ->orWhere(fn ($q) => $q->where($colFi, '<', $inicioMes)->where($colFf, '>', $finMes));
+                ->where(function ($query) use ($inicioVentana, $finMes, $colFi, $colFf) {
+                    $query->whereBetween($colFi, [$inicioVentana, $finMes])
+                          ->orWhereBetween($colFf, [$inicioVentana, $finMes])
+                          ->orWhere(fn ($q) => $q->where($colFi, '<', $inicioVentana)->where($colFf, '>', $finMes));
                 })
                 ->get();
 
@@ -412,7 +422,11 @@ class ClientePortalController extends Controller
                 }
                 $fiCarbon = Carbon::parse($res->{$colFi})->startOfDay();
                 $ffCarbon = Carbon::parse($res->{$colFf})->startOfDay();
-                for ($d = $fiCarbon->copy(); $d->lte($ffCarbon); $d->addDay()) {
+                // Incluye el DÍA DE ALISTAMIENTO (día siguiente a la salida): ReservaController::storeAjax
+                // lo bloquea (DATE_ADD(fecha_fin, INTERVAL 1 DAY)); sin esto el calendario lo ofrecía libre
+                // y la reserva se rechazaba al confirmar.
+                $alistamiento = $ffCarbon->copy()->addDay();
+                for ($d = $fiCarbon->copy(); $d->lte($alistamiento); $d->addDay()) {
                     $fechasOcupadas[] = $d->format('Y-m-d');
                 }
             }
@@ -1268,7 +1282,8 @@ class ClientePortalController extends Controller
                     $resumen['anulado'] += $monto;
                 } elseif (str_contains($edo, 'complet') || str_contains($edo, 'aprob') || str_contains($edo, 'pagad') || str_contains($edo, 'ok')) {
                     $resumen['pagado'] += $monto;
-                } else {
+                } elseif (!method_exists($tx, 'tieneSoporte') || $tx->tieneSoporte()) {
+                    // Solo está "en verificación" lo que tiene soporte; un intento sin archivo no suma
                     $resumen['pendiente'] += $monto;
                 }
             }

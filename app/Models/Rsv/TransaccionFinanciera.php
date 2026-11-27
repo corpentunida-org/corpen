@@ -37,13 +37,46 @@ class TransaccionFinanciera extends Model
      * - Si es una ruta de S3, genera una URL temporal de 30 minutos.
      * - Si ocurre un error, devuelve '#'.
      */
+    /**
+     * Disco donde se guardan los soportes: S3 cuando hay bucket configurado (producción);
+     * si no (entorno de desarrollo sin AWS), el disco "public" local. Antes se forzaba S3 y,
+     * sin bucket, la subida fallaba en silencio y quedaba soporte_pago = "0".
+     */
+    public static function discoSoportes(): string
+    {
+        return config('filesystems.disks.s3.bucket') ? 's3' : 'public';
+    }
+
+    /** ¿Tiene un soporte de pago real? (vacío o "0" = subida fallida → no cuenta). */
+    public function tieneSoporte(): bool
+    {
+        $v = trim((string) ($this->soporte_pago ?? ''));
+        return $v !== '' && $v !== '0';
+    }
+
+    /** Contabilidad lo rechazó / anuló (o falló): no cuenta como pago reportado. */
+    public function estaDescartada(): bool
+    {
+        $e = mb_strtolower((string) ($this->estado_pago ?? ''));
+        foreach (['rechaz', 'anul', 'cancel', 'fallid'] as $k) {
+            if (str_contains($e, $k)) return true;
+        }
+        return false;
+    }
+
+    /** Soporte que cuenta para la reserva: archivo real y no rechazado / anulado. */
+    public function esSoporteValido(): bool
+    {
+        return $this->tieneSoporte() && !$this->estaDescartada();
+    }
+
     protected function urlSoportePago(): Attribute
     {
         return Attribute::make(
             get: function () {
                 $value = $this->soporte_pago;
 
-                if (!$value) {
+                if (!$value || trim((string) $value) === '0') {
                     return '#';
                 }
 
@@ -60,6 +93,9 @@ class TransaccionFinanciera extends Model
                 }
 
                 try {
+                    if (self::discoSoportes() === 'public') {
+                        return Storage::disk('public')->url($value);
+                    }
                     return Storage::disk('s3')->temporaryUrl(
                         $value,
                         now()->addMinutes(30)

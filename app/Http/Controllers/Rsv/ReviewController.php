@@ -129,6 +129,12 @@ class ReviewController extends Controller
             'comentario'      => 'nullable|string',
         ]);
 
+        // Solo el titular califica su reserva, y el autor es siempre el usuario autenticado
+        if (!\App\Services\Rsv\RsvAcceso::esTitular((int) $validatedData['id_rsv_reservas'])) {
+            return \App\Services\Rsv\RsvAcceso::denegado('Solo puedes calificar tus propias reservas.');
+        }
+        $validatedData['id_user'] = \Illuminate\Support\Facades\Auth::id();
+
         DB::beginTransaction();
 
         try {

@@ -63,6 +63,32 @@
         }
     }
 
+    // ── Tarifa VIGENTE por inmueble (★) ──────────────────────────────────────────
+    // Una propiedad puede tener varias tarifas activas (año en curso + años futuros).
+    // La VIGENTE es la activa cuyas fechas incluyen HOY (mismo criterio que
+    // ReservaController::getTarifaAplicable); si hubiera varias, la de inicio más reciente.
+    $tarHoy = \Illuminate\Support\Carbon::today();
+    $tarVigentesIds = $tarifasMostrar
+        ->filter(fn ($t) => !empty($t->active)
+            && $t->fecha_inicio && $t->fecha_fin
+            && \Illuminate\Support\Carbon::parse($t->fecha_inicio)->startOfDay()->lte($tarHoy)
+            && \Illuminate\Support\Carbon::parse($t->fecha_fin)->startOfDay()->gte($tarHoy))
+        ->groupBy('id_rsv_catalogo_inmueble')
+        ->map(fn ($grp) => $grp->sortByDesc(fn ($t) => \Illuminate\Support\Carbon::parse($t->fecha_inicio)->timestamp)->first()->id)
+        ->values()
+        ->all();
+
+    // ── Orden: por INMUEBLE (alfabético) y, dentro, por TEMPORADA (cronológico) ─────
+    $tarNombreInm = function ($t) use (&$tarNombresInmuebles) {
+        return $t->nombre_inmueble_padre
+            ?? (($tarNombresInmuebles->isNotEmpty() && $tarNombresInmuebles->has($t->id_rsv_catalogo_inmueble))
+                ? $tarNombresInmuebles[$t->id_rsv_catalogo_inmueble] : 'Inmueble #' . $t->id_rsv_catalogo_inmueble);
+    };
+    $tarGrupos = $tarifasMostrar
+        ->groupBy(fn ($t) => $tarNombreInm($t))
+        ->sortKeysUsing(fn ($a, $b) => strcmp(mb_strtolower($a), mb_strtolower($b)))
+        ->map(fn ($grp) => $grp->sortBy(fn ($t) => $t->fecha_inicio ? \Illuminate\Support\Carbon::parse($t->fecha_inicio)->timestamp : PHP_INT_MAX)->values());
+
     $tzUid = $tzUid ?? ('tz' . substr(md5(uniqid('', true)), 0, 8));
 
     $cntTarTotal   = $tarifasMostrar->count();
@@ -153,6 +179,29 @@
             border-radius: 4px;
             padding: 2px 7px;
         }
+        /* Agrupación por temporada + tarifa vigente (★) */
+        .tar-root .tar-group-row td {
+            background: #f6f9f7 !important;
+            color: #3d7a5c;
+            font-size: 8.5px;
+            font-weight: 700;
+            letter-spacing: .02em;
+            padding: 4px 7px !important;
+            border-top: 1px solid #e3eee7 !important;
+            border-bottom: 1px solid #e3eee7 !important;
+        }
+        .tar-root .tar-group-count {
+            margin-left: 6px; font-weight: 600; color: #94a3b8; font-size: 7.5px;
+        }
+        .tar-root .tar-group-vig {
+            margin-left: 6px; font-size: 7.5px; font-weight: 700; color: #b7791f;
+            background: #fff8e6; border: 1px solid #f6e2b3; border-radius: 8px; padding: 0 6px;
+        }
+        .tar-root .tar-group-vig.is-inactiva { color: #8a94a3; background: #f4f6f9; border-color: #e3e8ef; }
+        .tar-root .tar-group-vig.is-inactiva i { color: #c0c7d1; }
+        .tar-root .tar-ref-nota { font-weight: 600; opacity: .8; }
+        .tar-root .tar-row-vigente > td { background: #fffcf2 !important; }
+        .tar-root .tar-star { color: #e0a800; font-size: 8px; margin-right: 3px; }
         .tar-root .tar-vigencia-pill.err {
             color: #b45f5a;
             background: #fdf5f4;
@@ -214,13 +263,14 @@
                         @if ($modoGlobal)
                             <th style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Inmueble</th>
                         @endif
-                        <th style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Temporada</th>
+                        <th style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Año Tarifa</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Fechas</th>
                         <th class="text-end" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Noche</th>
                         <th class="text-end" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Fin Sem.</th>
                         <th class="text-end" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Mín. Reserva</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Días Máx.</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Rsv. Máx/Año</th>
+                        <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Máx. Acomp.</th>
                         <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">Estado</th>
                         @if(empty($soloLectura))
                             <th class="text-center" style="font-size: 9px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8; background-color: #fafbfd; border-bottom: 1px solid #f1f5f9 !important; padding: 2px 7px; height: 20px;">·</th>
@@ -231,14 +281,53 @@
                 <tbody>
                     @if (!empty($tarifasMostrar) && count($tarifasMostrar) > 0)
 
-                        @foreach ($tarifasMostrar as $tarifa)
+                        @foreach ($tarGrupos as $tarGrupoNombre => $tarGrupo)
+                            @php
+                                $tarGrupoKey      = 'g' . substr(md5($tarGrupoNombre), 0, 8);
+                                $tarGrupoVigentes = $tarGrupo->whereIn('id', $tarVigentesIds)->count();
+                            @endphp
+
+                            {{-- Encabezado de INMUEBLE (se oculta si el filtro deja el grupo vacío) --}}
+                            <tr class="js-tar-group tar-group-row" data-tar-group="{{ $tarGrupoKey }}">
+                                <td colspan="{{ ($modoGlobal ? 10 : 9) + (empty($soloLectura) ? 1 : 0) }}">
+                                    <i class="bi bi-building me-1"></i>{{ $tarGrupoNombre }}
+                                    <span class="tar-group-count">{{ $tarGrupo->count() }} {{ $tarGrupo->count() === 1 ? 'tarifa' : 'tarifas' }}</span>
+                                    @php
+                                        // Valor del AÑO ACTUAL: la tarifa cuyas fechas incluyen hoy (activa primero;
+                                        // si solo existe inactiva, se muestra igual y se marca). Si el año actual no
+                                        // tiene tarifa, se muestra la que aplicaría la regla (última registrada).
+                                        $tarAnioActual = $tarGrupo
+                                            ->filter(fn ($t) => $t->fecha_inicio && $t->fecha_fin
+                                                && \Illuminate\Support\Carbon::parse($t->fecha_inicio)->startOfDay()->lte($tarHoy)
+                                                && \Illuminate\Support\Carbon::parse($t->fecha_fin)->startOfDay()->gte($tarHoy))
+                                            ->sortByDesc(fn ($t) => (int) !empty($t->active))
+                                            ->first();
+                                        $tarRef = $tarAnioActual
+                                            ?? \App\Models\Rsv\TarifaTemporada::aplicable((int) $tarGrupo->first()->id_rsv_catalogo_inmueble, $tarHoy);
+                                    @endphp
+                                    @if ($tarRef)
+                                        <span class="tar-group-vig{{ empty($tarRef->active) ? ' is-inactiva' : '' }}"
+                                              title="{{ $tarAnioActual ? 'Tarifa del año actual (' . $tarHoy->year . ')' : 'No hay tarifa para ' . $tarHoy->year . ': se aplica la última registrada' }}">
+                                            <i class="bi bi-star-fill"></i>
+                                            Año {{ $tarHoy->year }}: ${{ number_format((float) ($tarRef->precio_minimo_reserva ?? 0), 0, ',', '.') }}
+                                            @unless ($tarAnioActual) <span class="tar-ref-nota">(usa tarifa {{ $tarRef->nombre_temporada }})</span> @endunless
+                                            @if (empty($tarRef->active)) <span class="tar-ref-nota">· inactiva</span> @endif
+                                        </span>
+                                    @else
+                                        <span class="tar-group-count">· sin tarifas activas</span>
+                                    @endif
+                                </td>
+                            </tr>
+
+                        @foreach ($tarGrupo as $tarifa)
                             @php
                                 $nomPad = $tarifa->nombre_inmueble_padre ?? (($tarNombresInmuebles->isNotEmpty() && $tarifa->id_rsv_catalogo_inmueble && $tarNombresInmuebles->has($tarifa->id_rsv_catalogo_inmueble)) ? $tarNombresInmuebles[$tarifa->id_rsv_catalogo_inmueble] : 'N/A');
                                 $actTar = !empty($tarifa->active);
-                                $searchTar = mb_strtolower(($tarifa->nombre_temporada ?? '') . ' ' . $nomPad . ' ' . ($actTar ? 'activa' : 'inactiva'));
+                                $esVigente   = in_array($tarifa->id, $tarVigentesIds, true);
+                                $searchTar = mb_strtolower(($tarifa->nombre_temporada ?? '') . ' ' . $nomPad . ' ' . ($actTar ? 'activa' : 'inactiva') . ($esVigente ? ' vigente' : ''));
                             @endphp
 
-                            <tr class="js-tar-row" data-tar-active="{{ $actTar ? '1' : '0' }}" data-tar-search="{{ $searchTar }}">
+                            <tr class="js-tar-row{{ $esVigente ? ' tar-row-vigente' : '' }}" data-tar-group="{{ $tarGrupoKey }}" data-tar-active="{{ $actTar ? '1' : '0' }}" data-tar-search="{{ $searchTar }}">
 
                                 @if ($modoGlobal)
                                     <td class="fw-semibold" style="font-size: 8px; color: #5d8a70; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
@@ -247,6 +336,9 @@
                                 @endif
 
                                 <td class="fw-semibold" style="font-size: 8px; color: #475569; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
+                                    @if ($esVigente)
+                                        <i class="bi bi-star-fill tar-star" title="Tarifa vigente de {{ $nomPad }}"></i>
+                                    @endif
                                     {{ $tarifa->nombre_temporada }}
                                 </td>
 
@@ -272,6 +364,11 @@
 
                                 <td class="text-center" style="font-size: 8px; color: #64748b; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
                                     {{ $tarifa->max_reservas_anuales_cliente ?? 'N/A' }}
+                                </td>
+
+                                <td class="text-center" style="font-size: 8px; color: #64748b; border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;"
+                                    title="{{ $tarifa->max_acompanantes === null ? 'Sin límite propio: capacidad del inmueble menos el titular' : 'Acompañantes permitidos, sin contar al titular' }}">
+                                    {{ $tarifa->max_acompanantes ?? 'Capacidad' }}
                                 </td>
 
                                 <td class="text-center" style="border-bottom: 1px solid #f1f5f9; border-top: 0; padding: 2px 7px; height: 20px;">
@@ -301,6 +398,7 @@
                                                 data-precio-minimo-reserva="{{ $tarifa->precio_minimo_reserva }}"
                                                 data-dias-maximos="{{ $tarifa->dias_maximos }}"
                                                 data-max-reservas="{{ $tarifa->max_reservas_anuales_cliente }}"
+                                                data-max-acompanantes="{{ $tarifa->max_acompanantes }}"
                                                 data-active="{{ $actTar ? 1 : 0 }}">
                                             Editar
                                         </button>
@@ -309,16 +407,17 @@
                             </tr>
 
                         @endforeach
+                        @endforeach
 
                         <tr class="js-tar-empty-filter" style="display:none;">
-                            <td colspan="{{ $modoGlobal ? 10 : 9 }}" class="text-center py-3" style="color: #94a3b8; font-size: 8px; border-bottom: 1px solid #f1f5f9;">
+                            <td colspan="{{ $modoGlobal ? 11 : 10 }}" class="text-center py-3" style="color: #94a3b8; font-size: 8px; border-bottom: 1px solid #f1f5f9;">
                                 <i class="bi bi-funnel me-1"></i> Ninguna tarifa coincide con el filtro seleccionado.
                             </td>
                         </tr>
 
                     @else
                         <tr>
-                            <td colspan="{{ $modoGlobal ? 10 : 9 }}" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px; border-bottom: 1px solid #f1f5f9;">
+                            <td colspan="{{ $modoGlobal ? 11 : 10 }}" class="text-center py-3" style="color: #b3bcc7; font-size: 8.5px; border-bottom: 1px solid #f1f5f9;">
                                 No hay tarifas registradas.
                             </td>
                         </tr>
@@ -470,6 +569,12 @@
                                 </div>
 
                                 <div class="col-4">
+                                    <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Máx. acompañantes</label>
+                                    <input type="number" class="form-control form-control-sm shadow-none border" name="max_acompanantes" placeholder="Ej. 5" min="0" max="50" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Sin titular · vacío = capacidad</div>
+                                </div>
+
+                                <div class="col-12">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Disponibilidad</label>
                                     <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border" style="border-color: #f1f5f9 !important;">
                                         <div class="text-start w-100 me-1">
@@ -637,6 +742,12 @@
                                 </div>
 
                                 <div class="col-4">
+                                    <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Máx. acompañantes</label>
+                                    <input type="number" class="form-control form-control-sm shadow-none border" id="edit_tarifa_max_acompanantes-{{ $tzUid }}" name="max_acompanantes" min="0" max="50" style="font-size: 9.5px; color: #475569; border-color: #e9eef4 !important; border-radius: 3px; padding: 3px 8px;">
+                                    <div class="mt-1 text-start" style="font-size: 7px; color: #c3ccd6;">Sin titular · vacío = capacidad</div>
+                                </div>
+
+                                <div class="col-12">
                                     <label class="form-label d-block text-start mb-1" style="font-size: 7.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #94a3b8;">Disponibilidad</label>
                                     <div class="d-flex justify-content-between align-items-center bg-white p-2 rounded border" style="border-color: #f1f5f9 !important;">
                                         <div class="text-start w-100 me-1">
@@ -890,6 +1001,16 @@
                 var show  = okEst && okQ;
                 tr.style.display = show ? '' : 'none';
                 if (show) visibles++;
+            });
+
+            // Encabezados de temporada: visibles solo si queda alguna fila visible en su grupo
+            sc.querySelectorAll('.js-tar-group').forEach(function (gr) {
+                var key = gr.getAttribute('data-tar-group');
+                var algunaVisible = Array.prototype.some.call(
+                    sc.querySelectorAll('.js-tar-row[data-tar-group="' + key + '"]'),
+                    function (tr) { return tr.style.display !== 'none'; }
+                );
+                gr.style.display = algunaVisible ? '' : 'none';
             });
 
             var emptyRow = sc.querySelector('.js-tar-empty-filter');
@@ -1174,7 +1295,11 @@
             if ((f = porNombre('precio_minimo_reserva'))) { f.value = get('precio-minimo-reserva'); }
             if ((f = porNombre('dias_maximos'))) { f.value = get('dias-maximos'); }
             if ((f = porNombre('max_reservas_anuales_cliente'))) { f.value = get('max-reservas'); }
-            if ((f = porNombre('active')) && f.type === 'checkbox') { f.checked = get('active') === '1'; }
+            if ((f = porNombre('max_acompanantes'))) { f.value = get('max-acompanantes'); }
+            // El formulario tiene un <input type="hidden" name="active" value="0"> ANTES del switch:
+            // porNombre('active') devolvía ese hidden y el switch nunca se marcaba → al guardar se
+            // enviaba active=0 y toda tarifa editada quedaba INACTIVA. Se apunta al checkbox.
+            if ((f = form.querySelector('input[type="checkbox"][name="active"]'))) { f.checked = get('active') === '1'; }
 
             actualizarDuracionModal(form);
 

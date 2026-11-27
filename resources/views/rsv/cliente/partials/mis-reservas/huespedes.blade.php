@@ -154,7 +154,11 @@
         };
 
         $inm = $reserva?->inmueble;
-        $capMaxima   = (int) ($inm->capacidad_maxima ?? 6);
+        // Cupo = titular + máximo de acompañantes de la configuración del inmueble/tarifa
+        // (misma regla que el checkout y que ReservaHuespedController::store, que lo valida al guardar).
+        $capMaxima   = $reserva
+            ? \App\Http\Controllers\Rsv\ReservaHuespedController::maxAcompanantesDe($reserva) + 1
+            : (int) ($inm->capacidad_maxima ?? 6);
         $ocupados    = $huespedesReserva->count();
         $disponibles = max(0, $capMaxima - $ocupados);
         $pctCupo     = $capMaxima > 0 ? min(100, round(($ocupados / $capMaxima) * 100)) : 0;

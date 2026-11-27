@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Rsv;
 
 use App\Http\Controllers\Controller;
 use App\Models\Rsv\ReservaHuesped;
+use App\Models\Rsv\Reserva;
+use App\Models\Rsv\TarifaTemporada;
+use App\Services\Rsv\RsvAcceso;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -62,12 +65,46 @@ class ReservaHuespedController extends Controller
         }
     }
 
+    /**
+     * Máximo de acompañantes (sin titular) de una reserva: max_acompanantes de la tarifa del
+     * inmueble + año de la reserva, sin superar capacidad_maxima - 1. Vacío en la tarifa =
+     * capacidad - 1. Misma regla que muestra el checkout del Portal Cliente.
+     */
+    public static function maxAcompanantesDe(Reserva $reserva): int
+    {
+        $capacidad = (int) (optional($reserva->inmueble)->capacidad_maxima ?? 6);
+        $tarifa = $reserva->fecha_inicio
+            ? TarifaTemporada::aplicable((int) $reserva->id_rsv_catalogo_inmueble, \Illuminate\Support\Carbon::parse($reserva->fecha_inicio), $reserva->fecha_fin ? \Illuminate\Support\Carbon::parse($reserva->fecha_fin) : null)
+            : null;
+        $deTarifa = ($tarifa && $tarifa->max_acompanantes !== null) ? (int) $tarifa->max_acompanantes : null;
+
+        return max(0, min($deTarifa ?? ($capacidad - 1), $capacidad - 1));
+    }
+
     public function store(StoreReservaHuespedRequest $request): JsonResponse
     {
         try {
             $validated = $request->validated();
-            
-            $huesped = DB::transaction(function () use ($request, $validated) {
+            $esTitular = $request->boolean('es_titular', $request->boolean('es_principal', false));
+
+            // Solo el titular de la reserva o quien gestiona reservas
+            if (!RsvAcceso::titularOPuede((int) $validated['id_rsv_reservas'], RsvAcceso::RESERVAS_GESTIONAR)) {
+                return RsvAcceso::denegado('Solo puedes gestionar los huéspedes de tus reservas.');
+            }
+
+            $huesped = DB::transaction(function () use ($request, $validated, $esTitular) {
+                // Máx. ACOMPAÑANTES de la tarifa (inmueble + año de la reserva). Se valida aquí
+                // porque los acompañantes también se añaden después, desde Mis Reservas.
+                // lockForUpdate sobre la reserva: dos altas simultáneas no superan el máximo.
+                if (!$esTitular) {
+                    $reserva = Reserva::with('inmueble')->lockForUpdate()->findOrFail($validated['id_rsv_reservas']);
+                    $max = $this->maxAcompanantesDe($reserva);
+                    $actuales = ReservaHuesped::where('id_rsv_reservas', $reserva->id)->where('es_titular', false)->count();
+                    if ($actuales >= $max) {
+                        throw new \DomainException('La reserva ya tiene ' . $actuales . ' acompañante(s); el máximo permitido es ' . $max . ' (sin contar al titular).');
+                    }
+                }
+
                 return ReservaHuesped::create([
                     'id_rsv_reservas'     => $validated['id_rsv_reservas'],
                     'id_user_registrador' => Auth::id() ?? $request->user()?->id,
@@ -75,11 +112,13 @@ class ReservaHuespedController extends Controller
                     'apellidos'           => $validated['apellidos'],
                     'tipo_documento'      => $validated['tipo_documento'] ?? null,
                     'numero_documento'    => $validated['numero_documento'] ?? null,
-                    'es_titular'          => $request->boolean('es_titular', $request->boolean('es_principal', false)),
+                    'es_titular'          => $esTitular,
                 ]);
             });
 
             return response()->json(['success' => true, 'data' => $huesped], 201);
+        } catch (\DomainException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (Throwable $e) {
             Log::error('Error Store ReservaHuesped: ' . $e->getMessage());
             return response()->json(['success' => false, 'error' => config('app.debug') ? $e->getMessage() : null], 500);
@@ -105,6 +144,13 @@ class ReservaHuespedController extends Controller
             if (!$huesped) return response()->json(['success' => false], 404);
 
             $validated = $request->validated();
+
+            // Titular de la reserva actual (y de la destino, si lo mueve) o quien gestiona reservas
+            $destino = !empty($validated['id_rsv_reservas']) ? (int) $validated['id_rsv_reservas'] : null;
+            if (!RsvAcceso::titularOPuede((int) $huesped->id_rsv_reservas, RsvAcceso::RESERVAS_GESTIONAR)
+                || ($destino && !RsvAcceso::titularOPuede($destino, RsvAcceso::RESERVAS_GESTIONAR))) {
+                return RsvAcceso::denegado('Solo puedes gestionar los huéspedes de tus reservas.');
+            }
             $datosActualizar = [];
 
             // Procesar el cambio de reserva
@@ -131,7 +177,34 @@ class ReservaHuespedController extends Controller
                 return response()->json(['success' => false, 'message' => 'Nada que actualizar.'], 422);
             }
 
-            DB::transaction(fn() => $huesped->update($datosActualizar));
+            // Regla del inmueble también al EDITAR: si el huésped queda como acompañante en una reserva
+            // (porque cambia de reserva o deja de ser titular), no puede superar el máximo de acompañantes.
+            $reservaDestinoId = (int) ($datosActualizar['id_rsv_reservas'] ?? $huesped->id_rsv_reservas);
+            $quedaAcompanante = !($datosActualizar['es_titular'] ?? (bool) $huesped->es_titular);
+            $cambiaCupo = $quedaAcompanante
+                && ($reservaDestinoId !== (int) $huesped->id_rsv_reservas || (bool) $huesped->es_titular);
+
+            try {
+                DB::transaction(function () use ($huesped, $datosActualizar, $reservaDestinoId, $cambiaCupo) {
+                    if ($cambiaCupo) {
+                        $reservaDestino = Reserva::with('inmueble')->lockForUpdate()->find($reservaDestinoId);
+                        if ($reservaDestino) {
+                            $max = self::maxAcompanantesDe($reservaDestino);
+                            $actuales = ReservaHuesped::where('id_rsv_reservas', $reservaDestinoId)
+                                ->where('es_titular', false)
+                                ->where('id', '!=', $huesped->id)
+                                ->count();
+                            if ($actuales >= $max) {
+                                throw new \DomainException('La reserva ya tiene el máximo de ' . $max
+                                    . ' acompañante' . ($max === 1 ? '' : 's') . ' permitido por el inmueble.');
+                            }
+                        }
+                    }
+                    $huesped->update($datosActualizar);
+                });
+            } catch (\DomainException $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
 
             // Devolver con relaciones para que el JS pinte el código de reserva fresco
             return response()->json([
@@ -173,6 +246,9 @@ class ReservaHuespedController extends Controller
             $huesped = ReservaHuesped::find($id);
             if (!$huesped) {
                 return response()->json(['success' => false, 'message' => 'Huésped no encontrado.'], 404);
+            }
+            if (!RsvAcceso::titularOPuede((int) $huesped->id_rsv_reservas, RsvAcceso::RESERVAS_GESTIONAR)) {
+                return RsvAcceso::denegado('Solo puedes gestionar los huéspedes de tus reservas.');
             }
 
             $usaSoftDeletes = in_array(

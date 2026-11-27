@@ -970,4 +970,21 @@
     })();
     </script>
 
+    @if (\App\Services\Rsv\RsvAcceso::puede(\App\Services\Rsv\RsvAcceso::SOPORTES_RESPONDER))
+    <script>
+    // Latido de disponibilidad: con el panel abierto y actividad en los últimos 30 min, el agente
+    // figura "en línea" para el chat del Portal Asociado (sessions.last_activity < 10 min).
+    (function () {
+        var ultimaInteraccion = Date.now();
+        ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (ev) {
+            document.addEventListener(ev, function () { ultimaInteraccion = Date.now(); }, { passive: true });
+        });
+        setInterval(function () {
+            if (Date.now() - ultimaInteraccion > 30 * 60 * 1000) return;
+            fetch(@json(route('rsv.admin.latido')), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }).catch(function () {});
+        }, 4 * 60 * 1000);
+    })();
+    </script>
+    @endif
+
 </x-base-layout>

@@ -149,6 +149,8 @@ use Throwable;
 class ReservaController extends Controller
 {
     private const MONTO_MIN_BASE = 200000;
+    /** Máximo de DÍAS por estadía si la tarifa no define dias_maximos (5 días = 4 noches). */
+    public const DIAS_MAX_BASE = 5;
 
     /* ═══ 🆕 v31-EXC · EXCEPCIONES A POLÍTICAS · SIN VALIDAR ROL, SIN TABLA ═══
        Quien ejecuta este controlador YA ES admin (lo garantiza la ruta):
@@ -178,45 +180,39 @@ class ReservaController extends Controller
         }
     }
 
+    /**
+     * Estados que NO cuentan para el límite "Rsv. Máx/Año": los no bloqueantes (Cancelada/
+     * Rechazada/Anulada) + "Re asignada". Re asignada = el administrador, por fuerza mayor, pasó
+     * la reserva a otro asociado: sigue ocupando las fechas (no está en getEstadosNoBloqueantesIds),
+     * pero no consume el cupo anual del asociado.
+     */
+    private function getEstadosExcluidosLimiteIds(): array
+    {
+        $ids = $this->getEstadosNoBloqueantesIds();
+        try {
+            if (class_exists(Status::class)) {
+                $ids = array_merge($ids, Status::whereRaw("REPLACE(LOWER(name), ' ', '') LIKE ?", ['%reasignad%'])
+                    ->pluck('id')->toArray());
+            }
+        } catch (\Throwable $e) {
+            Log::warning('getEstadosExcluidosLimiteIds: ' . $e->getMessage());
+        }
+        return array_values(array_unique($ids));
+    }
+
     /* ═══════════════════════════════════════════════════════════════════════
      * 🆕 v29 · MOTOR DE TARIFA APLICABLE Y LÍMITE ANUAL (antes quemado en v28)
      * ═══════════════════════════════════════════════════════════════════════ */
 
     /**
-     * 🆕 v29 · Tarifa ACTIVA del inmueble que rige el rango solicitado.
-     *
-     * 1) Preferida: tarifa activa que cubre TODO el rango de la estadía.
-     * 2) Fallback: si el rango cruza temporadas (o ninguna cubre todo), rige
-     *    la tarifa ACTIVA que cubre el CHECK-IN (fecha_inicio).
-     *
-     * Nunca devuelve tarifas inactivas: active = false queda fuera siempre.
+     * Tarifa que rige la reserva: por INMUEBLE y AÑO DE LA RESERVA, con fallback a la
+     * última registrada si ese año no tiene tarifa. La regla vive en
+     * TarifaTemporada::aplicable() (la misma que usa el Portal Cliente para mostrar precios).
      */
     private function getTarifaAplicable($idInmueble, \Illuminate\Support\Carbon $fi, \Illuminate\Support\Carbon $ff): ?TarifaTemporada
     {
         try {
-            if (!class_exists(TarifaTemporada::class)) {
-                return null;
-            }
-
-            // Preferida: cubre TODO el rango
-            $tarifa = TarifaTemporada::where('id_rsv_catalogo_inmueble', $idInmueble)
-                ->where('active', true)
-                ->whereDate('fecha_inicio', '<=', $fi->toDateString())
-                ->whereDate('fecha_fin', '>=', $ff->toDateString())
-                ->orderBy('fecha_inicio', 'desc')
-                ->first();
-
-            // Fallback v29: rango que cruza temporadas → rige la del CHECK-IN
-            if (!$tarifa) {
-                $tarifa = TarifaTemporada::where('id_rsv_catalogo_inmueble', $idInmueble)
-                    ->where('active', true)
-                    ->whereDate('fecha_inicio', '<=', $fi->toDateString())
-                    ->whereDate('fecha_fin', '>=', $fi->toDateString())
-                    ->orderBy('fecha_inicio', 'desc')
-                    ->first();
-            }
-
-            return $tarifa;
+            return TarifaTemporada::aplicable((int) $idInmueble, $fi, $ff);
         } catch (Throwable $e) {
             Log::warning('getTarifaAplicable: ' . $e->getMessage());
             return null;
@@ -231,45 +227,92 @@ class ReservaController extends Controller
      */
     private function getLimiteAnualDesdeTarifa(?TarifaTemporada $tarifa): int
     {
-        if (!$tarifa) {
-            return 1;
-        }
+        return self::limiteAnualDe($tarifa);
+    }
+
+    /** Días del periodo de la política "Rsv. Máx/Año". */
+    public const DIAS_PERIODO_LIMITE = 365;
+
+    /** Límite "Rsv. Máx/Año" de una tarifa (null/0 → 1). Público para el calendario del Portal Cliente. */
+    public static function limiteAnualDe(?TarifaTemporada $tarifa): int
+    {
         $valor = (int) ($tarifa->max_reservas_anuales_cliente ?? 0);
         return $valor > 0 ? $valor : 1;
     }
 
     /**
-     * 🆕 v30-EXC · MOTOR ÚNICO de la regla del año (store/update/storeAjax).
-     * Comportamiento EXACTO al validador v29 (no cambia la regla):
-     * ventana ROLLING ±1 año alrededor del check-in (whereBetween inclusiva),
-     * COUNT() de reservas ACTIVAS de cualquier inmueble excluyendo
-     * Cancelada/Rechazada/Anulada y, en update(), la propia reserva; máximo
-     * leído de la tarifa ACTIVA (max_reservas_anuales_cliente; null/0 → 1).
+     * Llegadas (Y-m-d) de las reservas ACTIVAS del asociado que todavía pueden pesar en la
+     * política de 365 días (llegada > hoy − 365). Mismo criterio de estados que evaluarLimiteAnual():
+     * el calendario del Portal Cliente las usa para bloquear llegadas que superarían el límite.
+     */
+    public function llegadasActivasDe($idUsuario): array
+    {
+        if (empty($idUsuario)) {
+            return [];
+        }
+        $estadosNoBloqueantes = $this->getEstadosExcluidosLimiteIds();
+        $query = Reserva::where('id_user', $idUsuario)
+            ->whereNotNull('fecha_inicio')
+            ->whereDate('fecha_inicio', '>', now()->subDays(self::DIAS_PERIODO_LIMITE)->toDateString());
+        if (!empty($estadosNoBloqueantes)) {
+            $query->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
+        }
+        return $query->pluck('fecha_inicio')
+            ->map(fn ($f) => \Illuminate\Support\Carbon::parse($f)->format('Y-m-d'))
+            ->sort()->values()->all();
+    }
+
+    /**
+     * MOTOR ÚNICO de la política "Rsv. Máx/Año" (store/update/storeAjax y checkout del cliente).
+     *
+     * Regla: el asociado puede tener como máximo N reservas ACTIVAS (de cualquier inmueble)
+     * dentro de CUALQUIER periodo de 365 días. N = max_reservas_anuales_cliente de la tarifa
+     * del inmueble y año de la reserva (null/0 → 1). Con N = 1: entre dos reservas debe haber
+     * al menos 365 días. Con N = 2 o 3: ningún periodo de 365 días puede contener más de N.
+     *
+     * Se revisan todos los periodos de 365 días que contienen la nueva llegada (fi): empiezan
+     * en una llegada existente (o en fi) entre fi-364 y fi. Se cuentan solo las llegadas (fecha_inicio)
+     * a menos de 365 días de fi; Cancelada/Rechazada/Anulada no cuentan; en update() se excluye la propia.
      *
      * Devuelve UN array con TODO lo necesario para validar Y auditar:
-     *   mensaje (null si cumple) · conteo · limite · ventana_desde/hasta
-     *   tarifa_id · tarifa_nombre · limite_origen
+     *   mensaje (null si cumple) · conteo (reservas existentes en el periodo más cargado) · limite
+     *   ventana_desde/hasta (ese periodo) · tarifa_id · tarifa_nombre · limite_origen
      */
-    private function evaluarLimiteAnual($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): array
+    /* Público: el checkout del Portal Cliente lo usa para avisar ANTES de confirmar,
+       con la misma regla con la que storeAjax valida al guardar. */
+    public function evaluarLimiteAnual($idUsuario, \Illuminate\Support\Carbon $fi, ?int $excluirReservaId = null, ?TarifaTemporada $tarifa = null): array
     {
-        $limite = $this->getLimiteAnualDesdeTarifa($tarifa);
+        $limite  = $this->getLimiteAnualDesdeTarifa($tarifa);
+        $diasPer = self::DIAS_PERIODO_LIMITE;
+        $fi      = $fi->copy()->startOfDay();
 
-        $limiteInferior = $fi->copy()->subYear()->format('Y-m-d');
-        $limiteSuperior = $fi->copy()->addYear()->format('Y-m-d');
-
-        $estadosNoBloqueantes = $this->getEstadosNoBloqueantesIds();
-
+        // Llegadas existentes a menos de 365 días (antes o después) de la nueva llegada
+        $estadosNoBloqueantes = $this->getEstadosExcluidosLimiteIds();
         $query = Reserva::where('id_user', $idUsuario)
-            ->whereBetween('fecha_inicio', [$limiteInferior, $limiteSuperior]);
-
+            ->whereNotNull('fecha_inicio')
+            ->whereDate('fecha_inicio', '>', $fi->copy()->subDays($diasPer)->toDateString())
+            ->whereDate('fecha_inicio', '<', $fi->copy()->addDays($diasPer)->toDateString());
         if (!empty($estadosNoBloqueantes)) {
             $query->whereNotIn('id_rsv_statuses', $estadosNoBloqueantes);
         }
         if (!empty($excluirReservaId)) {
             $query->where('id', '!=', $excluirReservaId);
         }
+        $llegadas = $query->pluck('fecha_inicio')
+            ->map(fn ($f) => \Illuminate\Support\Carbon::parse($f)->startOfDay())
+            ->sort()->values();
 
-        $conteo = (int) $query->count();
+        // Periodo de 365 días (que contiene fi) con más reservas existentes
+        $conteo = 0;
+        $peorDesde = $fi->copy();
+        $inicios = $llegadas->filter(fn ($d) => $d->lte($fi))->push($fi->copy());
+        foreach ($inicios as $desde) {
+            $hasta = $desde->copy()->addDays($diasPer - 1);
+            $n = $llegadas->filter(fn ($d) => $d->gte($desde) && $d->lte($hasta))->count();
+            if ($n > $conteo) { $conteo = $n; $peorDesde = $desde->copy(); }
+        }
+        $limiteInferior = $peorDesde->format('Y-m-d');
+        $limiteSuperior = $peorDesde->copy()->addDays($diasPer - 1)->format('Y-m-d');
 
         // 🆕 v30-EXC · origen del límite, tal cual lo informa el mensaje v29
         $limiteOrigen = $tarifa
@@ -292,11 +335,11 @@ class ReservaController extends Controller
         }
 
         $origenLimite = $tarifa
-            ? 'La temporada "' . $tarifa->nombre_temporada . '" permite un máximo de ' . $limite . ' reserva(s) por año por asociado.'
-            : 'Se aplica el límite del sistema: 1 reserva por año (sin tarifa activa aplicable a la fecha del check-in).';
+            ? 'La tarifa "' . $tarifa->nombre_temporada . '" permite un máximo de ' . $limite . ' reserva(s) por cada 365 días por asociado.'
+            : 'Se aplica el límite del sistema: 1 reserva por cada 365 días (sin tarifa activa aplicable a la fecha del check-in).';
 
-        $base['mensaje'] = 'El asociado ya tiene ' . $conteo . ' reserva(s) ACTIVA(S) en menos de un año de diferencia '
-            . '(ventana ' . $limiteInferior . ' → ' . $limiteSuperior . '; se cuentan reservas de cualquier inmueble y el check-in define la ventana). '
+        $base['mensaje'] = 'El asociado ya tiene ' . $conteo . ' reserva(s) ACTIVA(S) en un periodo de 365 días que incluye la nueva llegada '
+            . '(del ' . $peorDesde->format('d/m/Y') . ' al ' . $peorDesde->copy()->addDays($diasPer - 1)->format('d/m/Y') . '; se cuentan reservas de cualquier inmueble). '
             . $origenLimite . ' '
             . 'Si canceló una reserva, verifique que su estado sea "Cancelada", "Rechazada" o "Anulada".';
         return $base;
@@ -319,10 +362,11 @@ class ReservaController extends Controller
     /**
      * 🆕 v31-EXC · Decide si el bloque del límite anual se salta o no.
      *
-     * Revalidación SERVER-SIDE del motivo: la excepción SOLO se concede con
-     * un motivo_excepcion enviado y válido (10-1000 caracteres).
-     * 🆕 v31 · NO se valida usuario, rol ni permiso: quien ejecuta este
-     * controlador YA ES admin (lo garantiza la ruta).
+     * Revalidación SERVER-SIDE: la excepción SOLO se concede si el usuario tiene
+     * el permiso directo PERMISO_EXCEPCION_LIMITE Y envía un motivo_excepcion válido
+     * (10-1000 caracteres). La ruta /rsv solo exige sesión (clientes incluidos), así
+     * que el permiso es lo que impide que un cliente se salte el límite enviando un
+     * motivo a mano. Sin permiso: el límite se aplica siempre y no se ofrece excepción.
      *
      * mensaje null → no hubo bloque: proceder sin excepción.
      * Devuelve:
@@ -330,34 +374,53 @@ class ReservaController extends Controller
      *   motivo           ?str → justificación validada (para la auditoría)
      *   requiere_motivo  bool → la alerta salió y se espera la justificación
      *   error_motivo     ?str → motivo enviado pero inválido (corto/largo)
+     *   puede_exceptuar  bool → el usuario tiene el permiso (el front ofrece el modal)
      */
     private function resolverExcepcionLimite(Request $request, ?string $mensaje): array
     {
         if ($mensaje === null) {
-            return ['proceder' => true, 'motivo' => null, 'requiere_motivo' => false, 'error_motivo' => null];
+            return ['proceder' => true, 'motivo' => null, 'requiere_motivo' => false, 'error_motivo' => null, 'puede_exceptuar' => false];
+        }
+
+        if (!$this->puedeExceptuarLimite()) {
+            if (trim((string) $request->input('motivo_excepcion', '')) !== '') {
+                Log::warning('Excepción de límite anual RECHAZADA: usuario sin permiso ' . self::PERMISO_EXCEPCION_LIMITE, [
+                    'user_id' => Auth::id(),
+                ]);
+            }
+            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => false, 'error_motivo' => null, 'puede_exceptuar' => false];
         }
 
         $motivo = trim((string) $request->input('motivo_excepcion', ''));
         $largo  = mb_strlen($motivo);
 
         if ($motivo === '') {
-            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true, 'error_motivo' => null];
+            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true, 'error_motivo' => null, 'puede_exceptuar' => true];
         }
 
         if ($largo < self::MOTIVO_EXC_MIN || $largo > self::MOTIVO_EXC_MAX) {
-            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true,
+            return ['proceder' => false, 'motivo' => null, 'requiere_motivo' => true, 'puede_exceptuar' => true,
                 'error_motivo' => 'La justificación debe tener entre ' . self::MOTIVO_EXC_MIN . ' y ' . self::MOTIVO_EXC_MAX . ' caracteres (enviada: ' . $largo . ').'];
         }
 
-        return ['proceder' => true, 'motivo' => $motivo, 'requiere_motivo' => false, 'error_motivo' => null];
+        return ['proceder' => true, 'motivo' => $motivo, 'requiere_motivo' => false, 'error_motivo' => null, 'puede_exceptuar' => true];
+    }
+
+    /** Permiso directo (Matriz de Permisos) para exceptuar la política "Rsv. Máx/Año". Ver RsvPermissionsSeeder. */
+    public const PERMISO_EXCEPCION_LIMITE = 'rsv.reservas.excepcion';
+
+    private function puedeExceptuarLimite(): bool
+    {
+        // Permiso directo (Matriz) o por rol rsv.admin
+        return \App\Services\Rsv\RsvAcceso::puede(self::PERMISO_EXCEPCION_LIMITE);
     }
 
     /**
-     * 🆕 v30-EXC · 422 uniforme con datos de la excepción para el front.
+     * 422 uniforme del límite anual.
      * $campoEstado = 'ok' (storeAjax) | 'success' (store/update) para
      * respetar el formato de respuesta de cada endpoint.
-     * 🆕 v31 · El bloque "excepcion" va SIEMPRE (no se valida rol): es la
-     * señal para que el modal pida la justificación obligatoria.
+     * El bloque "excepcion" (señal para que el modal pida la justificación) SOLO
+     * se envía a quien tiene el permiso PERMISO_EXCEPCION_LIMITE.
      */
     private function respuesta422Excepcion(string $campoEstado, string $mensaje, array $excepcion): JsonResponse
     {
@@ -365,6 +428,9 @@ class ReservaController extends Controller
             $campoEstado => false,
             'message'    => $mensaje,
         ];
+        if (empty($excepcion['puede_exceptuar'])) {
+            return response()->json($payload, 422);
+        }
         $payload['excepcion'] = [
             'disponible'      => true,
             'requiere_motivo' => true,
@@ -499,6 +565,11 @@ class ReservaController extends Controller
     {
         try {
             $validatedData = $request->validated();
+
+            if ((int) ($validatedData['id_user'] ?? 0) !== (int) Auth::id()
+                && !\App\Services\Rsv\RsvAcceso::puede(\App\Services\Rsv\RsvAcceso::RESERVAS_CREAR_OTRO)) {
+                return \App\Services\Rsv\RsvAcceso::denegado('Solo puedes crear reservas a tu nombre.');
+            }
 
             $fi = \Illuminate\Support\Carbon::parse($validatedData['fecha_inicio'])->startOfDay();
             $ff = \Illuminate\Support\Carbon::parse($validatedData['fecha_fin'])->startOfDay();
@@ -829,6 +900,13 @@ class ReservaController extends Controller
             $estadoAnterior = $reserva->id_rsv_statuses;
             $nuevoEstado = $validatedData['id_rsv_statuses'];
 
+            // Cancelar exige permiso propio (la ruta ya exige rsv.reservas.gestionar)
+            $nombreNuevo = mb_strtolower((string) Status::whereKey($nuevoEstado)->value('name'));
+            if (str_contains($nombreNuevo, 'cancel')
+                && !\App\Services\Rsv\RsvAcceso::puede(\App\Services\Rsv\RsvAcceso::RESERVAS_CANCELAR)) {
+                return \App\Services\Rsv\RsvAcceso::denegado('No tienes permiso para cancelar reservas.');
+            }
+
             if ($estadoAnterior === $nuevoEstado) {
                 return response()->json([
                     'success' => false,
@@ -1019,6 +1097,12 @@ class ReservaController extends Controller
             ], 422);
         }
 
+        // Reservar a nombre de OTRO asociado solo con permiso (antes bastaba con cambiar id_user)
+        if ((int) $data['id_user'] !== (int) Auth::id()
+            && !\App\Services\Rsv\RsvAcceso::puede(\App\Services\Rsv\RsvAcceso::RESERVAS_CREAR_OTRO)) {
+            return response()->json(['ok' => false, 'success' => false, 'message' => 'Solo puedes crear reservas a tu nombre.'], 403);
+        }
+
         try {
             $fi = \Illuminate\Support\Carbon::parse($data['fecha_inicio'])->startOfDay();
             $ff = \Illuminate\Support\Carbon::parse($data['fecha_fin'])->startOfDay();
@@ -1031,7 +1115,7 @@ class ReservaController extends Controller
             // una temporada, esta deja de gobernar monto mínimo, días máximos
             // y límite anual de las reservas nuevas.
             $montoMinAplicable = self::MONTO_MIN_BASE;
-            $diasMaxAplicable  = 0;
+            $diasMaxAplicable  = self::DIAS_MAX_BASE;
             $tarifaAplicable   = $this->getTarifaAplicable($data['id_rsv_catalogo_inmueble'], $fi, $ff);
 
             if ($tarifaAplicable) {
@@ -1067,10 +1151,15 @@ class ReservaController extends Controller
                 ], 422);
             }
 
-            if ($diasMaxAplicable > 0 && $noches > $diasMaxAplicable) {
+            // DÍAS MÁX. cuenta días de estadía (check-in y check-out incluidos): días = noches + 1.
+            // Ej.: dias_maximos = 5 → máximo 4 noches (15 al 19). Mismo límite que aplica el calendario.
+            $diasEstadia = $noches + 1;
+            if ($diasEstadia > $diasMaxAplicable) {
                 return response()->json([
                     'ok'      => false,
-                    'message' => 'El rango seleccionado (' . $noches . ' noches) excede el máximo permitido por la tarifa.',
+                    'message' => 'El rango seleccionado (' . $noches . ' noches · ' . $diasEstadia . ' días) excede el máximo de '
+                        . $diasMaxAplicable . ' días (' . ($diasMaxAplicable - 1) . ' noches) '
+                        . ($tarifaAplicable ? 'de la tarifa ' . $tarifaAplicable->nombre_temporada . '.' : 'del sistema.'),
                 ], 422);
             }
 
@@ -1171,6 +1260,9 @@ class ReservaController extends Controller
             DB::commit();
             $reserva->load(['user', 'inmueble', 'status']);
 
+            // Correo al asociado (después del commit: si el correo falla, la reserva ya quedó guardada)
+            $this->enviarCorreoReservaCreada($reserva);
+
             return response()->json([
                 'ok'      => true,
                 'message' => 'Reserva creada correctamente (estado inicial: Pendiente).',
@@ -1193,6 +1285,116 @@ class ReservaController extends Controller
                 'ok'      => false,
                 'message' => 'Error interno al crear la reserva: ' . $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /** Días hábiles que tiene el asociado para pagar y cargar el soporte. */
+    public const DIAS_HABILES_PAGO = 3;
+
+    /** Fecha límite de pago: N días hábiles después de $desde (sin sábados, domingos ni festivos de Colombia). */
+    public static function fechaLimitePago(\Illuminate\Support\Carbon $desde, int $diasHabiles = self::DIAS_HABILES_PAGO): \Illuminate\Support\Carbon
+    {
+        $festivos = app(\App\Services\Sgrh\FestivoColombiaCalculador::class);
+        $fecha = $desde->copy()->startOfDay();
+        $contados = 0;
+        while ($contados < $diasHabiles) {
+            $fecha->addDay();
+            if ($fecha->isWeekday() && !$festivos->esFestivo($fecha)) {
+                $contados++;
+            }
+        }
+        return $fecha;
+    }
+
+    /**
+     * Plazo de pago de UNA reserva. Cuenta desde la creación o, si contabilidad rechazó un soporte
+     * después, desde el último rechazo (el asociado recibe un plazo nuevo para subir otro).
+     */
+    public static function fechaLimitePagoDe(Reserva $reserva): ?\Illuminate\Support\Carbon
+    {
+        if (!$reserva->created_at) {
+            return null;
+        }
+        $desde = \Illuminate\Support\Carbon::parse($reserva->created_at);
+        $txs = $reserva->relationLoaded('transacciones') ? $reserva->transacciones : $reserva->transacciones()->get();
+        $ultimoRechazo = $txs->filter(fn ($t) => $t->tieneSoporte() && $t->estaDescartada() && $t->updated_at)
+            ->max(fn ($t) => \Illuminate\Support\Carbon::parse($t->updated_at));
+        if ($ultimoRechazo && $ultimoRechazo->gt($desde)) {
+            $desde = $ultimoRechazo;
+        }
+        return self::fechaLimitePago($desde);
+    }
+
+    /**
+     * Valores de los lineamientos del correo tomados de la CONFIGURACIÓN del apartamento: tarifa
+     * aplicable (inmueble + año de la reserva) y capacidad del inmueble. Misma regla que el checkout
+     * del Portal Cliente ("Datos a tener en cuenta").
+     */
+    public static function lineamientosCorreo(Reserva $reserva): array
+    {
+        $tarifa = $reserva->fecha_inicio
+            ? TarifaTemporada::aplicable(
+                (int) $reserva->id_rsv_catalogo_inmueble,
+                \Illuminate\Support\Carbon::parse($reserva->fecha_inicio),
+                $reserva->fecha_fin ? \Illuminate\Support\Carbon::parse($reserva->fecha_fin) : null)
+            : null;
+
+        $dias   = ($tarifa && (int) $tarifa->dias_maximos > 0) ? (int) $tarifa->dias_maximos : self::DIAS_MAX_BASE;
+        $noches = max(1, $dias - 1);
+        $limite = self::limiteAnualDe($tarifa);
+        $cap    = (int) (optional($reserva->inmueble)->capacidad_maxima ?? 6);
+        $acomp  = max(0, min(($tarifa && $tarifa->max_acompanantes !== null) ? (int) $tarifa->max_acompanantes : $cap - 1, $cap - 1));
+        $pers   = $acomp + 1;
+
+        return [
+            'plazo_pago'      => self::DIAS_HABILES_PAGO . ' días hábiles',
+            'estadia_maxima'  => $dias . ' días / ' . $noches . ' noche' . ($noches === 1 ? '' : 's'),
+            'limite_reservas' => $limite . ' reserva' . ($limite === 1 ? '' : 's') . ' por cada 365 días',
+            'capacidad'       => $pers . ' persona' . ($pers === 1 ? '' : 's') . ' (titular + hasta ' . $acomp . ' acompañante' . ($acomp === 1 ? '' : 's') . ')',
+        ];
+    }
+
+    /**
+     * Correo "reserva creada" al asociado titular: datos de la reserva + plazo de 3 días hábiles
+     * para pagar y cargar el soporte. Reutiliza el Mailable del módulo Reservas (ReservaInmueble,
+     * plantilla emails.reserva con los lineamientos). Un fallo de correo solo se registra en el log.
+     */
+    private function enviarCorreoReservaCreada(Reserva $reserva): void
+    {
+        try {
+            $user = $reserva->user;
+            if (!$user || empty($user->email)) {
+                Log::warning('Rsv correo reserva creada: el asociado no tiene correo', ['reserva' => $reserva->id]);
+                return;
+            }
+
+            $inmueble = optional($reserva->inmueble)->name ?? 'el inmueble';
+            $limite = self::fechaLimitePago($reserva->created_at ? \Illuminate\Support\Carbon::parse($reserva->created_at) : now());
+            $fmt    = fn ($f) => $f ? \Illuminate\Support\Carbon::parse($f)->locale('es')->translatedFormat('l j \d\e F \d\e Y') : '—';
+
+            $texto = 'Su reserva <strong>' . e($reserva->codigo_reserva) . '</strong> en <strong>' . e($inmueble) . '</strong> '
+                . 'fue registrada con éxito.<br><br>'
+                . '<strong>Llegada:</strong> ' . e($fmt($reserva->fecha_inicio)) . '<br>'
+                . '<strong>Salida:</strong> ' . e($fmt($reserva->fecha_fin)) . '<br>'
+                . '<strong>Valor a pagar:</strong> $' . number_format((float) $reserva->monto_total, 0, ',', '.') . '<br><br>'
+                . 'Tiene <strong>' . self::DIAS_HABILES_PAGO . ' días hábiles</strong> (hasta el <strong>' . e($fmt($limite)) . '</strong>) '
+                . 'para realizar el pago y subir el soporte en el Portal de Reservas, sección <em>Mis Reservas</em>. '
+                . 'Si no se recibe el soporte en ese plazo, las fechas quedarán libres para otro asociado. ¡Dios le bendiga!';
+
+            $url = url(route('rsv.cliente.portal')) . '?tab=mis-reservas&reserva_id=' . $reserva->id;
+
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\ReservaInmueble(
+                $user->name,
+                $texto,
+                'Reserva ' . $reserva->codigo_reserva . ' · ' . $inmueble,
+                true,
+                null,
+                $url,
+                'Ver mi reserva y subir soporte',
+                self::lineamientosCorreo($reserva)
+            ));
+        } catch (Throwable $e) {
+            Log::error('Rsv correo reserva creada: ' . $e->getMessage(), ['reserva' => $reserva->id]);
         }
     }
 
@@ -1225,6 +1427,12 @@ class ReservaController extends Controller
      */
     public function descargarPdfComprobante(string $id)
     {
+        // Comprobante: solo el titular o quien puede ver todas las reservas (fuera del try, que
+        // convertiría el 403 en "no se pudo generar el PDF")
+        if (!\App\Services\Rsv\RsvAcceso::titularOPuede((int) $id, \App\Services\Rsv\RsvAcceso::RESERVAS_VER)) {
+            abort(403, 'No tienes permiso para ver el comprobante de esta reserva.');
+        }
+
         try {
             $relaciones = ['inmueble', 'user', 'status'];
 

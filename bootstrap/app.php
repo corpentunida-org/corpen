@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'candirect'           => CanDirect::class,
             'check.mantenimiento' => ContabilidadMantenimiento::class,
+            // Módulo Rsv: permiso por ruta (mapa central en el middleware, roles rsv.* de Spatie)
+            'rsv.autorizacion'    => \App\Http\Middleware\RsvAutorizacion::class,
         ]);
 
         // Global (no por-ruta): la marca "forzar cambio de contraseña" que se asigna desde

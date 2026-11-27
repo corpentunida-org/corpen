@@ -40,6 +40,15 @@
         $phpDebugLogs[] = ['err', 'Error resolviendo ruta API: ' . $e->getMessage()];
     }
 
+    // Llegadas de las reservas ACTIVAS del asociado (cualquier inmueble): el calendario bloquea
+    // las llegadas que superarían "Rsv. Máx/Año" (misma regla que ReservaController::evaluarLimiteAnual).
+    $misLlegadas = [];
+    try {
+        $misLlegadas = app(\App\Http\Controllers\Rsv\ReservaController::class)->llegadasActivasDe(auth()->id());
+    } catch (\Throwable $e) {
+        $phpDebugLogs[] = ['err', 'Error cargando reservas del asociado: ' . $e->getMessage()];
+    }
+
     $rutaFragmento = '';
     foreach (['rsv.cliente.nueva-reserva.buscador.fragmento', 'rsv.cliente.fragmento'] as $rn) {
         if (\Illuminate\Support\Facades\Route::has($rn)) {
@@ -98,6 +107,30 @@
                 }
                 .reservas-soft .btn-green:hover:not(:disabled) { background:#e3f1e9; color:#2e5c43; }
                 .reservas-soft .btn-green:disabled { opacity: 0.5; cursor: not-allowed; }
+
+                /* Botón principal del buscador ("Reservar ahora" / "Continuar a Checkout").
+                   Clase PROPIA (no .btn-green): checkout.blade.php se carga en la misma página y
+                   redefine .btn-green con fondo #2e5c43 en :hover; combinado con el color de texto
+                   del :hover de aquí dejaba texto #2e5c43 sobre fondo #2e5c43 (texto invisible
+                   mientras el puntero seguía encima tras el clic). Todos los estados fijan fondo
+                   Y color para que ninguna otra hoja pueda dejarlos sin contraste. */
+                .reservas-soft .rv-btn-reservar {
+                    background:var(--accent); color:#fff; border:1px solid var(--accent);
+                    font-size:9.5px; font-weight:700; padding:7px 10px; border-radius:4px;
+                    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:5px;
+                    transition: background-color .15s, border-color .15s, box-shadow .15s, transform .1s;
+                    -webkit-user-select:none; user-select:none;
+                }
+                .reservas-soft .rv-btn-reservar i { color:inherit; }
+                .reservas-soft .rv-btn-reservar:hover:not(:disabled),
+                .reservas-soft .rv-btn-reservar:focus:not(:disabled) {
+                    background:#2e5c43; color:#fff; border-color:#2e5c43; outline:none;
+                }
+                .reservas-soft .rv-btn-reservar:focus-visible:not(:disabled) { box-shadow:0 0 0 3px rgba(61,122,92,.30); }
+                .reservas-soft .rv-btn-reservar:active:not(:disabled) {
+                    background:#24493a; color:#fff; border-color:#24493a; transform:scale(.98);
+                }
+                .reservas-soft .rv-btn-reservar:disabled { background:var(--accent); color:#fff; opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
 
                 .reservas-soft .btn-outline {
                     background:#fff; color:var(--ink-3); border:1px solid var(--grid-2);
@@ -163,15 +196,27 @@
                 .cal-title { font-weight: 700; font-size: 8.5px; color: var(--ink-2); text-transform: capitalize; }
                 .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; text-align: center; font-size: 8.5px; margin-top: 8px; background: var(--grid); border: 1px solid var(--grid); border-radius: 3px;}
                 .cal-header-day { font-weight: 700; color: var(--ink-3); font-size: 7px; padding: 2px 0; background: var(--head); text-transform: uppercase;}
-                .cal-cell { padding: 4px 0; cursor: pointer; transition: background 0.1s; color: var(--ink-2); background: #fff;}
-                .cal-cell:hover:not(.cal-past):not(.cal-occ):not(.cal-ali) { background: var(--head); }
-                .cal-past { color: var(--ink-4); cursor: not-allowed; text-decoration: line-through; background: #fafbfd;}
+                .cal-cell { padding: 4px 0; cursor: pointer; transition: background 0.1s; color: #1f2937; font-weight: 600; background: #fff;}
+                /* Reservado / alistamiento / bloqueo: rojo suave, claramente distinto de libre */
+                .cal-occ { background: #fde2e1; color: #b42318; cursor: not-allowed; font-weight: 600; }
+                .cal-cell:hover:not(.cal-past):not(.cal-occ):not(.cal-lim):not(.cal-ali) { background: var(--head); }
+                .cal-past { color: #b8bec8; cursor: not-allowed; text-decoration: line-through; background: #f3f4f6; font-weight: 400;}
                 .cal-selected { background: var(--accent) !important; color: #fff !important; font-weight: bold; border-radius:2px;}
-                .cal-range { background: var(--accent-bg); color: #0f5132; }
+                .cal-range { background: #bfe0cc; color: #0f5132; font-weight: 700; }
+                /* Fuera del máximo de días de la tarifa (después de elegir la llegada) */
+                .cal-max { color: var(--ink-4); cursor: not-allowed; background: #fafbfd; opacity: .55; }
+                .cal-sel-info .cal-max-nota { display:block; margin-top:2px; color: var(--ink-3); font-weight:600; }
+                .cal-sel-info .cal-aviso { display:block; margin-top:2px; color:#b45309; font-weight:700; }
                 .cal-legend { font-size: 7.5px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px;}
                 .cal-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 2px; vertical-align: middle;}
                 .cal-dot-free { background: #fff; border: 1px solid var(--grid-2); }
                 .cal-dot-sel { background: var(--accent); }
+                .cal-dot-occ { background: #fde2e1; border: 1px solid #f04438; }
+                /* Llegada no permitida por "Rsv. Máx/Año" (ya tiene reserva en ese periodo de 365 días) */
+                .cal-lim { background: #fef3c7; color: #92400e; cursor: not-allowed; font-weight: 600; }
+                .cal-dot-lim { background: #fef3c7; border: 1px solid #f59e0b; }
+                .cal-sel-info .cal-lim-nota { display:block; margin-top:2px; color:#92400e; font-weight:600; }
+                .cal-dot-past { background: #f3f4f6; border: 1px solid #d0d5dd; }
                 .cal-sel-info { font-size: 8px; color: var(--ink-2); background: var(--head); padding: 6px; border-radius: 3px; border: 1px solid var(--grid-2); margin-top: 8px; margin-bottom: 8px; line-height: 1.3;}
 
                 /* ── ESTILOS DEL MODAL DE DETALLES ── */
@@ -243,10 +288,23 @@
             <div class="rsv-grid pb-4">
                 @forelse($inmuebles as $inm)
                     @php
-                        $tarifaObj = $inm->latestTarifa;
+                        // Antes de elegir fechas se muestra la tarifa del año en curso (o la última registrada)
+                        $tarifaObj = \App\Models\Rsv\TarifaTemporada::aplicable($inm->id, \Carbon\Carbon::today());
                         $precioMin = optional($tarifaObj)->precio_minimo_reserva;
                         $diasMax   = optional($tarifaObj)->dias_maximos;
                         $maxAnual  = optional($tarifaObj)->max_reservas_anuales_cliente;
+
+                        // DÍAS MÁX. por AÑO de la reserva (regla inmueble + año, igual que el servidor).
+                        // El calendario lo usa para limitar la salida: días = noches + 1.
+                        $diasMaxPorAnio = [];
+                        $limiteAnualPorAnio = [];
+                        for ($anioCal = now()->year; $anioCal <= now()->year + 2; $anioCal++) {
+                            $tAnio = \App\Models\Rsv\TarifaTemporada::aplicable($inm->id, \Carbon\Carbon::create($anioCal, 1, 1));
+                            $limiteAnualPorAnio[$anioCal] = \App\Http\Controllers\Rsv\ReservaController::limiteAnualDe($tAnio);
+                            $diasMaxPorAnio[$anioCal] = ($tAnio && (int) $tAnio->dias_maximos > 0)
+                                ? (int) $tAnio->dias_maximos
+                                : \App\Http\Controllers\Rsv\ReservaController::DIAS_MAX_BASE;
+                        }
                         $mapQuery  = urlencode($inm->ubicacion ?? $inm->city ?? $inm->name);
 
                         $heroImg = $inm->multimedia->first() ? $inm->multimedia->first()->url_archivo : asset('img/9.jpeg');
@@ -317,13 +375,14 @@
                                     data-bs-toggle="modal" data-bs-target="#modalMapa_{{ $inm->id }}">
                                 <i class="bi bi-map"></i> Mapa
                             </button>
-                            <button type="button" class="btn-green flex-grow-1 w-100" onclick="window.rvTabApi.abrirCalendarioInmueble(event, {{ $inm->id }})">
-                                <i class="bi bi-calendar3"></i> Fechas
+                            <button type="button" class="rv-btn-reservar flex-grow-1 w-100" onclick="window.rvTabApi.abrirCalendarioInmueble(event, {{ $inm->id }})">
+                                <i class="bi bi-calendar-check"></i> Reservar ahora
                             </button>
                         </div>
 
                         {{-- Popover Calendario --}}
-                        <div id="cal-box-{{ $inm->id }}" class="rsv-popover" onclick="event.stopPropagation()">
+                        <div id="cal-box-{{ $inm->id }}" class="rsv-popover" onclick="event.stopPropagation()"
+                             data-dias-max='@json($diasMaxPorAnio)' data-limite-anual='@json($limiteAnualPorAnio)' data-dias-max-base="{{ \App\Http\Controllers\Rsv\ReservaController::DIAS_MAX_BASE }}">
                             <i class="bi bi-x-lg popover-close" onclick="window.rvTabApi.closePopovers()"></i>
                             <form action="{{ url()->current() }}" method="GET" onsubmit="window.rvTabApi.validarReservaCliente(event, this, {{ $inm->id }}, '{{ addslashes($inm->name) }}')">
                                 <input type="hidden" name="inmueble_id" value="{{ $inm->id }}">
@@ -337,16 +396,15 @@
                                 <div id="miniCalGrid_{{ $inm->id }}" class="cal-grid"></div>
                                 <div class="cal-legend">
                                     <span class="me-2"><span class="cal-dot cal-dot-free"></span> Libre</span>
-                                    <span class="me-2"><span class="cal-dot cal-dot-sel"></span> Sel</span>
+                                    <span class="me-2"><span class="cal-dot cal-dot-occ"></span> Reservado</span>
+                                    <span class="me-2"><span class="cal-dot cal-dot-sel"></span> Tu reserva</span>
+                                    @if(!empty($misLlegadas))
+                                        <span class="me-2"><span class="cal-dot cal-dot-lim"></span> Límite anual</span>
+                                    @endif
+                                    <span class="me-2"><span class="cal-dot cal-dot-past"></span> No disponible</span>
                                 </div>
                                 <div id="calSelInfo_{{ $inm->id }}" class="cal-sel-info">Selecciona tu llegada.</div>
-                                <label class="val mb-1">Huéspedes</label>
-                                <select name="huespedes" class="xls-select">
-                                    <option value="2">1 a 2 huéspedes</option>
-                                    <option value="4">3 a 4 huéspedes</option>
-                                    <option value="6">5 a más huéspedes</option>
-                                </select>
-                                <button type="submit" class="btn-green w-100 mt-1" id="btnReserva_{{ $inm->id }}" disabled>Continuar a Checkout <i class="bi bi-arrow-right"></i></button>
+                                <button type="submit" class="rv-btn-reservar w-100 mt-1" id="btnReserva_{{ $inm->id }}" disabled>Continuar a Checkout <i class="bi bi-arrow-right"></i></button>
                             </form>
                         </div>
                     </div>
@@ -691,6 +749,8 @@
 
     /* ═══ LÓGICA DE CALENDARIO Y POPOVERS ═══ */
     const RSV_CAL = {};
+    // Llegadas (Y-m-d) de las reservas ACTIVAS del asociado, de cualquier inmueble
+    const RSV_MIS_LLEGADAS = @json($misLlegadas);
     const NOMBRES_MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
     const DIAS_SEMANA = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
     const ENDPOINT_BASE = '{{ $apiDispUrl }}';
@@ -833,6 +893,52 @@
         fetchOccupied(id);
     }
 
+    // DÍAS MÁX. de la tarifa del AÑO de la llegada (data-dias-max del popover).
+    // Días = noches + 1 → máximo de noches = días - 1 (ej. 5 días → 4 noches).
+    function diasMaxPara(id, fechaLlegada) {
+        let box = document.getElementById('cal-box-' + id);
+        let base = parseInt(box?.dataset.diasMaxBase || '5', 10) || 5;
+        let mapa = {};
+        try { mapa = JSON.parse(box?.dataset.diasMax || '{}'); } catch (err) { mapa = {}; }
+        let anio = fechaLlegada ? fechaLlegada.getFullYear() : new Date().getFullYear();
+        if (mapa[anio]) return parseInt(mapa[anio], 10);
+        // Año fuera del mapa (más allá de 2 años): el último año conocido, como la regla del servidor
+        let anios = Object.keys(mapa).map(Number).sort((a, b) => a - b);
+        return anios.length ? parseInt(mapa[anios[anios.length - 1]], 10) : base;
+    }
+    function nochesMaxPara(id, fechaLlegada) {
+        return Math.max(1, diasMaxPara(id, fechaLlegada) - 1);
+    }
+
+    // "Rsv. Máx/Año" de la tarifa del inmueble para el AÑO de la llegada (data-limite-anual).
+    function limiteAnualPara(id, fechaLlegada) {
+        let box = document.getElementById('cal-box-' + id);
+        let mapa = {};
+        try { mapa = JSON.parse(box?.dataset.limiteAnual || '{}'); } catch (err) { mapa = {}; }
+        let anio = fechaLlegada ? fechaLlegada.getFullYear() : new Date().getFullYear();
+        if (mapa[anio]) return parseInt(mapa[anio], 10);
+        let anios = Object.keys(mapa).map(Number).sort((a, b) => a - b);
+        return anios.length ? parseInt(mapa[anios[anios.length - 1]], 10) : 1;
+    }
+
+    // ¿Una llegada en esta fecha superaría el límite? Misma regla que el servidor
+    // (ReservaController::evaluarLimiteAnual): ningún periodo de 365 días que contenga la
+    // llegada puede tener ya N reservas activas del asociado (de cualquier inmueble).
+    function superaLimiteAnual(id, fecha) {
+        if (!RSV_MIS_LLEGADAS.length) return false;
+        const dia = (d) => Math.round(d.getTime() / 86400000);
+        let t = dia(fecha), per = 365;
+        let ll = RSV_MIS_LLEGADAS.map(s => dia(new Date(s + 'T00:00:00'))).filter(x => x > t - per && x < t + per);
+        if (!ll.length) return false;
+        let inicios = ll.filter(x => x <= t).concat([t]);
+        let peor = 0;
+        inicios.forEach(s => {
+            let n = ll.filter(x => x >= s && x <= s + per - 1).length;
+            if (n > peor) peor = n;
+        });
+        return peor >= limiteAnualPara(id, fecha);
+    }
+
     function pintarCalendario(id) {
         let state = RSV_CAL[id];
         let grid = document.getElementById('miniCalGrid_' + id);
@@ -845,6 +951,13 @@
         let diaSemanaInicio = primerDiaMes.getDay();
         let hoy = new Date(); hoy.setHours(0,0,0,0);
 
+        // Con la llegada elegida y sin salida aún: la salida no puede pasar de llegada + máx. noches
+        let limiteSalida = null;
+        if (state.start && !state.end) {
+            limiteSalida = new Date(state.start.getTime());
+            limiteSalida.setDate(limiteSalida.getDate() + nochesMaxPara(id, state.start));
+        }
+
         let html = '';
         DIAS_SEMANA.forEach(d => { html += `<div class="cal-header-day">${d}</div>`; });
         for (let i = 0; i < diaSemanaInicio; i++) { html += `<div></div>`; }
@@ -856,16 +969,27 @@
             let esPasado = timeActual < hoy.getTime();
             let fechaISO = calFmt(fechaActual);
             let esOcupado = state.occupied.includes(fechaISO);
+            let excedeMax = limiteSalida && timeActual > limiteSalida.getTime();
+            // El límite anual aplica a la LLEGADA: no se evalúa sobre las fechas candidatas a salida
+            let eligiendoSalida = state.start && !state.end && timeActual > state.start.getTime();
+            let enRango = state.start && state.end && timeActual >= state.start.getTime() && timeActual <= state.end.getTime();
+            let porLimite = !esPasado && !esOcupado && !eligiendoSalida && !enRango && superaLimiteAnual(id, fechaActual);
 
             let clase = 'cal-cell';
-            if (esPasado || esOcupado) clase += ' cal-past';
+            if (esPasado) clase += ' cal-past';
+            else if (esOcupado) clase += ' cal-occ';
+            else if (porLimite) clase += ' cal-lim';
+            else if (excedeMax) clase += ' cal-max';
             else {
                 if (state.start && timeActual === state.start.getTime()) clase += ' cal-selected';
                 else if (state.end && timeActual === state.end.getTime()) clase += ' cal-selected';
                 else if (state.start && state.end && timeActual > state.start.getTime() && timeActual < state.end.getTime()) clase += ' cal-range';
             }
 
-            if (esPasado || esOcupado) html += `<div class="${clase}">${dia}</div>`;
+            if (esPasado) html += `<div class="${clase}">${dia}</div>`;
+            else if (esOcupado) html += `<div class="${clase}" title="Reservado (o día de alistamiento)">${dia}</div>`;
+            else if (porLimite) html += `<div class="${clase}" title="Ya tienes ${limiteAnualPara(id, fechaActual)} reserva(s) en un periodo de 365 días que incluye esta fecha">${dia}</div>`;
+            else if (excedeMax) html += `<div class="${clase}" title="Supera el máximo de ${diasMaxPara(id, state.start)} días de la tarifa">${dia}</div>`;
             else html += `<div class="${clase}" onclick="window.rvTabApi.seleccionarDia(event, ${id}, '${fechaISO}')">${dia}</div>`;
         }
         grid.innerHTML = html;
@@ -876,6 +1000,19 @@
         e.stopPropagation();
         let state = RSV_CAL[id];
         let dateObj = new Date(fechaISO + 'T00:00:00');
+        state.aviso = null;
+
+        // Defensa extra (las celdas fuera de rango no son clicables): salida más allá del máximo
+        if (state.start && !state.end && dateObj.getTime() > state.start.getTime()) {
+            let noches = Math.round((dateObj.getTime() - state.start.getTime()) / 86400000);
+            let nochesMax = nochesMaxPara(id, state.start);
+            if (noches > nochesMax) {
+                state.aviso = 'Máximo ' + diasMaxPara(id, state.start) + ' días (' + nochesMax + ' noches). Elige una salida más cercana.';
+                rvdbg('Salida rechazada inmueble #' + id + ': ' + noches + ' noches > máx ' + nochesMax, 'warn');
+                pintarCalendario(id);
+                return;
+            }
+        }
 
         if (!state.start || (state.start && state.end)) {
             state.start = dateObj; state.end = null;
@@ -915,14 +1052,21 @@
         const fStr = (d) => ('0'+d.getDate()).slice(-2) + '/' + ('0'+(d.getMonth()+1)).slice(-2);
 
         if (!state.start) {
-            panelInfo.innerHTML = '<b style="color:var(--accent);">Paso 1:</b> Selecciona tu llegada.';
+            panelInfo.innerHTML = '<b style="color:var(--accent);">Paso 1:</b> Selecciona tu llegada.'
+                + (RSV_MIS_LLEGADAS.length
+                    ? '<span class="cal-lim-nota">Los días en amarillo no están disponibles: ya tienes reserva(s) que alcanzan el límite de '
+                      + limiteAnualPara(id, new Date(state.year, state.month, 1)) + ' por cada 365 días.</span>'
+                    : '');
             inputFi.value = ''; inputFf.value = ''; btn.disabled = true;
         } else if (state.start && !state.end) {
-            panelInfo.innerHTML = 'Llegada: <b>' + fStr(state.start) + '</b>. Selecciona la salida.';
+            let dMax = diasMaxPara(id, state.start);
+            panelInfo.innerHTML = 'Llegada: <b>' + fStr(state.start) + '</b>. Selecciona la salida.'
+                + '<span class="cal-max-nota">Máximo ' + dMax + ' días (' + (dMax - 1) + ' noches) · tarifa ' + state.start.getFullYear() + '</span>'
+                + (state.aviso ? '<span class="cal-aviso">' + state.aviso + '</span>' : '');
             inputFi.value = calFmt(state.start); inputFf.value = ''; btn.disabled = true;
         } else if (state.start && state.end) {
             let noches = Math.round((state.end.getTime() - state.start.getTime()) / 86400000);
-            panelInfo.innerHTML = '<b>Rango:</b> ' + fStr(state.start) + ' al ' + fStr(state.end) + ' ('+noches+' n).';
+            panelInfo.innerHTML = '<b>Rango:</b> ' + fStr(state.start) + ' al ' + fStr(state.end) + ' (' + noches + ' n · ' + (noches + 1) + ' días).';
             inputFi.value = calFmt(state.start); inputFf.value = calFmt(state.end); btn.disabled = false;
         }
     }
@@ -939,9 +1083,6 @@
             rvdbg('Intento de envío sin rango de fechas completo.', 'warn');
             return;
         }
-
-        localStorage.setItem('rsv_cliente_panel_parent', '#cli-nueva');
-        localStorage.setItem('rsv_cliente_panel_child', '#nr-sub-checkout');
 
         // Si existe el contenedor de Checkout en el DOM, navegamos por AJAX sin recargar la página
         var chkRoot = document.getElementById('cliCheckoutRoot');
