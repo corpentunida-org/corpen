@@ -752,6 +752,14 @@
                                         </select>
                                         <div class="ps-err-msg" data-error-for="estado_pago"></div>
                                     </div>
+                                    @if(strtolower((string) ($trx->estado_pago ?? '')) !== 'rechazado')
+                                        <div class="col-12">
+                                            <label class="form-label">Motivo del rechazo <span class="sub">(solo si lo marcas RECHAZADO · se envía al asociado por correo)</span></label>
+                                            <textarea class="form-control form-control-sm" name="motivo_rechazo" rows="2" maxlength="500"
+                                                      placeholder="Ej.: el archivo no es un comprobante de pago / el valor no coincide…"></textarea>
+                                            <div class="ps-err-msg" data-error-for="motivo_rechazo"></div>
+                                        </div>
+                                    @endif
                                     <div class="col-6">
                                         <label class="form-label">Referencia</label>
                                         <input type="text" class="form-control form-control-sm" name="referencia_externa" maxlength="100" value="{{ $trx->referencia_externa ?? '' }}">

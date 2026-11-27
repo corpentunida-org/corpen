@@ -724,7 +724,9 @@ Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinS
 //     repetido haría fallar `php artisan route:cache`).
 //   · Patrón de nombres: rsv.admin.<tab>.fragmento / rsv.cliente.<dominio>.fragmento
 // =========================================================================
-Route::middleware(['auth'])
+// Autorización: 'rsv.autorizacion' (App\Http\Middleware\RsvAutorizacion) exige el permiso de cada
+// ruta según su mapa central; lo no mapeado queda cerrado. Roles/permisos: RsvPermissionsSeeder.
+Route::middleware(['auth', 'rsv.autorizacion'])
     ->prefix('rsv')
     ->name('rsv.')
     ->group(function () {
@@ -961,6 +963,14 @@ Route::middleware(['auth'])
         // ---------------------------------------------------------------------
         Route::get('cliente-api-disponibilidad/{id}', [ClientePortalController::class, 'getDisponibilidadInmueble'])
             ->name('cliente.api.disponibilidad');
+
+        // Soporte dentro de la reserva: agente en línea → chat; si no → ticket en plataforma Soportes
+        Route::get('cliente-soporte/estado', [\App\Http\Controllers\Rsv\SoporteAsociadoController::class, 'estado'])
+            ->name('cliente.soporte.estado');
+        Route::post('cliente-soporte/ticket', [\App\Http\Controllers\Rsv\SoporteAsociadoController::class, 'crearTicket'])
+            ->name('cliente.soporte.ticket');
+        // Latido del panel admin: mantiene sessions.last_activity al día para figurar "en línea"
+        Route::get('admin/latido', fn () => response()->json(['ok' => true]))->name('admin.latido');
 
         // =====================================================================
         // FIN 3. RUTAS ESPECÍFICAS DE ACCIÓN

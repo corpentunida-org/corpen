@@ -3,13 +3,13 @@
 # Cambia el entorno local entre DESARROLLO y PRODUCCIÓN.
 #
 # Uso (desde cualquier carpeta):
-#   ./scripts/cambiar-entorno.sh preparar     # 1.ª vez: crea .env.produccion y .env.desarrollo
+#   ./scripts/cambiar-entorno.sh              # MENÚ: pregunta 1) desarrollo 2) producción 3) mantener actual
 #   ./scripts/cambiar-entorno.sh desarrollo   # usa .env.desarrollo
 #   ./scripts/cambiar-entorno.sh produccion   # usa .env.produccion (pide confirmación)
 #   ./scripts/cambiar-entorno.sh estado       # muestra a qué base está conectada la app
 #
 # Qué hace al cambiar:
-#   1. Respalda el .env actual si tiene cambios que no están en ninguno de los dos archivos.
+#   1. NO crea respaldos: si el .env tenía cambios propios, solo avisa qué variables se descartan.
 #   2. Copia .env.<entorno> a .env.
 #   3. Recrea los contenedores (app y, si están corriendo, worker/scheduler). Docker
 #      carga el .env al CREAR el contenedor; sin recrearlo la app sigue con el entorno anterior.
@@ -20,8 +20,6 @@ set -euo pipefail
 PROYECTO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROYECTO"
 
-PLANTILLA=".env.desarrollo.example"
-HOST_DESARROLLO="192.168.10.13"
 VERDE=$'\e[1;32m'; ROJO=$'\e[1;41;97m'; AMARILLO=$'\e[1;33m'; AZUL=$'\e[1;36m'; NORMAL=$'\e[0m'
 
 error() { echo "${AMARILLO}✖ $*${NORMAL}" >&2; exit 1; }
@@ -34,20 +32,6 @@ entorno_actual() {
     if   [[ -f .env.desarrollo ]] && cmp -s .env .env.desarrollo; then echo "desarrollo"
     elif [[ -f .env.produccion ]] && cmp -s .env .env.produccion; then echo "produccion"
     else echo "desconocido"; fi
-}
-
-# Escribe CLAVE=VALOR en un archivo .env (reemplaza la línea o la agrega al final).
-fijar_clave() {
-    local archivo="$1" clave="$2" valor="$3" tmp
-    tmp="$(mktemp)"
-    awk -v k="$clave" -v v="$valor" '
-        BEGIN { hecho = 0 }
-        $0 ~ "^" k "=" { print k "=" v; hecho = 1; next }
-        { print }
-        END { if (!hecho) print k "=" v }
-    ' "$archivo" > "$tmp"
-    cat "$tmp" > "$archivo"
-    rm -f "$tmp"
 }
 
 verificar_conexion() {
@@ -81,52 +65,41 @@ banner() {
     esac
 }
 
-preparar() {
-    [[ -f "$PLANTILLA" ]] || error "No existe $PLANTILLA (haz git pull)."
-
-    if [[ -f .env.produccion ]]; then
-        echo "✔ .env.produccion ya existe (no se toca)."
-    else
-        [[ -f .env ]] || error "No hay .env. Pide a tu líder técnico el .env de producción y guárdalo como .env.produccion."
-        grep -q "^DB_HOST=\"\?$HOST_DESARROLLO" .env && \
-            error "Tu .env ya apunta a desarrollo; no puedo usarlo como .env.produccion. Crea .env.produccion a mano."
-        cp -p .env .env.produccion
-        echo "✔ .env.produccion creado a partir de tu .env actual."
-    fi
-
-    if [[ -f .env.desarrollo && "${1:-}" != "--forzar" ]]; then
-        echo "✔ .env.desarrollo ya existe (no se toca; usa 'preparar --forzar' para regenerarlo)."
-    else
-        cp .env.produccion .env.desarrollo
-        sed -i '1i # ==== ENTORNO DE DESARROLLO / PRUEBAS - generado desde '"$PLANTILLA"' ====' .env.desarrollo
-        local clave valor
-        while IFS='=' read -r clave valor; do
-            [[ -z "$clave" || "$clave" == \#* ]] && continue
-            fijar_clave .env.desarrollo "$clave" "$valor"
-        done < <(grep -E '^[A-Z_]+=' "$PLANTILLA")
-        echo "✔ .env.desarrollo generado desde .env.produccion + $PLANTILLA."
-    fi
-
-    if grep -qE '^DB_(USERNAME|PASSWORD)=CAMBIAR_AQUI' .env.desarrollo; then
-        aviso "Falta poner TU usuario y contraseña de la BD de desarrollo en .env.desarrollo"
-        aviso "(líneas DB_USERNAME y DB_PASSWORD). Luego ejecuta: $0 desarrollo"
-    fi
-}
-
 # ── Argumentos ─────────────────────────────────────────────────────────────────
 command -v docker >/dev/null || error "Docker no está disponible en esta terminal."
 
+# Sin argumentos: menú interactivo para elegir entorno.
+menu() {
+    local actual op
+    actual="$(entorno_actual)"
+    echo
+    echo "${AZUL}  ¿Con cuál .env quieres trabajar?${NORMAL}   (actual: ${actual})"
+    echo
+    echo "    1) Desarrollo   → .env.desarrollo (base de pruebas)"
+    echo "    2) Producción   → .env.produccion (datos REALES)"
+    echo "    3) Mantener el .env actual (solo ver estado)"
+    echo
+    read -r -p "  Elige 1, 2 o 3: " op
+    op="$(tr -d '\r[:space:]' <<<"$op")"   # desde PowerShell la respuesta llega con \r
+    case "$op" in
+        1) DESTINO="desarrollo" ;;
+        2) DESTINO="produccion" ;;
+        3) DESTINO="estado" ;;
+        *) error "Opción no válida. No se cambió nada." ;;
+    esac
+}
+
 DESTINO="${1:-}"
+[[ -z "$DESTINO" ]] && menu
 case "$DESTINO" in
-    preparar|init)     preparar "${2:-}"; exit 0 ;;
     desarrollo|dev|d)  DESTINO="desarrollo" ;;
     produccion|prod|p) DESTINO="produccion" ;;
     estado|status|s)   banner "$(entorno_actual)"; verificar_conexion; exit 0 ;;
-    *) echo "Uso: $0 {preparar|desarrollo|produccion|estado}"; exit 1 ;;
+    *) echo "Uso: $0 [desarrollo|produccion|estado]   (sin argumentos muestra el menú)"; exit 1 ;;
 esac
 
 ORIGEN=".env.$DESTINO"
-[[ -f "$ORIGEN" ]] || error "No existe $ORIGEN. Ejecuta primero: $0 preparar"
+[[ -f "$ORIGEN" ]] || error "No existe $ORIGEN. Créalo (pídelo a tu líder técnico)."
 grep -qE '^DB_(USERNAME|PASSWORD)=CAMBIAR_AQUI' "$ORIGEN" && error "$ORIGEN aún tiene DB_USERNAME/DB_PASSWORD=CAMBIAR_AQUI."
 
 ACTUAL="$(entorno_actual)"
@@ -134,15 +107,22 @@ ACTUAL="$(entorno_actual)"
 
 if [[ "$DESTINO" == "produccion" ]]; then
     echo "${ROJO} Vas a conectar tu entorno local a PRODUCCIÓN. ${NORMAL}"
-    read -r -p "Escribe 'produccion' para confirmar: " confirmacion
+    echo "No es una contraseña: para confirmar escribe la PALABRA  produccion  (minúsculas, sin tilde)."
+    read -r -p "Confirmación: " confirmacion
+    confirmacion="$(tr -d '\r[:space:]' <<<"$confirmacion")"
     [[ "$confirmacion" == "produccion" ]] || error "Cancelado. No se cambió nada."
 fi
 
-# ── 1. Respaldar .env si tiene cambios propios ──────────────────────────────────
+# ── 1. Avisar (SIN respaldar) si .env tenía cambios propios ─────────────────────
+# Por decisión del equipo NO se crean archivos .env.respaldo-*: los cambios permanentes se hacen
+# en .env.desarrollo / .env.produccion, nunca directamente en .env. Solo se listan los NOMBRES de
+# las variables que se pierden (nunca sus valores).
 if [[ -f .env && "$ACTUAL" == "desconocido" ]]; then
-    RESPALDO=".env.respaldo-$(date +%Y%m%d-%H%M%S)"
-    cp -p .env "$RESPALDO"
-    aviso "El .env actual no coincidía con ningún entorno; respaldado en $RESPALDO"
+    PERDIDAS="$(diff <(grep -E '^[A-Z_]+=' .env | sort) <(grep -E '^[A-Z_]+=' "$ORIGEN" | sort) \
+                | grep '^<' | sed -E 's/^< ([A-Z_]+)=.*/\1/' | tr '\n' ' ' || true)"
+    aviso "El .env actual tenía cambios propios que se descartan (no se crea respaldo)."
+    [[ -n "$PERDIDAS" ]] && aviso "Variables distintas en el .env descartado: $PERDIDAS"
+    aviso "Si los necesitas, ponlos en $ORIGEN y vuelve a ejecutar: $0 $DESTINO"
 fi
 
 # ── 2. Copiar ──────────────────────────────────────────────────────────────────

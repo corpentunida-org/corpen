@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         InformeUsoPermissionsSeeder::class,
         CongregacionImportarPermissionsSeeder::class,
         TerceroImportarPermissionsSeeder::class,
+        RsvPermissionsSeeder::class,
     ]);
     }
 }

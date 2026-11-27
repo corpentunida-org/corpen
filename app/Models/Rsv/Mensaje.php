@@ -15,6 +15,7 @@ class Mensaje extends Model
         'tipo_mensaje',
         'contenido',
         'url_archivo',
+        'id_scp_soporte', // ticket creado en la plataforma Soportes desde la reserva
         'leido_en',
     ];
 
@@ -25,6 +26,11 @@ class Mensaje extends Model
     public function reserva(): BelongsTo
     {
         return $this->belongsTo(Reserva::class, 'id_rsv_reservas');
+    }
+
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Soportes\ScpSoporte::class, 'id_scp_soporte');
     }
 
     public function remitente(): BelongsTo

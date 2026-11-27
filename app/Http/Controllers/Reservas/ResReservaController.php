@@ -41,8 +41,14 @@ class ResReservaController extends Controller implements HasMiddleware
             ->get()
             ->map(function ($inmueble) {
                 $inmueble->fotosrel->map(function ($foto) {
-                    if (Storage::disk('s3')->exists($foto->attached)) {
-                        $foto->url = Storage::disk('s3')->temporaryUrl($foto->attached, now()->addMinutes(5));
+                    // Si S3 no responde (o no está configurado, como en desarrollo) el inmueble se
+                    // muestra sin foto en vez de tumbar toda la página.
+                    try {
+                        if (Storage::disk('s3')->exists($foto->attached)) {
+                            $foto->url = Storage::disk('s3')->temporaryUrl($foto->attached, now()->addMinutes(5));
+                        }
+                    } catch (\Throwable $e) {
+                        \Illuminate\Support\Facades\Log::warning('Reservas: no se pudo obtener la foto ' . $foto->attached . ': ' . $e->getMessage());
                     }
                     return $foto;
                 });

@@ -320,7 +320,8 @@
                 $st = $stActual;
                 $stGroup = $stGroupActual;
                 $mapQuery = urlencode($inm->ubicacion ?? $inm->city ?? $inm->name ?? 'Colombia');
-                $tarifa = $inm?->latestTarifa;
+                // Tarifa del inmueble para el AÑO de esta reserva
+                $tarifa = ($inm && $fi) ? \App\Models\Rsv\TarifaTemporada::aplicable($inm->id, $fi, $ff) : null;
 
                 $hoy = \Carbon\Carbon::today();
                 $diasParaLlegada = $fi ? (int) $hoy->diffInDays($fi->copy()->startOfDay(), false) : null;

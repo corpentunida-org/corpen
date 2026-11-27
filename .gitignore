@@ -11,8 +11,6 @@
 /vendor
 .env
 .env.desarrollo
-.env.example
-.env.backup
 .env.production
 .phpactor.json
 .phpunit.result.cache
@@ -25,5 +23,3 @@ yarn-error.log
 /.idea
 /.vscode
 .env.*
-!.env.example
-!.env.desarrollo.example

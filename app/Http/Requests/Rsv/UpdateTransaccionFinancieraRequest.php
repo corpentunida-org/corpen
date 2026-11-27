@@ -19,6 +19,8 @@ class UpdateTransaccionFinancieraRequest extends FormRequest
             'metodo_pago'        => 'sometimes|nullable|string|max:100',
             'referencia_externa' => 'sometimes|nullable|string|max:255',
             'soporte_pago'       => 'sometimes|nullable|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+            // Solo para el correo al asociado cuando el pago se marca Rechazado (no es columna)
+            'motivo_rechazo'     => 'nullable|string|max:500',
         ];
     }
 }

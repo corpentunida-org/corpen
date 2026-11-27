@@ -23,8 +23,11 @@ class StoreTarifaTemporadaRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        // El formulario envía un hidden active=0 y, si el switch está encendido, active=1
+        // (PHP conserva el último). has() era SIEMPRE true por el hidden → toda tarifa nueva
+        // quedaba activa aunque el switch estuviera apagado. Se usa el VALOR enviado.
         $this->merge([
-            'active' => $this->has('active') ? 1 : 0,
+            'active' => $this->boolean('active') ? 1 : 0,
         ]);
     }
 
@@ -45,6 +48,7 @@ class StoreTarifaTemporadaRequest extends FormRequest
             'precio_minimo_reserva'        => ['required', 'numeric', 'min:0'],
             'dias_maximos'                 => ['nullable', 'integer', 'min:1'],
             'max_reservas_anuales_cliente' => ['nullable', 'integer', 'min:0'], // <-- Nuevo campo agregado
+            'max_acompanantes'             => ['nullable', 'integer', 'min:0', 'max:50'],
             'active'                       => ['required', 'boolean'], // Validamos el estado que pre-procesamos
         ];
     }
@@ -64,6 +68,7 @@ class StoreTarifaTemporadaRequest extends FormRequest
             'precio_minimo_reserva'        => 'precio mínimo de reserva',
             'dias_maximos'                 => 'días máximos',
             'max_reservas_anuales_cliente' => 'reservas máximas anuales por cliente', // <-- Traducción para errores
+            'max_acompanantes'             => 'máximo de acompañantes',
         ];
     }
 

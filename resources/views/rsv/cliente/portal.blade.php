@@ -290,12 +290,6 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-historial" type="button" role="tab">
-                            <i class="bi bi-clock-history me-1"></i> Historial
-                            <span class="badge bg-light text-secondary border ms-1" id="portalBadgeHistorial">{{ $cliHistorial }}</span>
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
                         <button class="nav-link" data-bs-toggle="tab" data-bs-target="#cli-chat" type="button" role="tab">
                             <i class="bi bi-chat-dots me-1"></i> Soporte
                             <span class="badge bg-light text-secondary border ms-1" id="portalBadgeMensajes">{{ $cliMensajes }}</span>
@@ -327,7 +321,7 @@
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" data-bs-toggle="pill" data-bs-target="#nr-sub-buscador" type="button" role="tab">
-                                        <i class="bi bi-search me-1"></i> Buscador
+                                        <i class="bi bi-calendar-plus me-1"></i> Nueva Reserva
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -409,55 +403,8 @@
                         </div>
                     </div>
 
-                    {{-- ─────────── TAB 3: HISTORIAL ─────────── --}}
-                    <div class="tab-pane fade" id="cli-historial" role="tabpanel">
-                        <div class="subnav-fusion d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div class="d-flex align-items-center gap-2 text-success-emphasis fw-bold small">
-                                <i class="bi bi-diagram-3-fill"></i> Ecosistema de Historial:
-                            </div>
-                            <ul class="nav nav-pills sub-pills gap-1 mb-0 tab-memory-child" data-parent-tab="#cli-historial" id="historialSubTabs" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#hi-sub-inicio" type="button" role="tab">
-                                        <i class="bi bi-house-door me-1"></i> Inicio
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#hi-sub-estados" type="button" role="tab">
-                                        <i class="bi bi-flag me-1"></i> Estados
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" data-bs-toggle="pill" data-bs-target="#hi-sub-endosos" type="button" role="tab">
-                                        <i class="bi bi-arrow-left-right me-1"></i> Endosos
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="tab-content p-3 reservas-soft" id="historialSubContent">
-                            <div class="tab-pane fade show active" id="hi-sub-inicio" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial-tab'))
-                                    @include('rsv.cliente.partials.historial-tab')
-                                @else
-                                    <div class="text-center py-4 text-muted">Vista "Inicio" de historial no encontrada.</div>
-                                @endif
-                            </div>
-                            <div class="tab-pane fade" id="hi-sub-estados" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.estados'))
-                                    @include('rsv.cliente.partials.historial.estados')
-                                @else
-                                    <div class="text-center py-4 text-muted">Vista "Estados" no encontrada.</div>
-                                @endif
-                            </div>
-                            <div class="tab-pane fade" id="hi-sub-endosos" role="tabpanel">
-                                @if(view()->exists('rsv.cliente.partials.historial.endosos'))
-                                    @include('rsv.cliente.partials.historial.endosos')
-                                @else
-                                    <div class="text-center py-4 text-muted">Vista "Endosos" no encontrada.</div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
+                    {{-- TAB HISTORIAL retirada: la trazabilidad (cambios de estado y endosos) vive en el
+                         detalle de cada reserva (Mis Reservas → clic en la reserva → línea de tiempo). --}}
 
                     {{-- ─────────── TAB 4: SOPORTE / CHAT ─────────── --}}
                     <div class="tab-pane fade" id="cli-chat" role="tabpanel">
@@ -621,6 +568,11 @@
 
                         // Restaurar la sub-pestaña específica de este padre
                         var savedChildForParent = localStorage.getItem(CHILD_PREFIX + targetParent);
+                        // Checkout depende de una selección (inmueble + fechas) que no se guarda:
+                        // restaurarlo dejaba "Información incompleta". Se vuelve al buscador.
+                        if (savedChildForParent === '#nr-sub-checkout') {
+                            savedChildForParent = '#nr-sub-buscador';
+                        }
                         if (savedChildForParent) {
                             showTabBySelector(savedChildForParent);
                         }
@@ -660,9 +612,10 @@
                     'reservas-activas':    ['#cli-reservas', '#mr-sub-activas'],
                     'reservas-itinerario': ['#cli-reservas', '#mr-sub-itinerario'],
                     'reservas-huespedes':  ['#cli-reservas', '#mr-sub-huespedes'],
-                    'historial':           ['#cli-historial', '#hi-sub-inicio'],
-                    'historial-estados':   ['#cli-historial', '#hi-sub-estados'],
-                    'historial-endosos':   ['#cli-historial', '#hi-sub-endosos'],
+                    // Historial ya no es pestaña: enlaces antiguos llevan a Mis Reservas
+                    'historial':           ['#cli-reservas', '#mr-sub-activas'],
+                    'historial-estados':   ['#cli-reservas', '#mr-sub-activas'],
+                    'historial-endosos':   ['#cli-reservas', '#mr-sub-activas'],
                     'chat':                ['#cli-chat', '#ch-sub-inicio'],
                     'chat-mensajes':       ['#cli-chat', '#ch-sub-mensajes'],
                     'chat-receptores':     ['#cli-chat', '#ch-sub-receptores'],
@@ -672,18 +625,18 @@
                     'pagos-reviews':       ['#cli-pagos', '#pg-sub-reviews']
                 };
 
+                // Pestaña inicial: la decide SOLO la URL. Entrar desde el menú (sin parámetros)
+                // abre SIEMPRE Nueva Reserva → Inicio; ya no se restaura la última pestaña de
+                // localStorage (dejaba al usuario en un Checkout vacío, "Información incompleta").
+                var destinoInicial = mapUrlToTabs['nueva-reserva'];
                 if (tabParam && mapUrlToTabs[tabParam]) {
-                    window.RsvPortal.go(mapUrlToTabs[tabParam][0], mapUrlToTabs[tabParam][1]);
-                } else {
-                    var savedParent = localStorage.getItem(PARENT_KEY);
-                    if (savedParent) {
-                        showTabBySelector(savedParent);
-                        var savedChild = localStorage.getItem(CHILD_PREFIX + savedParent);
-                        if (savedChild) {
-                            showTabBySelector(savedChild);
-                        }
-                    }
+                    destinoInicial = mapUrlToTabs[tabParam];
+                } else if (urlParams.get('inmueble_id') && urlParams.get('fi') && urlParams.get('ff')) {
+                    destinoInicial = mapUrlToTabs['nueva-checkout'];   // vuelta del buscador con fechas
+                } else if (urlParams.get('reserva_id')) {
+                    destinoInicial = mapUrlToTabs['mis-reservas'];     // tras confirmar una reserva
                 }
+                window.RsvPortal.go(destinoInicial[0], destinoInicial[1]);
             });
         })();
     </script>

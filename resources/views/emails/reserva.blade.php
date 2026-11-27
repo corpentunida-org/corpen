@@ -667,7 +667,7 @@
                                                                 Una vez hecha la pre-reserva, el sistema bloqueará
                                                                 automáticamente los días seleccionados. El asociado
                                                                 contará
-                                                                con <strong>3 días</strong> para realizar el aporte y
+                                                                con <strong>{{ $config['plazo_pago'] ?? '3 días' }}</strong> para realizar el aporte y
                                                                 cargar el comprobante. De lo contrario, la fecha quedará
                                                                 libre para otro asociado.
                                                             </p>
@@ -680,14 +680,18 @@
                                                             </p>
 
                                                             <p style="margin-bottom:10px;">
-                                                                ⏳ <strong>Estadía máxima:</strong> 5 días / 4 noches
+                                                                ⏳ <strong>Estadía máxima:</strong> {{ $config['estadia_maxima'] ?? '5 días / 4 noches' }}
                                                             </p>
+                                                            @if(!empty($config['limite_reservas']))
+                                                            <p style="margin-bottom:10px;">
+                                                                📅 <strong>Límite de reservas:</strong> {{ $config['limite_reservas'] }}
+                                                            </p>
+                                                            @endif
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Condiciones
                                                                 de uso</h4>
 
-                                                            <p style="margin-bottom:10px;">Capacidad máxima: 6
-                                                                personas.</p>
+                                                            <p style="margin-bottom:10px;">Capacidad máxima: {{ $config['capacidad'] ?? '6 personas' }}.</p>
                                                             <p style="margin-bottom:10px;">No se permite el ingreso de
                                                                 mascotas.</p>
                                                             <p style="margin-bottom:10px;">
@@ -791,10 +795,9 @@
                                             <td align="center" height="50" style="height:50px;">
                                     <![endif]-->
                                         <singleline>
-                                            <a href="{{ url(route('reserva.crudinmuebles.show', $inmueble->id ?? $inmueble)) }}"
+                                            <a href="{{ !empty($urlBoton) ? $urlBoton : url(route('reserva.crudinmuebles.show', $inmueble->id ?? $inmueble)) }}"
                                                 mc:edit data-button data-text-style="Buttons"
-                                                style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>Ver
-                                                    detalles del Apartamento</span></a>
+                                                style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>{{ !empty($textoBoton) ? $textoBoton : 'Ver detalles del Apartamento' }}</span></a>
                                         </singleline>
                                         <!--[if (gte mso 9)|(IE)]>
                                     </td>

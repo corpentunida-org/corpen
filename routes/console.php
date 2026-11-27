@@ -12,6 +12,10 @@ Artisan::command('inspire', function () {
 
 Schedule::command('reservas:cancelar-vencidas')->daily();
 
+// Rsv: cancela reservas pendientes sin soporte de pago tras 3 días hábiles y avisa al asociado
+// por correo (ver CancelarReservasSinPago). Idempotente: correrlo de nuevo no repite nada.
+Schedule::command('rsv:cancelar-sin-pago')->hourly()->withoutOverlapping();
+
 // Corre solo: Cloud Scheduler llama a /internal/schedule-run cada minuto (ver
 // SchedulerRunController), que dispara `php artisan schedule:run` en el servidor. Las alertas
 // de contratos (sgrh.contrato.alertas) no dependen de este comando — calculan "vencido" en vivo.

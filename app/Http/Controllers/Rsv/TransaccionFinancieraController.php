@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Rsv;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Rsv\StoreTransaccionFinancieraRequest;
 use App\Http\Requests\Rsv\UpdateTransaccionFinancieraRequest;
+use App\Mail\ReservaInmueble;
 use App\Models\Rsv\TransaccionFinanciera;
+use App\Services\Rsv\RsvAcceso;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Throwable;
@@ -146,9 +149,25 @@ class TransaccionFinancieraController extends Controller
     {
         $validatedData = $request->validated();
 
+        // El asociado solo reporta pagos de SUS reservas y siempre quedan "Pendiente" (antes podía
+        // enviar estado_pago=Aprobado). Contabilidad/admin (rsv.pagos.validar) registran con cualquier estado.
+        $puedeValidar = RsvAcceso::puede(RsvAcceso::PAGOS_VALIDAR);
+        if (!$puedeValidar && !RsvAcceso::esTitular((int) ($validatedData['id_rsv_reservas'] ?? 0))) {
+            return RsvAcceso::denegado('Solo puedes reportar pagos de tus reservas.');
+        }
+        if (!$puedeValidar) {
+            $validatedData['estado_pago'] = 'Pendiente';
+        }
+
         // Procesar archivo cargado si proviene de multipart/form-data
         if ($request->hasFile('soporte_pago')) {
-            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
+            // Disco según entorno (S3 con bucket; si no, "public"). Si la subida falla, se
+            // rechaza: antes quedaba soporte_pago = "0" y el pago parecía tener soporte.
+            $path = $request->file('soporte_pago')->store('soportes_pagos', TransaccionFinanciera::discoSoportes());
+            if (!$path) {
+                Log::error('Rsv soporte de pago: no se pudo guardar el archivo', ['disco' => TransaccionFinanciera::discoSoportes()]);
+                return response()->json(['success' => false, 'message' => 'No se pudo guardar el archivo del soporte. Intenta de nuevo.'], 422);
+            }
             $validatedData['soporte_pago'] = $path;
         }
 
@@ -205,7 +224,13 @@ class TransaccionFinancieraController extends Controller
         $validatedData = $request->validated();
 
         if ($request->hasFile('soporte_pago')) {
-            $path = $request->file('soporte_pago')->store('soportes_pagos', 's3');
+            // Disco según entorno (S3 con bucket; si no, "public"). Si la subida falla, se
+            // rechaza: antes quedaba soporte_pago = "0" y el pago parecía tener soporte.
+            $path = $request->file('soporte_pago')->store('soportes_pagos', TransaccionFinanciera::discoSoportes());
+            if (!$path) {
+                Log::error('Rsv soporte de pago: no se pudo guardar el archivo', ['disco' => TransaccionFinanciera::discoSoportes()]);
+                return response()->json(['success' => false, 'message' => 'No se pudo guardar el archivo del soporte. Intenta de nuevo.'], 422);
+            }
             $validatedData['soporte_pago'] = $path;
         }
 
@@ -219,11 +244,22 @@ class TransaccionFinancieraController extends Controller
                 ], 404);
             }
 
+            // motivo_rechazo no es columna: solo viaja en el correo al asociado
+            $motivoRechazo = trim((string) ($validatedData['motivo_rechazo'] ?? ''));
+            unset($validatedData['motivo_rechazo']);
+            $estabaRechazada = str_contains(mb_strtolower((string) $transaccion->estado_pago), 'rechaz');
+
             DB::transaction(function () use ($transaccion, $validatedData) {
                 $transaccion->update($validatedData);
             });
 
             $transaccion->load(['reserva', 'pasarela']);
+
+            // Contabilidad acaba de RECHAZAR el soporte → la reserva vuelve a "Pendiente subir pago"
+            // (estado derivado) con plazo nuevo, y se avisa al asociado.
+            if (!$estabaRechazada && str_contains(mb_strtolower((string) $transaccion->estado_pago), 'rechaz')) {
+                $this->notificarSoporteRechazado($transaccion, $motivoRechazo);
+            }
 
             return response()->json([
                 'success' => true,
@@ -241,6 +277,46 @@ class TransaccionFinancieraController extends Controller
                 'message' => 'Ocurrió un error al actualizar la transacción financiera.',
                 'error'   => config('app.debug') ? $e->getMessage() : null,
             ], 500);
+        }
+    }
+
+    /**
+     * Correo al asociado: su soporte fue rechazado, con el motivo y el nuevo plazo para subir otro
+     * (si la reserva sigue Pendiente). Un fallo del correo solo se registra; no revierte el rechazo.
+     */
+    private function notificarSoporteRechazado(TransaccionFinanciera $tx, string $motivo): void
+    {
+        try {
+            $reserva = $tx->reserva;
+            $user = $reserva ? $reserva->user : null;
+            if (!$reserva || !$user || empty($user->email)) {
+                Log::warning('Rsv soporte rechazado: asociado sin correo', ['transaccion' => $tx->id]);
+                return;
+            }
+            $reserva->load(['inmueble', 'status', 'transacciones']);
+            $fmt = fn ($f) => \Illuminate\Support\Carbon::parse($f)->locale('es')->translatedFormat('l j \d\e F \d\e Y');
+            $pendiente = str_contains(mb_strtolower((string) optional($reserva->status)->name), 'pendien');
+            $limite = $pendiente ? ReservaController::fechaLimitePagoDe($reserva) : null;
+
+            $texto = 'Contabilidad revisó el soporte de pago por <strong>$' . number_format((float) $tx->monto, 0, ',', '.') . ' COP</strong> '
+                . 'que cargó el ' . e(optional($tx->created_at)->format('d/m/Y')) . ' para su reserva <strong>' . e($reserva->codigo_reserva) . '</strong> '
+                . 'en <strong>' . e(optional($reserva->inmueble)->name ?? 'el inmueble') . '</strong> y <strong>no pudo validarlo</strong>.<br><br>'
+                . ($motivo !== '' ? '<strong>Motivo:</strong> ' . nl2br(e($motivo)) . '<br><br>' : '')
+                . 'Por favor cargue un comprobante de pago válido desde el Portal de Reservas'
+                . ($limite ? ' a más tardar el <strong>' . e($fmt($limite)) . '</strong>; si no se recibe, la reserva se cancelará automáticamente' : '')
+                . '. ¡Dios le bendiga!';
+
+            Mail::to($user->email)->send(new ReservaInmueble(
+                $user->name,
+                $texto,
+                'Soporte de pago rechazado · Reserva ' . $reserva->codigo_reserva,
+                false,
+                null,
+                url(route('rsv.cliente.portal')) . '?tab=pagos-transacciones&reserva_id=' . $reserva->id . '&subir=1',
+                'Subir un nuevo soporte'
+            ));
+        } catch (Throwable $e) {
+            Log::error('Rsv soporte rechazado: no se pudo enviar el correo (tx ' . $tx->id . '): ' . $e->getMessage());
         }
     }
 
