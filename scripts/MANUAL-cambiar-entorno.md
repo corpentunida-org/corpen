@@ -48,25 +48,33 @@ Aparece el menú:
 ```
   ¿Con cuál .env quieres trabajar?   (actual: desarrollo)
 
-    1) Desarrollo   → .env.desarrollo (base de pruebas)
-    2) Producción   → .env.produccion (datos REALES)
-    3) Mantener el .env actual (solo ver estado)
+    1) Actual       → .env             (BD: ...)  recargar sin cambiar
+    2) Desarrollo   → .env.desarrollo  (BD: ...)  pruebas
+    3) Producción   → .env.produccion  (BD: ...)  ⚠ datos REALES
+    4) Backup       → .env.backup      (BD: ...)  ⚠ copias de seguridad
+    5) Mantener el .env actual (solo ver estado)
 
-  Elige 1, 2 o 3:
+  Elige 1, 2, 3, 4 o 5:
 ```
+
+Junto a cada opción se muestra el nombre de la base que tiene configurada ese archivo.
 
 | Opción | Qué hace |
 |---|---|
-| **1 Desarrollo** | Copia `.env.desarrollo` → `.env`, recrea los contenedores y muestra la conexión (BD `desarrolloappcorpen`, correo a Mailpit). |
-| **2 Producción** | Pide escribir `produccion` para confirmar. Copia `.env.produccion` → `.env`, recrea los contenedores y muestra la conexión. **Todo lo que hagas afecta datos, correos y archivos reales.** |
-| **3 Mantener** | No cambia nada; solo muestra en qué entorno estás y a qué BD/correo/S3 está conectada la app. |
+| **1 Actual** | No copia nada: deja el `.env` como está, recrea los contenedores y muestra la conexión. Útil si los contenedores quedaron con una configuración vieja. |
+| **2 Desarrollo** | Copia `.env.desarrollo` → `.env`, recrea los contenedores y muestra la conexión. Aquí se hacen **todas** las pruebas. |
+| **3 Producción** | Pide escribir `produccion` para confirmar. Copia `.env.produccion` → `.env`, recrea los contenedores y muestra la conexión. **Todo lo que hagas afecta datos, correos y archivos reales.** |
+| **4 Backup** | Pide escribir `backup` para confirmar. Copia `.env.backup` → `.env`. Solo para consultar o restaurar copias de seguridad. |
+| **5 Ver estado** | No cambia nada; solo muestra en qué entorno estás y a qué BD/correo/S3 está conectada la app. |
 | Otra tecla | "Opción no válida. No se cambió nada." |
 
 Atajos sin menú (útiles en scripts):
 
 ```bash
+bash scripts/cambiar-entorno.sh actual
 bash scripts/cambiar-entorno.sh desarrollo
 bash scripts/cambiar-entorno.sh produccion
+bash scripts/cambiar-entorno.sh backup
 bash scripts/cambiar-entorno.sh estado
 ```
 
@@ -77,7 +85,7 @@ bash scripts/cambiar-entorno.sh estado
 Al terminar verás un resumen como:
 
 ```
-  ✔ ENTORNO: DESARROLLO (base de pruebas, correo a Mailpit)
+  ✔ ENTORNO: DESARROLLO (pruebas sobre copia de producción)
 → Verificando conexión real de la app...
 BD:     CGMBOG23-DB:3308 / desarrolloappcorpen
 Correo: host.docker.internal:1025
@@ -90,18 +98,24 @@ Si la línea **BD** no muestra la base esperada, no trabajes hasta revisarlo.
 
 ## 3. Los archivos `.env`
 
-En la raíz del proyecto solo existen tres, y **ninguno se sube a git**:
+En la raíz del proyecto existen cuatro (el `.env` activo y tres entornos), y **ninguno se sube a git**:
 
 | Archivo | Uso |
 |---|---|
 | `.env` | El que usa la app en este momento. **No lo edites a mano**: el script lo sobrescribe. |
-| `.env.desarrollo` | Configuración de desarrollo (base de pruebas). |
-| `.env.produccion` | Configuración de producción. Contiene credenciales reales: no lo compartas ni lo copies. |
+| `.env.desarrollo` | **Desarrollo.** Base que recibe copias de producción. Aquí se ejecutan todas las pruebas de código antes de pasar a producción. |
+| `.env.produccion` | **Producción.** Base real. Solo se usa cuando el código ya se probó en desarrollo. Contiene credenciales reales: no lo compartas ni lo copies. |
+| `.env.backup` | **Backup.** Base de copias de seguridad y control de cambios, para restaurar o investigar un error grave. No es para trabajar a diario. |
+
+Flujo: **desarrollo** (probar) → **producción** (publicar). **Backup** solo se usa para respaldar o
+restaurar.
 
 Reglas:
 
-- Un cambio permanente (nueva variable, otra contraseña, etc.) se hace en `.env.desarrollo` o
-  `.env.produccion`, y después se ejecuta el script para aplicarlo.
+- Un cambio permanente (nueva variable, otra contraseña, etc.) se hace en `.env.desarrollo`,
+  `.env.produccion` o `.env.backup`, y después se ejecuta el script para aplicarlo.
+- Para agregar otro entorno: crea `.env.<nombre>`, añade `<nombre>` a la lista `ENTORNOS` al inicio
+  del script y agrega su opción en el menú.
 - Si editaste `.env` a mano, al cambiar de entorno el script **no crea respaldos**: solo avisa
   qué variables se descartaron (muestra nombres, nunca valores).
 - Un compañero nuevo debe pedirle al líder técnico sus archivos `.env.desarrollo` y
@@ -115,7 +129,7 @@ Reglas:
 |---|---|
 | `Docker no está disponible en esta terminal` | Docker Desktop está apagado, o no tiene activada la integración con Ubuntu (Settings → Resources → WSL integration). |
 | PowerShell: `bash: no se reconoce...` | Faltó `wsl` delante: `wsl bash scripts/cambiar-entorno.sh`. |
-| `No existe .env.desarrollo` / `.env.produccion` | Falta el archivo en la raíz; pídelo al líder técnico. |
+| `No existe .env.desarrollo` / `.env.produccion` / `.env.backup` | Falta el archivo en la raíz; pídelo al líder técnico. |
 | `No se pudo verificar la conexión` | El contenedor `app` no está corriendo (`docker compose up -d`) o el usuario/contraseña de la BD es incorrecto. |
 | `El servidor de correo no responde` (en desarrollo) | Falta Mailpit: `docker run -d --name mailpit --restart unless-stopped -p 8025:8025 -p 1025:1025 axllent/mailpit` |
 | `Permission denied` | Ejecuta con `bash scripts/cambiar-entorno.sh`. |

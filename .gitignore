@@ -10,7 +10,9 @@
 /storage/*.key
 /vendor
 .env
+.env.backup
 .env.desarrollo
+.env.produccion
 .env.production
 .phpactor.json
 .phpunit.result.cache
