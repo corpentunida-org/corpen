@@ -7,6 +7,36 @@ máquina, sin editar el `.env` a mano.
 
 ---
 
+## 0. Primera vez en un equipo nuevo
+
+1. Instala **Docker Desktop** y, en Windows, **Ubuntu (WSL)**. En Docker Desktop activa
+   *Settings → Resources → WSL integration → Ubuntu*.
+2. Clona el proyecto **dentro de Ubuntu** (no en `C:\`), por ejemplo en `~/proyectos/aplicacionp`:
+   ```bash
+   mkdir -p ~/proyectos && cd ~/proyectos
+   git clone https://github.com/corpentunida-org/corpen.git aplicacionp
+   cd aplicacionp
+   ```
+3. Pide al líder técnico tu `.env.desarrollo` (por un medio seguro, **nunca** por git o chat) y
+   guárdalo en la raíz del proyecto. `.env.produccion` y `.env.backup` solo a quien los necesite.
+4. Ejecuta:
+   ```bash
+   bash scripts/cambiar-entorno.sh desarrollo
+   ```
+   El script revisa todo solo:
+   - Avisa si Docker no está instalado o encendido.
+   - Avisa si falta algún `.env`.
+   - Corrige un `.env` guardado con formato de Windows.
+   - Si faltan `vendor/` o `public/build`, pregunta si los instala dentro del contenedor (la
+     primera vez tarda varios minutos, porque también construye la imagen).
+5. La última línea debe decir `BD: ... / desarrolloappcorpen`. La app queda en
+   **http://localhost:83**.
+
+Tu equipo debe poder llegar al servidor de base de datos (red de la oficina o VPN). Si no,
+el script lo indica al final.
+
+---
+
 ## 1. Dónde se ejecuta
 
 El script es de bash y corre dentro de Ubuntu (WSL). Se puede lanzar de dos maneras:
@@ -133,3 +163,9 @@ Reglas:
 | `No se pudo verificar la conexión` | El contenedor `app` no está corriendo (`docker compose up -d`) o el usuario/contraseña de la BD es incorrecto. |
 | `El servidor de correo no responde` (en desarrollo) | Falta Mailpit: `docker run -d --name mailpit --restart unless-stopped -p 8025:8025 -p 1025:1025 axllent/mailpit` |
 | `Permission denied` | Ejecuta con `bash scripts/cambiar-entorno.sh`. |
+| `Docker está instalado pero NO está encendido` | Abre Docker Desktop y espera a que diga *Engine running*. |
+| `No hay ningún archivo .env.<entorno>` | Equipo nuevo: falta recibir y guardar `.env.desarrollo` en la raíz. |
+| `Este equipo aún no tiene: vendor/ ...` | Responde `s` para instalar dentro del contenedor. |
+| `No se pudieron levantar los contenedores` | Otro programa usa el puerto 83, o falló la construcción de la imagen (revisa el error mostrado). |
+| `El contenedor 'app' se detuvo al arrancar` | Revisa el log que muestra el script; normalmente faltan dependencias o el `.env` está incompleto. |
+| Ayuda rápida | `bash scripts/cambiar-entorno.sh ayuda` |
