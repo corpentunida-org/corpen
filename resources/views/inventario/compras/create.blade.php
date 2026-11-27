@@ -1,542 +1,725 @@
+{{-- resources/views/inventario/compras/create.blade.php · INV-COM-CREATE-v5.3-COLORGROUPS --}}
 <x-base-layout>
     <style>
-        .page-wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            font-family: 'Inter', sans-serif;
-            color: #0f172a;
+        /* Sistema de Diseño Corporativo & UX Full-Width */
+        :root {
+            --corp-ink: #0f172a;
+            --corp-muted: #64748b;
+            --corp-border: #e2e8f0;
+            --corp-surface: #ffffff;
+            --corp-bg: #f8fafc;
+            --corp-accent: #1d4ed8;
+            --corp-accent-soft: #eff6ff;
         }
 
-        .form-header {
-            margin-bottom: 30px;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 20px;
+        .corp-shell {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            color: var(--corp-ink);
         }
 
-        .back-link {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: #64748b;
-            text-decoration: none;
+        /* Cabecera ejecutiva */
+        .corp-header {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        /* Barra minimalista de accesos rápidos por grupo de enfoque */
+        .corp-quicknav {
             display: flex;
             align-items: center;
-            gap: 5px;
-            margin-bottom: 10px;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            scrollbar-width: none;
+        }
+        .corp-quicknav::-webkit-scrollbar {
+            display: none;
+        }
+        .corp-nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            transition: all .15s ease;
+        }
+        .corp-nav-pill i {
+            font-size: 13px;
+        }
+        .corp-nav-sep {
+            width: 1px;
+            height: 18px;
+            background: #e2e8f0;
+            margin: 0 2px;
+            flex-shrink: 0;
         }
 
-        .form-title {
-            font-size: 1.8rem;
-            font-weight: 800;
-            margin: 0;
+        /* 1. Grupo Principal / Vistas Core (Azul claro) */
+        .pill-core {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #dbeafe;
+        }
+        .pill-core:hover {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+        .pill-core.active {
+            background: #1d4ed8;
+            color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
         }
 
-        .section-card {
-            background: #fff;
-            border: 1px solid #e2e8f0;
+        /* 2. Grupo Operaciones / Altas Rápidas (Verde esmeralda claro) */
+        .pill-ops {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #d1fae5;
+        }
+        .pill-ops:hover {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .pill-ops.active {
+            background: #059669;
+            color: #ffffff;
+            border-color: #059669;
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+        }
+
+        /* 3. Grupo Control / Bitácoras y Alertas (Ámbar cálido claro) */
+        .pill-audit {
+            background: #fffbeb;
+            color: #b45309;
+            border-color: #fef3c7;
+        }
+        .pill-audit:hover {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+        .pill-audit.active {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+        }
+
+        /* 4. Grupo Configuración / Catálogos Maestros (Púrpura suave) */
+        .pill-conf {
+            background: #f5f3ff;
+            color: #6d28d9;
+            border-color: #ede9fe;
+        }
+        .pill-conf:hover {
+            background: #ede9fe;
+            color: #5b21b6;
+            border-color: #ddd6fe;
+        }
+        .pill-conf.active {
+            background: #7c3aed;
+            color: #ffffff;
+            border-color: #7c3aed;
+            box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+        }
+
+        /* Tarjetas de sección del formulario */
+        .corp-panel {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
             border-radius: 12px;
-            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
             overflow: hidden;
         }
-
-        .section-head {
+        .corp-panel-head {
             background: #f8fafc;
-            padding: 15px 24px;
-            border-bottom: 1px solid #e2e8f0;
-            font-weight: 700;
-            font-size: 0.95rem;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 12px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .corp-panel-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--corp-ink);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .corp-panel-body {
+            padding: 18px 20px;
         }
 
-        .section-body {
-            padding: 24px;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .label {
+        /* Inputs y etiquetas corporativas */
+        .corp-label {
             display: block;
-            font-size: 0.85rem;
+            font-size: 12px;
             font-weight: 600;
-            margin-bottom: 8px;
             color: #334155;
+            margin-bottom: 5px;
         }
-
-        .input {
+        .corp-input, .corp-select {
             width: 100%;
-            padding: 10px 14px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            transition: 0.2s;
-            background: #fbfcfd;
+            font-size: 13.5px;
+            padding: 8px 12px;
+            background-color: #ffffff;
+            color: var(--corp-ink);
+            transition: all .15s ease;
         }
-
-        .input:focus {
+        .corp-input:focus, .corp-select:focus {
             outline: none;
-            border-color: #0f172a;
-            background: #fff;
+            border-color: var(--corp-accent);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
         }
-
-        .btn-submit {
-            background: #000;
-            color: #fff;
-            border: none;
-            padding: 14px 30px;
-            border-radius: 8px;
-            font-weight: 700;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        .btn-submit:hover {
-            background: #222;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #b91c1c;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 0.9rem;
-        }
-
-        .alert-error ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .input-readonly {
-            background: #e2e8f0;
-            color: #64748b;
+        .corp-input-readonly {
+            background-color: #f1f5f9 !important;
+            color: #64748b !important;
             cursor: not-allowed;
-            border-color: #cbd5e1;
+            border-color: #e2e8f0 !important;
         }
-
-        /* Estilos Tabla Dinámica Items */
-        .table-responsive {
-            overflow-x: auto;
-        }
-
-        .table-items {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
-            min-width: 900px;
-        }
-
-        .table-items th {
-            background: #f1f5f9;
-            padding: 12px;
-            text-align: left;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: #475569;
-            border-bottom: 2px solid #e2e8f0;
-        }
-
-        .table-items td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e2e8f0;
-            vertical-align: middle;
-        }
-
-        .table-items .input {
-            padding: 8px 10px;
-        }
-
         .input-money {
             text-align: right;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        /* Tabla dinámica de ítems */
+        .corp-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 920px;
+        }
+        .corp-items-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 10px 10px;
+            text-align: left;
+        }
+        .corp-items-table tbody td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .corp-items-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        .corp-items-table .corp-input {
+            padding: 6px 10px;
+            font-size: 13px;
         }
 
         .btn-remove-row {
             color: #ef4444;
-            background: none;
-            border: none;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 5px;
-            transition: 0.2s;
+            transition: all .15s ease;
         }
-
-        .btn-remove-row:hover {
+        .btn-remove-row:hover:not(:disabled) {
+            background: #fee2e2;
             color: #b91c1c;
-            transform: scale(1.1);
+        }
+        .btn-remove-row:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
         }
 
         .btn-add-row {
-            background: #f1f5f9;
-            color: #0f172a;
-            border: 1px dashed #cbd5e1;
-            padding: 10px 15px;
-            border-radius: 8px;
+            background: #f8fafc;
+            color: var(--corp-ink);
+            border: 1px dashed #94a3b8;
+            padding: 9px 16px;
+            border-radius: 9px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            width: 100%;
             justify-content: center;
-            transition: 0.2s;
+            gap: 6px;
+            width: 100%;
+            transition: all .15s ease;
         }
-
         .btn-add-row:hover {
-            background: #e2e8f0;
-            border-color: #94a3b8;
+            background: #eff6ff;
+            border-color: var(--corp-accent);
+            color: var(--corp-accent);
         }
 
-        .totals-wrapper {
+        /* Resumen financiero y totales */
+        .corp-totals-box {
             background: #f8fafc;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            margin-top: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-end;
+            border: 1px solid var(--corp-border);
+            border-radius: 10px;
+            padding: 16px 20px;
+            min-width: 340px;
         }
-
-        .total-row {
+        .corp-total-line {
             display: flex;
             justify-content: space-between;
-            width: 350px;
             align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
         }
-
-        .total-row label {
-            font-size: 0.85rem;
+        .corp-total-line label {
+            font-size: 12.5px;
             font-weight: 600;
-            color: #64748b;
+            color: #475569;
             margin: 0;
         }
-
-        .total-row .input-small {
-            width: 150px;
-            text-align: right;
-            padding: 6px 10px;
-            font-family: monospace;
+        .corp-total-line .corp-input {
+            width: 155px;
+            padding: 5px 10px;
+            font-size: 13px;
         }
-
-        .grand-total {
-            font-size: 1.2rem;
+        .corp-grand-total {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 20px;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--corp-accent);
         }
 
-        /* Estilos del Modal */
+        .corp-bod-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: var(--corp-accent-soft);
+            color: var(--corp-accent);
+            border: 1px solid #dbeafe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Modal overlay */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(2px);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 1060;
+            padding: 16px;
         }
-
-        .modal-content {
-            background: #fff;
+        .modal-card-corp {
+            background: #ffffff;
             width: 100%;
-            max-width: 500px;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 15px;
-            margin-bottom: 15px;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.2rem;
-            color: #0f172a;
-        }
-
-        .btn-close-modal {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #64748b;
-            transition: 0.2s;
-        }
-
-        .btn-close-modal:hover {
-            color: #ef4444;
-        }
-
-        .btn-modal-action {
-            background: #10b981;
-            color: #fff;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .btn-modal-action:hover {
-            background: #059669;
+            max-width: 520px;
+            border-radius: 14px;
+            border: 1px solid var(--corp-border);
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
+            overflow: hidden;
         }
     </style>
 
-    <div class="page-wrap">
-        @if ($errors->any())
-            <div class="alert-error">
-                <strong>Por favor corrige los siguientes errores:</strong>
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        @endif
+    <div class="container-fluid py-2 px-2 px-md-3">
+        <div class="corp-shell">
 
-        {{-- PLANTILLA ÚNICA DATALIST PARA PROVEEDORES --}}
-        <datalist id="proveedoresDataList">
-            @foreach($proveedores as $proveedor)
-                <option data-id="{{ $proveedor->cod_ter }}" value="{{ $proveedor->cod_ter }} - {{ $proveedor->nom_ter }} {{ $proveedor->razon_soc ? '- ' . $proveedor->razon_soc : '' }}"></option>
-            @endforeach
-        </datalist>
-
-        {{-- PLANTILLA ÚNICA DATALIST PARA PRODUCTOS --}}
-        <datalist id="referenciasDataList">
-            @foreach($referencias as $ref)
-                {{-- Actualizado para incluir Marca en el buscador --}}
-                <option data-id="{{ $ref->id }}" value="{{ $ref->referencia }} | Marca: {{ $ref->marca->nombre ?? 'N/A' }} | Bodega: {{ $ref->bodega->nombre ?? 'N/A' }} | SG: {{ $ref->subgrupo->nombre ?? 'N/A' }}"></option>
-            @endforeach
-        </datalist>
-
-        <form action="{{ route('inventario.compras.store') }}" method="POST" enctype="multipart/form-data" id="formCompra">
-            @csrf
-            <div class="form-header">
-                <a href="{{ route('inventario.compras.index') }}" class="back-link"><i class="bi bi-arrow-left"></i> Cancelar</a>
-                <h1 class="form-title">Nueva Compra</h1>
-            </div>
-
-            {{-- REGISTRO DE USUARIO --}}
-            <div class="section-card">
-                <div class="section-head">
-                    <div><i class="bi bi-person"></i> Registro del Sistema</div>
-                </div>
-                <div class="section-body">
-                    <div>
-                        <label class="label">Registrado por</label>
-                        <input type="text" class="input input-readonly" value="{{ auth()->user()->name ?? 'Usuario Sistema' }}" disabled>
+            {{-- ALERTAS DE VALIDACIÓN --}}
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert" style="border-radius: 10px; font-size: 13px;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                        <div class="flex-grow-1">
+                            <strong>Por favor corrige los siguientes errores:</strong>
+                            <ul class="mb-0 ps-3 mt-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
                     </div>
                 </div>
-            </div>
+            @endif
 
-            {{-- DATOS FACTURA --}}
-            <div class="section-card">
-                <div class="section-head">
-                    <div><i class="bi bi-receipt"></i> Datos de Facturación</div>
+            {{-- PLANTILLA ÚNICA DATALIST PARA PROVEEDORES --}}
+            <datalist id="proveedoresDataList">
+                @foreach($proveedores as $proveedor)
+                    <option data-id="{{ $proveedor->cod_ter }}" value="{{ $proveedor->cod_ter }} - {{ $proveedor->nom_ter }} {{ $proveedor->razon_soc ? '- ' . $proveedor->razon_soc : '' }}"></option>
+                @endforeach
+            </datalist>
+
+            {{-- PLANTILLA ÚNICA DATALIST PARA PRODUCTOS --}}
+            <datalist id="referenciasDataList">
+                @foreach($referencias as $ref)
+                    <option data-id="{{ $ref->id }}" value="{{ $ref->referencia }} | Marca: {{ $ref->marca->nombre ?? 'N/A' }} | Bodega: {{ $ref->bodega->nombre ?? 'N/A' }} | SG: {{ $ref->subgrupo->nombre ?? 'N/A' }}"></option>
+                @endforeach
+            </datalist>
+
+            <form action="{{ route('inventario.compras.store') }}" method="POST" enctype="multipart/form-data" id="formCompra">
+                @csrf
+
+                {{-- 1. CABECERA EJECUTIVA + ACCESOS RÁPIDOS POR GRUPO DE ENFOQUE --}}
+                <div class="corp-header mb-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div>
+                            <nav aria-label="breadcrumb" class="mb-1">
+                                <ol class="breadcrumb mb-0" style="font-size: 11.5px;">
+                                    <li class="breadcrumb-item text-muted">Gestión de Inventario</li>
+                                    <li class="breadcrumb-item text-muted">Operaciones</li>
+                                    <li class="breadcrumb-item active fw-semibold text-primary" aria-current="page">Registrar Compra</li>
+                                </ol>
+                            </nav>
+                            <h4 class="fw-bold mb-1" style="letter-spacing: -0.02em; color: #0f172a;">
+                                Nueva Compra e Ingreso a Inventario
+                            </h4>
+                            <p class="text-secondary mb-0" style="font-size: 13.5px;">
+                                Registra facturas de proveedores, asociando referencias, cantidades, costos unitarios y soportes contables.
+                            </p>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{{ route('inventario.compras.index') }}"
+                               class="btn btn-outline-secondary fw-semibold px-3 py-2"
+                               style="font-size: 13px; border-radius: 9px;">
+                                <i class="bi bi-arrow-left me-1"></i> Cancelar
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-primary fw-semibold px-4 py-2 shadow-sm"
+                                    style="font-size: 13px; border-radius: 9px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                                <i class="bi bi-check2-circle me-1"></i> Guardar e Ingresar
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Barra Minimalista de Accesos Rápidos con Color por Enfoque --}}
+                    <div class="corp-quicknav" aria-label="Accesos rápidos de inventario">
+                        {{-- GRUPO 1: PRINCIPAL / VISTAS CORE (Azul claro) --}}
+                        <a href="{{ route('inventario.tablero') }}" class="corp-nav-pill pill-core" title="Vista Principal">
+                            <i class="bi bi-speedometer2"></i> Tablero
+                        </a>
+                        <a href="{{ route('inventario.activos.index') }}" class="corp-nav-pill pill-core" title="Vista Principal">
+                            <i class="bi bi-laptop"></i> Activos
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 2: OPERACIONES / ALTAS (Verde esmeralda claro) --}}
+                        <a href="{{ route('inventario.compras.create') }}" class="corp-nav-pill pill-ops active" title="Operaciones">
+                            <i class="bi bi-cart-plus-fill"></i> + Compra
+                        </a>
+                        <a href="{{ route('inventario.movimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                            <i class="bi bi-file-earmark-arrow-up"></i> + Acta / Mov.
+                        </a>
+                        <a href="{{ route('inventario.mantenimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                            <i class="bi bi-wrench-adjustable"></i> + Mantenimiento
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 3: CONTROL / BITÁCORAS Y ALERTAS (Ámbar cálido claro) --}}
+                        <a href="{{ route('inventario.movimientos.index') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                            <i class="bi bi-arrow-left-right"></i> Movimientos
+                        </a>
+                        <a href="{{ route('inventario.compras.index') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                            <i class="bi bi-receipt"></i> Facturas
+                        </a>
+                        <a href="{{ route('inventario.activos.alertas') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                            <i class="bi bi-exclamation-triangle"></i> Alertas
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 4: CONFIGURACIÓN / CATÁLOGOS (Púrpura suave) --}}
+                        <a href="{{ route('inventario.bodegas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-geo-alt"></i> Bodegas
+                        </a>
+                        <a href="{{ route('inventario.clasificacion.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-diagram-3"></i> Clasificación
+                        </a>
+                        <a href="{{ route('inventario.marcas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-tags"></i> Marcas
+                        </a>
+                        <a href="{{ route('inventario.metodos-pago.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-credit-card"></i> Métodos Pago
+                        </a>
+                    </div>
                 </div>
-                <div class="section-body">
-                    <div class="grid-2">
-                        <div style="grid-column: span 2;">
-                            <label class="label">Proveedor (Buscador) *</label>
-                            <input list="proveedoresDataList" class="input proveedor-search" placeholder="Escriba el NIT o nombre del proveedor..." autocomplete="off" required>
-                            <input type="hidden" name="cod_ter_proveedor" class="proveedor-id" required>
-                        </div>
-                        <div>
-                            <label class="label">Número de Factura *</label>
-                            <input type="text" name="numero_factura" class="input" placeholder="Ej: F-2024-001" value="{{ old('numero_factura') }}" required>
-                        </div>
-                        <div>
-                            <label class="label">Fecha de Emisión *</label>
-                            <input type="date" name="fecha_factura" class="input" value="{{ old('fecha_factura') }}" required>
-                        </div>
-                        <div>
-                            <label class="label">Núm. Doc. Interno</label>
-                            <input type="text" name="num_doc_interno" class="input" placeholder="Opcional" value="{{ old('num_doc_interno') }}">
-                        </div>
-                        <div>
-                            <label class="label">Número de Egreso</label>
-                            <input type="number" name="numero_egreso" class="input" placeholder="Ej: 1024" value="{{ old('numero_egreso') }}">
-                        </div>
-                        <div>
-                            <label class="label">Método de Pago *</label>
-                            <select name="id_InvMetodos" class="input" required>
-                                <option value="">Seleccione un método...</option>
-                                @foreach($metodos as $metodo)
-                                    <option value="{{ $metodo->id }}" {{ old('id_InvMetodos') == $metodo->id ? 'selected' : '' }}>
-                                        {{ $metodo->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="label">Adjuntar archivo de factura (PDF)</label>
-                            <input type="file" name="eg_archivo" class="input" style="padding: 7px;" accept=".pdf,.jpg,.jpeg,.png">
-                        </div>
-                        <div style="grid-column: span 2;">
+
+                {{-- 2. DATOS DE FACTURACIÓN Y AUDITORÍA --}}
+                <div class="corp-panel mb-3">
+                    <div class="corp-panel-head">
+                        <h6 class="corp-panel-title">
+                            <i class="bi bi-receipt text-primary"></i> Datos de Facturación y Proveedor
+                        </h6>
+                        <span class="badge bg-light text-secondary border" style="font-size: 11.5px;">
+                            <i class="bi bi-person-check me-1 text-primary"></i> Registrado por: <strong class="text-dark">{{ auth()->user()->name ?? 'Usuario Sistema' }}</strong>
+                        </span>
+                    </div>
+
+                    <div class="corp-panel-body">
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-6">
+                                <label class="corp-label">Proveedor (Buscador por NIT o Nombre) <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <i class="bi bi-search text-muted position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 13.5px;"></i>
+                                    <input list="proveedoresDataList"
+                                           class="corp-input proveedor-search ps-4"
+                                           placeholder="Escriba el NIT o nombre del proveedor..."
+                                           autocomplete="off"
+                                           required>
+                                    <input type="hidden" name="cod_ter_proveedor" class="proveedor-id" required>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Número de Factura <span class="text-danger">*</span></label>
+                                <input type="text" name="numero_factura" class="corp-input" placeholder="Ej: F-2026-001" value="{{ old('numero_factura') }}" required>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Fecha de Emisión <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_factura" class="corp-input" value="{{ old('fecha_factura') }}" required>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Núm. Doc. Interno</label>
+                                <input type="text" name="num_doc_interno" class="corp-input" placeholder="Opcional" value="{{ old('num_doc_interno') }}">
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Número de Egreso</label>
+                                <input type="number" name="numero_egreso" class="corp-input" placeholder="Ej: 1024" value="{{ old('numero_egreso') }}">
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Método de Pago <span class="text-danger">*</span></label>
+                                <select name="id_InvMetodos" class="corp-select" required>
+                                    <option value="">Seleccione un método...</option>
+                                    @foreach($metodos as $metodo)
+                                        <option value="{{ $metodo->id }}" {{ old('id_InvMetodos') == $metodo->id ? 'selected' : '' }}>
+                                            {{ $metodo->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Soporte de Factura (PDF / Imagen)</label>
+                                <input type="file" name="eg_archivo" class="corp-input" style="padding: 6px 10px;" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+
                             <input type="hidden" name="total_pago" id="total_pago_hidden" value="0">
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- ITEMS DINÁMICOS --}}
-            <div class="section-card">
-                <div class="section-head">
-                    <div><i class="bi bi-box-seam"></i> Detalle de Items y Costos (Stock)</div>
-                    <button type="button" class="btn-modal-action" id="btnOpenModalRef">
-                        <i class="bi bi-plus-lg"></i> Nuevo Producto / Referencia
-                    </button>
-                </div>
-                <div class="section-body">
-
-                    <div class="table-responsive">
-                        <table class="table-items" id="tablaItems">
-                            <thead>
-                                <tr>
-                                    <th style="width: 5%;">#</th>
-                                    <th style="width: 30%;">Producto / Referencia *</th>
-                                    <th style="width: 15%;">Detalle (Opcional)</th>
-                                    <th style="width: 10%;">Cantidad *</th>
-                                    <th style="width: 17%;">Costo Unit. *</th>
-                                    <th style="width: 18%;">Subtotal</th>
-                                    <th style="width: 5%; text-align: center;"><i class="bi bi-trash"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemsBody">
-                                <tr>
-                                    <td class="row-num" style="font-weight: 700; color: #64748b;">1</td>
-                                    <td>
-                                        <input list="referenciasDataList" class="input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
-                                        <input type="hidden" name="detalles[0][invReferencias_id]" class="item-ref-id" required>
-                                    </td>
-                                    <td>
-                                        <input type="text" name="detalles[0][detalle]" class="input item-detalle" placeholder="Ej: Lote A, Talla M...">
-                                    </td>
-                                    <td>
-                                        <input type="number" name="detalles[0][cantidad]" class="input item-qty" value="1" min="0.01" step="0.01" required>
-                                    </td>
-                                    <td>
-                                        <input type="text" class="input item-price-display input-money" placeholder="0" required>
-                                        <input type="hidden" name="detalles[0][precio]" class="item-price-hidden" value="0">
-                                    </td>
-                                    <td>
-                                        <input type="text" class="input item-subtotal input-readonly input-money" value="0" disabled style="font-family: monospace;">
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <button type="button" class="btn-remove-row" disabled style="opacity: 0.3;"><i class="bi bi-x-circle"></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                {{-- 3. DETALLE DE ITEMS DINÁMICOS Y COSTOS --}}
+                <div class="corp-panel mb-3">
+                    <div class="corp-panel-head">
+                        <h6 class="corp-panel-title">
+                            <i class="bi bi-box-seam text-primary"></i> Detalle de Ítems y Costos (Ingreso a Stock)
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-success fw-semibold px-3" id="btnOpenModalRef" style="font-size: 12.5px; border-radius: 8px;">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo Producto / Referencia
+                        </button>
                     </div>
 
-                    <button type="button" class="btn-add-row" id="btnAddRow">
-                        <i class="bi bi-plus-circle"></i> Agregar otra fila
-                    </button>
+                    <div class="corp-panel-body">
+                        <div class="table-responsive border rounded-3 mb-3" style="border-color: #e2e8f0 !important;">
+                            <table class="corp-items-table" id="tablaItems">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 45px;" class="text-center">#</th>
+                                        <th style="width: 34%;">Producto / Referencia <span class="text-danger">*</span></th>
+                                        <th style="width: 18%;">Detalle (Opcional)</th>
+                                        <th style="width: 11%;">Cantidad <span class="text-danger">*</span></th>
+                                        <th style="width: 16%;">Costo Unit. <span class="text-danger">*</span></th>
+                                        <th style="width: 16%;">Subtotal</th>
+                                        <th style="width: 50px;" class="text-center"><i class="bi bi-trash"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="itemsBody">
+                                    <tr>
+                                        <td class="row-num text-center fw-bold text-muted">1</td>
+                                        <td>
+                                            <input list="referenciasDataList" class="corp-input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
+                                            <input type="hidden" name="detalles[0][invReferencias_id]" class="item-ref-id" required>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="detalles[0][detalle]" class="corp-input item-detalle" placeholder="Ej: Lote A, Talla M...">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="detalles[0][cantidad]" class="corp-input item-qty" value="1" min="0.01" step="0.01" required>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="corp-input item-price-display input-money" placeholder="0" required>
+                                            <input type="hidden" name="detalles[0][precio]" class="item-price-hidden" value="0">
+                                        </td>
+                                        <td>
+                                            <input type="text" class="corp-input item-subtotal corp-input-readonly input-money" value="0" disabled>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn-remove-row" disabled title="Eliminar fila">
+                                                <i class="bi bi-x-lg" style="font-size: 12px;"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
-                    <div class="totals-wrapper">
-                        <div class="total-row">
-                            <label>Subtotal Productos:</label>
-                            <input type="text" id="suma_productos_display" class="input input-small input-readonly input-money" value="0" disabled>
-                        </div>
-                        <div class="total-row">
-                            <label>IVA Total ($):</label>
-                            <input type="text" class="input input-small extra-cost-display input-money" value="0">
-                            <input type="hidden" name="costo_iva" id="costo_iva" class="extra-cost-hidden" value="0">
-                        </div>
-                        <div class="total-row">
-                            <label>Otros Costos / Varios ($):</label>
-                            <input type="text" class="input input-small extra-cost-display input-money" value="0">
-                            <input type="hidden" name="costo_varios" id="costo_varios" class="extra-cost-hidden" value="0">
-                        </div>
-                        <hr style="width: 100%; border: 0; border-top: 1px solid #cbd5e1; margin: 5px 0;">
-                        <div class="total-row">
-                            <label style="color: #0f172a;">TOTAL FACTURA:</label>
-                            <div class="grand-total" id="display_grand_total">$0</div>
+                        <div class="row g-3 align-items-start">
+                            <div class="col-12 col-lg-7">
+                                <button type="button" class="btn-add-row" id="btnAddRow">
+                                    <i class="bi bi-plus-circle"></i> Agregar otra fila de producto
+                                </button>
+                                <div class="text-muted mt-2" style="font-size: 12px;">
+                                    <i class="bi bi-info-circle me-1 text-primary"></i>
+                                    Selecciona siempre la referencia desde la lista desplegable para asegurar su vinculación con la bodega y subgrupo.
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-5 d-flex justify-content-lg-end">
+                                <div class="corp-totals-box w-100">
+                                    <div class="corp-total-line">
+                                        <label>Subtotal Productos:</label>
+                                        <input type="text" id="suma_productos_display" class="corp-input corp-input-readonly input-money" value="0" disabled>
+                                    </div>
+                                    <div class="corp-total-line">
+                                        <label>IVA Total ($):</label>
+                                        <input type="text" class="corp-input extra-cost-display input-money" value="0">
+                                        <input type="hidden" name="costo_iva" id="costo_iva" class="extra-cost-hidden" value="0">
+                                    </div>
+                                    <div class="corp-total-line">
+                                        <label>Otros Costos / Varios ($):</label>
+                                        <input type="text" class="corp-input extra-cost-display input-money" value="0">
+                                        <input type="hidden" name="costo_varios" id="costo_varios" class="extra-cost-hidden" value="0">
+                                    </div>
+                                    <hr style="border-color: #cbd5e1; margin: 10px 0;">
+                                    <div class="corp-total-line mb-0">
+                                        <label class="fw-bold text-dark" style="font-size: 13px;">TOTAL FACTURA:</label>
+                                        <div class="corp-grand-total" id="display_grand_total">$0</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div style="text-align: right;">
-                <button type="submit" class="btn-submit">Guardar e Ingresar</button>
-            </div>
-        </form>
+                {{-- 4. PIE DE ACCIONES --}}
+                <div class="d-flex justify-content-end gap-2 pb-3">
+                    <a href="{{ route('inventario.compras.index') }}"
+                       class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                       style="font-size: 13.5px; border-radius: 9px;">
+                        Cancelar
+                    </a>
+                    <button type="submit"
+                            class="btn btn-primary fw-semibold px-4 py-2 shadow-sm"
+                            style="font-size: 13.5px; border-radius: 9px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                        <i class="bi bi-check2-circle me-1"></i> Guardar e Ingresar Compra
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     {{-- MODAL PARA CREAR NUEVA REFERENCIA --}}
     <div id="modalReferencia" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Crear Nuevo Producto / Referencia</h3>
-                <button type="button" class="btn-close-modal" id="closeModal">&times;</button>
+        <div class="modal-card-corp">
+            <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-center" style="background: #f8fafc;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="corp-bod-avatar">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0" style="font-size: 14.5px;">Crear Nuevo Producto / Referencia</h6>
+                        <div class="text-muted" style="font-size: 11.5px;">Se agregará y seleccionará automáticamente en la compra</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" id="closeModal" aria-label="Cerrar"></button>
             </div>
-            <div class="modal-body">
-                <div class="alert-error" id="modalErrors" style="display: none;"></div>
-                <div>
-                    <label class="label">Nombre del Producto *</label>
-                    <input type="text" id="ref_referencia" class="input" placeholder="Ej: B XVR 45">
+
+            <div class="p-4">
+                <div class="alert alert-danger py-2 px-3 mb-3" id="modalErrors" style="display: none; font-size: 12.5px; border-radius: 8px;"></div>
+
+                <div class="mb-3">
+                    <label class="corp-label">Nombre del Producto / Referencia <span class="text-danger">*</span></label>
+                    <input type="text" id="ref_referencia" class="corp-input" placeholder="Ej: Portátil Latitude 5430">
                 </div>
 
-                <div style="margin-top: 15px;">
-                    <label class="label">Subgrupo *</label>
-                    <select id="ref_id_InvSubGrupos" class="input" required>
-                        <option value="">Seleccione un subgrupo...</option>
-                        @foreach($subgrupos as $sg)
-                            <option value="{{ $sg->id }}">{{ $sg->nombre }}</option>
-                        @endforeach
-                    </select>
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="corp-label">Subgrupo <span class="text-danger">*</span></label>
+                        <select id="ref_id_InvSubGrupos" class="corp-select" required>
+                            <option value="">Seleccione un subgrupo...</option>
+                            @foreach($subgrupos as $sg)
+                                <option value="{{ $sg->id }}">{{ $sg->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-sm-6">
+                        <label class="corp-label">Marca <span class="text-danger">*</span></label>
+                        <select id="ref_id_InvMarcas" class="corp-select" required>
+                            <option value="">Seleccione una marca...</option>
+                            @foreach($marcas as $marca)
+                                <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
-                {{-- NUEVO: Campo Marca en el Modal --}}
-                <div style="margin-top: 15px;">
-                    <label class="label">Marca *</label>
-                    <select id="ref_id_InvMarcas" class="input" required>
-                        <option value="">Seleccione una marca...</option>
-                        @foreach($marcas as $marca)
-                            <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div style="margin-top: 15px;">
-                    <label class="label">Bodega *</label>
-                    <select id="ref_id_InvBodegas" class="input" required>
+                <div class="mb-3">
+                    <label class="corp-label">Bodega Destino <span class="text-danger">*</span></label>
+                    <select id="ref_id_InvBodegas" class="corp-select" required>
                         <option value="">Seleccione una bodega...</option>
                         @foreach($bodegas as $bodega)
                             <option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div style="margin-top: 15px;">
-                    <label class="label">Detalle (Opcional)</label>
-                    <input type="text" id="ref_detalle" class="input" placeholder="Ej: Marca Norma, 500 hojas">
+
+                <div class="mb-1">
+                    <label class="corp-label">Detalle (Opcional)</label>
+                    <input type="text" id="ref_detalle" class="corp-input" placeholder="Ej: Core i7, 16GB RAM, SSD 512GB">
                 </div>
             </div>
-            <div style="margin-top: 25px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-add-row" style="width: auto; padding: 10px 20px;" id="cancelModal">Cancelar</button>
-                <button type="button" class="btn-submit" style="padding: 10px 20px;" id="btnSaveRefAjax">Guardar Producto</button>
+
+            <div class="px-4 py-3 bg-light border-top d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary fw-semibold px-3" id="cancelModal" style="font-size: 13px;">Cancelar</button>
+                <button type="button" class="btn btn-primary fw-semibold px-4" id="btnSaveRefAjax" style="font-size: 13px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                    Guardar Producto
+                </button>
             </div>
         </div>
     </div>
@@ -546,12 +729,10 @@
 
     <script>
         $(document).ready(function () {
-            
+
             // =========================================================
-            // LÓGICA DE DICCIONARIO PARA DATALIST (Cero Lag y Funciona)
+            // LÓGICA DE DICCIONARIO PARA DATALIST (Cero Lag)
             // =========================================================
-            
-            // 1. Guardamos todo en memoria cuando carga la página
             let dictProveedores = {};
             $('#proveedoresDataList option').each(function () {
                 dictProveedores[$(this).val()] = $(this).attr('data-id');
@@ -562,10 +743,10 @@
                 dictReferencias[$(this).val()] = $(this).attr('data-id');
             });
 
-            // 2. Evento instantáneo para Proveedores
+            // Evento instantáneo para Proveedores
             $(document).on('input change', '.proveedor-search', function () {
                 let val = $(this).val();
-                let hiddenInput = $(this).siblings('.proveedor-id');
+                let hiddenInput = $(this).closest('div').find('.proveedor-id');
 
                 if (dictProveedores.hasOwnProperty(val)) {
                     hiddenInput.val(dictProveedores[val]);
@@ -576,7 +757,7 @@
                 }
             });
 
-            // 3. Evento instantáneo para Referencias / Productos
+            // Evento instantáneo para Referencias / Productos
             $(document).on('input change', '.item-ref-search', function () {
                 let val = $(this).val();
                 let hiddenInput = $(this).siblings('.item-ref-id');
@@ -672,26 +853,28 @@
             $('#btnAddRow').click(function () {
                 let newRow = `
                     <tr>
-                        <td class="row-num" style="font-weight: 700; color: #64748b;">${rowCount + 1}</td>
+                        <td class="row-num text-center fw-bold text-muted">${rowCount + 1}</td>
                         <td>
-                            <input list="referenciasDataList" class="input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
+                            <input list="referenciasDataList" class="corp-input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
                             <input type="hidden" name="detalles[${rowCount}][invReferencias_id]" class="item-ref-id" required>
                         </td>
                         <td>
-                            <input type="text" name="detalles[${rowCount}][detalle]" class="input item-detalle" placeholder="Ej: Lote A, Talla M...">
+                            <input type="text" name="detalles[${rowCount}][detalle]" class="corp-input item-detalle" placeholder="Ej: Lote A, Talla M...">
                         </td>
                         <td>
-                            <input type="number" name="detalles[${rowCount}][cantidad]" class="input item-qty" value="1" min="0.01" step="0.01" required>
+                            <input type="number" name="detalles[${rowCount}][cantidad]" class="corp-input item-qty" value="1" min="0.01" step="0.01" required>
                         </td>
                         <td>
-                            <input type="text" class="input item-price-display input-money" placeholder="0" required>
+                            <input type="text" class="corp-input item-price-display input-money" placeholder="0" required>
                             <input type="hidden" name="detalles[${rowCount}][precio]" class="item-price-hidden" value="0">
                         </td>
                         <td>
-                            <input type="text" class="input item-subtotal input-readonly input-money" value="0" disabled style="font-family: monospace;">
+                            <input type="text" class="corp-input item-subtotal corp-input-readonly input-money" value="0" disabled>
                         </td>
-                        <td style="text-align: center;">
-                            <button type="button" class="btn-remove-row"><i class="bi bi-x-circle"></i></button>
+                        <td class="text-center">
+                            <button type="button" class="btn-remove-row" title="Eliminar fila">
+                                <i class="bi bi-x-lg" style="font-size: 12px;"></i>
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -719,18 +902,17 @@
                     $(this).find('.item-price-hidden').attr('name', `detalles[${index}][precio]`);
 
                     if (index === 0 && $('#itemsBody tr').length === 1) {
-                        $(this).find('.btn-remove-row').prop('disabled', true).css('opacity', '0.3');
+                        $(this).find('.btn-remove-row').prop('disabled', true);
                     } else {
-                        $(this).find('.btn-remove-row').prop('disabled', false).css('opacity', '1');
+                        $(this).find('.btn-remove-row').prop('disabled', false);
                     }
                 });
             }
             calculateTotals();
 
             // ==========================================
-            // MODAL Y GUARDADO AJAX (ACTUALIZADO CON MARCA)
+            // MODAL Y GUARDADO AJAX
             // ==========================================
-
             $('#btnOpenModalRef').click(function () {
                 $('#modalReferencia').fadeIn('fast');
             });
@@ -741,7 +923,7 @@
                 $('#ref_detalle').val('');
                 $('#ref_id_InvSubGrupos').val('');
                 $('#ref_id_InvBodegas').val('');
-                $('#ref_id_InvMarcas').val(''); // Limpiar marca
+                $('#ref_id_InvMarcas').val('');
                 $('#modalErrors').hide();
             });
 
@@ -750,12 +932,12 @@
                 let detalle = $('#ref_detalle').val().trim();
                 let id_InvSubGrupos = $('#ref_id_InvSubGrupos').val();
                 let id_InvBodegas = $('#ref_id_InvBodegas').val();
-                let id_InvMarcas = $('#ref_id_InvMarcas').val(); // Capturar marca
+                let id_InvMarcas = $('#ref_id_InvMarcas').val();
                 let btn = $(this);
 
                 if (!referencia) return $('#modalErrors').text('La referencia es obligatoria.').show();
                 if (!id_InvSubGrupos) return $('#modalErrors').text('Debe seleccionar un subgrupo.').show();
-                if (!id_InvMarcas) return $('#modalErrors').text('Debe seleccionar una marca.').show(); // Validar marca
+                if (!id_InvMarcas) return $('#modalErrors').text('Debe seleccionar una marca.').show();
                 if (!id_InvBodegas) return $('#modalErrors').text('Debe seleccionar una bodega.').show();
 
                 btn.prop('disabled', true).text('Guardando...');
@@ -770,7 +952,7 @@
                         detalle: detalle,
                         id_InvSubGrupos: id_InvSubGrupos,
                         id_InvBodegas: id_InvBodegas,
-                        id_InvMarcas: id_InvMarcas // Enviar marca
+                        id_InvMarcas: id_InvMarcas
                     },
                     success: function (response) {
                         if (response.success) {
@@ -778,25 +960,20 @@
                             let newRefName = response.referencia.referencia;
                             let nomSubgrupo = $('#ref_id_InvSubGrupos option:selected').text();
                             let nomBodega = $('#ref_id_InvBodegas option:selected').text();
-                            let nomMarca = $('#ref_id_InvMarcas option:selected').text(); // Texto marca
+                            let nomMarca = $('#ref_id_InvMarcas option:selected').text();
 
-                            // 1. Armamos la cadena para el datalist incluyendo Marca
                             let optionValue = `${newRefName} | Marca: ${nomMarca} | Bodega: ${nomBodega} | SG: ${nomSubgrupo}`;
-                            
-                            // 2. Agregamos al HTML del datalist
+
                             let newOptionHTML = `<option data-id="${newRefId}" value="${optionValue}"></option>`;
                             $('#referenciasDataList').append(newOptionHTML);
 
-                            // 3. Agregamos al Diccionario en memoria
                             dictReferencias[optionValue] = newRefId;
 
-                            // 4. Autoseleccionar en la última fila agregada de la tabla
                             let lastRowSearch = $('#itemsBody tr:last-child .item-ref-search');
                             let lastRowHidden = $('#itemsBody tr:last-child .item-ref-id');
                             lastRowSearch.val(optionValue).css('border-color', '#cbd5e1');
                             lastRowHidden.val(newRefId);
 
-                            // Limpiar Modal
                             $('#modalReferencia').fadeOut('fast');
                             $('#ref_referencia, #ref_detalle, #ref_id_InvSubGrupos, #ref_id_InvBodegas, #ref_id_InvMarcas').val('');
                             $('#modalErrors').hide();

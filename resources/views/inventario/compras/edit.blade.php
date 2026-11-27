@@ -1,221 +1,618 @@
+{{-- resources/views/inventario/compras/edit.blade.php · INV-COM-EDIT-v5.3-COLORGROUPS --}}
 <x-base-layout>
     <style>
+        /* Sistema de Diseño Corporativo & UX Full-Width */
         :root {
-            --primary: #0f172a;
-            --primary-hover: #1e293b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --slate-200: #e2e8f0;
-            --slate-600: #475569;
+            --corp-ink: #0f172a;
+            --corp-muted: #64748b;
+            --corp-border: #e2e8f0;
+            --corp-surface: #ffffff;
+            --corp-bg: #f8fafc;
+            --corp-accent: #1d4ed8;
+            --corp-accent-soft: #eff6ff;
         }
 
-        .page-wrap { max-width: 1200px; margin: 0 auto; padding: 40px 20px; font-family: 'Inter', sans-serif; color: var(--primary); }
-        
-        /* Encabezado */
-        .header-actions { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-bottom: 1px solid var(--slate-200); padding-bottom: 20px; }
-        .back-link { font-size: 0.85rem; font-weight: 600; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; transition: 0.2s; }
-        .back-link:hover { color: var(--primary); transform: translateX(-3px); }
-        .page-title { font-size: 2rem; font-weight: 800; margin: 0; letter-spacing: -0.025em; }
+        .corp-shell {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            color: var(--corp-ink);
+        }
 
-        /* Botones */
-        .btn-action { background: #fff; border: 1px solid var(--slate-200); color: #334155; padding: 10px 20px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; }
-        .btn-action:hover { background: #f8fafc; border-color: #94a3b8; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
-        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        /* Cabecera ejecutiva */
+        .corp-header {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
 
-        /* Cards */
-        .card { background: #fff; border: 1px solid var(--slate-200); border-radius: 16px; margin-bottom: 24px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .card-header { background: #f8fafc; padding: 18px 24px; border-bottom: 1px solid var(--slate-200); font-weight: 700; color: var(--slate-600); display: flex; align-items: center; gap: 10px; }
-        .card-body { padding: 24px; }
+        /* Barra minimalista de accesos rápidos por grupo de enfoque */
+        .corp-quicknav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            padding-top: 12px;
+            margin-top: 12px;
+            border-top: 1px solid #f1f5f9;
+            scrollbar-width: none;
+        }
+        .corp-quicknav::-webkit-scrollbar {
+            display: none;
+        }
+        .corp-nav-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            border: 1px solid transparent;
+            transition: all .15s ease;
+        }
+        .corp-nav-pill i {
+            font-size: 13px;
+        }
+        .corp-nav-sep {
+            width: 1px;
+            height: 18px;
+            background: #e2e8f0;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
 
-        /* Formulario */
-        .info-label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 6px; text-transform: uppercase; display: block; }
-        .form-control { border: 1.5px solid var(--slate-200); border-radius: 10px; padding: 10px 14px; width: 100%; font-size: 0.95rem; transition: 0.2s; }
-        .form-control:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1); }
+        /* 1. Grupo Principal / Vistas Core (Azul claro) */
+        .pill-core {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border-color: #dbeafe;
+        }
+        .pill-core:hover {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #bfdbfe;
+        }
+        .pill-core.active {
+            background: #1d4ed8;
+            color: #ffffff;
+            border-color: #1d4ed8;
+            box-shadow: 0 2px 6px rgba(29, 78, 216, 0.25);
+        }
 
-        /* Archivo S3 */
-        .file-status-box { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 8px 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; font-size: 0.8rem; }
-        .btn-view-file { color: #166534; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
-        .btn-view-file:hover { text-decoration: underline; color: #064e3b; }
+        /* 2. Grupo Operaciones / Altas Rápidas (Verde esmeralda claro) */
+        .pill-ops {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #d1fae5;
+        }
+        .pill-ops:hover {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #a7f3d0;
+        }
+        .pill-ops.active {
+            background: #059669;
+            color: #ffffff;
+            border-color: #059669;
+            box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+        }
 
-        /* Tabla */
-        .table-items { width: 100%; border-collapse: collapse; }
-        .table-items th { text-align: left; padding: 14px 20px; background: #f1f5f9; font-size: 0.75rem; color: var(--slate-600); text-transform: uppercase; }
-        .table-items td { padding: 14px 20px; border-bottom: 1px solid var(--slate-200); vertical-align: middle; }
-        .item-row:hover { background-color: #f8fafc; }
+        /* 3. Grupo Control / Bitácoras y Alertas (Ámbar cálido claro) */
+        .pill-audit {
+            background: #fffbeb;
+            color: #b45309;
+            border-color: #fef3c7;
+        }
+        .pill-audit:hover {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #fde68a;
+        }
+        .pill-audit.active {
+            background: #d97706;
+            color: #ffffff;
+            border-color: #d97706;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.25);
+        }
 
-        /* Visualización Dinero */
-        .input-money-group { position: relative; display: flex; align-items: center; }
-        .input-money-group::before { content: '$'; position: absolute; left: 12px; color: #94a3b8; font-weight: 700; z-index: 5; }
-        .input-money-group .form-money { padding-left: 28px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #0f172a; }
+        /* 4. Grupo Configuración / Catálogos Maestros (Púrpura suave) */
+        .pill-conf {
+            background: #f5f3ff;
+            color: #6d28d9;
+            border-color: #ede9fe;
+        }
+        .pill-conf:hover {
+            background: #ede9fe;
+            color: #5b21b6;
+            border-color: #ddd6fe;
+        }
+        .pill-conf.active {
+            background: #7c3aed;
+            color: #ffffff;
+            border-color: #7c3aed;
+            box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+        }
 
-        /* Resumen Final */
-        .summary-section { background: #f8fafc; padding: 30px; border-top: 2px solid var(--slate-200); }
-        .total-box { background: var(--primary); padding: 30px; border-radius: 14px; text-align: right; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-        .total-amount { font-size: 2.5rem; font-weight: 800; font-family: monospace; display: block; }
-        
-        .remove-row { color: var(--danger); border: none; background: none; font-size: 1.2rem; cursor: pointer; opacity: 0.5; transition: 0.2s; }
-        .remove-row:hover { opacity: 1; transform: scale(1.2); }
+        /* Paneles del formulario */
+        .corp-panel {
+            background: var(--corp-surface);
+            border: 1px solid var(--corp-border);
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+        .corp-panel-head {
+            background: #f8fafc;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .corp-panel-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--corp-ink);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+        .corp-panel-body {
+            padding: 18px 20px;
+        }
+
+        /* Etiquetas e inputs */
+        .corp-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+        .corp-input, .corp-select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 13.5px;
+            padding: 8px 12px;
+            background-color: #ffffff;
+            color: var(--corp-ink);
+            transition: all .15s ease;
+        }
+        .corp-input:focus, .corp-select:focus {
+            outline: none;
+            border-color: var(--corp-accent);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+        }
+
+        .corp-code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        /* Archivo adjunto */
+        .file-status-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 8px;
+            padding: 7px 10px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        /* Tabla de ítems */
+        .corp-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 880px;
+        }
+        .corp-items-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            border-bottom: 1px solid var(--corp-border);
+            padding: 10px 12px;
+            text-align: left;
+        }
+        .corp-items-table tbody td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .corp-items-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+        .corp-items-table .corp-input,
+        .corp-items-table .corp-select {
+            padding: 6px 10px;
+            font-size: 13px;
+        }
+
+        /* Grupo input dinero */
+        .input-money-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-money-group::before {
+            content: '$';
+            position: absolute;
+            left: 11px;
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 13px;
+            z-index: 5;
+        }
+        .input-money-group .form-money {
+            padding-left: 24px;
+            text-align: right;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 700;
+            color: var(--corp-ink);
+        }
+
+        .remove-row {
+            color: #ef4444;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 7px;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+        .remove-row:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Resumen y Total */
+        .corp-summary-footer {
+            background: #f8fafc;
+            border-top: 1px solid var(--corp-border);
+            padding: 18px 20px;
+        }
+        .corp-total-card {
+            background: #0f172a;
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 18px 22px;
+            text-align: right;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+        .corp-total-amount {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.15;
+            display: block;
+            color: #ffffff;
+        }
     </style>
 
-    <div class="page-wrap">
-        <form action="{{ route('inventario.compras.update', $compra->id) }}" method="POST" enctype="multipart/form-data" id="compra-form">
-            @csrf @method('PUT')
+    <div class="container-fluid py-2 px-2 px-md-3">
+        <div class="corp-shell">
 
-            <div class="header-actions">
-                <div>
-                    <a href="{{ route('inventario.compras.show', $compra->id) }}" class="back-link"><i class="bi bi-arrow-left-circle-fill"></i> Regresar</a>
-                    <h1 class="page-title">Editar Factura <span style="color: #94a3b8;">#{{ $compra->numero_factura }}</span></h1>
-                </div>
-                <button type="submit" class="btn-action btn-primary"><i class="bi bi-cloud-check-fill"></i> Guardar Cambios</button>
-            </div>
-
-            {{-- SECCIÓN 1: CABECERA --}}
-            <div class="card">
-                <div class="card-header"><i class="bi bi-receipt-cutoff"></i> Información de Cabecera</div>
-                <div class="card-body">
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-                        <div>
-                            <span class="info-label">Proveedor</span>
-                            <select name="cod_ter_proveedor" class="form-control" required>
-                                @foreach($proveedores as $p)
-                                    <option value="{{ $p->cod_ter }}" {{ $compra->cod_ter_proveedor == $p->cod_ter ? 'selected' : '' }}>
-                                        {{ $p->nom_ter }} ({{ $p->cod_ter }})
-                                    </option>
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-3" role="alert" style="border-radius: 10px; font-size: 13px;">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="bi bi-exclamation-triangle-fill mt-1"></i>
+                        <div class="flex-grow-1">
+                            <strong>Por favor corrige los siguientes errores:</strong>
+                            <ul class="mb-0 ps-3 mt-1">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
                                 @endforeach
-                            </select>
+                            </ul>
                         </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+            @endif
+
+            <form action="{{ route('inventario.compras.update', $compra->id) }}" method="POST" enctype="multipart/form-data" id="compra-form">
+                @csrf
+                @method('PUT')
+
+                {{-- 1. CABECERA EJECUTIVA + ACCESOS RÁPIDOS POR GRUPO DE ENFOQUE --}}
+                <div class="corp-header mb-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                         <div>
-                            <span class="info-label">N° de Factura</span>
-                            <input type="text" name="numero_factura" value="{{ $compra->numero_factura }}" class="form-control" required>
+                            <nav aria-label="breadcrumb" class="mb-1">
+                                <ol class="breadcrumb mb-0" style="font-size: 11.5px;">
+                                    <li class="breadcrumb-item text-muted">Gestión de Inventario</li>
+                                    <li class="breadcrumb-item text-muted">Historial de Facturas</li>
+                                    <li class="breadcrumb-item active fw-semibold text-primary" aria-current="page">Editar Factura #{{ $compra->numero_factura }}</li>
+                                </ol>
+                            </nav>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h4 class="fw-bold mb-0" style="letter-spacing: -0.02em; color: #0f172a;">
+                                    Editar Factura de Compra
+                                </h4>
+                                <span class="corp-code">#{{ $compra->numero_factura }}</span>
+                            </div>
+                            <p class="text-secondary mb-0" style="font-size: 13.5px;">
+                                Modifica los datos de cabecera, soportes adjuntos o líneas de ítems registrados en la factura.
+                            </p>
                         </div>
-                        <div>
-                            <span class="info-label">Fecha de Factura</span>
-                            <input type="date" name="fecha_factura" value="{{ $compra->fecha_factura->format('Y-m-d') }}" class="form-control" required>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{{ route('inventario.compras.show', $compra->id) }}"
+                               class="btn btn-outline-secondary fw-semibold px-3 py-2"
+                               style="font-size: 13px; border-radius: 9px;">
+                                <i class="bi bi-arrow-left me-1"></i> Regresar
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-primary fw-semibold px-4 py-2 shadow-sm"
+                                    style="font-size: 13px; border-radius: 9px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                                <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
+                            </button>
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 24px;">
-                        <div>
-                            <span class="info-label">Método de Pago</span>
-                            <select name="id_InvMetodos" class="form-control" required>
-                                @foreach($metodos as $m)
-                                    <option value="{{ $m->id }}" {{ $compra->id_InvMetodos == $m->id ? 'selected' : '' }}>{{ $m->nombre }}</option>
-                                @endforeach
-                            </select>
+                    {{-- Barra Minimalista de Accesos Rápidos con Color por Enfoque --}}
+                    <div class="corp-quicknav" aria-label="Accesos rápidos de inventario">
+                        {{-- GRUPO 1: PRINCIPAL / VISTAS CORE (Azul claro) --}}
+                        <a href="{{ route('inventario.tablero') }}" class="corp-nav-pill pill-core" title="Vista Principal">
+                            <i class="bi bi-speedometer2"></i> Tablero
+                        </a>
+                        <a href="{{ route('inventario.activos.index') }}" class="corp-nav-pill pill-core" title="Vista Principal">
+                            <i class="bi bi-laptop"></i> Activos
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 2: OPERACIONES / ALTAS (Verde esmeralda claro) --}}
+                        <a href="{{ route('inventario.compras.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                            <i class="bi bi-cart-plus"></i> + Compra
+                        </a>
+                        <a href="{{ route('inventario.movimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                            <i class="bi bi-file-earmark-arrow-up"></i> + Acta / Mov.
+                        </a>
+                        <a href="{{ route('inventario.mantenimientos.create') }}" class="corp-nav-pill pill-ops" title="Operaciones">
+                            <i class="bi bi-wrench-adjustable"></i> + Mantenimiento
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 3: CONTROL / BITÁCORAS Y ALERTAS (Ámbar cálido claro) --}}
+                        <a href="{{ route('inventario.movimientos.index') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                            <i class="bi bi-arrow-left-right"></i> Movimientos
+                        </a>
+                        <a href="{{ route('inventario.compras.index') }}" class="corp-nav-pill pill-audit active" title="Control y Seguimiento">
+                            <i class="bi bi-receipt-cutoff"></i> Facturas
+                        </a>
+                        <a href="{{ route('inventario.activos.alertas') }}" class="corp-nav-pill pill-audit" title="Control y Seguimiento">
+                            <i class="bi bi-exclamation-triangle"></i> Alertas
+                        </a>
+
+                        <span class="corp-nav-sep"></span>
+
+                        {{-- GRUPO 4: CONFIGURACIÓN / CATÁLOGOS (Púrpura suave) --}}
+                        <a href="{{ route('inventario.bodegas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-geo-alt"></i> Bodegas
+                        </a>
+                        <a href="{{ route('inventario.clasificacion.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-diagram-3"></i> Clasificación
+                        </a>
+                        <a href="{{ route('inventario.marcas.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-tags"></i> Marcas
+                        </a>
+                        <a href="{{ route('inventario.metodos-pago.index') }}" class="corp-nav-pill pill-conf" title="Configuración">
+                            <i class="bi bi-credit-card"></i> Métodos Pago
+                        </a>
+                    </div>
+                </div>
+
+                {{-- 2. SECCIÓN 1: INFORMACIÓN DE CABECERA --}}
+                <div class="corp-panel mb-3">
+                    <div class="corp-panel-head">
+                        <h6 class="corp-panel-title">
+                            <i class="bi bi-receipt-cutoff text-primary"></i> Información de Cabecera
+                        </h6>
+                        <span class="text-muted" style="font-size: 12px;">
+                            ID Interno: <strong class="text-dark">#{{ $compra->id }}</strong>
+                        </span>
+                    </div>
+
+                    <div class="corp-panel-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-lg-6">
+                                <label class="corp-label">Proveedor <span class="text-danger">*</span></label>
+                                <select name="cod_ter_proveedor" class="corp-select" required>
+                                    @foreach($proveedores as $p)
+                                        <option value="{{ $p->cod_ter }}" {{ $compra->cod_ter_proveedor == $p->cod_ter ? 'selected' : '' }}>
+                                            {{ $p->nom_ter }} ({{ $p->cod_ter }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">N° de Factura <span class="text-danger">*</span></label>
+                                <input type="text" name="numero_factura" value="{{ $compra->numero_factura }}" class="corp-input" required>
+                            </div>
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Fecha de Factura <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_factura" value="{{ $compra->fecha_factura->format('Y-m-d') }}" class="corp-input" required>
+                            </div>
                         </div>
-                        <div>
-                            <span class="info-label">Doc. Interno</span>
-                            <input type="text" name="num_doc_interno" value="{{ $compra->num_doc_interno }}" class="form-control">
-                        </div>
-                        <div>
-                            <span class="info-label">Egreso N°</span>
-                            <input type="text" name="numero_egreso" value="{{ $compra->numero_egreso }}" class="form-control">
-                        </div>
-                        <div>
-                            <span class="info-label">Actualizar factura</span>
-                            <input type="file" name="eg_archivo" class="form-control" style="font-size: 0.8rem;">
-                            
-                            @if($compra->eg_archivo)
-                                <div class="file-status-box">
-                                    <i class="bi bi-file-earmark-check-fill" style="color: var(--success); font-size: 1.1rem;"></i>
-                                    <div>
-                                        <div style="color: #166534; font-weight: 600;">Factura actual disponible.</div>
-                                        <a href="{{ route('inventario.compras.archivo', $compra->id) }}" target="_blank" class="btn-view-file">
-                                            <i class="bi bi-eye-fill"></i> Ver factura
+
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Método de Pago <span class="text-danger">*</span></label>
+                                <select name="id_InvMetodos" class="corp-select" required>
+                                    @foreach($metodos as $m)
+                                        <option value="{{ $m->id }}" {{ $compra->id_InvMetodos == $m->id ? 'selected' : '' }}>{{ $m->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Doc. Interno</label>
+                                <input type="text" name="num_doc_interno" value="{{ $compra->num_doc_interno }}" class="corp-input">
+                            </div>
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Egreso N°</label>
+                                <input type="text" name="numero_egreso" value="{{ $compra->numero_egreso }}" class="corp-input">
+                            </div>
+                            <div class="col-12 col-sm-6 col-lg-3">
+                                <label class="corp-label">Actualizar Factura (Soporte)</label>
+                                <input type="file" name="eg_archivo" class="corp-input" style="padding: 6px 10px; font-size: 12.5px;">
+
+                                @if($compra->eg_archivo)
+                                    <div class="file-status-box">
+                                        <span class="text-success fw-semibold">
+                                            <i class="bi bi-file-earmark-check-fill me-1"></i>Archivo cargado
+                                        </span>
+                                        <a href="{{ route('inventario.compras.archivo', $compra->id) }}" target="_blank" class="text-success fw-bold text-decoration-none">
+                                            <i class="bi bi-eye-fill me-1"></i>Ver factura
                                         </a>
                                     </div>
-                                </div>
-                            @endif
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- SECCIÓN 2: DETALLES --}}
-            <div class="card">
-                <div class="card-header" style="justify-content: space-between;">
-                    <span><i class="bi bi-box-seam-fill"></i> Ítems de la Factura</span>
-                    <button type="button" id="add-row" class="btn-action" style="padding: 6px 14px; font-size: 0.8rem; background: #f0fdf4; color: #166534; border-color: #bbf7d0;">
-                        <i class="bi bi-plus-circle-fill"></i> Añadir Ítem
+                {{-- 3. SECCIÓN 2: DETALLES DE LA FACTURA --}}
+                <div class="corp-panel mb-3">
+                    <div class="corp-panel-head">
+                        <h6 class="corp-panel-title">
+                            <i class="bi bi-box-seam-fill text-primary"></i> Ítems de la Factura
+                        </h6>
+                        <button type="button" id="add-row" class="btn btn-sm btn-success fw-semibold px-3" style="font-size: 12.5px; border-radius: 8px;">
+                            <i class="bi bi-plus-circle me-1"></i> Añadir Ítem
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="corp-items-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 55px;" class="text-center">#</th>
+                                    <th>Referencia / Producto</th>
+                                    <th style="width: 22%;">Detalle</th>
+                                    <th style="width: 105px;" class="text-center">Cant.</th>
+                                    <th style="width: 175px;" class="text-end">Precio Unit.</th>
+                                    <th style="width: 165px;" class="text-end">Subtotal</th>
+                                    <th style="width: 55px;" class="text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="details-body">
+                                @foreach($compra->detalles->where('cantidades', '>', 0) as $index => $item)
+                                    <tr class="item-row">
+                                        <td class="text-center fw-bold text-muted">
+                                            {{ $loop->iteration }}
+                                            <input type="hidden" name="detalles[{{ $index }}][id]" value="{{ $item->id }}">
+                                        </td>
+                                        <td>
+                                            <select name="detalles[{{ $index }}][invReferencias_id]" class="corp-select" required>
+                                                @foreach($referencias as $ref)
+                                                    <option value="{{ $ref->id }}" {{ $item->invReferencias_id == $ref->id ? 'selected' : '' }}>
+                                                        {{ $ref->subgrupo?->nombre }} — {{ $ref->referencia }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="detalles[{{ $index }}][detalle]" value="{{ $item->detalle }}" class="corp-input">
+                                        </td>
+                                        <td>
+                                            <input type="number" name="detalles[{{ $index }}][cantidad]" value="{{ (float)$item->cantidades }}" class="corp-input input-qty text-center fw-bold" step="any">
+                                        </td>
+                                        <td>
+                                            <div class="input-money-group">
+                                                <input type="text" class="corp-input form-money currency-mask" value="{{ number_format($item->precio_unitario, 0, ',', '.') }}">
+                                                <input type="hidden" name="detalles[{{ $index }}][precio]" value="{{ $item->precio_unitario }}">
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold font-monospace subtotal-cell" style="font-size: 13.5px;">
+                                            ${{ number_format($item->sub_total, 0, ',', '.') }}
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="remove-row" title="Eliminar línea">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Resumen Financiero --}}
+                    <div class="corp-summary-footer">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-12 col-lg-7">
+                                <div class="row g-3">
+                                    <div class="col-12 col-sm-6">
+                                        <label class="corp-label">IVA Liquidado</label>
+                                        <div class="input-money-group">
+                                            <input type="text" class="corp-input form-money currency-mask" value="{{ number_format($extraCosts['iva'], 0, ',', '.') }}">
+                                            <input type="hidden" name="costo_iva" id="costo_iva" value="{{ $extraCosts['iva'] }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label class="corp-label">Otros Gastos</label>
+                                        <div class="input-money-group">
+                                            <input type="text" class="corp-input form-money currency-mask" value="{{ number_format($extraCosts['varios'], 0, ',', '.') }}">
+                                            <input type="hidden" name="costo_varios" id="costo_varios" value="{{ $extraCosts['varios'] }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-lg-5">
+                                <div class="corp-total-card">
+                                    <span style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;">
+                                        Total a Pagar
+                                    </span>
+                                    <span class="corp-total-amount" id="grand-total">${{ number_format($compra->total_pago, 0, ',', '.') }}</span>
+                                    <input type="hidden" name="total_pago" id="total_pago_hidden" value="{{ $compra->total_pago }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- 4. PIE DE ACCIONES --}}
+                <div class="d-flex justify-content-end gap-2 pb-3">
+                    <a href="{{ route('inventario.compras.show', $compra->id) }}"
+                       class="btn btn-outline-secondary fw-semibold px-4 py-2"
+                       style="font-size: 13.5px; border-radius: 9px;">
+                        Cancelar
+                    </a>
+                    <button type="submit"
+                            class="btn btn-primary fw-semibold px-4 py-2 shadow-sm"
+                            style="font-size: 13.5px; border-radius: 9px; background-color: #1d4ed8; border-color: #1d4ed8;">
+                        <i class="bi bi-check2-circle me-1"></i> Guardar Cambios
                     </button>
                 </div>
-                <div class="card-body" style="padding: 0; overflow-x: auto;">
-                    <table class="table-items">
-                        <thead>
-                            <tr>
-                                <th style="width: 60px;">#</th>
-                                <th>Referencia / Producto</th>
-                                <th>Detalle</th>
-                                <th style="width: 100px; text-align: center;">Cant.</th>
-                                <th style="width: 180px; text-align: right;">Precio Unit.</th>
-                                <th style="width: 180px; text-align: right;">Subtotal</th>
-                                <th style="width: 60px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="details-body">
-                            @foreach($compra->detalles->where('cantidades', '>', 0) as $index => $item)
-                                <tr class="item-row">
-                                    <td style="font-weight: 700; color: #94a3b8;">
-                                        {{ $loop->iteration }}
-                                        <input type="hidden" name="detalles[{{ $index }}][id]" value="{{ $item->id }}">
-                                    </td>
-                                    <td>
-                                        <select name="detalles[{{ $index }}][invReferencias_id]" class="form-control" required>
-                                            @foreach($referencias as $ref)
-                                                <option value="{{ $ref->id }}" {{ $item->invReferencias_id == $ref->id ? 'selected' : '' }}>
-                                                    {{ $ref->subgrupo?->nombre }} — {{ $ref->referencia }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td><input type="text" name="detalles[{{ $index }}][detalle]" value="{{ $item->detalle }}" class="form-control"></td>
-                                    <td><input type="number" name="detalles[{{ $index }}][cantidad]" value="{{ (float)$item->cantidades }}" class="form-control input-qty text-center" step="any" style="font-weight: 700;"></td>
-                                    <td>
-                                        <div class="input-money-group">
-                                            <input type="text" class="form-control form-money currency-mask" value="{{ number_format($item->precio_unitario, 0, ',', '.') }}">
-                                            <input type="hidden" name="detalles[{{ $index }}][precio]" value="{{ $item->precio_unitario }}">
-                                        </div>
-                                    </td>
-                                    <td style="text-align: right; font-weight: 800; font-family: monospace;" class="subtotal-cell">
-                                        ${{ number_format($item->sub_total, 0, ',', '.') }}
-                                    </td>
-                                    <td style="text-align: center;">
-                                        <button type="button" class="remove-row"><i class="bi bi-trash3-fill"></i></button>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="summary-section">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <span class="info-label">IVA Liquidado</span>
-                                <div class="input-money-group">
-                                    <input type="text" class="form-control form-money currency-mask" value="{{ number_format($extraCosts['iva'], 0, ',', '.') }}">
-                                    <input type="hidden" name="costo_iva" id="costo_iva" value="{{ $extraCosts['iva'] }}">
-                                </div>
-                            </div>
-                            <div>
-                                <span class="info-label">Otros Gastos</span>
-                                <div class="input-money-group">
-                                    <input type="text" class="form-control form-money currency-mask" value="{{ number_format($extraCosts['varios'], 0, ',', '.') }}">
-                                    <input type="hidden" name="costo_varios" id="costo_varios" value="{{ $extraCosts['varios'] }}">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="total-box">
-                            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Total a Pagar</span>
-                            <span class="total-amount" id="grand-total">${{ number_format($compra->total_pago, 0, ',', '.') }}</span>
-                            <input type="hidden" name="total_pago" id="total_pago_hidden" value="{{ $compra->total_pago }}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -256,36 +653,36 @@
             document.getElementById('add-row').addEventListener('click', () => {
                 const idx = Date.now();
                 const rowHtml = `
-                    <tr class="item-row" style="background: #f0fdf4; border-left: 4px solid var(--success);">
-                        <td style="font-weight: 700; color: var(--success);">+ <input type="hidden" name="detalles[${idx}][id]" value=""></td>
+                    <tr class="item-row" style="background: #ecfdf5; border-left: 4px solid #10b981;">
+                        <td class="text-center fw-bold text-success">+ <input type="hidden" name="detalles[${idx}][id]" value=""></td>
                         <td>
-                            <select name="detalles[${idx}][invReferencias_id]" class="form-control" required>
+                            <select name="detalles[${idx}][invReferencias_id]" class="corp-select" required>
                                 <option value="">Seleccione...</option>
                                 @foreach($referencias as $ref)
                                     <option value="{{ $ref->id }}">{{ $ref->subgrupo?->nombre }} — {{ $ref->referencia }}</option>
                                 @endforeach
                             </select>
                         </td>
-                        <td><input type="text" name="detalles[${idx}][detalle]" class="form-control"></td>
-                        <td><input type="number" name="detalles[${idx}][cantidad]" value="1" class="form-control input-qty text-center" step="any" style="font-weight: 700;"></td>
+                        <td><input type="text" name="detalles[${idx}][detalle]" class="corp-input"></td>
+                        <td><input type="number" name="detalles[${idx}][cantidad]" value="1" class="corp-input input-qty text-center fw-bold" step="any"></td>
                         <td>
                             <div class="input-money-group">
-                                <input type="text" class="form-control form-money currency-mask" value="0">
+                                <input type="text" class="corp-input form-money currency-mask" value="0">
                                 <input type="hidden" name="detalles[${idx}][precio]" value="0">
                             </div>
                         </td>
-                        <td style="text-align: right; font-weight: 800; font-family: monospace;" class="subtotal-cell">$ 0</td>
-                        <td style="text-align: center;"><button type="button" class="remove-row"><i class="bi bi-trash3-fill"></i></button></td>
+                        <td class="text-end fw-bold font-monospace subtotal-cell" style="font-size: 13.5px;">$ 0</td>
+                        <td class="text-center"><button type="button" class="remove-row" title="Eliminar línea"><i class="bi bi-trash3"></i></button></td>
                     </tr>`;
                 body.insertAdjacentHTML('beforeend', rowHtml);
             });
 
             body.addEventListener('click', e => {
                 const btn = e.target.closest('.remove-row');
-                if(btn && confirm('¿Eliminar esta línea?')) {
+                if (btn && confirm('¿Eliminar esta línea?')) {
                     const row = btn.closest('.item-row');
                     const idInput = row.querySelector('input[name*="[id]"]');
-                    if(idInput && idInput.value) {
+                    if (idInput && idInput.value) {
                         const input = document.createElement('input');
                         input.type = 'hidden';
                         input.name = 'detalles_eliminados[]';

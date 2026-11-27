@@ -1,5 +1,5 @@
 {{-- ============================================================================
-     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v3.3-DBG
+     RSV · ADMIN · FINANZAS · TRANSACCIONES · TRX-v3.4-DBG
      Parcial: resources/views/rsv/admin/partials/finanzas/transacciones.blade.php
      ============================================================================ --}}
 @php
@@ -219,7 +219,7 @@
     }
 
     $trxDbg = [
-        'version'       => 'TRX-v3.3-DBG',
+        'version'       => 'TRX-v3.4-DBG',
         'vista'         => 'partials/finanzas/transacciones.blade.php',
         'render'        => now()->format('H:i:s'),
         'modo'          => $trxGlobal ? 'global' : ('inmueble #' . $trxInmId),
@@ -253,13 +253,13 @@
     ];
 @endphp
 
-{{-- TRX-v3.3-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3) --}}
-<div id="trxDbgToggle" title="Debug Transacciones (TRX-v3.3-DBG)">
+{{-- TRX-v3.4-DBG · Tab DBG terminal + LED + Panel LOCAL (diseño TIP-v1.3) --}}
+<div id="trxDbgToggle" title="Debug Transacciones (TRX-v3.4-DBG)">
     <span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>
 </div>
 <div id="trxDbgPanel" role="dialog" aria-label="Panel de debug de Transacciones Financieras">
     <div class="trx-dbg-header" id="trxDbgHeader">
-        <span>DEBUG · Finanzas · Transacciones · TRX-v3.3-DBG</span>
+        <span>DEBUG · Finanzas · Transacciones · TRX-v3.4-DBG</span>
         <span class="trx-dbg-controls">
             <button type="button" class="trx-dbg-btn" id="trxDbgRefresh" title="Refrescar fragmento">↻ Frag</button>
             <button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>
@@ -369,7 +369,7 @@
                     <i class="bi bi-receipt-cutoff text-success me-1"></i> Transacciones Financieras
                 </h6>
                 <span class="badge rounded-pill" style="font-size: 6.5px; background: rgba(2,6,23,.94); color: #38bdf8; border: 1px solid #1e293b; font-family: ui-monospace, monospace;">
-                    TRX-v3.3-DBG
+                    TRX-v3.4-DBG
                 </span>
                 @if(!$trxGlobal)
                     <span class="count-badge" title="Filtro activo: transacciones de un solo inmueble">
@@ -572,7 +572,7 @@
                                         data-soporte-url="{{ $sopInfo['url'] ?: '#' }}">Ver</button>
                                 @if($trxBase)
                                     <button type="button" class="btn-mini" data-bs-toggle="modal" data-bs-target="#trxEditModal-{{ $trx->id }}">Editar</button>
-                                    <button type="button" class="btn-mini text-danger" data-bs-toggle="modal" data-bs-target="#trxDelModal-{{ $trx->id }}">Anular</button>
+                                    <button type="button" class="btn-mini text-danger" data-bs-toggle="modal" data-bs-target="#trxDelModal-{{ $trx->id }}">Eliminar</button>
                                 @endif
                             </td>
                         </tr>
@@ -877,8 +877,8 @@
 <script>
 (function () {
     'use strict';
-    if (window.__jsTransaccionesV33Listo) return;
-    window.__jsTransaccionesV33Listo = true;
+    if (window.__jsTransaccionesV34Listo) return;
+    window.__jsTransaccionesV34Listo = true;
 
     var TRX_FRAG_URL  = '{!! $trxFragmentoUrl ?? "" !!}';
     var PAGINA_ACTUAL = 1;
@@ -888,7 +888,7 @@
     var TRX_Q_SEQ     = 0;
     var TRX_Q_TIMER   = null;
 
-    /* ═══ PANEL DE DEBUG LOCAL TRX-v3.3-DBG (diseño TIP-v1.3) ═══ */
+    /* ═══ PANEL DE DEBUG LOCAL TRX-v3.4-DBG (diseño TIP-v1.3) ═══ */
     var DBG = (window.TrxDbg && window.TrxDbg.alive && window.TrxDbg.alive())
         ? window.TrxDbg
         : (function () {
@@ -904,7 +904,7 @@
                 if (!$('trxDbgToggle')) {
                     var t = document.createElement('div');
                     t.id = 'trxDbgToggle';
-                    t.title = 'Debug Transacciones (TRX-v3.3-DBG)';
+                    t.title = 'Debug Transacciones (TRX-v3.4-DBG)';
                     t.innerHTML = '<span class="trx-dbg-led" id="trxDbgLed"></span>DBG<span class="trx-dbg-badge" id="trxDbgBadge">0</span>';
                     rootDbg.insertBefore(t, rootDbg.firstChild);
                 }
@@ -912,7 +912,7 @@
                     var p = document.createElement('div');
                     p.id = 'trxDbgPanel';
                     p.innerHTML = '<div class="trx-dbg-header" id="trxDbgHeader">' +
-                        '<span>DEBUG · Finanzas · Transacciones · TRX-v3.3-DBG</span>' +
+                        '<span>DEBUG · Finanzas · Transacciones · TRX-v3.4-DBG</span>' +
                         '<span class="trx-dbg-controls">' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgRefresh">↻ Frag</button>' +
                         '<button type="button" class="trx-dbg-btn" id="trxDbgCopy">Copiar</button>' +
@@ -983,7 +983,7 @@
                 clear: function () { var b = $('trxDbgBody'); if (b) { b.innerHTML = ''; } },
                 copy: function () {
                     var b = $('trxDbgBody'); if (!b) { return; }
-                    var txt = '=== DEBUG transacciones TRX-v3.3-DBG · ' + new Date().toISOString() + ' ===\n';
+                    var txt = '=== DEBUG transacciones TRX-v3.4-DBG · ' + new Date().toISOString() + ' ===\n';
                     for (var i = 0; i < b.children.length; i++) { txt += b.children[i].textContent + '\n'; }
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(txt).then(function () {
@@ -1003,7 +1003,7 @@
 
     var SRVDBG = @json($trxDbg);
     if (DBG) {
-        trxdbg('TRX-v3.3-DBG activo · modo=' + (SRVDBG ? SRVDBG.modo : '?') + ' · fuente=' + (SRVDBG ? SRVDBG.fuente_datos : '?'), 'ok');
+        trxdbg('TRX-v3.4-DBG activo · modo=' + (SRVDBG ? SRVDBG.modo : '?') + ' · fuente=' + (SRVDBG ? SRVDBG.fuente_datos : '?'), 'ok');
         trxdbg('init · total=' + (SRVDBG ? SRVDBG.transacciones : 0) + ' · en página=' + (SRVDBG ? SRVDBG.en_pagina : 0) +
             ' · pasarelas=' + (SRVDBG ? SRVDBG.pasarelas : 0) + ' · con soporte=' + (SRVDBG ? SRVDBG.con_soporte : 0), 'info');
         if (SRVDBG && SRVDBG.rango_fechas) {
@@ -1091,17 +1091,16 @@
         });
     }
 
-    function marcarFilaAnuladaEnDom(id) {
+    function eliminarFilaInmediataEnDom(id) {
         if (!id) return;
         document.querySelectorAll('#sheet-transacciones tr[data-id="' + id + '"]').forEach(function (tr) {
-            tr.classList.add('trx-anulada');
-            tr.setAttribute('data-grp', 'anulado');
-            var tds = tr.querySelectorAll('td');
-            if (tds[5]) {
-                tds[5].innerHTML = '<span class="st-dot" style="background: #b91c1c;"></span>ANULADO';
+            tr.remove();
+        });
+        var idx = 1;
+        document.querySelectorAll('#sheet-transacciones tr.trx-row').forEach(function (tr) {
+            if (tr.cells && tr.cells[0]) {
+                tr.cells[0].textContent = idx++;
             }
-            var btnVer = tr.querySelector('.js-ver-trx');
-            if (btnVer) { btnVer.dataset.estado = 'ANULADO'; }
         });
         aplicarFiltro();
     }
@@ -1218,6 +1217,7 @@
             return r.text().then(function (raw) {
                 var j = null;
                 try { j = JSON.parse(raw); } catch (e) {}
+                trxdbg('HTTP ' + r.status + ' en ' + metodoReal + ' · respuesta=' + (j ? 'JSON' : 'HTML/vacío'), r.ok ? 'ok' : 'err');
                 return { ok: r.ok, status: r.status, json: j };
             });
         })
@@ -1229,12 +1229,12 @@
                 ocultarModal(form.closest('.modal'));
 
                 if (metodoReal === 'DELETE' && idFila) {
-                    marcarFilaAnuladaEnDom(idFila);
+                    eliminarFilaInmediataEnDom(idFila);
                 }
 
                 avisar((res.json && res.json.message) || (metodoReal === 'DELETE' ? 'Transacción anulada correctamente' : 'Guardado correctamente'), 'success');
 
-                refrescarTabla(idFila, PAGINA_ACTUAL);
+                refrescarTabla(metodoReal === 'DELETE' ? null : idFila, PAGINA_ACTUAL);
                 if (typeof window.finTabReloadFragment === 'function') {
                     window.finTabReloadFragment(null, 'sync-desde-transacciones');
                 }
@@ -1245,7 +1245,8 @@
                 errorGeneral(form, (res.json && res.json.message) || 'No se pudo completar la operación.');
             }
         })
-        .catch(function () {
+        .catch(function (err) {
+            trxdbg('Error AJAX: ' + (err && err.message ? err.message : 'conexión'), 'err');
             errorGeneral(form, 'Error de conexión. Intenta de nuevo.');
         })
         .finally(function () {
